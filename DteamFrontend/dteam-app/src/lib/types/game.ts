@@ -1,0 +1,43 @@
+import type { Duser } from './user';
+
+export interface Review {
+  id: string;
+  userId: string;
+  user?: Duser;
+  gameId: string;
+  rating: number; // 1 - 5
+  content: string;
+  isRecommended: boolean;
+  playTimeHoursAtReview: number;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface Game {
+  id: string;
+  title: string;
+  description: string;
+  shortDescription?: string | null;
+  priceInNanoTons: number | string;
+  serverArchivePath: string;
+  ownerId: string;
+  owner?: Duser;
+  downloadCount: number;
+  averageRating: number;
+  reviewsCount: number;
+  isDlc: boolean;
+  parentGameId?: string | null;
+  parentGame?: Game | null;
+  dlcs?: Game[];
+  version: string;
+  sizeInBytes: number;
+  isPublished: boolean;
+  headerImageUrl?: string | null;
+  coverImageUrl?: string | null;
+  screenshotUrls: string[];
+  trailerUrl?: string | null;
+  tags?: string[];
+  createdAt: string;
+  updatedAt?: string | null;
+  reviews?: Review[];
+}
