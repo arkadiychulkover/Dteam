@@ -29,7 +29,6 @@
 
 <div class="max-w-5xl mx-auto px-4 lg:px-8 py-6 space-y-8">
   {#if $currentUser}
-    <!-- Profile Card Header -->
     <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-[#161a29] to-[#0f121d] border border-slate-800 shadow-2xl relative overflow-hidden">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
         <div class="relative">
@@ -70,9 +69,7 @@
         </div>
       </div>
 
-      <!-- Wallet & Financial Overview -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-800">
-        <!-- TON Wallet -->
         <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
           <span class="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
             <Wallet class="w-3.5 h-3.5 text-cyan-400" /> TON Address
@@ -95,7 +92,6 @@
           </div>
         </div>
 
-        <!-- Available Balance -->
         <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
           <span class="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
             <Coins class="w-3.5 h-3.5 text-cyan-400" /> Wallet Balance
@@ -105,7 +101,6 @@
           </span>
         </div>
 
-        <!-- Creator Earnings -->
         <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
           <span class="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
             <Sparkles class="w-3.5 h-3.5 text-amber-400" /> Developer Earnings
@@ -117,7 +112,6 @@
       </div>
     </div>
 
-    <!-- User's Created Games / Published Titles -->
     <div>
       <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Gamepad2 class="w-5 h-5 text-cyan-400" /> Published Games & Creations
@@ -133,7 +127,7 @@
             />
             <div class="flex-1 min-w-0">
               <h4 class="text-sm font-bold text-white truncate">{game.title}</h4>
-              <span class="text-xs font-mono text-cyan-400">{formatPrice(game.priceInNanoTons)}</span>
+              <span class="text-xs font-mono text-cyan-400">{formatPrice(game.priceInNanoTons, game.discountPercentage)}</span>
               <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
                 <span>{game.downloadCount.toLocaleString()} downloads</span>
                 <span>★ {game.averageRating}</span>

@@ -3,17 +3,17 @@ import type { Duser, UserStatus } from '../types';
 import { authService } from '../services/authService';
 
 const MOCK_USER: Duser = {
-  id: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+  id: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
   email: 'cyber_gamer@dteam.io',
   username: 'CyberPlayer',
   walletAddress: 'EQBvW8Z5huBkMJYdn3PBRnVDLyTO2_OTHTuP4asMb_Fton',
-  balanceInNanoTons: 15_500_000_000, // 15.5 TON
-  totalEarningsInNanoTons: 42_000_000_000, // 42 TON
+  balanceInNanoTons: 15_500_000_000,
+  totalEarningsInNanoTons: 42_000_000_000,
   createdAt: new Date().toISOString(),
   isInFamily: true,
   isAdmin: true,
   isBanned: false,
-  status: 1 as UserStatus, // Online
+  status: 1 as UserStatus,
   avatarUrl: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80',
   bio: 'Web3 game dev & collector. Exploring the decentralized metaverse 🚀',
 };
@@ -54,7 +54,6 @@ function createAuthStore() {
         const res = await authService.login({ emailOrUsername, password });
         set({ user: res.user, token: res.token, isLoading: false, error: null });
       } catch (err: any) {
-        // Fallback for dev mode
         update((s) => ({
           ...s,
           isLoading: false,

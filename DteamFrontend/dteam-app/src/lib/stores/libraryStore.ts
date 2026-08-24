@@ -6,18 +6,18 @@ import { uiStore } from './uiStore';
 
 const INITIAL_LIBRARY: UserGame[] = [
   {
-    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
     gameId: '1',
     purchasedAt: '2026-02-10T15:00:00Z',
-    playTimeMinutes: 450, // 7.5 hours
+    playTimeMinutes: 450,
     lastPlayedAt: '2026-08-20T21:30:00Z',
     isFavorite: true,
   },
   {
-    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
     gameId: '3',
     purchasedAt: '2026-03-12T11:00:00Z',
-    playTimeMinutes: 120, // 2 hours
+    playTimeMinutes: 120,
     lastPlayedAt: '2026-08-18T18:15:00Z',
     isFavorite: false,
   },
@@ -62,7 +62,7 @@ function createLibraryStore() {
           items: [
             ...s.items,
             {
-              userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+              userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
               gameId: game.id,
               purchasedAt: new Date().toISOString(),
               playTimeMinutes: 0,

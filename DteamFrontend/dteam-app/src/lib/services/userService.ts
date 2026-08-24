@@ -1,7 +1,19 @@
 import { api } from './api';
 import type { UserGame, UserFriend, UserStatus } from '../types';
 
+export interface UserBanStatus {
+  userId: string;
+  username: string;
+  email: string;
+  isBanned: boolean;
+  isAdmin: boolean;
+}
+
 export const userService = {
+  async checkIsBanned(userId: string): Promise<UserBanStatus> {
+    return await api.get<UserBanStatus>(`/users/is-banned?userId=${userId}`);
+  },
+
   async getLibrary(): Promise<UserGame[]> {
     return await api.get<UserGame[]>('/users/library');
   },

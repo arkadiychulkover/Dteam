@@ -1,40 +1,66 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
-  import FriendsSidebar from './lib/components/layout/FriendsSidebar.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
-  import LibraryView from './lib/components/library/LibraryView.svelte';
-  import CommunityView from './lib/components/community/CommunityView.svelte';
-  import ProfileView from './lib/components/profile/ProfileView.svelte';
-  import WalletModal from './lib/components/wallet/WalletModal.svelte';
-  import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
+  import CatalogView from './lib/components/store/CatalogView.svelte';
+  import WishlistView from './lib/components/wishlist/WishlistView.svelte';
+  import AdminView from './lib/components/admin/AdminView.svelte';
+  import BannedView from './lib/components/banned/BannedView.svelte';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
+  import LiveBackground from './lib/components/ui/LiveBackground.svelte';
   import { uiStore } from './lib/stores/uiStore';
+  import { authStore, currentUser } from './lib/stores/authStore';
+  import { wishlistStore } from './lib/stores/wishlistStore';
+  import { userService } from './lib/services/userService';
+
+  let isBanned = $state(false);
+
+  async function checkUserBanStatus() {
+    if (!$currentUser?.id) return;
+    try {
+      const res = await userService.checkIsBanned($currentUser.id);
+      isBanned = res.isBanned;
+      if (res.isBanned && $currentUser) {
+        authStore.setUser({ ...$currentUser, isBanned: true });
+      }
+    } catch (e) {
+      console.warn('[App] Could not check ban status:', e);
+    }
+  }
+
+  onMount(() => {
+    checkUserBanStatus();
+    wishlistStore.loadWishlist();
+    const interval = setInterval(checkUserBanStatus, 5000);
+    return () => clearInterval(interval);
+  });
 </script>
 
-<div class="min-h-screen flex flex-col bg-[#0a0c14] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
-  <!-- Top Navigation -->
-  <Header />
+<div class="min-h-screen flex flex-col text-slate-100 font-sans selection:bg-cyan-400 selection:text-black relative">
+  <LiveBackground />
 
-  <!-- Main Content Body -->
-  <main class="flex-1">
-    {#if $uiStore.activeTab === 'store'}
+  {#if !isBanned}
+    <Header />
+  {/if}
+
+  <main class="flex-1 relative z-10">
+    {#if isBanned}
+      <BannedView onRetry={checkUserBanStatus} />
+    {:else if $uiStore.activeTab === 'store'}
       <StoreView />
-    {:else if $uiStore.activeTab === 'library'}
-      <LibraryView />
-    {:else if $uiStore.activeTab === 'community'}
-      <CommunityView />
-    {:else if $uiStore.activeTab === 'profile'}
-      <ProfileView />
+    {:else if $uiStore.activeTab === 'catalog'}
+      <CatalogView />
+    {:else if $uiStore.activeTab === 'wishlist'}
+      <WishlistView />
+    {:else if $uiStore.activeTab === 'admin'}
+      <AdminView />
     {/if}
   </main>
 
-  <!-- Sidebars & Global Modals -->
-  <FriendsSidebar />
-  <WalletModal />
-  <PublishGameModal />
   <ToastContainer />
 
-  <!-- Footer -->
-  <Footer />
+  {#if !isBanned}
+    <Footer />
+  {/if}
 </div>

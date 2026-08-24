@@ -15,6 +15,7 @@ namespace DteamBackend.Data
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<UserGame> UserGames => Set<UserGame>();
         public DbSet<UserFriend> UserFriends => Set<UserFriend>();
+        public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +66,21 @@ namespace DteamBackend.Data
                 entity.HasOne(ug => ug.Game)
                     .WithMany(g => g.Owners)
                     .HasForeignKey(ug => ug.GameId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserWishlist>(entity =>
+            {
+                entity.HasKey(w => new { w.UserId, w.GameId });
+
+                entity.HasOne(w => w.User)
+                    .WithMany(u => u.Wishlist)
+                    .HasForeignKey(w => w.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(w => w.Game)
+                    .WithMany(g => g.WishlistedBy)
+                    .HasForeignKey(w => w.GameId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

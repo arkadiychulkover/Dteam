@@ -18,6 +18,9 @@ namespace DteamBackend.Models
 
         public long PriceInNanoTons { get; set; } = 0;
 
+        [Range(0, 100)]
+        public int DiscountPercentage { get; set; } = 0;
+
         [Required]
         [MaxLength(500)]
         public string ServerArchivePath { get; set; } = string.Empty;
@@ -37,6 +40,14 @@ namespace DteamBackend.Models
         public Game? ParentGame { get; set; }
 
         public ICollection<Game> Dlcs { get; set; } = new List<Game>();
+
+        public List<string> Genres { get; set; } = new();
+
+        public List<string> Platforms { get; set; } = new() { "Windows" };
+
+        public List<string> Features { get; set; } = new();
+
+        public List<string> Tags { get; set; } = new();
 
         [MaxLength(50)]
         public string Version { get; set; } = "1.0.0";
@@ -63,5 +74,7 @@ namespace DteamBackend.Models
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
         public ICollection<UserGame> Owners { get; set; } = new List<UserGame>();
+
+        public ICollection<UserWishlist> WishlistedBy { get; set; } = new List<UserWishlist>();
     }
 }

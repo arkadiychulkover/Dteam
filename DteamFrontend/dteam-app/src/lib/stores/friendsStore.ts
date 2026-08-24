@@ -4,7 +4,7 @@ import { UserStatus, FriendshipStatus } from '../types';
 
 const SAMPLE_FRIENDS: UserFriend[] = [
   {
-    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
     friendId: 'f1',
     status: FriendshipStatus.Accepted,
     createdAt: '2026-01-10T12:00:00Z',
@@ -24,7 +24,7 @@ const SAMPLE_FRIENDS: UserFriend[] = [
     },
   },
   {
-    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
     friendId: 'f2',
     status: FriendshipStatus.Accepted,
     createdAt: '2026-01-12T12:00:00Z',
@@ -43,7 +43,7 @@ const SAMPLE_FRIENDS: UserFriend[] = [
     },
   },
   {
-    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
     friendId: 'f3',
     status: FriendshipStatus.Accepted,
     createdAt: '2026-01-20T12:00:00Z',
@@ -74,7 +74,7 @@ function createFriendsStore() {
     subscribe,
     addFriend: (usernameOrEmail: string) => {
       const newFriend: UserFriend = {
-        userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+        userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
         friendId: Math.random().toString(36).substring(2, 9),
         status: FriendshipStatus.Accepted,
         createdAt: new Date().toISOString(),

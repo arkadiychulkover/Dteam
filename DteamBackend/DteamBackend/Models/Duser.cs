@@ -66,5 +66,7 @@ namespace DteamBackend.Models
         public ICollection<Game> CreatedGames { get; set; } = new List<Game>();
 
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+        public ICollection<UserWishlist> Wishlist { get; set; } = new List<UserWishlist>();
     }
 }
