@@ -9,6 +9,16 @@
   import WalletModal from './lib/components/wallet/WalletModal.svelte';
   import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
+
+  // Auth Components
+  import LoginView from './lib/components/auth/LoginView.svelte';
+  import RegisterView from './lib/components/auth/RegisterView.svelte';
+  import ForgotPasswordView from './lib/components/auth/ForgotPasswordView.svelte';
+  import ConfirmCodeView from './lib/components/auth/ConfirmCodeView.svelte';
+  import ResetPasswordView from './lib/components/auth/ResetPasswordView.svelte';
+  import LoginModal from './lib/components/auth/LoginModal.svelte';
+  import ConfirmCodeModal from './lib/components/auth/ConfirmCodeModal.svelte';
+
   import { uiStore } from './lib/stores/uiStore';
 </script>
 
@@ -26,6 +36,16 @@
       <CommunityView />
     {:else if $uiStore.activeTab === 'profile'}
       <ProfileView />
+    {:else if $uiStore.activeTab === 'login'}
+      <LoginView />
+    {:else if $uiStore.activeTab === 'register'}
+      <RegisterView />
+    {:else if $uiStore.activeTab === 'forgot-password'}
+      <ForgotPasswordView />
+    {:else if $uiStore.activeTab === 'confirm-code'}
+      <ConfirmCodeView />
+    {:else if $uiStore.activeTab === 'reset-password'}
+      <ResetPasswordView />
     {/if}
   </main>
 
@@ -33,6 +53,8 @@
   <FriendsSidebar />
   <WalletModal />
   <PublishGameModal />
+  <LoginModal />
+  <ConfirmCodeModal />
   <ToastContainer />
 
   <!-- Footer -->

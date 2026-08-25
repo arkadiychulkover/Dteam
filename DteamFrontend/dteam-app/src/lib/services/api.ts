@@ -46,7 +46,16 @@ class ApiClient {
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.message || errorData.title || errorMessage;
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.errors && typeof errorData.errors === 'object') {
+            const firstKey = Object.keys(errorData.errors)[0];
+            if (firstKey && Array.isArray(errorData.errors[firstKey]) && errorData.errors[firstKey].length > 0) {
+              errorMessage = errorData.errors[firstKey][0];
+            }
+          } else if (errorData.title) {
+            errorMessage = errorData.title;
+          }
         } catch {
           // ignore json parse error
         }

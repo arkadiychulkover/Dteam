@@ -13,7 +13,10 @@
     PlusCircle, 
     Bell, 
     Sparkles, 
-    ChevronDown 
+    ChevronDown,
+    LogIn,
+    UserPlus,
+    LogOut
   } from 'lucide-svelte';
 
   let isStatusDropdownOpen = $state(false);
@@ -145,41 +148,64 @@
           {#if isStatusDropdownOpen}
             <div class="absolute right-0 mt-2 w-48 bg-[#141724] border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50 animate-in fade-in slide-in-from-top-2">
               <div class="px-3 py-2 border-b border-slate-800 text-[11px] text-slate-400">
-                Set Steam Status:
+                Set Status:
               </div>
               <button
                 onclick={() => handleStatusChange(UserStatus.Online)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200"
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
               >
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Online
               </button>
               <button
                 onclick={() => handleStatusChange(UserStatus.InGame)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200"
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
               >
                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span> In-Game
               </button>
               <button
                 onclick={() => handleStatusChange(UserStatus.Away)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200"
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
               >
                 <span class="w-2 h-2 rounded-full bg-amber-500"></span> Away
               </button>
               <button
                 onclick={() => handleStatusChange(UserStatus.Offline)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200"
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
               >
                 <span class="w-2 h-2 rounded-full bg-slate-500"></span> Offline (Invisible)
               </button>
               <div class="border-t border-slate-800 my-1"></div>
               <button
                 onclick={() => { uiStore.setTab('profile'); isStatusDropdownOpen = false; }}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-300"
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-300 cursor-pointer"
               >
                 <User class="w-3.5 h-3.5" /> View Profile
               </button>
+              <button
+                onclick={() => { authStore.logout(); isStatusDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-red-500/10 text-red-400 cursor-pointer"
+              >
+                <LogOut class="w-3.5 h-3.5" /> Выйти
+              </button>
             </div>
           {/if}
+        </div>
+      {:else}
+        <div class="flex items-center gap-2">
+          <button
+            onclick={() => uiStore.setLoginModal(true)}
+            class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700/80 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <LogIn class="w-3.5 h-3.5 text-cyan-400" />
+            <span>Войти</span>
+          </button>
+          <button
+            onclick={() => uiStore.setTab('register')}
+            class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <UserPlus class="w-3.5 h-3.5" />
+            <span>Регистрация</span>
+          </button>
         </div>
       {/if}
     </div>

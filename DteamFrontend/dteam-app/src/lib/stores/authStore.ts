@@ -1,35 +1,38 @@
 import { writable, derived } from 'svelte/store';
 import type { Duser, UserStatus } from '../types';
 import { authService } from '../services/authService';
-
-const MOCK_USER: Duser = {
-  id: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
-  email: 'cyber_gamer@dteam.io',
-  username: 'CyberPlayer',
-  walletAddress: 'EQBvW8Z5huBkMJYdn3PBRnVDLyTO2_OTHTuP4asMb_Fton',
-  balanceInNanoTons: 15_500_000_000, // 15.5 TON
-  totalEarningsInNanoTons: 42_000_000_000, // 42 TON
-  createdAt: new Date().toISOString(),
-  isInFamily: true,
-  isAdmin: true,
-  isBanned: false,
-  status: 1 as UserStatus, // Online
-  avatarUrl: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80',
-  bio: 'Web3 game dev & collector. Exploring the decentralized metaverse 🚀',
-};
+import { api } from '../services/api';
 
 function createAuthStore() {
+  const initialToken = api.getToken();
+
   const { subscribe, set, update } = writable<{
     user: Duser | null;
     token: string | null;
+    resetEmail: string | null;
+    resetToken: string | null;
     isLoading: boolean;
     error: string | null;
   }>({
-    user: MOCK_USER,
-    token: 'mock-jwt-token-dteam',
+    user: null,
+    token: initialToken,
+    resetEmail: null,
+    resetToken: null,
     isLoading: false,
     error: null,
   });
+
+  // Attempt to restore session on initialization if token exists
+  if (initialToken) {
+    authService.getProfile()
+      .then((user) => {
+        update((s) => ({ ...s, user, isLoading: false }));
+      })
+      .catch(() => {
+        api.setToken(null);
+        update((s) => ({ ...s, user: null, token: null, isLoading: false }));
+      });
+  }
 
   return {
     subscribe,
@@ -48,24 +51,78 @@ function createAuthStore() {
         return { ...s, user: { ...s.user, balanceInNanoTons: newBalance } };
       });
     },
+    register: async (email: string, username: string, password: string, walletAddress?: string) => {
+      update((s) => ({ ...s, isLoading: true, error: null }));
+      try {
+        const res = await authService.register({ email, username, password, walletAddress });
+        set({ user: res.user, token: res.token, resetEmail: null, resetToken: null, isLoading: false, error: null });
+        return res;
+      } catch (err: any) {
+        const message = err.message || 'Ошибка регистрации';
+        update((s) => ({ ...s, isLoading: false, error: message }));
+        throw new Error(message);
+      }
+    },
     login: async (emailOrUsername: string, password: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
         const res = await authService.login({ emailOrUsername, password });
-        set({ user: res.user, token: res.token, isLoading: false, error: null });
+        set({ user: res.user, token: res.token, resetEmail: null, resetToken: null, isLoading: false, error: null });
+        return res;
       } catch (err: any) {
-        // Fallback for dev mode
-        update((s) => ({
-          ...s,
-          isLoading: false,
-          user: { ...MOCK_USER, username: emailOrUsername },
-          error: null,
-        }));
+        const message = err.message || 'Ошибка входа';
+        update((s) => ({ ...s, isLoading: false, error: message }));
+        throw new Error(message);
+      }
+    },
+    requestPasswordReset: async (email: string) => {
+      update((s) => ({ ...s, isLoading: true, error: null }));
+      try {
+        const res = await authService.requestPasswordReset(email);
+        update((s) => ({ ...s, resetEmail: email, isLoading: false, error: null }));
+        return res;
+      } catch (err: any) {
+        const message = err.message || 'Ошибка запроса сброса пароля';
+        update((s) => ({ ...s, isLoading: false, error: message }));
+        throw new Error(message);
+      }
+    },
+    verifyResetCode: async (code: string) => {
+      update((s) => ({ ...s, isLoading: true, error: null }));
+      let currentEmail = '';
+      const unsubscribe = subscribe((s) => { currentEmail = s.resetEmail || ''; });
+      unsubscribe();
+
+      try {
+        const res = await authService.verifyResetCode(currentEmail, code);
+        const token = res.resetToken || code;
+        update((s) => ({ ...s, resetToken: token, isLoading: false, error: null }));
+        return res;
+      } catch (err: any) {
+        const message = err.message || 'Неверный код подтверждения';
+        update((s) => ({ ...s, isLoading: false, error: message }));
+        throw new Error(message);
+      }
+    },
+    resetPassword: async (newPassword: string) => {
+      update((s) => ({ ...s, isLoading: true, error: null }));
+      let currentToken = '';
+      const unsubscribe = subscribe((s) => { currentToken = s.resetToken || ''; });
+      unsubscribe();
+
+      try {
+        const res = await authService.resetPassword(currentToken, newPassword);
+        update((s) => ({ ...s, resetEmail: null, resetToken: null, isLoading: false, error: null }));
+        return res;
+      } catch (err: any) {
+        const message = err.message || 'Ошибка обновления пароля';
+        update((s) => ({ ...s, isLoading: false, error: message }));
+        throw new Error(message);
       }
     },
     logout: async () => {
       await authService.logout();
-      set({ user: null, token: null, isLoading: false, error: null });
+      set({ user: null, token: null, resetEmail: null, resetToken: null, isLoading: false, error: null });
     },
   };
 }
