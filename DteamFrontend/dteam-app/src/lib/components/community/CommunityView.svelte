@@ -1,109 +1,213 @@
 <script lang="ts">
-  import { authStore, currentUser } from '../../stores/authStore';
-  import { friendsStore } from '../../stores/friendsStore';
-  import { gamesStore } from '../../stores/gamesStore';
-  import { Users, Sparkles, Heart, MessageSquare, Shield, Trophy } from 'lucide-svelte';
+  import {
+    Heart,
+    MessageSquare,
+    Share2,
+    MoreHorizontal,
+    Play,
+    Search,
+    SlidersHorizontal,
+    Sparkles,
+    Image,
+    Video,
+    MessageCircle,
+    BookOpen,
+    Newspaper,
+    Filter
+  } from 'lucide-svelte';
 
-  const familyMembers = $derived($friendsStore.friends.filter(f => f.friend.isInFamily));
+  // Sub-Navigation Tabs
+  let activeTab = $state<'subscriptions' | 'library' | 'recommended'>('recommended');
+  let activeCategory = $state<string>('Усі розділи');
+  let sortBy = $state<string>('Популярні');
+  let searchQuery = $state('');
+
+  const sampleCommunityPosts = [
+    {
+      id: 'cp-1',
+      authorName: 'NikaNii',
+      authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      timestamp: '2 години тому',
+      title: 'Епічний світанок у відкритому космосі!',
+      body: 'Сьогодні досліджували нову зоряну систему з командою. Удалося відшукати рідкісну планету з атмосферою неону.',
+      mediaType: 'image',
+      mediaUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1000&auto=format&fit=crop&q=80',
+      likes: 2500,
+      comments: 310,
+    },
+    {
+      id: 'cp-2',
+      authorName: 'CyberViper',
+      authorAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+      timestamp: '5 годин тому',
+      title: 'Спідран турнір — Фінальний забіг',
+      body: 'Подивіться моменти з нашого турніру по кіберпанк арені. Таймінги на 02:45 просто божевільні!',
+      mediaType: 'video',
+      mediaUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=80',
+      likes: 4200,
+      comments: 580,
+    },
+    {
+      id: 'cp-3',
+      authorName: 'AstraWalker',
+      authorAvatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80',
+      timestamp: '1 день тому',
+      title: 'Гайд по оптимізації бази Neocity',
+      body: 'Детальний розбір того, як правильно розподіляти енергетичні вузли у вашому поселенні.',
+      mediaType: 'image',
+      mediaUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1000&auto=format&fit=crop&q=80',
+      likes: 1800,
+      comments: 140,
+    },
+  ];
+
+  const categories = [
+    { name: 'Усі розділи', icon: Sparkles },
+    { name: 'Форум', icon: MessageCircle },
+    { name: 'Скріншоти', icon: Image },
+    { name: 'Відео', icon: Video },
+    { name: 'Гайди', icon: BookOpen },
+    { name: 'Новини', icon: Newspaper },
+  ];
 </script>
 
-<div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
-  <!-- Family Sharing Section -->
-  <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-purple-950/40 border border-blue-500/30 shadow-2xl relative overflow-hidden">
-    <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-      <div>
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold border border-cyan-500/30 uppercase mb-3">
-          <Shield class="w-3.5 h-3.5" /> Dteam Family Sharing
-        </div>
-        <h2 class="text-2xl md:text-3xl font-black text-white font-['Outfit']">
-          Decentralized Family Library
-        </h2>
-        <p class="text-xs md:text-sm text-slate-300 max-w-xl mt-1.5 leading-relaxed">
-          Share your Web3 game collection with trusted family members. Play simultaneously without restrictions.
-        </p>
-      </div>
+<div class="min-h-[90vh] bg-[#0A0D14] text-slate-200 font-sans p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+  <!-- Top Sub-Navigation Bar -->
+  <div class="bg-[#111C24] border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-6 text-sm font-bold">
+      <button
+        onclick={() => activeTab = 'subscriptions'}
+        class="transition-colors cursor-pointer pb-1 relative {activeTab === 'subscriptions' ? 'text-cyan-400 font-black' : 'text-slate-400 hover:text-white'}"
+      >
+        Підписки
+        {#if activeTab === 'subscriptions'}
+          <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>
+        {/if}
+      </button>
 
-      <div class="flex items-center gap-3">
-        <div class="flex -space-x-2">
-          {#each $friendsStore.friends.slice(0, 3) as f}
-            <img
-              src={f.friend.avatarUrl}
-              alt={f.friend.username}
-              class="w-10 h-10 rounded-full border-2 border-[#0a0c14] object-cover"
-            />
-          {/each}
-        </div>
-        <div class="text-left">
-          <span class="block text-xs font-bold text-white">3 Family Slots Active</span>
-          <span class="block text-[10px] text-emerald-400 font-semibold">● Family Sharing Online</span>
-        </div>
-      </div>
+      <button
+        onclick={() => activeTab = 'library'}
+        class="transition-colors cursor-pointer pb-1 relative {activeTab === 'library' ? 'text-cyan-400 font-black' : 'text-slate-400 hover:text-white'}"
+      >
+        З Бібліотеки
+        {#if activeTab === 'library'}
+          <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>
+        {/if}
+      </button>
+
+      <button
+        onclick={() => activeTab = 'recommended'}
+        class="transition-colors cursor-pointer pb-1 relative {activeTab === 'recommended' ? 'text-cyan-400 font-black' : 'text-slate-400 hover:text-white'}"
+      >
+        Рекомендоване
+        {#if activeTab === 'recommended'}
+          <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>
+        {/if}
+      </button>
+    </div>
+
+    <!-- Sorting Dropdown -->
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-slate-400">Сортування:</span>
+      <select
+        bind:value={sortBy}
+        class="bg-[#16222F] text-xs font-bold text-cyan-400 border border-white/10 rounded-xl px-3 py-1.5 focus:outline-none focus:border-cyan-400 cursor-pointer"
+      >
+        <option value="Популярні">Популярні</option>
+        <option value="Нові">Нові</option>
+        <option value="Обговорювані">Обговорювані</option>
+      </select>
     </div>
   </div>
 
-  <!-- Activity Feed & Reviews -->
+  <!-- Main Feed & Right Sidebar Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- Left: Friends Activity -->
-    <div class="lg:col-span-8 space-y-4">
-      <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <Sparkles class="w-4 h-4 text-cyan-400" /> Recent Community Activity
-      </h3>
-
-      <div class="p-4 rounded-xl bg-[#111420] border border-slate-800 space-y-4">
-        {#each $friendsStore.friends as f}
-          <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-900/60 border border-slate-800/80">
-            <img
-              src={f.friend.avatarUrl}
-              alt={f.friend.username}
-              class="w-10 h-10 rounded-xl object-cover ring-1 ring-slate-700"
-            />
-            <div class="flex-1 text-xs">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-200">{f.friend.username}</span>
-                <span class="text-slate-500 text-[10px]">2 hours ago</span>
+    <!-- Main Feed Area (Left 75%) -->
+    <div class="lg:col-span-8 space-y-6">
+      {#each sampleCommunityPosts as post}
+        <div class="bg-[#111C24] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl hover:border-cyan-500/30 transition-all">
+          <!-- User Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <img src={post.authorAvatar} alt={post.authorName} class="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-500/30" />
+              <div>
+                <span class="block text-sm font-bold text-white">{post.authorName}</span>
+                <span class="block text-[11px] text-slate-500">{post.timestamp}</span>
               </div>
-              <p class="text-slate-400 mt-1">
-                Started playing <span class="text-cyan-400 font-semibold">Neon Odyssey 2088</span> and unlocked an on-chain achievement!
-              </p>
             </div>
+            <button class="text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+              <MoreHorizontal class="w-5 h-5" />
+            </button>
           </div>
-        {/each}
-      </div>
+
+          <!-- Title & Body -->
+          <div class="space-y-1.5">
+            <h3 class="text-base sm:text-lg font-bold text-white">{post.title}</h3>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">{post.body}</p>
+          </div>
+
+          <!-- Embedded Media -->
+          <div class="relative rounded-2xl overflow-hidden border border-white/10 max-h-[420px] bg-slate-900 group">
+            <img src={post.mediaUrl} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            {#if post.mediaType === 'video'}
+              <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                <div class="w-16 h-16 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-xl shadow-cyan-400/50 group-hover:scale-110 transition-transform">
+                  <Play class="w-7 h-7 fill-black ml-1" />
+                </div>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Footer Stats & Actions -->
+          <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+            <div class="flex items-center gap-6">
+              <button class="flex items-center gap-2 hover:text-cyan-400 transition-colors cursor-pointer font-semibold">
+                <Heart class="w-4 h-4 text-rose-400 fill-rose-400" /> {(post.likes / 1000).toFixed(1)}k
+              </button>
+              <button class="flex items-center gap-2 hover:text-cyan-400 transition-colors cursor-pointer font-semibold">
+                <MessageSquare class="w-4 h-4" /> {post.comments}
+              </button>
+            </div>
+            <button class="flex items-center gap-2 hover:text-white transition-colors cursor-pointer font-semibold">
+              <Share2 class="w-4 h-4" /> Поділитись
+            </button>
+          </div>
+        </div>
+      {/each}
     </div>
 
-    <!-- Right: Top Creators / TON Leaderboard -->
-    <div class="lg:col-span-4 space-y-4">
-      <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <Trophy class="w-4 h-4 text-amber-400" /> Top Game Creators
-      </h3>
-
-      <div class="p-4 rounded-xl bg-[#111420] border border-slate-800 space-y-3">
-        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-          <div class="flex items-center gap-2.5">
-            <span class="w-5 font-bold text-amber-400 text-sm">#1</span>
-            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
-              NX
-            </div>
-            <div>
-              <span class="block text-xs font-bold text-white">NexusStudios</span>
-              <span class="block text-[10px] text-slate-400">2 Games Published</span>
-            </div>
+    <!-- Right Filter Sidebar (Right 25%) -->
+    <div class="lg:col-span-4 space-y-6">
+      <div class="bg-[#111C24] border border-white/10 rounded-3xl p-5 space-y-5 sticky top-36">
+        <!-- Search Input -->
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <Search class="w-4 h-4" />
           </div>
-          <span class="text-xs font-mono font-bold text-cyan-400">124.5 TON</span>
+          <input
+            type="text"
+            bind:value={searchQuery}
+            placeholder="Пошук: Усі розділи"
+            class="w-full pl-10 pr-4 py-2.5 bg-[#0a0d14] border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
+          />
         </div>
 
-        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-          <div class="flex items-center gap-2.5">
-            <span class="w-5 font-bold text-slate-300 text-sm">#2</span>
-            <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">
-              CY
-            </div>
-            <div>
-              <span class="block text-xs font-bold text-white">CyberForge</span>
-              <span class="block text-[10px] text-slate-400">1 Game Published</span>
-            </div>
-          </div>
-          <span class="text-xs font-mono font-bold text-cyan-400">89.2 TON</span>
+        <!-- Categories List -->
+        <div class="space-y-1">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block px-2 mb-2">Категорії</span>
+          {#each categories as cat}
+            {@const Icon = cat.icon}
+            <button
+              onclick={() => activeCategory = cat.name}
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border
+                {activeCategory === cat.name
+                  ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 font-bold'
+                  : 'text-slate-400 hover:bg-slate-800/60 border-transparent hover:text-slate-200'}"
+            >
+              <Icon class="w-4 h-4" />
+              <span>{cat.name}</span>
+            </button>
+          {/each}
         </div>
       </div>
     </div>
