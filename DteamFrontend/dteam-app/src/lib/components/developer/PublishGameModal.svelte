@@ -76,7 +76,7 @@
         <Gamepad2 class="w-5 h-5" />
       </div>
       <div>
-        <h3 class="text-xl font-bold text-white font-['Outfit']">Publish New Web3 Game</h3>
+        <h3 class="text-xl font-bold text-white font-display">Publish New Web3 Game</h3>
         <span class="text-xs text-slate-400">Deploy your build and earn TON directly</span>
       </div>
     </div>

@@ -44,7 +44,7 @@
 
         <div class="flex-1">
           <div class="flex flex-wrap items-center gap-3">
-            <h2 class="text-2xl md:text-3xl font-black text-white font-['Outfit']">
+            <h2 class="text-2xl md:text-3xl font-black text-white font-display">
               {$currentUser.username}
             </h2>
             {#if $currentUser.isAdmin}

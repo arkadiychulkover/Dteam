@@ -1,36 +1,83 @@
 <script lang="ts">
   import { uiStore, type MainTab } from '../../stores/uiStore';
   import { wishlistStore } from '../../stores/wishlistStore';
+  import { cartStore } from '../../stores/cartStore';
+  import { gamesStore } from '../../stores/gamesStore';
+  import { authStore, currentUser, isUserAdmin } from '../../stores/authStore';
   import { 
     Gamepad2, 
     Shield, 
     Compass, 
     Heart, 
     ShoppingCart, 
-    Settings, 
-    Bell,
-    Sparkles
+    LogIn,
+    UserPlus,
+    LogOut,
+    User,
+    ChevronDown,
+    Search,
+    Newspaper
   } from 'lucide-svelte';
 
-  const tabs: { id: MainTab; label: string; icon: any }[] = [
+  let isUserDropdownOpen = $state(false);
+  let headerSearchQuery = $state('');
+
+  const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
     { id: 'catalog', label: 'Каталог', icon: Compass },
-    { id: 'admin', label: 'Адмінка', icon: Shield },
+    { id: 'admin', label: 'Адмінка', icon: Shield, adminOnly: true },
   ];
+
+  const visibleTabs = $derived(
+    baseTabs.filter(t => !t.adminOnly || $isUserAdmin)
+  );
+
+  function handleSearchInput() {
+    const q = headerSearchQuery.trim();
+    if (q) {
+      if ($uiStore.activeTab !== 'catalog') {
+        uiStore.setTab('catalog');
+      }
+      gamesStore.setFilters({ search: q });
+      gamesStore.loadCatalogGames();
+    }
+  }
+
+  function handleSearchSubmit(e: Event) {
+    e.preventDefault();
+    const q = headerSearchQuery.trim();
+    uiStore.setTab('catalog');
+    gamesStore.setFilters({ search: q });
+    gamesStore.loadCatalogGames();
+  }
+
+  async function handleLogout() {
+    isUserDropdownOpen = false;
+    await authStore.logout();
+    uiStore.addToast({
+      title: 'Вихід',
+      message: 'Ви успішно вийшли з акаунту',
+      type: 'info'
+    });
+    if ($uiStore.activeTab === 'admin') {
+      uiStore.setTab('store');
+    }
+  }
 </script>
 
-<header class="sticky top-0 z-40 bg-[#030d12]/95 backdrop-blur-xl border-b border-cyan-950/80 px-4 lg:px-8 py-3 shadow-2xl">
-  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-    <div class="flex items-center gap-6 lg:gap-8">
+<header class="sticky top-0 z-40 bg-[#030d12]/95 backdrop-blur-xl border-b border-cyan-950/80 px-4 lg:px-8 py-2.5 shadow-2xl">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6">
+    <!-- Left: Logo & Navigation Tabs -->
+    <div class="flex items-center gap-4 lg:gap-6 shrink-0">
       <button 
         onclick={() => uiStore.setTab('store')}
-        class="flex items-center gap-3 group cursor-pointer"
+        class="flex items-center gap-2.5 group cursor-pointer"
       >
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-105 group-hover:shadow-cyan-400/40 transition-all">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-105 group-hover:shadow-cyan-400/40 transition-all">
           <Gamepad2 class="w-5 h-5 text-black font-black" />
         </div>
-        <div class="text-left">
-          <span class="font-black text-2xl tracking-tighter text-white font-['Outfit'] flex items-center gap-1.5 leading-none">
+        <div class="text-left hidden sm:block">
+          <span class="font-black text-xl tracking-tighter text-white font-display flex items-center gap-1 leading-none">
             DTEAM<span class="text-cyan-400">.</span>
           </span>
           <span class="block text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">GAMING HUB</span>
@@ -38,16 +85,16 @@
       </button>
 
       <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner">
-        {#each tabs as tab}
+        {#each visibleTabs as tab}
           {@const Icon = tab.icon}
           <button
             onclick={() => uiStore.setTab(tab.id)}
-            class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
               {$uiStore.activeTab === tab.id 
                 ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black' 
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
           >
-            <Icon class="w-4 h-4 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
+            <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
             <span>{tab.label}</span>
             {#if tab.id === 'admin'}
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
@@ -57,7 +104,26 @@
       </nav>
     </div>
 
-    <div class="flex items-center gap-2.5">
+    <!-- Center: Search Input (Matching Reference Image 3) -->
+    <form onsubmit={handleSearchSubmit} class="relative flex-1 max-w-md mx-1 sm:mx-2">
+      <input
+        type="text"
+        placeholder="Пошук у Крамниці..."
+        bind:value={headerSearchQuery}
+        oninput={handleSearchInput}
+        class="w-full pl-4 pr-10 py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+      />
+      <button
+        type="submit"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
+        title="Пошук"
+      >
+        <Search class="w-4 h-4" />
+      </button>
+    </form>
+
+    <!-- Right: Wishlist, Cart & Auth -->
+    <div class="flex items-center gap-2 shrink-0">
       <button
         onclick={() => uiStore.setTab('wishlist')}
         class="relative p-2 rounded-xl border transition-all cursor-pointer group
@@ -75,17 +141,84 @@
       </button>
 
       <button
-        onclick={() => uiStore.addToast({ title: 'Кошик', message: 'Кошик порожній.', type: 'info' })}
-        class="p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/20 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 transition-all cursor-pointer relative"
+        onclick={() => uiStore.setTab('cart')}
+        class="relative p-2 rounded-xl border transition-all cursor-pointer group
+          {$uiStore.activeTab === 'cart'
+            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20'
+            : 'bg-[#061820] hover:bg-cyan-950/60 border-cyan-500/20 hover:border-cyan-400 text-slate-300 hover:text-cyan-300'}"
         title="Кошик"
       >
-        <ShoppingCart class="w-4 h-4" />
+        <ShoppingCart class="w-4 h-4 {$cartStore.items.length > 0 || $uiStore.activeTab === 'cart' ? 'text-cyan-400' : 'group-hover:scale-110'}" />
+        {#if $cartStore.items.length > 0}
+          <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-500 text-black text-[10px] font-black flex items-center justify-center shadow-md shadow-cyan-500/40 animate-in zoom-in">
+            {$cartStore.items.length}
+          </span>
+        {/if}
       </button>
 
-      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#061820] border border-cyan-500/30 text-[11px] font-mono text-cyan-300">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>DTEAM NETWORK</span>
-      </div>
+      <!-- Auth Section -->
+      {#if $currentUser}
+        <div class="relative">
+          <button
+            onclick={() => isUserDropdownOpen = !isUserDropdownOpen}
+            class="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer"
+          >
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs">
+              {#if $currentUser.avatarUrl}
+                <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
+              {:else}
+                {$currentUser.username.charAt(0).toUpperCase()}
+              {/if}
+            </div>
+            <span class="hidden sm:block text-xs font-bold text-slate-200">
+              {$currentUser.username}
+            </span>
+            <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          {#if isUserDropdownOpen}
+            <div class="absolute right-0 mt-2 w-52 bg-[#09151e] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+              <div class="px-3 py-2 border-b border-cyan-950/80 text-[11px] text-slate-400">
+                <p class="font-bold text-white truncate">{$currentUser.username}</p>
+                <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
+              </div>
+
+              {#if $currentUser.isAdmin}
+                <button
+                  onclick={() => { uiStore.setTab('admin'); isUserDropdownOpen = false; }}
+                  class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer font-bold mt-1"
+                >
+                  <Shield class="w-3.5 h-3.5" /> Панель Адміністратора
+                </button>
+              {/if}
+
+              <button
+                onclick={handleLogout}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-red-500/10 text-red-400 cursor-pointer font-bold mt-1"
+              >
+                <LogOut class="w-3.5 h-3.5" /> Вийти з акаунту
+              </button>
+            </div>
+          {/if}
+        </div>
+      {:else}
+        <div class="flex items-center gap-1.5">
+          <button
+            onclick={() => uiStore.setLoginModal(true)}
+            class="px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 text-xs font-bold text-slate-200 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <LogIn class="w-3.5 h-3.5 text-cyan-400" />
+            <span class="hidden sm:inline">Увійти</span>
+          </button>
+          <button
+            onclick={() => uiStore.setTab('register')}
+            class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-xs font-black text-black shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <UserPlus class="w-3.5 h-3.5 text-black" />
+            <span class="hidden sm:inline">Реєстрація</span>
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 </header>

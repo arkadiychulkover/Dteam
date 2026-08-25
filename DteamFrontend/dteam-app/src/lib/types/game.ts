@@ -3,12 +3,14 @@ import type { Duser } from './user';
 export interface Review {
   id: string;
   userId: string;
+  username?: string;
+  userAvatarUrl?: string | null;
   user?: Duser;
   gameId: string;
   rating: number;
   content: string;
   isRecommended: boolean;
-  playTimeHoursAtReview: number;
+  playTimeHoursAtReview?: number;
   createdAt: string;
   updatedAt?: string | null;
 }

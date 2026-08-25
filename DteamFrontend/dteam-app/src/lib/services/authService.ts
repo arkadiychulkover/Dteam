@@ -15,14 +15,28 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    api.setToken(null);
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore if failed on server
+    } finally {
+      api.setToken(null);
+    }
   },
 
   async getProfile(): Promise<Duser> {
     return await api.get<Duser>('/auth/me');
   },
 
-  async requestPasswordReset(email: string): Promise<void> {
-    await api.post('/auth/forgot-password', { email });
+  async requestPasswordReset(email: string): Promise<{ message: string; debugCode?: string }> {
+    return await api.post<{ message: string; debugCode?: string }>('/auth/forgot-password', { email });
+  },
+
+  async verifyResetCode(email: string, code: string): Promise<{ message: string; resetToken?: string }> {
+    return await api.post<{ message: string; resetToken?: string }>('/auth/verify-reset-code', { email, code });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    return await api.post<{ message: string }>('/auth/reset-password', { token, newPassword });
   },
 };

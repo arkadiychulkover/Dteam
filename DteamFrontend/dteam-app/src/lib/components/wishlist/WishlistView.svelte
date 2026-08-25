@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { wishlistStore } from '../../stores/wishlistStore';
+  import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
@@ -18,11 +19,14 @@
     Check,
     Layers,
     Monitor,
+    Apple,
     Gamepad2,
     Heart,
     ShoppingCart,
     ShoppingBag,
-    Trash2
+    Trash2,
+    Grid,
+    List,
   } from 'lucide-svelte';
 
   let storeSearchQuery = $state('');
@@ -553,8 +557,8 @@
             <div
               role="button"
               tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+              onclick={() => openGame(game)}
+              onkeydown={(e) => e.key === 'Enter' && openGame(game)}
               class="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#061820]/95 hover:bg-[#092530] border border-cyan-500/20 hover:border-cyan-400/60 shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 cursor-pointer gap-4"
             >
               <div class="flex items-center gap-4 flex-1 min-w-0">
@@ -645,7 +649,7 @@
 
                   <button
                     type="button"
-                    onclick={(e) => handleDecorativeBuy(e, game)}
+                    onclick={(e) => handleAddToCart(e, game)}
                     class="px-4 py-1.5 sm:py-2 rounded-xl bg-[#06b6d4] hover:bg-[#22d3ee] text-black font-extrabold text-xs shadow-md shadow-cyan-500/20 transition-all cursor-pointer shrink-0 mt-1"
                   >
                     У кошик

@@ -27,13 +27,17 @@
     e.stopPropagation();
     wishlistStore.toggleWishlist(game);
   }
+  function openGame() {
+    gamesStore.selectGame(game);
+    uiStore.setTab('game');
+  }
 </script>
 
 <div
   role="button"
   tabindex="0"
-  onclick={() => gamesStore.selectGame(game)}
-  onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+  onclick={openGame}
+  onkeydown={(e) => e.key === 'Enter' && openGame()}
   class="group relative flex flex-col rounded-2xl bg-[#061820]/90 hover:bg-[#08202b] border border-cyan-500/20 hover:border-cyan-400/80 overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left"
 >
   <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">

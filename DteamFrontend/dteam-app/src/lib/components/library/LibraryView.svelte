@@ -129,7 +129,7 @@
               </span>
             </div>
 
-            <h2 class="text-3xl md:text-5xl font-black text-white font-['Outfit'] mt-4">
+            <h2 class="text-3xl md:text-5xl font-black text-white font-display mt-4">
               {selectedGameDetails.title}
             </h2>
 

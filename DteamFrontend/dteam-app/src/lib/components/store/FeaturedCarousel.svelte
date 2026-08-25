@@ -95,8 +95,8 @@
     <div
       role="button"
       tabindex="0"
-      onclick={() => gamesStore.selectGame(activeGame)}
-      onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(activeGame)}
+      onclick={() => { gamesStore.selectGame(activeGame); uiStore.setTab('game'); }}
+      onkeydown={(e) => { if (e.key === 'Enter') { gamesStore.selectGame(activeGame); uiStore.setTab('game'); } }}
       class="group relative w-full aspect-[16/7] min-h-[300px] rounded-3xl overflow-hidden border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 cursor-pointer text-left bg-slate-950"
     >
       <img

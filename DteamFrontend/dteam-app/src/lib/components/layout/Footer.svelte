@@ -9,7 +9,7 @@
       <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/25">
         <Gamepad2 class="w-4 h-4" />
       </div>
-      <span class="font-black text-xl text-white font-['Outfit'] tracking-tight">
+      <span class="font-black text-xl text-white font-display tracking-tight">
         DTEAM<span class="text-cyan-400">.</span>
       </span>
     </div>

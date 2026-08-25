@@ -45,8 +45,20 @@ export const gamesService = {
     return await api.post<UploadImageResponse>('/games/upload-image', formData);
   },
 
-  async addReview(gameId: string, payload: { rating: number; content: string; isRecommended: boolean }): Promise<Review> {
-    return await api.post<Review>(`/games/${gameId}/reviews`, payload);
+  async getReviews(gameId: string): Promise<Review[]> {
+    return await api.get<Review[]>(`/games/${gameId}/reviews`);
+  },
+
+  async getDlcs(gameId: string): Promise<Game[]> {
+    return await api.get<Game[]>(`/games/${gameId}/dlcs`);
+  },
+
+  async addReview(gameId: string, payload: { rating: number; content: string; isRecommended?: boolean }): Promise<Review> {
+    return await api.post<Review>(`/games/${gameId}/reviews`, {
+      rating: payload.rating,
+      content: payload.content,
+      isRecommended: payload.isRecommended ?? true,
+    });
   },
 
   async buyGame(gameId: string): Promise<{ success: boolean; txHash?: string }> {

@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
+  import { cartStore } from '../../stores/cartStore';
+  import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import GameDetailsModal from './GameDetailsModal.svelte';
@@ -77,8 +79,20 @@
     gamesStore.loadCatalogGames();
   }
 
+  $effect(() => {
+    searchInput = $gamesStore.filters.search;
+  });
+
   function calculateOriginalPrice(game: Game): string {
     return formatBasePrice(game.priceInNanoTons);
+  }
+
+  function openGame(game: Game) {
+    gamesStore.selectGame(game);
+    uiStore.setTab('game');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }
 
   onMount(() => {
@@ -364,8 +378,8 @@
               <div
                 role="button"
                 tabindex="0"
-                onclick={() => gamesStore.selectGame(game)}
-                onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+                onclick={() => openGame(game)}
+                onkeydown={(e) => e.key === 'Enter' && openGame(game)}
                 class="group relative flex flex-col rounded-2xl bg-[#061820]/90 hover:bg-[#08202b] border border-cyan-500/20 hover:border-cyan-400/80 overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left"
               >
                 <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
@@ -436,8 +450,8 @@
               <div
                 role="button"
                 tabindex="0"
-                onclick={() => gamesStore.selectGame(game)}
-                onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+                onclick={() => openGame(game)}
+                onkeydown={(e) => e.key === 'Enter' && openGame(game)}
                 class="group flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[#061820]/90 hover:bg-[#08232e] border border-cyan-500/20 hover:border-cyan-400/60 shadow-md hover:shadow-cyan-500/15 transition-all cursor-pointer"
               >
                 <div class="flex items-center gap-4 flex-1 min-w-0 pr-4">
@@ -520,6 +534,4 @@
       {/if}
     </main>
   </div>
-
-  <GameDetailsModal />
 </div>

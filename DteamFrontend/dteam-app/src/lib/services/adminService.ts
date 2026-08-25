@@ -101,105 +101,47 @@ class AdminService {
   }
 
   public async checkHealth(): Promise<HealthCheckResponse> {
-    const res = await api.get<HealthCheckResponse>('/health/check-status');
-    if (res.adminId && !get(activeAdminIdStore)) {
-      this.setActiveAdminId(res.adminId);
-    }
-    return res;
+    return await api.get<HealthCheckResponse>('/health/check-status');
   }
 
-  public async autoDiscoverAdminGuid(): Promise<string> {
-    try {
-      const health = await this.checkHealth();
-      if (health.adminId) {
-        this.setActiveAdminId(health.adminId);
-        return health.adminId;
-      }
-    } catch (e) {
-      console.warn('[AdminService] Health check auto-discovery warning:', e);
-    }
-
-    return this.getActiveAdminId();
+  public async getUsers(_customAdminId?: string): Promise<Duser[]> {
+    return await api.get<Duser[]>('/admin/users');
   }
 
-  public async getUsers(customAdminId?: string): Promise<Duser[]> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.get<Duser[]>(`/admin/users?adminId=${adminId}`);
+  public async getUserById(id: string, _customAdminId?: string): Promise<Duser> {
+    return await api.get<Duser>(`/admin/users/${id}`);
   }
 
-  public async getUserById(id: string, customAdminId?: string): Promise<Duser> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.get<Duser>(`/admin/users/${id}?adminId=${adminId}`);
+  public async createUser(dto: CreateUserDto, _customAdminId?: string): Promise<Duser> {
+    return await api.post<Duser>('/admin/users', dto);
   }
 
-  public async createUser(dto: CreateUserDto, customAdminId?: string): Promise<Duser> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.post<Duser>(`/admin/users?adminId=${adminId}`, dto);
+  public async updateUser(id: string, dto: UpdateUserDto, _customAdminId?: string): Promise<Duser> {
+    return await api.put<Duser>(`/admin/users/${id}`, dto);
   }
 
-  public async updateUser(id: string, dto: UpdateUserDto, customAdminId?: string): Promise<Duser> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.put<Duser>(`/admin/users/${id}?adminId=${adminId}`, dto);
+  public async deleteUser(id: string, _customAdminId?: string): Promise<{ message: string }> {
+    return await api.delete<{ message: string }>(`/admin/users/${id}`);
   }
 
-  public async deleteUser(id: string, customAdminId?: string): Promise<{ message: string }> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.delete<{ message: string }>(`/admin/users/${id}?adminId=${adminId}`);
+  public async getGames(_customAdminId?: string): Promise<Game[]> {
+    return await api.get<Game[]>('/admin/games');
   }
 
-  public async getGames(customAdminId?: string): Promise<Game[]> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.get<Game[]>(`/admin/games?adminId=${adminId}`);
+  public async getGameById(id: string, _customAdminId?: string): Promise<Game> {
+    return await api.get<Game>(`/admin/games/${id}`);
   }
 
-  public async getGameById(id: string, customAdminId?: string): Promise<Game> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.get<Game>(`/admin/games/${id}?adminId=${adminId}`);
+  public async createGame(dto: CreateGameDto, _customAdminId?: string): Promise<Game> {
+    return await api.post<Game>('/admin/games', dto);
   }
 
-  public async createGame(dto: CreateGameDto, customAdminId?: string): Promise<Game> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.post<Game>(`/admin/games?adminId=${adminId}`, dto);
+  public async updateGame(id: string, dto: UpdateGameDto, _customAdminId?: string): Promise<Game> {
+    return await api.put<Game>(`/admin/games/${id}`, dto);
   }
 
-  public async updateGame(id: string, dto: UpdateGameDto, customAdminId?: string): Promise<Game> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.put<Game>(`/admin/games/${id}?adminId=${adminId}`, dto);
-  }
-
-  public async deleteGame(id: string, customAdminId?: string): Promise<{ message: string }> {
-    let adminId = customAdminId || this.getActiveAdminId();
-    if (!adminId) {
-      adminId = await this.autoDiscoverAdminGuid();
-    }
-    return await api.delete<{ message: string }>(`/admin/games/${id}?adminId=${adminId}`);
+  public async deleteGame(id: string, _customAdminId?: string): Promise<{ message: string }> {
+    return await api.delete<{ message: string }>(`/admin/games/${id}`);
   }
 }
 

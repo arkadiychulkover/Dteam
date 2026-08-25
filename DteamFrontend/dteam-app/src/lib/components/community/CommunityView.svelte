@@ -15,7 +15,7 @@
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold border border-cyan-500/30 uppercase mb-3">
           <Shield class="w-3.5 h-3.5" /> Dteam Family Sharing
         </div>
-        <h2 class="text-2xl md:text-3xl font-black text-white font-['Outfit']">
+        <h2 class="text-2xl md:text-3xl font-black text-white font-display">
           Decentralized Family Library
         </h2>
         <p class="text-xs md:text-sm text-slate-300 max-w-xl mt-1.5 leading-relaxed">

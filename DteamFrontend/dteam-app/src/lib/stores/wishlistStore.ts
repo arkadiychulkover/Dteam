@@ -23,13 +23,13 @@ function createWishlistStore() {
     openModal: () => update((s) => ({ ...s, isModalOpen: true })),
     closeModal: () => update((s) => ({ ...s, isModalOpen: false })),
 
-    loadWishlist: async (userId?: string) => {
-      const uid = userId || get(currentUser)?.id;
-      if (!uid) return;
+    loadWishlist: async () => {
+      const user = get(currentUser);
+      if (!user?.id) return;
 
       update((s) => ({ ...s, isLoading: true }));
       try {
-        const items = await wishlistService.getWishlist(uid);
+        const items = await wishlistService.getWishlist();
         const gameIds = new Set(items.map((i) => i.gameId));
         update((s) => ({
           ...s,
@@ -43,14 +43,15 @@ function createWishlistStore() {
       }
     },
 
-    toggleWishlist: async (game: Game, userId?: string) => {
-      const uid = userId || get(currentUser)?.id;
-      if (!uid) {
+    toggleWishlist: async (game: Game) => {
+      const user = get(currentUser);
+      if (!user?.id) {
         uiStore.addToast({
           title: 'Увійдіть в акаунт',
           message: 'Для додавання до списку бажань потрібен активний акаунт.',
           type: 'warning',
         });
+        uiStore.setLoginModal(true);
         return;
       }
 
@@ -69,7 +70,7 @@ function createWishlistStore() {
         });
 
         try {
-          await wishlistService.removeFromWishlist(game.id, uid);
+          await wishlistService.removeFromWishlist(game.id);
           uiStore.addToast({
             title: 'Видалено зі списку бажань',
             message: `Гру '${game.title}' видалено зі списку бажань.`,
@@ -77,12 +78,12 @@ function createWishlistStore() {
           });
         } catch (err: any) {
           uiStore.addToast({ title: 'Помилка', message: err.message, type: 'error' });
-          const items = await wishlistService.getWishlist(uid);
+          const items = await wishlistService.getWishlist();
           update((s) => ({ ...s, items, wishlistGameIds: new Set(items.map((i) => i.gameId)) }));
         }
       } else {
         const dummyItem: WishlistItem = {
-          userId: uid,
+          userId: user.id,
           gameId: game.id,
           game,
           addedAt: new Date().toISOString(),
@@ -100,7 +101,7 @@ function createWishlistStore() {
         });
 
         try {
-          const newItem = await wishlistService.addToWishlist(uid, { gameId: game.id });
+          const newItem = await wishlistService.addToWishlist({ gameId: game.id });
           update((s) => ({
             ...s,
             items: [newItem, ...s.items.filter((i) => i.gameId !== game.id)],
@@ -126,12 +127,12 @@ function createWishlistStore() {
       }
     },
 
-    clearWishlist: async (userId?: string) => {
-      const uid = userId || get(currentUser)?.id;
-      if (!uid) return;
+    clearWishlist: async () => {
+      const user = get(currentUser);
+      if (!user?.id) return;
 
       try {
-        await wishlistService.clearWishlist(uid);
+        await wishlistService.clearWishlist();
         update((s) => ({ ...s, items: [], wishlistGameIds: new Set() }));
         uiStore.addToast({
           title: 'Список бажань очищено',

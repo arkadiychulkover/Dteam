@@ -5,7 +5,6 @@
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import FeaturedCarousel from './FeaturedCarousel.svelte';
-  import GameDetailsModal from './GameDetailsModal.svelte';
   import { ChevronRight, ChevronLeft, Gift } from 'lucide-svelte';
 
   const allGames = $derived($gamesStore.games);
@@ -33,6 +32,11 @@
     uiStore.setTab('catalog');
   }
 
+  function openGame(game: Game) {
+    gamesStore.selectGame(game);
+    uiStore.setTab('game');
+  }
+
   function calculateOriginalPrice(game: Game): string {
     return formatBasePrice(game.priceInNanoTons);
   }
@@ -50,7 +54,7 @@
       <div class="flex items-center justify-between">
         <button
           onclick={() => goToCatalog({ isDiscounted: true })}
-          class="group flex items-center gap-2 text-lg sm:text-xl font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          class="group flex items-center gap-2 text-lg sm:text-xl font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
         >
           <span>Особливі пропозиції</span>
           <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
@@ -82,8 +86,8 @@
             <div
               role="button"
               tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+              onclick={() => openGame(game)}
+              onkeydown={(e) => e.key === 'Enter' && openGame(game)}
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
@@ -129,7 +133,7 @@
       <div class="flex items-center justify-between">
         <button
           onclick={() => goToCatalog()}
-          class="group flex items-center gap-2 text-lg sm:text-xl font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          class="group flex items-center gap-2 text-lg sm:text-xl font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
         >
           <span>Рекомендовані вам</span>
           <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
@@ -161,8 +165,8 @@
             <div
               role="button"
               tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+              onclick={() => openGame(game)}
+              onkeydown={(e) => e.key === 'Enter' && openGame(game)}
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
@@ -208,7 +212,7 @@
       <div class="flex items-center justify-between">
         <button
           onclick={() => goToCatalog({ priceFilter: 'under1' })}
-          class="group flex items-center gap-2 text-lg sm:text-xl font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          class="group flex items-center gap-2 text-lg sm:text-xl font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
         >
           <span>До 1 TON</span>
           <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
@@ -240,8 +244,8 @@
             <div
               role="button"
               tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+              onclick={() => openGame(game)}
+              onkeydown={(e) => e.key === 'Enter' && openGame(game)}
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
@@ -283,116 +287,24 @@
   {/if}
 
   {#if allGames.length > 0}
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-cyan-950/60">
-      <div class="space-y-4">
-        <button
-          onclick={() => goToCatalog({ sortBy: 'downloads' })}
-          class="group flex items-center gap-2 text-base font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
-        >
-          <span>Хіти продажу</span>
-          <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
-        </button>
-
+    <section class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="space-y-4">
-          {#each topSellers as game (game.id)}
-            <div
-              role="button"
-              tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
-              class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-            >
-              <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div class="p-3 space-y-1">
-                <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
-                  {game.title}
-                </h4>
-                <div class="flex items-center gap-2">
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
-                      -{game.discountPercentage}%
-                    </span>
-                  {/if}
-                  <span class="text-xs font-bold text-slate-200 font-mono">
-                    {formatPrice(game.priceInNanoTons, game.discountPercentage)}
-                  </span>
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="text-[10px] text-slate-500 line-through font-mono">
-                      {calculateOriginalPrice(game)}
-                    </span>
-                  {/if}
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
+          <button
+            onclick={() => goToCatalog({ sortBy: 'relevance' })}
+            class="group flex items-center gap-2 text-base font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          >
+            <span>Хіти продажу</span>
+            <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+          </button>
 
-      <div class="space-y-4">
-        <button
-          onclick={() => goToCatalog({ sortBy: 'newest' })}
-          class="group flex items-center gap-2 text-base font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
-        >
-          <span>Нові релізи</span>
-          <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
-        </button>
-
-        <div class="space-y-4">
-          {#each newReleases as game (game.id)}
-            <div
-              role="button"
-              tabindex="0"
-              onclick={() => gamesStore.selectGame(game)}
-              onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
-              class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-            >
-              <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div class="p-3 space-y-1">
-                <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
-                  {game.title}
-                </h4>
-                <div class="flex items-center gap-2">
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
-                      -{game.discountPercentage}%
-                    </span>
-                  {/if}
-                  <span class="text-xs font-bold text-slate-200 font-mono">
-                    {formatPrice(game.priceInNanoTons, game.discountPercentage)}
-                  </span>
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="text-[10px] text-slate-500 line-through font-mono">
-                      {calculateOriginalPrice(game)}
-                    </span>
-                  {/if}
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-
-      <div class="space-y-4">
-        <button
-          onclick={() => goToCatalog({ priceFilter: 'free' })}
-          class="group flex items-center gap-2 text-base font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer"
-        >
-          <span>Безкоштовні</span>
-          <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
-        </button>
-
-        {#if freeGames.length > 0}
           <div class="space-y-4">
-            {#each freeGames as game (game.id)}
+            {#each topSellers as game (game.id)}
               <div
                 role="button"
                 tabindex="0"
-                onclick={() => gamesStore.selectGame(game)}
-                onkeydown={(e) => e.key === 'Enter' && gamesStore.selectGame(game)}
+                onclick={() => openGame(game)}
+                onkeydown={(e) => e.key === 'Enter' && openGame(game)}
                 class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
               >
                 <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
@@ -403,15 +315,15 @@
                     {game.title}
                   </h4>
                   <div class="flex items-center gap-2">
-                    {#if (game.discountPercentage || 0) === 100}
+                    {#if (game.discountPercentage || 0) > 0}
                       <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
-                        -100%
+                        -{game.discountPercentage}%
                       </span>
                     {/if}
-                    <span class="text-xs font-bold text-cyan-400 font-mono">
-                      Безкоштовно
+                    <span class="text-xs font-bold text-slate-200 font-mono">
+                      {formatPrice(game.priceInNanoTons, game.discountPercentage)}
                     </span>
-                    {#if (game.discountPercentage || 0) === 100}
+                    {#if (game.discountPercentage || 0) > 0}
                       <span class="text-[10px] text-slate-500 line-through font-mono">
                         {calculateOriginalPrice(game)}
                       </span>
@@ -421,18 +333,110 @@
               </div>
             {/each}
           </div>
-        {:else}
-          <div class="p-6 rounded-2xl bg-[#061d26]/80 border border-[#0d3b4b] text-center space-y-2">
-            <Gift class="w-8 h-8 text-cyan-400/40 mx-auto" />
-            <h5 class="text-xs font-bold text-white">Немає безкоштовних ігор</h5>
-            <p class="text-[11px] text-slate-400">
-              Наразі всі ігри платні. Ви можете додати безкоштовну гру через адмін-панель зі ціною 0 TON.
-            </p>
+        </div>
+
+        <div class="space-y-4">
+          <button
+            onclick={() => goToCatalog({ sortBy: 'newest' })}
+            class="group flex items-center gap-2 text-base font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          >
+            <span>Нові релізи</span>
+            <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <div class="space-y-4">
+            {#each newReleases as game (game.id)}
+              <div
+                role="button"
+                tabindex="0"
+                onclick={() => openGame(game)}
+                onkeydown={(e) => e.key === 'Enter' && openGame(game)}
+                class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+              >
+                <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
+                  <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+                <div class="p-3 space-y-1">
+                  <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
+                    {game.title}
+                  </h4>
+                  <div class="flex items-center gap-2">
+                    {#if (game.discountPercentage || 0) > 0}
+                      <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
+                        -{game.discountPercentage}%
+                      </span>
+                    {/if}
+                    <span class="text-xs font-bold text-slate-200 font-mono">
+                      {formatPrice(game.priceInNanoTons, game.discountPercentage)}
+                    </span>
+                    {#if (game.discountPercentage || 0) > 0}
+                      <span class="text-[10px] text-slate-500 line-through font-mono">
+                        {calculateOriginalPrice(game)}
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            {/each}
           </div>
-        {/if}
+        </div>
+
+        <div class="space-y-4">
+          <button
+            onclick={() => goToCatalog({ priceFilter: 'free' })}
+            class="group flex items-center gap-2 text-base font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
+          >
+            <span>Безкоштовні</span>
+            <ChevronRight class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          {#if freeGames.length > 0}
+            <div class="space-y-4">
+              {#each freeGames as game (game.id)}
+                <div
+                  role="button"
+                  tabindex="0"
+                  onclick={() => openGame(game)}
+                  onkeydown={(e) => e.key === 'Enter' && openGame(game)}
+                  class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                >
+                  <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
+                    <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <div class="p-3 space-y-1">
+                    <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <div class="flex items-center gap-2">
+                      {#if (game.discountPercentage || 0) === 100}
+                        <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
+                          -100%
+                        </span>
+                      {/if}
+                      <span class="text-xs font-bold text-cyan-400 font-mono">
+                        Безкоштовно
+                      </span>
+                      {#if (game.discountPercentage || 0) === 100}
+                        <span class="text-[10px] text-slate-500 line-through font-mono">
+                          {calculateOriginalPrice(game)}
+                        </span>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="p-6 rounded-2xl bg-[#061d26]/80 border border-[#0d3b4b] text-center space-y-2">
+              <Gift class="w-8 h-8 text-cyan-400/40 mx-auto" />
+              <h5 class="text-xs font-bold text-white">Немає безкоштовних ігор</h5>
+              <p class="text-[11px] text-slate-400">
+                Наразі всі ігри платні. Ви можете додати безкоштовну гру через адмін-панель зі ціною 0 TON.
+              </p>
+            </div>
+          {/if}
+        </div>
       </div>
     </section>
   {/if}
-
-  <GameDetailsModal />
 </div>
