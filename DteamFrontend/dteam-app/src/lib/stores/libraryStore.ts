@@ -7,18 +7,50 @@ import { uiStore } from './uiStore';
 const INITIAL_LIBRARY: UserGame[] = [
   {
     userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
-    gameId: '1',
+    gameId: '1', // No Man's Sky
     purchasedAt: '2026-02-10T15:00:00Z',
-    playTimeMinutes: 450, // 7.5 hours
+    playTimeMinutes: 450,
     lastPlayedAt: '2026-08-20T21:30:00Z',
     isFavorite: true,
   },
   {
     userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
-    gameId: '3',
+    gameId: '2', // The Witcher 3
+    purchasedAt: '2026-02-12T11:00:00Z',
+    playTimeMinutes: 7200,
+    lastPlayedAt: '2026-08-22T19:45:00Z',
+    isFavorite: true,
+  },
+  {
+    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    gameId: '10', // Fallout 4
+    purchasedAt: '2026-03-01T14:00:00Z',
+    playTimeMinutes: 3400,
+    lastPlayedAt: '2026-08-25T10:00:00Z',
+    isFavorite: true,
+  },
+  {
+    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    gameId: '11', // Cyberpunk 2077
+    purchasedAt: '2026-03-05T16:20:00Z',
+    playTimeMinutes: 5100,
+    lastPlayedAt: '2026-08-24T22:15:00Z',
+    isFavorite: false,
+  },
+  {
+    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    gameId: '4', // Sekiro
     purchasedAt: '2026-03-12T11:00:00Z',
-    playTimeMinutes: 120, // 2 hours
+    playTimeMinutes: 1800,
     lastPlayedAt: '2026-08-18T18:15:00Z',
+    isFavorite: false,
+  },
+  {
+    userId: 'd199452b-23fa-4cf3-a633-8fe5932599fa',
+    gameId: '5', // Dark Souls 3
+    purchasedAt: '2026-03-15T09:00:00Z',
+    playTimeMinutes: 2900,
+    lastPlayedAt: '2026-08-15T14:30:00Z',
     isFavorite: false,
   },
 ];
@@ -53,8 +85,8 @@ function createLibraryStore() {
         const price = Number(game.priceInNanoTons);
         authStore.updateBalance(-price);
         uiStore.addToast({
-          title: 'Purchase Successful!',
-          message: `${game.title} has been added to your Library.`,
+          title: 'Придбано успішно!',
+          message: `${game.title} додано до вашої Бібліотеки.`,
           type: 'success',
         });
         return {
