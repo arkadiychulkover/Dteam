@@ -50,43 +50,119 @@ namespace DteamBackend.Services
 
             await context.Users.AddAsync(adminUser);
 
-            var games = new List<Game>
+            var mainGameId = Guid.NewGuid();
+            var mainGame = new Game
             {
-                new Game
+                Id = mainGameId,
+                Title = "Cyberpunk 2077",
+                Description = "Cyberpunk 2077 — пригодницький бойовик і рольова гра з відкритим світом. Дія відбувається у темному майбутньому Найт-Сіті, небезпечного мегаполіса, одержимого владою, гламуром і ненаситною модифікацією тіла. Грайте за найманця V у пошуках унікального імплантату безсмертя.",
+                ShortDescription = "Пригодницький рольовий екшн у відкритому світі майбутнього з глибоким сюжетом.",
+                PriceInNanoTons = 5_000_000_000,
+                DiscountPercentage = 20,
+                ServerArchivePath = "/storage/games/cyberpunk-2077.zip",
+                OwnerId = adminUser.Id,
+                DownloadCount = 14200,
+                AverageRating = 4.9,
+                ReviewsCount = 4,
+                IsDlc = false,
+                ParentGameId = null,
+                Genres = new List<string> { "Action", "RPG", "Cyberpunk", "Open World" },
+                Platforms = new List<string> { "Windows", "MacOS" },
+                Features = new List<string> { "SinglePlayer", "CloudSaves", "Achievements" },
+                Tags = new List<string> { "шутер", "екшн", "кіберпанк", "відкритий світ", "майбутнє", "рольова гра" },
+                Version = "2.1.0",
+                SizeInBytes = 70L * 1024 * 1024 * 1024,
+                IsPublished = true,
+                HeaderImageUrl = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80",
+                CoverImageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+                ScreenshotUrls = new List<string>
                 {
-                    Id = Guid.NewGuid(),
-                    Title = "Cyberpunk Odyssey 2077",
-                    Description = "A next-generation sci-fi RPG set in a dystopian futuristic metropolis. Experience cutting-edge graphics, deep narrative, high-stakes tactical combat, and seamless decentralized trading.",
-                    ShortDescription = "High-octane cyberpunk action RPG with next-gen raytracing and Web3 trading.",
-                    PriceInNanoTons = 5_000_000_000,
-                    DiscountPercentage = 40,
-                    ServerArchivePath = "/storage/games/cyberpunk-odyssey-v1.0.0.zip",
-                    OwnerId = adminUser.Id,
-                    DownloadCount = 14200,
-                    AverageRating = 4.8,
-                    ReviewsCount = 389,
-                    IsDlc = false,
-                    ParentGameId = null,
-                    Genres = new List<string> { "Action", "RPG", "Cyberpunk", "SciFi" },
-                    Platforms = new List<string> { "Windows", "MacOS", "Linux" },
-                    Features = new List<string> { "SinglePlayer", "CloudSaves", "Achievements" },
-                    Tags = new List<string> { "Open World", "Story Rich", "Ray Tracing", "Cyberpunk" },
-                    Version = "1.0.0",
-                    SizeInBytes = 25L * 1024 * 1024 * 1024,
-                    IsPublished = true,
-                    HeaderImageUrl = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80",
-                    CoverImageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-                    ScreenshotUrls = new List<string>
-                    {
-                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
-                        "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80"
-                    },
-                    TrailerUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    CreatedAt = DateTime.UtcNow
-                }
+                    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80"
+                },
+                TrailerUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                CreatedAt = DateTime.UtcNow
             };
 
-            await context.Games.AddRangeAsync(games);
+            var dlc1 = new Game
+            {
+                Id = Guid.NewGuid(),
+                Title = "Cyberpunk 2077: Bonus Content",
+                Description = "Офіційний додатковий контент та шпалери для Cyberpunk 2077.",
+                ShortDescription = "Офіційний бонусний контент.",
+                PriceInNanoTons = 0,
+                DiscountPercentage = 0,
+                ServerArchivePath = "/storage/games/cyberpunk-bonus.zip",
+                OwnerId = adminUser.Id,
+                DownloadCount = 5000,
+                AverageRating = 5.0,
+                ReviewsCount = 1,
+                IsDlc = true,
+                ParentGameId = mainGameId,
+                Genres = new List<string> { "DLC" },
+                Platforms = new List<string> { "Windows" },
+                IsPublished = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var dlc2 = new Game
+            {
+                Id = Guid.NewGuid(),
+                Title = "Cyberpunk 2077: REDmod",
+                Description = "Безкоштовний інструмент для створення та завантаження модифікацій.",
+                ShortDescription = "Інструмент модифікацій.",
+                PriceInNanoTons = 0,
+                DiscountPercentage = 0,
+                ServerArchivePath = "/storage/games/cyberpunk-redmod.zip",
+                OwnerId = adminUser.Id,
+                DownloadCount = 8000,
+                AverageRating = 5.0,
+                ReviewsCount = 1,
+                IsDlc = true,
+                ParentGameId = mainGameId,
+                Genres = new List<string> { "DLC", "Modding" },
+                Platforms = new List<string> { "Windows" },
+                IsPublished = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var dlc3 = new Game
+            {
+                Id = Guid.NewGuid(),
+                Title = "Cyberpunk 2077: Phantom Liberty",
+                Description = "Масштабне сюжетне доповнення у жанрі шпигунського трилера до Cyberpunk 2077.",
+                ShortDescription = "Шпигунський трилер у Найт-Сіті.",
+                PriceInNanoTons = 2_500_000_000,
+                DiscountPercentage = 0,
+                ServerArchivePath = "/storage/games/cyberpunk-phantom-liberty.zip",
+                OwnerId = adminUser.Id,
+                DownloadCount = 11000,
+                AverageRating = 5.0,
+                ReviewsCount = 2,
+                IsDlc = true,
+                ParentGameId = mainGameId,
+                Genres = new List<string> { "Action", "RPG", "DLC" },
+                Platforms = new List<string> { "Windows", "MacOS" },
+                IsPublished = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await context.Games.AddRangeAsync(new[] { mainGame, dlc1, dlc2, dlc3 });
+
+            var sampleReview = new Review
+            {
+                Id = Guid.NewGuid(),
+                UserId = adminUser.Id,
+                GameId = mainGameId,
+                Rating = 5,
+                Content = "Чудова гра! Неймовірна атмосфера, графіка та сюжет тримають у напрузі до останньої хвилини. Рекомендую всім!",
+                IsRecommended = true,
+                PlayTimeHoursAtReview = 48.5,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await context.Reviews.AddAsync(sampleReview);
+
             await context.SaveChangesAsync();
         }
 

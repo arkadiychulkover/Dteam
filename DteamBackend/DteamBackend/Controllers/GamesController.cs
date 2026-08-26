@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
 using DteamBackend.Models.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -182,6 +184,7 @@ namespace DteamBackend.Controllers
                 .Include(g => g.Owner)
                 .Include(g => g.ParentGame)
                 .Include(g => g.Dlcs)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.Id == id && g.IsPublished);
 
             if (game == null)
@@ -192,6 +195,116 @@ namespace DteamBackend.Controllers
             return Ok(MapToGameDto(game));
         }
 
+        [HttpGet("{id:guid}/reviews")]
+        public async Task<ActionResult<IEnumerable<ReviewDto>>> GetGameReviews(Guid id)
+        {
+            var reviews = await _context.Reviews
+                .Include(r => r.User)
+                .AsNoTracking()
+                .Where(r => r.GameId == id)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new ReviewDto
+                {
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Username = r.User != null ? r.User.Username : "Анонім",
+                    UserAvatarUrl = r.User != null ? r.User.AvatarUrl : null,
+                    GameId = r.GameId,
+                    Rating = r.Rating,
+                    Content = r.Content,
+                    IsRecommended = r.IsRecommended,
+                    PlayTimeHoursAtReview = r.PlayTimeHoursAtReview,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(reviews);
+        }
+
+        [Authorize]
+        [HttpPost("{id:guid}/reviews")]
+        public async Task<ActionResult<ReviewDto>> PostReview(Guid id, [FromBody] CreateReviewDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Потрібна авторизація для публікації рецензії." });
+            }
+
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id && g.IsPublished);
+            if (game == null)
+            {
+                return NotFound(new { message = "Гру не знайдено." });
+            }
+
+            var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id);
+            if (existingReview != null)
+            {
+                existingReview.Rating = Math.Clamp(dto.Rating, 1, 5);
+                existingReview.Content = dto.Content.Trim();
+                existingReview.IsRecommended = dto.IsRecommended;
+                existingReview.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var newReview = new Review
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    GameId = id,
+                    Rating = Math.Clamp(dto.Rating, 1, 5),
+                    Content = dto.Content.Trim(),
+                    IsRecommended = dto.IsRecommended,
+                    PlayTimeHoursAtReview = 0,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _context.Reviews.AddAsync(newReview);
+            }
+
+            await _context.SaveChangesAsync();
+
+            var allReviews = await _context.Reviews.Where(r => r.GameId == id).ToListAsync();
+            game.ReviewsCount = allReviews.Count;
+            game.AverageRating = allReviews.Count > 0 ? Math.Round(allReviews.Average(r => (double)r.Rating), 1) : 5.0;
+            await _context.SaveChangesAsync();
+
+            var savedReview = await _context.Reviews
+                .Include(r => r.User)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id);
+
+            return Ok(new ReviewDto
+            {
+                Id = savedReview!.Id,
+                UserId = savedReview.UserId,
+                Username = savedReview.User.Username,
+                UserAvatarUrl = savedReview.User.AvatarUrl,
+                GameId = savedReview.GameId,
+                Rating = savedReview.Rating,
+                Content = savedReview.Content,
+                IsRecommended = savedReview.IsRecommended,
+                PlayTimeHoursAtReview = savedReview.PlayTimeHoursAtReview,
+                CreatedAt = savedReview.CreatedAt,
+                UpdatedAt = savedReview.UpdatedAt
+            });
+        }
+
+        [HttpGet("{id:guid}/dlcs")]
+        public async Task<ActionResult<IEnumerable<GameDto>>> GetGameDlcs(Guid id)
+        {
+            var dlcs = await _context.Games
+                .Include(g => g.Owner)
+                .AsNoTracking()
+                .Where(g => g.IsDlc && g.ParentGameId == id && g.IsPublished)
+                .OrderBy(g => g.PriceInNanoTons)
+                .ToListAsync();
+
+            return Ok(dlcs.Select(MapToGameDto));
+        }
+
         [HttpGet("genres")]
         public ActionResult<IEnumerable<string>> GetGenres()
         {
@@ -199,6 +312,7 @@ namespace DteamBackend.Controllers
             return Ok(genres);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("upload-image")]
         public async Task<ActionResult<object>> UploadGameImage(IFormFile? file)
         {

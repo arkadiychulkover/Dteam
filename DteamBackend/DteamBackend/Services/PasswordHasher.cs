@@ -3,33 +3,58 @@ using System.Text;
 
 namespace DteamBackend.Services
 {
-    public static class PasswordHasher
+    public interface IPasswordHasher
     {
-        public static void CreatePasswordHash(string password, out string hash, out string salt)
+        void CreatePasswordHash(string password, out string passwordHash, out string passwordSalt);
+        bool VerifyPasswordHash(string password, string storedHash, string storedSalt);
+    }
+
+    public class PasswordHasher : IPasswordHasher
+    {
+        void IPasswordHasher.CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
         {
-            using var hmac = new HMACSHA512();
-            salt = Convert.ToBase64String(hmac.Key);
-            hash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(password)));
+            CreatePasswordHash(password, out passwordHash, out passwordSalt);
         }
 
-        public static bool VerifyPassword(string password, string storedHash, string storedSalt)
+        bool IPasswordHasher.VerifyPasswordHash(string password, string storedHash, string storedSalt)
+        {
+            return VerifyPasswordHash(password, storedHash, storedSalt);
+        }
+
+        public static void CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
+        {
+            using var hmac = new HMACSHA512();
+            var saltBytes = hmac.Key;
+            var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+            passwordSalt = Convert.ToBase64String(saltBytes);
+            passwordHash = Convert.ToBase64String(hashBytes);
+        }
+
+        public static bool VerifyPasswordHash(string password, string storedHash, string storedSalt)
         {
             if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(storedHash) || string.IsNullOrWhiteSpace(storedSalt))
-            {
                 return false;
-            }
 
             try
             {
-                byte[] key = Convert.FromBase64String(storedSalt);
-                using var hmac = new HMACSHA512(key);
-                byte[] computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(computedHash) == storedHash;
+                var saltBytes = Convert.FromBase64String(storedSalt);
+                var storedHashBytes = Convert.FromBase64String(storedHash);
+
+                using var hmac = new HMACSHA512(saltBytes);
+                var computedHashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+
+                return CryptographicOperations.FixedTimeEquals(computedHashBytes, storedHashBytes);
             }
             catch
             {
                 return false;
             }
+        }
+
+        public static bool VerifyPassword(string password, string storedHash, string storedSalt)
+        {
+            return VerifyPasswordHash(password, storedHash, storedSalt);
         }
     }
 }

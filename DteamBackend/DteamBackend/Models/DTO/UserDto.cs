@@ -20,5 +20,28 @@ namespace DteamBackend.Models.DTO
         public UserStatus Status { get; set; }
         public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
+
+        public static UserDto FromEntity(Duser user)
+        {
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Username = user.Username,
+                WalletAddress = user.WalletAddress,
+                BalanceInNanoTons = user.BalanceInNanoTons,
+                TotalEarningsInNanoTons = user.TotalEarningsInNanoTons,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                LastLoginAt = user.LastLoginAt,
+                IsInFamily = user.IsInFamily,
+                FamilyOwnerId = user.FamilyOwnerId,
+                IsAdmin = user.IsAdmin,
+                IsBanned = user.IsBanned,
+                Status = user.Status,
+                AvatarUrl = user.AvatarUrl,
+                Bio = user.Bio
+            };
+        }
     }
 }

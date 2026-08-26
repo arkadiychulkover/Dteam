@@ -1,12 +1,15 @@
+using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
 using DteamBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DteamBackend.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class AdminController : ControllerBase
@@ -18,17 +21,6 @@ namespace DteamBackend.Controllers
         {
             _context = context;
             _logger = logger;
-        }
-
-        private async Task<bool> IsCallerAdminAsync(Guid? adminId)
-        {
-            if (adminId == null || adminId == Guid.Empty)
-            {
-                return false;
-            }
-
-            var caller = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == adminId.Value);
-            return caller != null && caller.IsAdmin;
         }
 
         private static UserDto MapToUserDto(Duser user) => new()
@@ -113,13 +105,8 @@ namespace DteamBackend.Controllers
         };
 
         [HttpGet("users")]
-        public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers([FromQuery] Guid? adminId)
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var users = await _context.Users
                 .AsNoTracking()
                 .OrderByDescending(u => u.CreatedAt)
@@ -129,14 +116,12 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("users/{id:guid}")]
-        public async Task<ActionResult<UserDto>> GetUserById(Guid id, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<UserDto>> GetUserById(Guid id)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
@@ -146,13 +131,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("users")]
-        public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             {
                 return BadRequest(new { message = $"Пользователь с email '{dto.Email}' уже существует" });
@@ -186,17 +166,12 @@ namespace DteamBackend.Controllers
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id, adminId }, MapToUserDto(user));
+            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, MapToUserDto(user));
         }
 
         [HttpPut("users/{id:guid}")]
-        public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto dto, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto dto)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
@@ -244,13 +219,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("users/{id:guid}")]
-        public async Task<IActionResult> DeleteUser(Guid id, [FromQuery] Guid? adminId)
+        public async Task<IActionResult> DeleteUser(Guid id)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
@@ -264,13 +234,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("games")]
-        public async Task<ActionResult<IEnumerable<GameDto>>> GetAllGames([FromQuery] Guid? adminId)
+        public async Task<ActionResult<IEnumerable<GameDto>>> GetAllGames()
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var games = await _context.Games
                 .Include(g => g.Owner)
                 .Include(g => g.ParentGame)
@@ -283,17 +248,13 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("games/{id:guid}")]
-        public async Task<ActionResult<GameDto>> GetGameById(Guid id, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<GameDto>> GetGameById(Guid id)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var game = await _context.Games
                 .Include(g => g.Owner)
                 .Include(g => g.ParentGame)
                 .Include(g => g.Dlcs)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (game == null)
@@ -305,14 +266,13 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("games")]
-        public async Task<ActionResult<GameDto>> CreateGame([FromBody] CreateGameDto dto, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<GameDto>> CreateGame([FromBody] CreateGameDto dto)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
+            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                                  ?? User.FindFirst("sub")?.Value;
+            Guid.TryParse(currentUserIdClaim, out var currentAdminId);
 
-            Guid ownerId = dto.OwnerId ?? adminId ?? Guid.Empty;
+            Guid ownerId = dto.OwnerId ?? currentAdminId;
 
             var ownerExists = await _context.Users.AnyAsync(u => u.Id == ownerId);
             if (!ownerExists)
@@ -358,17 +318,12 @@ namespace DteamBackend.Controllers
                 await _context.Entry(game).Reference(g => g.ParentGame).LoadAsync();
             }
 
-            return CreatedAtAction(nameof(GetGameById), new { id = game.Id, adminId }, MapToGameDto(game));
+            return CreatedAtAction(nameof(GetGameById), new { id = game.Id }, MapToGameDto(game));
         }
 
         [HttpPut("games/{id:guid}")]
-        public async Task<ActionResult<GameDto>> UpdateGame(Guid id, [FromBody] UpdateGameDto dto, [FromQuery] Guid? adminId)
+        public async Task<ActionResult<GameDto>> UpdateGame(Guid id, [FromBody] UpdateGameDto dto)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var game = await _context.Games
                 .Include(g => g.Owner)
                 .Include(g => g.ParentGame)
@@ -417,13 +372,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("games/{id:guid}")]
-        public async Task<IActionResult> DeleteGame(Guid id, [FromQuery] Guid? adminId)
+        public async Task<IActionResult> DeleteGame(Guid id)
         {
-            if (!await IsCallerAdminAsync(adminId))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Доступ запрещен: требуется флаг IsAdmin = true в модели Duser" });
-            }
-
             var game = await _context.Games.FindAsync(id);
             if (game == null)
             {

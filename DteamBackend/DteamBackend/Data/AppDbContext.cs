@@ -16,6 +16,7 @@ namespace DteamBackend.Data
         public DbSet<UserGame> UserGames => Set<UserGame>();
         public DbSet<UserFriend> UserFriends => Set<UserFriend>();
         public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
+        public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,6 +82,21 @@ namespace DteamBackend.Data
                 entity.HasOne(w => w.Game)
                     .WithMany(g => g.WishlistedBy)
                     .HasForeignKey(w => w.GameId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserCartItem>(entity =>
+            {
+                entity.HasKey(c => new { c.UserId, c.GameId });
+
+                entity.HasOne(c => c.User)
+                    .WithMany(u => u.CartItems)
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Game)
+                    .WithMany(g => g.InCartsOf)
+                    .HasForeignKey(c => c.GameId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

@@ -1,11 +1,14 @@
+using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DteamBackend.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class WishlistController : ControllerBase
@@ -15,6 +18,14 @@ namespace DteamBackend.Controllers
         public WishlistController(AppDbContext context)
         {
             _context = context;
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                           ?? User.FindFirst("sub")?.Value;
+
+            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
 
         private static GameDto MapToGameDto(Game game) => new()
@@ -61,19 +72,13 @@ namespace DteamBackend.Controllers
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<WishlistItemDto>>> GetWishlist(
-            [FromQuery] Guid userId,
             [FromQuery] string? search,
             [FromQuery] string? sortBy = "date_added")
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
-            }
-
-            var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
-            if (!userExists)
-            {
-                return NotFound(new { message = $"Пользователь с ID '{userId}' не найден." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var query = _context.UserWishlists
@@ -110,11 +115,12 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{gameId:guid}")]
-        public async Task<ActionResult<object>> CheckGameInWishlist(Guid gameId, [FromQuery] Guid userId)
+        public async Task<ActionResult<object>> CheckGameInWishlist(Guid gameId)
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var item = await _context.UserWishlists
@@ -132,17 +138,12 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<WishlistItemDto>> AddToWishlist([FromQuery] Guid userId, [FromBody] AddToWishlistDto dto)
+        public async Task<ActionResult<WishlistItemDto>> AddToWishlist([FromBody] AddToWishlistDto dto)
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
-            }
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                return NotFound(new { message = $"Пользователь с ID '{userId}' не найден." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var game = await _context.Games
@@ -183,18 +184,18 @@ namespace DteamBackend.Controllers
 
             wishlistItem.Game = game;
 
-            return CreatedAtAction(nameof(CheckGameInWishlist), new { gameId = dto.GameId, userId }, MapToWishlistItemDto(wishlistItem));
+            return CreatedAtAction(nameof(CheckGameInWishlist), new { gameId = dto.GameId }, MapToWishlistItemDto(wishlistItem));
         }
 
         [HttpPut("{gameId:guid}")]
         public async Task<ActionResult<WishlistItemDto>> UpdateWishlistItem(
             Guid gameId,
-            [FromQuery] Guid userId,
             [FromBody] UpdateWishlistItemDto dto)
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var item = await _context.UserWishlists
@@ -204,7 +205,7 @@ namespace DteamBackend.Controllers
 
             if (item == null)
             {
-                return NotFound(new { message = $"Игра с ID '{gameId}' не найдена в списке желаемого пользователя." });
+                return NotFound(new { message = $"Игра с ID '{gameId}' не найдена в списке желаемого." });
             }
 
             if (dto.Priority.HasValue) item.Priority = dto.Priority.Value;
@@ -216,11 +217,12 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("{gameId:guid}")]
-        public async Task<IActionResult> RemoveFromWishlist(Guid gameId, [FromQuery] Guid userId)
+        public async Task<IActionResult> RemoveFromWishlist(Guid gameId)
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var item = await _context.UserWishlists
@@ -228,7 +230,7 @@ namespace DteamBackend.Controllers
 
             if (item == null)
             {
-                return NotFound(new { message = $"Игра с ID '{gameId}' не найдена в списке желаемого пользователя." });
+                return NotFound(new { message = $"Игра с ID '{gameId}' не найдена в списке желаемого." });
             }
 
             _context.UserWishlists.Remove(item);
@@ -237,17 +239,18 @@ namespace DteamBackend.Controllers
             return Ok(new
             {
                 message = "Игра успешно удалена из списка желаемого",
-                gameId = gameId,
-                userId = userId
+                gameId,
+                userId
             });
         }
 
         [HttpDelete]
-        public async Task<IActionResult> ClearWishlist([FromQuery] Guid userId)
+        public async Task<IActionResult> ClearWishlist()
         {
+            var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
             {
-                return BadRequest(new { message = "Параметр userId обязателен." });
+                return Unauthorized(new { message = "Пользователь не авторизован." });
             }
 
             var items = await _context.UserWishlists
@@ -266,7 +269,7 @@ namespace DteamBackend.Controllers
             {
                 message = "Список желаемого успешно очищен.",
                 count = items.Count,
-                userId = userId
+                userId
             });
         }
     }

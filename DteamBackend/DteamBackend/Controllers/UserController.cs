@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DteamBackend.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,14 +20,25 @@ namespace DteamBackend.Controllers
         [HttpGet("is-banned")]
         public async Task<IActionResult> CheckIsBanned([FromQuery] Guid? userId)
         {
-            if (userId == null || userId == Guid.Empty)
+            var targetId = userId;
+            if ((targetId == null || targetId == Guid.Empty) && User.Identity?.IsAuthenticated == true)
             {
-                return BadRequest(new { message = "Параметр userId обязателен" });
+                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                           ?? User.FindFirst("sub")?.Value;
+                if (Guid.TryParse(idClaim, out var parsedId))
+                {
+                    targetId = parsedId;
+                }
+            }
+
+            if (targetId == null || targetId == Guid.Empty)
+            {
+                return BadRequest(new { message = "Параметр userId обязателен или выполните вход" });
             }
 
             var user = await _context.Users
                 .AsNoTracking()
-                .Where(u => u.Id == userId.Value)
+                .Where(u => u.Id == targetId.Value)
                 .Select(u => new
                 {
                     UserId = u.Id,

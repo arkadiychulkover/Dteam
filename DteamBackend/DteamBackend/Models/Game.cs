@@ -76,5 +76,7 @@ namespace DteamBackend.Models
         public ICollection<UserGame> Owners { get; set; } = new List<UserGame>();
 
         public ICollection<UserWishlist> WishlistedBy { get; set; } = new List<UserWishlist>();
+
+        public ICollection<UserCartItem> InCartsOf { get; set; } = new List<UserCartItem>();
     }
 }

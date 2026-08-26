@@ -1,9 +1,12 @@
+using System.Text;
 using DteamBackend.Data;
 using DteamBackend.Interfaces;
 using DteamBackend.Middlewares;
 using DteamBackend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DteamBackend
 {
@@ -13,28 +16,80 @@ namespace DteamBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Database Context (PostgreSQL)
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
                 options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
 
+            // Application Services
+            builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
 
+            // SMTP Email Service Configuration
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
+            builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+
+            // CORS Policy
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
+                options.AddPolicy("DteamCorsPolicy", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins(
+                              "http://localhost:5173",
+                              "https://localhost:5173",
+                              "http://127.0.0.1:5173",
+                              "https://127.0.0.1:5173",
+                              "http://localhost:3000",
+                              "http://localhost:5117",
+                              "https://localhost:7264")
                           .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
+            });
+
+            // JWT Authentication Setup
+            var secretKey = builder.Configuration["Jwt:Secret"] 
+                ?? "DteamSuperSecretJwtKey2026_dteam_io_security_token_key_spec_32bytes_long";
+            var issuer = builder.Configuration["Jwt:Issuer"] ?? "DteamBackend";
+            var audience = builder.Configuration["Jwt:Audience"] ?? "DteamApp";
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(5)
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"[JWT Bearer] Auth failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             builder.Services.AddControllers();
 
             var app = builder.Build();
 
+            // Automatic Database Migration and Seed
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -53,15 +108,19 @@ namespace DteamBackend
                 }
             }
 
-            app.UseCors("AllowAll");
+            app.UseCors("DteamCorsPolicy");
 
             app.UseStaticFiles();
 
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseMiddleware<CheckBannedUserMiddleware>();
 
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.MapControllers();
 
