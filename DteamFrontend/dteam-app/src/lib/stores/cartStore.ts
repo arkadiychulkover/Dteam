@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Game, CartItem } from '../types';
 import { cartService } from '../services/cartService';
-import { currentUser } from './authStore';
+import { authStore, currentUser } from './authStore';
 import { wishlistStore } from './wishlistStore';
 import { uiStore } from './uiStore';
 
@@ -201,6 +201,51 @@ function createCartStore() {
           items: summary.items || [],
           cartGameIds: new Set((summary.items || []).map((i) => i.gameId)),
         }));
+      }
+    },
+
+    checkout: async () => {
+      const user = get(currentUser);
+      if (!user?.id) {
+        uiStore.addToast({
+          title: 'Увійдіть в акаунт',
+          message: 'Для здійснення покупки необхідно авторизуватися.',
+          type: 'warning',
+        });
+        uiStore.setLoginModal(true);
+        return null;
+      }
+
+      update((s) => ({ ...s, isLoading: true }));
+      try {
+        const res = await cartService.checkout();
+        update((s) => ({ ...s, items: [], cartGameIds: new Set(), isLoading: false }));
+        authStore.updateBalance(-res.totalSpentInNanoTons);
+        uiStore.addToast({
+          title: 'Успішна покупка! 🎉',
+          message: res.message || 'Ігри додано до вашої бібліотеки!',
+          type: 'success',
+        });
+        return res;
+      } catch (err: any) {
+        update((s) => ({ ...s, isLoading: false }));
+        const errorMessage = err.message || 'Помилка при оформленні замовлення.';
+        
+        if (errorMessage.toLowerCase().includes('недостатньо коштів') || errorMessage.toLowerCase().includes('balance')) {
+          uiStore.addToast({
+            title: 'Недостатньо коштів',
+            message: 'На вашому балансі недостатньо TON. Будь ласка, поповніть рахунок.',
+            type: 'warning',
+          });
+          uiStore.setDepositModal(true);
+        } else {
+          uiStore.addToast({
+            title: 'Помилка покупки',
+            message: errorMessage,
+            type: 'error',
+          });
+        }
+        throw err;
       }
     },
   };

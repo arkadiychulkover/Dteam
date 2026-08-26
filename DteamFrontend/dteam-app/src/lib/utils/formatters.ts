@@ -13,6 +13,10 @@ export function tonToNanoTon(ton: number): bigint {
   return BigInt(Math.floor(ton * 1_000_000_000));
 }
 
+export function formatTon(tons: number): string {
+  return `${tons.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TON`;
+}
+
 export function getEffectivePrice(nanoTon: number | string | bigint, discountPercentage: number = 0): number {
   const baseTons = nanoTonToTon(nanoTon);
   if (baseTons === 0 || discountPercentage >= 100) return 0;

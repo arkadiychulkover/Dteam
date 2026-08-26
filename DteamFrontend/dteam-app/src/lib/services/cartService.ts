@@ -21,4 +21,8 @@ export const cartService = {
   async moveToWishlist(gameId: string): Promise<{ message: string; gameId: string }> {
     return await api.post<{ message: string; gameId: string }>(`/cart/move-to-wishlist/${gameId}`, {});
   },
+
+  async checkout(): Promise<import('../types').CheckoutResult> {
+    return await api.post<import('../types').CheckoutResult>('/cart/checkout');
+  },
 };

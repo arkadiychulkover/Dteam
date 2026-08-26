@@ -27,4 +27,13 @@ namespace DteamBackend.Models.DTO
                 : i.Game.PriceInNanoTons);
         public long TotalSavingsInNanoTons => TotalBasePriceInNanoTons - TotalEffectivePriceInNanoTons;
     }
+
+    public class CheckoutResultDto
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public long NewBalanceInNanoTons { get; set; }
+        public long TotalSpentInNanoTons { get; set; }
+        public int PurchasedGamesCount { get; set; }
+    }
 }

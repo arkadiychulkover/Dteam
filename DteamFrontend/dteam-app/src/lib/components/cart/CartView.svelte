@@ -4,7 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { currentUser } from '../../stores/authStore';
-  import { formatPrice, formatBasePrice } from '../../utils/formatters';
+  import { formatPrice, formatBasePrice, formatTon, nanoTonToTon } from '../../utils/formatters';
   import type { Game, CartItem } from '../../types';
   import { 
     ShoppingCart, 
@@ -16,117 +16,190 @@
     Sparkles, 
     ShieldCheck,
     CreditCard,
-    CheckCircle2
+    CheckCircle2,
+    Coins,
+    Wallet,
+    Loader2
   } from 'lucide-svelte';
 
   const items = $derived($cartStore.items);
   const totals = $derived($cartTotals);
+
+  let isCheckingOut = $state(false);
 
   function openGame(game: Game) {
     gamesStore.selectGame(game);
     uiStore.setTab('game');
   }
 
-  function handleCheckout() {
-    uiStore.addToast({
-      title: 'Оформлення замовлення',
-      message: `Сума до сплати: ${formatPrice(totals.totalEffectivePriceInNanoTons)}. Інтеграція TON Connect увімкнена в тестовому режимі.`,
-      type: 'success',
-    });
+  async function handleCheckout() {
+    if (!$currentUser) {
+      uiStore.addToast({
+        title: 'Увійдіть в акаунт',
+        message: 'Для оформлення покупки необхідно увійти в акаунт.',
+        type: 'warning',
+      });
+      uiStore.setLoginModal(true);
+      return;
+    }
+
+    if (items.length === 0) return;
+
+    const currentBalance = Number($currentUser.balanceInNanoTons) || 0;
+    const requiredTotal = totals.totalEffectivePriceInNanoTons;
+
+    if (currentBalance < requiredTotal) {
+      uiStore.addToast({
+        title: 'Недостатньо TON на балансі',
+        message: `Для покупки потрібно ${formatPrice(requiredTotal)}, а ваш баланс становить ${formatPrice(currentBalance)}. Будь ласка, поповніть рахунок.`,
+        type: 'warning',
+      });
+      uiStore.setDepositModal(true);
+      return;
+    }
+
+    isCheckingOut = true;
+    try {
+      await cartStore.checkout();
+    } catch (e) {
+      console.warn('Checkout failed:', e);
+    } finally {
+      isCheckingOut = false;
+    }
   }
 </script>
 
-<div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
-  
-  <!-- Breadcrumbs & Navigation -->
-  <div class="flex items-center justify-between border-b border-cyan-950/60 pb-3">
-    <div class="flex items-center gap-2 text-xs text-slate-400">
-      <button onclick={() => uiStore.setTab('store')} class="hover:text-cyan-400 transition-colors cursor-pointer">
-        Крамниця
-      </button>
-      <span>/</span>
-      <span class="text-white font-bold">Кошик</span>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+  <!-- Top Breadcrumb / Title Bar (Matching Reference Image 1) -->
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div>
+      <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+        <button 
+          onclick={() => uiStore.setTab('store')}
+          class="hover:text-cyan-400 transition-colors cursor-pointer"
+        >
+          Головна
+        </button>
+        <span>/</span>
+        <span class="text-slate-200">Кошик</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-black text-white font-display tracking-tight flex items-center gap-3">
+        Ваш кошик
+        {#if items.length > 0}
+          <span class="text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+            {items.length} {items.length === 1 ? 'товар' : items.length < 5 ? 'товари' : 'товарів'}
+          </span>
+        {/if}
+      </h1>
     </div>
 
-    <button
-      onclick={() => uiStore.setTab('store')}
-      class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
-    >
-      <ArrowLeft class="w-3.5 h-3.5" />
-      <span>Продовжити покупки</span>
-    </button>
+    {#if items.length > 0}
+      <button
+        onclick={() => uiStore.setTab('catalog')}
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 hover:border-cyan-400 text-xs font-bold text-slate-200 hover:text-white transition-all cursor-pointer shadow-sm"
+      >
+        <ArrowLeft class="w-3.5 h-3.5" />
+        <span>Продовжити покупки</span>
+      </button>
+    {/if}
   </div>
 
-  <!-- Main Section Title -->
-  <div class="flex items-center justify-between">
-    <h1 class="text-3xl sm:text-4xl font-black text-white font-display tracking-wide flex items-center gap-3">
-      <span>Мій кошик</span>
-      {#if items.length > 0}
-        <span class="text-base font-bold px-3 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono">
-          {items.length}
-        </span>
-      {/if}
-    </h1>
-  </div>
+  {#if items.length === 0}
+    <!-- Empty Cart State -->
+    <div class="p-12 sm:p-16 rounded-3xl bg-[#061820]/70 border border-cyan-500/20 text-center max-w-xl mx-auto shadow-2xl backdrop-blur-xl">
+      <div class="w-20 h-20 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 text-cyan-400 shadow-lg shadow-cyan-500/10">
+        <ShoppingCart class="w-10 h-10" />
+      </div>
+      <h2 class="text-2xl font-black text-white font-display">
+        Ваш кошик порожній
+      </h2>
+      <p class="text-sm text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
+        Ви ще не додали жодної гри чи DLC. Перегляньте найкращі новинки та хіти в нашому каталозі.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <button
+          onclick={() => uiStore.setTab('catalog')}
+          class="px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2"
+        >
+          <span>Перейти до каталогу</span>
+          <ArrowRight class="w-4 h-4" />
+        </button>
+        <button
+          onclick={() => uiStore.setTab('wishlist')}
+          class="px-5 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-2"
+        >
+          <Heart class="w-3.5 h-3.5" />
+          <span>Список бажань</span>
+        </button>
+      </div>
+    </div>
 
-  {#if items.length > 0}
-    <!-- Two Column Layout (Matching Reference Screenshot) -->
+  {:else}
+    <!-- Cart Grid (Left: Items List, Right: Order Summary) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       
-      <!-- Left Column: Cart Items List -->
+      <!-- Left Column: Items List -->
       <div class="lg:col-span-8 space-y-4">
         {#each items as item (item.gameId)}
-          <div class="relative bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/20 hover:border-cyan-500/40 rounded-3xl p-4 sm:p-5 transition-all shadow-xl shadow-cyan-950/30 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 group">
+          <div class="p-4 sm:p-5 rounded-3xl bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 group shadow-lg">
             
-            <!-- Game Image Banner -->
+            <!-- Game Capsule Thumbnail -->
             <button
               type="button"
               onclick={() => openGame(item.game)}
-              class="w-full sm:w-48 aspect-[16/9] sm:aspect-[16/8] rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 shrink-0 group-hover:scale-[1.02] transition-transform cursor-pointer relative shadow-inner"
+              class="w-full sm:w-44 h-28 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 relative cursor-pointer group-hover:scale-[1.02] transition-transform text-left border border-cyan-500/20"
             >
               <img
-                src={item.game.headerImageUrl || item.game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80'}
+                src={item.game.capsuleImageUrl || item.game.headerImageUrl || item.game.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80'}
                 alt={item.game.title}
                 class="w-full h-full object-cover"
               />
+              {#if item.game.isDlc}
+                <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-purple-600/90 text-white font-black text-[9px] uppercase tracking-wider backdrop-blur-sm shadow-md">
+                  DLC
+                </span>
+              {/if}
             </button>
 
             <!-- Game Details -->
-            <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch py-1 space-y-2">
+            <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch">
               <div>
-                <!-- Title -->
-                <button
-                  type="button"
-                  onclick={() => openGame(item.game)}
-                  class="text-left font-black text-lg sm:text-xl text-white hover:text-cyan-300 transition-colors cursor-pointer truncate max-w-full block"
-                >
-                  {item.game.title}
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick={() => openGame(item.game)}
+                    class="text-base sm:text-lg font-black text-white hover:text-cyan-400 transition-colors truncate text-left cursor-pointer font-display"
+                  >
+                    {item.game.title}
+                  </button>
+                </div>
 
-                <!-- Move to Wishlist Link -->
-                <button
-                  type="button"
-                  onclick={() => cartStore.moveToWishlist(item.game)}
-                  class="text-xs font-bold text-cyan-400/80 hover:text-cyan-300 hover:underline transition-all cursor-pointer inline-flex items-center gap-1 mt-1"
-                >
-                  <span>Перемістити до Бажаного</span>
-                </button>
+                {#if item.game.genres && item.game.genres.length > 0}
+                  <div class="flex flex-wrap gap-1.5 mt-1.5">
+                    {#each item.game.genres.slice(0, 3) as genre}
+                      <span class="text-[10px] px-2 py-0.5 rounded-lg bg-[#041219] text-cyan-300/80 border border-cyan-500/15 font-medium">
+                        {genre}
+                      </span>
+                    {/each}
+                  </div>
+                {/if}
               </div>
 
-              <!-- Platforms / Genre tags -->
-              {#if item.game.genres && item.game.genres.length > 0}
-                <div class="flex flex-wrap gap-1.5 pt-1">
-                  {#each item.game.genres.slice(0, 2) as genre}
-                    <span class="px-2 py-0.5 rounded-md bg-[#08232e] text-[10px] font-semibold text-slate-300 border border-cyan-500/10">
-                      {genre}
-                    </span>
-                  {/each}
-                </div>
-              {/if}
+              <!-- Item Actions: Move to Wishlist -->
+              <div class="flex items-center gap-4 mt-3 pt-2 border-t border-cyan-950/60">
+                <button
+                  type="button"
+                  onclick={() => cartStore.moveToWishlist(item.gameId, item.game.title)}
+                  class="text-[11px] font-semibold text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Heart class="w-3.5 h-3.5" />
+                  <span>Перемістити до бажаного</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Price and Actions -->
-            <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 shrink-0 self-stretch sm:self-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-cyan-950/60">
+            <!-- Price and Remove Action (Right on desktop) -->
+            <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-between shrink-0 self-stretch sm:pl-4 sm:border-l sm:border-cyan-950/80">
               
               <!-- Remove '✕' Button (Top right on desktop) -->
               <button
@@ -169,6 +242,28 @@
       <div class="lg:col-span-4 sticky top-20 space-y-4">
         <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-6 shadow-2xl shadow-cyan-950/60 space-y-5">
           
+          <!-- Balance Pill in Cart -->
+          {#if $currentUser}
+            <div class="p-3 rounded-2xl bg-[#041219] border border-cyan-500/20 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-1.5 text-slate-300">
+                <Wallet class="w-3.5 h-3.5 text-cyan-400" />
+                <span>Ваш баланс:</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white font-mono text-[11px]">
+                  💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                </span>
+                <button
+                  type="button"
+                  onclick={() => uiStore.setDepositModal(true)}
+                  class="px-2 py-0.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/30 text-[10px] font-bold cursor-pointer transition-colors"
+                >
+                  + Поповнити
+                </button>
+              </div>
+            </div>
+          {/if}
+
           <!-- Summary Lines -->
           <div class="space-y-3 text-sm">
             <!-- Savings Row -->
@@ -193,13 +288,19 @@
             Якщо застосовно, податок із продажу буде розраховано в процесі оплати.
           </p>
 
-          <!-- Primary Button (Перейти до оплати) -->
+          <!-- Primary Button (Оплатити через баланс) -->
           <button
             type="button"
             onclick={handleCheckout}
-            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
+            disabled={isCheckingOut}
+            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 disabled:opacity-60 disabled:cursor-not-allowed text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            <span>Перейти до оплати</span>
+            {#if isCheckingOut}
+              <Loader2 class="w-4 h-4 animate-spin text-black" />
+              <span>Обробка покупки...</span>
+            {:else}
+              <span>Купити {totals.itemsCount === 1 ? 'гру' : 'ігри'} ({formatPrice(totals.totalEffectivePriceInNanoTons)})</span>
+            {/if}
           </button>
 
           <!-- Secondary Button (Продовжити покупки) -->
@@ -229,41 +330,9 @@
           <ShieldCheck class="w-5 h-5 text-cyan-400 shrink-0" />
           <span>Безпечна оплата через TON Blockchain та миттєва активація у вашій бібліотеці.</span>
         </div>
+
       </div>
 
-    </div>
-  {:else}
-    <!-- Empty Cart State -->
-    <div class="text-center py-20 bg-[#061820]/60 rounded-3xl border border-cyan-500/20 shadow-2xl max-w-2xl mx-auto space-y-5 p-8">
-      <div class="w-20 h-20 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
-        <ShoppingCart class="w-10 h-10" />
-      </div>
-
-      <div class="space-y-2">
-        <h2 class="text-2xl font-black text-white font-display">Ваш кошик порожній</h2>
-        <p class="text-sm text-slate-400 max-w-md mx-auto">
-          У вашому кошику поки немає обраних ігор. Ознайомтеся з каталогом та знайдіть свої улюблені проекти!
-        </p>
-      </div>
-
-      <div class="pt-3 flex flex-wrap items-center justify-center gap-4">
-        <button
-          onclick={() => uiStore.setTab('catalog')}
-          class="px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2"
-        >
-          <span>Перейти до каталогу</span>
-          <ArrowRight class="w-4 h-4" />
-        </button>
-
-        <button
-          onclick={() => uiStore.setTab('wishlist')}
-          class="px-6 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-2"
-        >
-          <Heart class="w-4 h-4 text-rose-400" />
-          <span>Список бажань</span>
-        </button>
-      </div>
     </div>
   {/if}
-
 </div>

@@ -16,8 +16,12 @@
     User,
     ChevronDown,
     Search,
-    Newspaper
+    Newspaper,
+    Coins,
+    Plus,
+    Wallet
   } from 'lucide-svelte';
+  import { formatTon, nanoTonToTon } from '../../utils/formatters';
 
   let isUserDropdownOpen = $state(false);
   let headerSearchQuery = $state('');
@@ -29,54 +33,54 @@
   ];
 
   const visibleTabs = $derived(
-    baseTabs.filter(t => !t.adminOnly || $isUserAdmin)
+    baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin)
   );
 
-  function handleSearchInput() {
-    const q = headerSearchQuery.trim();
-    if (q) {
+  function handleLogout() {
+    authStore.logout();
+    isUserDropdownOpen = false;
+    uiStore.setTab('store');
+  }
+
+  function handleSearchSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    if (headerSearchQuery.trim()) {
+      gamesStore.setSearch(headerSearchQuery.trim());
+      uiStore.setTab('catalog');
+    }
+  }
+
+  function handleSearchInput(e: Event) {
+    const query = (e.target as HTMLInputElement).value;
+    headerSearchQuery = query;
+    if (query.trim()) {
+      gamesStore.setSearch(query.trim());
       if ($uiStore.activeTab !== 'catalog') {
         uiStore.setTab('catalog');
       }
-      gamesStore.setFilters({ search: q });
-      gamesStore.loadCatalogGames();
     }
   }
 
-  function handleSearchSubmit(e: Event) {
-    e.preventDefault();
-    const q = headerSearchQuery.trim();
-    uiStore.setTab('catalog');
-    gamesStore.setFilters({ search: q });
-    gamesStore.loadCatalogGames();
-  }
-
-  async function handleLogout() {
-    isUserDropdownOpen = false;
-    await authStore.logout();
-    uiStore.addToast({
-      title: 'Вихід',
-      message: 'Ви успішно вийшли з акаунту',
-      type: 'info'
-    });
-    if ($uiStore.activeTab === 'admin') {
-      uiStore.setTab('store');
-    }
+  function handleLogoClick() {
+    gamesStore.setSearch('');
+    gamesStore.setGenre(null);
+    headerSearchQuery = '';
+    uiStore.setTab('store');
   }
 </script>
 
-<header class="sticky top-0 z-40 bg-[#030d12]/95 backdrop-blur-xl border-b border-cyan-950/80 px-4 lg:px-8 py-2.5 shadow-2xl">
-  <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6">
-    <!-- Left: Logo & Navigation Tabs -->
-    <div class="flex items-center gap-4 lg:gap-6 shrink-0">
+<header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <!-- Left: Logo & Nav -->
+    <div class="flex items-center gap-6">
       <button 
-        onclick={() => uiStore.setTab('store')}
-        class="flex items-center gap-2.5 group cursor-pointer"
+        onclick={handleLogoClick}
+        class="flex items-center gap-2.5 group cursor-pointer text-left"
       >
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-105 group-hover:shadow-cyan-400/40 transition-all">
-          <Gamepad2 class="w-5 h-5 text-black font-black" />
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform">
+          <Gamepad2 class="w-5 h-5" />
         </div>
-        <div class="text-left hidden sm:block">
+        <div>
           <span class="font-black text-xl tracking-tighter text-white font-display flex items-center gap-1 leading-none">
             DTEAM<span class="text-cyan-400">.</span>
           </span>
@@ -158,6 +162,21 @@
 
       <!-- Auth Section -->
       {#if $currentUser}
+        <!-- TON Balance Top-Up Pill -->
+        <button
+          onclick={() => uiStore.setDepositModal(true)}
+          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
+          title="Поповнити баланс (The Open Network)"
+        >
+          <span class="text-cyan-400 font-bold text-xs group-hover:scale-110 transition-transform">💎</span>
+          <span class="font-bold text-white font-mono text-xs tracking-tight">
+            {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+          </span>
+          <span class="w-4 h-4 rounded-md bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-400 group-hover:text-black flex items-center justify-center text-[11px] font-black transition-all ml-0.5 shadow-sm">
+            +
+          </span>
+        </button>
+
         <div class="relative">
           <button
             onclick={() => isUserDropdownOpen = !isUserDropdownOpen}
@@ -177,11 +196,24 @@
           </button>
 
           {#if isUserDropdownOpen}
-            <div class="absolute right-0 mt-2 w-52 bg-[#09151e] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+            <div class="absolute right-0 mt-2 w-56 bg-[#09151e] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2">
               <div class="px-3 py-2 border-b border-cyan-950/80 text-[11px] text-slate-400">
                 <p class="font-bold text-white truncate">{$currentUser.username}</p>
                 <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
+                  <span class="text-slate-400 text-[10px]">Баланс:</span>
+                  <span class="text-cyan-300 font-bold font-mono text-[11px]">
+                    💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                  </span>
+                </div>
               </div>
+
+              <button
+                onclick={() => { uiStore.setDepositModal(true); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 cursor-pointer font-bold mt-1"
+              >
+                <Coins class="w-3.5 h-3.5 text-cyan-400" /> Поповнити баланс (TON)
+              </button>
 
               {#if $currentUser.isAdmin}
                 <button

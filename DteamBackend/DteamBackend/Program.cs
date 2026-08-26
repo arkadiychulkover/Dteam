@@ -17,16 +17,21 @@ namespace DteamBackend
             var builder = WebApplication.CreateBuilder(args);
 
             // Database Context (PostgreSQL)
-            builder.Services.AddDbContext<AppDbContext>(options =>
+            builder.Services.AddDbContextFactory<AppDbContext>(options =>
             {
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
                 options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
+            builder.Services.AddScoped(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
+
+            // HTTP Client
+            builder.Services.AddHttpClient();
 
             // Application Services
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
+            builder.Services.AddScoped<TonService>();
 
             // SMTP Email Service Configuration
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
@@ -42,6 +47,7 @@ namespace DteamBackend
                               "https://localhost:5173",
                               "http://127.0.0.1:5173",
                               "https://127.0.0.1:5173",
+                              "http://localhost:5174",
                               "http://localhost:3000",
                               "http://localhost:5117",
                               "https://localhost:7264")

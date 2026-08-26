@@ -25,11 +25,13 @@ function createUiStore() {
     activeTab: MainTab;
     isLoginModalOpen: boolean;
     isConfirmCodeModalOpen: boolean;
+    isDepositModalOpen: boolean;
     toasts: ToastMessage[];
   }>({
     activeTab: 'store',
     isLoginModalOpen: false,
     isConfirmCodeModalOpen: false,
+    isDepositModalOpen: false,
     toasts: [],
   });
 
@@ -38,6 +40,7 @@ function createUiStore() {
     setTab: (tab: MainTab) => update((s) => ({ ...s, activeTab: tab })),
     setLoginModal: (isOpen: boolean) => update((s) => ({ ...s, isLoginModalOpen: isOpen })),
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
+    setDepositModal: (isOpen: boolean) => update((s) => ({ ...s, isDepositModalOpen: isOpen })),
     addToast: (toast: Omit<ToastMessage, 'id'>) => {
       const id = Math.random().toString(36).substring(2, 9);
       update((s) => ({

@@ -238,5 +238,128 @@ namespace DteamBackend.Controllers
                 gameId
             });
         }
+
+        [HttpPost("checkout")]
+        [HttpPost("buy")]
+        public async Task<ActionResult<CheckoutResultDto>> Checkout()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            if (user.IsBanned)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ваш акаунт заблоковано." });
+            }
+
+            var cartItems = await _context.UserCartItems
+                .Include(c => c.Game)
+                    .ThenInclude(g => g.Owner)
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
+            if (cartItems.Count == 0)
+            {
+                return BadRequest(new { message = "Кошик порожній." });
+            }
+
+            long totalRequiredNanoTons = 0;
+            var gamesToPurchase = new List<(Game game, long effectivePrice)>();
+
+            foreach (var item in cartItems)
+            {
+                var game = item.Game;
+                long effectivePrice = game.PriceInNanoTons;
+                if (game.DiscountPercentage > 0)
+                {
+                    effectivePrice = (long)Math.Round((double)game.PriceInNanoTons * (100.0 - game.DiscountPercentage) / 100.0);
+                }
+                if (effectivePrice < 0) effectivePrice = 0;
+
+                totalRequiredNanoTons += effectivePrice;
+                gamesToPurchase.Add((game, effectivePrice));
+            }
+
+            if (user.BalanceInNanoTons < totalRequiredNanoTons)
+            {
+                return BadRequest(new
+                {
+                    message = "Недостатньо коштів на балансі для здійснення покупки.",
+                    requiredBalanceInNanoTons = totalRequiredNanoTons,
+                    currentBalanceInNanoTons = user.BalanceInNanoTons,
+                    missingNanoTons = totalRequiredNanoTons - user.BalanceInNanoTons
+                });
+            }
+
+            var existingOwnedGameIds = await _context.UserGames
+                .Where(ug => ug.UserId == userId)
+                .Select(ug => ug.GameId)
+                .ToListAsync();
+
+            var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
+
+            // Deduct balance
+            user.BalanceInNanoTons -= totalRequiredNanoTons;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            var addedCount = 0;
+            foreach (var (game, effectivePrice) in gamesToPurchase)
+            {
+                if (!ownedSet.Contains(game.Id))
+                {
+                    await _context.UserGames.AddAsync(new UserGame
+                    {
+                        UserId = user.Id,
+                        GameId = game.Id,
+                        PurchasedAt = DateTime.UtcNow,
+                        PlayTimeMinutes = 0,
+                        IsFavorite = false
+                    });
+
+                    game.DownloadCount += 1;
+                    if (game.Owner != null && effectivePrice > 0)
+                    {
+                        game.Owner.TotalEarningsInNanoTons += effectivePrice;
+                    }
+
+                    addedCount++;
+                }
+            }
+
+            // Remove from wishlist if present
+            var purchasedGameIds = gamesToPurchase.Select(g => g.game.Id).ToList();
+            var wishlistsToRemove = await _context.UserWishlists
+                .Where(w => w.UserId == userId && purchasedGameIds.Contains(w.GameId))
+                .ToListAsync();
+
+            if (wishlistsToRemove.Count > 0)
+            {
+                _context.UserWishlists.RemoveRange(wishlistsToRemove);
+            }
+
+            // Clear Cart
+            _context.UserCartItems.RemoveRange(cartItems);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new CheckoutResultDto
+            {
+                Success = true,
+                Message = addedCount == 1 
+                    ? "Гру успішно придбано та додано до вашої бібліотеки!" 
+                    : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!",
+                NewBalanceInNanoTons = user.BalanceInNanoTons,
+                TotalSpentInNanoTons = totalRequiredNanoTons,
+                PurchasedGamesCount = addedCount
+            });
+        }
     }
 }

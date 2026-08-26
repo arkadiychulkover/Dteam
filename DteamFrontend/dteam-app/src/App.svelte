@@ -20,6 +20,7 @@
   import ResetPasswordView from './lib/components/auth/ResetPasswordView.svelte';
   import LoginModal from './lib/components/auth/LoginModal.svelte';
   import ConfirmCodeModal from './lib/components/auth/ConfirmCodeModal.svelte';
+  import DepositModal from './lib/components/payment/DepositModal.svelte';
 
   import { uiStore } from './lib/stores/uiStore';
   import { authStore, currentUser } from './lib/stores/authStore';
@@ -97,6 +98,9 @@
   <!-- Global Modals -->
   <LoginModal />
   <ConfirmCodeModal />
+  {#if $uiStore.isDepositModalOpen}
+    <DepositModal />
+  {/if}
   <ToastContainer />
 
   {#if !isBanned}

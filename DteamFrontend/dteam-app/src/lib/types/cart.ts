@@ -14,3 +14,11 @@ export interface CartSummary {
   totalEffectivePriceInNanoTons: number;
   totalSavingsInNanoTons: number;
 }
+
+export interface CheckoutResult {
+  success: boolean;
+  message: string;
+  newBalanceInNanoTons: number;
+  totalSpentInNanoTons: number;
+  purchasedGamesCount: number;
+}
