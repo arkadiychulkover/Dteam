@@ -7,9 +7,6 @@ import type {
 } from '../types/payment';
 
 export const paymentService = {
-  /**
-   * Отримати адресу TON гаманця платформи для поповнення
-   */
   async getDepositAddress(): Promise<string> {
     try {
       const res = await api.get<DepositAddressResponse>('/payment/deposit-address');
@@ -20,9 +17,6 @@ export const paymentService = {
     }
   },
 
-  /**
-   * Надіслати хеш транзакції та суму на валідацію в блокчейні TON
-   */
   async verifyTransaction(txhHash: string, amount: number): Promise<PaymentVerificationResult> {
     const payload: VerifyTransactionRequest = {
       txhHash: txhHash.trim(),
@@ -31,9 +25,6 @@ export const paymentService = {
     return await api.post<PaymentVerificationResult>('/payment/verify', payload);
   },
 
-  /**
-   * Отримати історію транзакцій поточного користувача
-   */
   async getTransactionHistory(): Promise<TransactionHistoryItem[]> {
     return await api.get<TransactionHistoryItem[]>('/payment/history');
   }

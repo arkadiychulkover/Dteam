@@ -49,7 +49,6 @@ function createAuthStore() {
     error: null,
   });
 
-  // If token exists, validate session in background with backend
   if (initialToken) {
     authService.getProfile()
       .then((freshUser) => {
@@ -57,7 +56,6 @@ function createAuthStore() {
         update((s) => ({ ...s, user: freshUser, token: initialToken, isLoading: false }));
       })
       .catch((err: any) => {
-        // Only wipe credentials if explicitly 401 Unauthorized (token invalid / expired)
         if (err.status === 401) {
           api.setToken(null);
           saveStoredUser(null);

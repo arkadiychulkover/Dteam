@@ -18,7 +18,6 @@ export const authService = {
     try {
       await api.post('/auth/logout');
     } catch {
-      // Ignore if failed on server
     } finally {
       api.setToken(null);
     }

@@ -8,7 +8,7 @@
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8">
-  <!-- Family Sharing Section -->
+  
   <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-purple-950/40 border border-blue-500/30 shadow-2xl relative overflow-hidden">
     <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
       <div>
@@ -41,9 +41,8 @@
     </div>
   </div>
 
-  <!-- Activity Feed & Reviews -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- Left: Friends Activity -->
+    
     <div class="lg:col-span-8 space-y-4">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
         <Sparkles class="w-4 h-4 text-cyan-400" /> Recent Community Activity
@@ -71,7 +70,6 @@
       </div>
     </div>
 
-    <!-- Right: Top Creators / TON Leaderboard -->
     <div class="lg:col-span-4 space-y-4">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
         <Trophy class="w-4 h-4 text-amber-400" /> Top Game Creators

@@ -55,13 +55,12 @@
     </div>
   {:else}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#0e111a] border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl min-h-[680px]">
-      <!-- Left Sidebar: Games List -->
+      
       <div class="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-4 flex flex-col bg-[#0b0d14]/70">
         <div class="flex items-center justify-between px-2 mb-3">
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">All Games ({userGames.length})</span>
         </div>
 
-        <!-- Games List -->
         <div class="space-y-1 overflow-y-auto flex-1 pr-1">
           {#each userGames as item (item.gameId)}
             {@const g = $gamesStore.games.find(x => x.id === item.gameId)}
@@ -106,10 +105,9 @@
         </div>
       </div>
 
-      <!-- Right Panel: Active Game Launcher & Details -->
       {#if selectedGameDetails && selectedUserGame}
         <div class="lg:col-span-8 flex flex-col justify-between p-6 md:p-8 relative bg-gradient-to-b from-[#131726]/60 to-[#0e111a]">
-          <!-- Hero background art -->
+          
           <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
             <img
               src={selectedGameDetails.headerImageUrl || selectedGameDetails.coverImageUrl}
@@ -119,7 +117,7 @@
           </div>
 
           <div class="relative z-10">
-            <!-- Top Bar -->
+            
             <div class="flex items-center justify-between gap-4">
               <span class="text-xs px-2.5 py-1 rounded-md bg-cyan-950 text-cyan-400 border border-cyan-500/30 font-semibold uppercase tracking-wider">
                 Installed & Verified
@@ -137,7 +135,6 @@
               {selectedGameDetails.description}
             </p>
 
-            <!-- Stats Bar -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
               <div>
                 <span class="text-[10px] text-slate-400 block uppercase font-semibold">Time Played</span>
@@ -167,7 +164,6 @@
             </div>
           </div>
 
-          <!-- Bottom Action Controls -->
           <div class="relative z-10 mt-8 pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
             <button
               onclick={launchGame}

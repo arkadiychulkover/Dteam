@@ -16,6 +16,18 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/hubs': {
+        target: 'http://localhost:5117',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/hub': {
+        target: 'http://localhost:5117',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
       '/game_images': {
         target: 'http://localhost:5117',
         changeOrigin: true,

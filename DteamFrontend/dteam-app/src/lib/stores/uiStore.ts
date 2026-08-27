@@ -6,6 +6,7 @@ export type MainTab =
   | 'game'
   | 'wishlist' 
   | 'cart'
+  | 'friends'
   | 'admin'
   | 'login'
   | 'register'

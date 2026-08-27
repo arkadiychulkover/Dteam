@@ -38,12 +38,12 @@
 
 <div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-md">
-    <!-- Glow Backdrops -->
+    
     <div class="absolute -top-10 -left-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
-      <!-- Header -->
+      
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 shadow-lg shadow-cyan-500/30 mb-4">
           <Gamepad2 class="w-7 h-7 text-black font-black" />
@@ -63,7 +63,7 @@
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-5">
-        <!-- Identifier Input -->
+        
         <div>
           <label for="login-identifier" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
             Логин или Email
@@ -83,7 +83,6 @@
           </div>
         </div>
 
-        <!-- Password Input -->
         <div>
           <div class="flex items-center justify-between mb-2">
             <label for="login-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -123,7 +122,6 @@
           </div>
         </div>
 
-        <!-- Remember Me Checkbox -->
         <div class="flex items-center justify-between pt-1">
           <label class="flex items-center gap-2.5 cursor-pointer group">
             <input
@@ -141,7 +139,6 @@
           </span>
         </div>
 
-        <!-- Submit Button -->
         <button
           type="submit"
           disabled={isSubmitting}
@@ -158,7 +155,6 @@
         </button>
       </form>
 
-      <!-- Footer Switch to Register -->
       <div class="mt-8 pt-6 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
           Еще нет аккаунта?

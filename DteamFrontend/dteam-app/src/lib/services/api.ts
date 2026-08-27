@@ -32,9 +32,7 @@ class ApiClient {
     if (!this.token && typeof window !== 'undefined' && window.localStorage) {
       try {
         this.token = localStorage.getItem('dteam_token');
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
     return this.token;
   }
@@ -73,9 +71,7 @@ class ApiClient {
           } else if (errorData.title) {
             errorMessage = errorData.title;
           }
-        } catch {
-          // ignore json parse error
-        }
+        } catch {}
 
         const err: any = new Error(errorMessage);
         err.status = status;

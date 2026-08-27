@@ -47,14 +47,14 @@
 </script>
 
 {#if $uiStore.isLoginModalOpen}
-  <!-- Backdrop -->
+  
   <div 
     onclick={handleBackdropClick}
     role="presentation"
     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
   >
     <div class="relative w-full max-w-md bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
-      <!-- Close Button -->
+      
       <button
         onclick={closeModal}
         class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors cursor-pointer"
@@ -62,7 +62,6 @@
         <X class="w-5 h-5" />
       </button>
 
-      <!-- Modal Header -->
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 shadow-md shadow-cyan-500/20 mb-3">
           <Gamepad2 class="w-6 h-6 text-black font-black" />
@@ -79,7 +78,7 @@
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-4">
-        <!-- Identifier Input -->
+        
         <div>
           <label for="modal-login-id" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Логин / Email
@@ -99,7 +98,6 @@
           </div>
         </div>
 
-        <!-- Password Input -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label for="modal-login-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -139,7 +137,6 @@
           </div>
         </div>
 
-        <!-- Remember Me Checkbox -->
         <div class="flex items-center justify-between pt-1">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
@@ -151,7 +148,6 @@
           </label>
         </div>
 
-        <!-- Submit Button -->
         <button
           type="submit"
           disabled={isSubmitting}
@@ -168,7 +164,6 @@
         </button>
       </form>
 
-      <!-- Switch to Register -->
       <div class="mt-6 pt-4 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
           Нет аккаунта?

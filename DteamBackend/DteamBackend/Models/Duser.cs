@@ -70,5 +70,7 @@ namespace DteamBackend.Models
         public ICollection<UserWishlist> Wishlist { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> CartItems { get; set; } = new List<UserCartItem>();
+        public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
+        public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = new List<FriendRequest>();
     }
 }

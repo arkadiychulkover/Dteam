@@ -8,11 +8,11 @@
   import WishlistView from './lib/components/wishlist/WishlistView.svelte';
   import CartView from './lib/components/cart/CartView.svelte';
   import AdminView from './lib/components/admin/AdminView.svelte';
+  import FriendsView from './lib/components/friends/FriendsView.svelte';
   import BannedView from './lib/components/banned/BannedView.svelte';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
   import LiveBackground from './lib/components/ui/LiveBackground.svelte';
 
-  // Auth Components
   import LoginView from './lib/components/auth/LoginView.svelte';
   import RegisterView from './lib/components/auth/RegisterView.svelte';
   import ForgotPasswordView from './lib/components/auth/ForgotPasswordView.svelte';
@@ -27,6 +27,7 @@
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { userService } from './lib/services/userService';
+  import { friendsHubService } from './lib/services/friendsHubService';
 
   let isBanned = $state(false);
 
@@ -44,10 +45,13 @@
   }
 
   $effect(() => {
-    if ($currentUser?.id) {
+    if ($currentUser?.id && $authStore.token) {
       checkUserBanStatus();
       wishlistStore.loadWishlist();
       cartStore.loadCart();
+      friendsHubService.start();
+    } else {
+      friendsHubService.stop();
     }
   });
 
@@ -56,7 +60,10 @@
     wishlistStore.loadWishlist();
     cartStore.loadCart();
     const interval = setInterval(checkUserBanStatus, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      friendsHubService.stop();
+    };
   });
 </script>
 
@@ -80,6 +87,8 @@
       <WishlistView />
     {:else if $uiStore.activeTab === 'cart'}
       <CartView />
+    {:else if $uiStore.activeTab === 'friends'}
+      <FriendsView />
     {:else if $uiStore.activeTab === 'admin'}
       <AdminView />
     {:else if $uiStore.activeTab === 'login'}
@@ -95,7 +104,6 @@
     {/if}
   </main>
 
-  <!-- Global Modals -->
   <LoginModal />
   <ConfirmCodeModal />
   {#if $uiStore.isDepositModalOpen}

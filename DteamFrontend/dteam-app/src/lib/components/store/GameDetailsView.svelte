@@ -41,7 +41,6 @@
   let isDescriptionExpanded = $state(false);
   let isTagsExpanded = $state(false);
   
-  // Real Reviews State
   let reviews = $state<Review[]>([]);
   let isLoadingReviews = $state(false);
   let isReviewModalOpen = $state(false);
@@ -49,7 +48,6 @@
   let newReviewRating = $state(5);
   let newReviewText = $state('');
 
-  // Real DLCs State
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
 
@@ -85,7 +83,6 @@
     }
   });
 
-  // Media items list
   const mediaList = $derived.by(() => {
     if (!game) return [];
     const list: { type: 'image' | 'video'; url: string; thumb: string }[] = [];
@@ -112,7 +109,6 @@
 
   const activeMedia = $derived(mediaList[selectedMediaIndex] || mediaList[0]);
 
-  // Real Tags
   const allTags = $derived.by(() => {
     if (game?.tags && game.tags.length > 0) return game.tags;
     if (game?.genres && game.genres.length > 0) return game.genres;
@@ -123,7 +119,6 @@
     isTagsExpanded ? allTags : allTags.slice(0, 6)
   );
 
-  // Real DLC and Bundle Pricing with discounts
   const gameEffectivePriceNanoTons = $derived.by(() => {
     if (!game) return 0;
     const price = Number(game.priceInNanoTons) || 0;
@@ -257,8 +252,7 @@
 
 {#if game}
   <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8 animate-in fade-in duration-300">
-    
-    <!-- Top Sub-Navigation Bar (Interactive Smooth Scroll) -->
+
     <div class="sticky top-14 z-30 bg-[#030d12]/95 backdrop-blur-xl -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 border-b border-cyan-950/80 flex items-center justify-between shadow-lg">
       <div class="flex items-center gap-8">
         <button
@@ -293,9 +287,8 @@
       </button>
     </div>
 
-    <!-- SECTION: ABOUT (Про гру) -->
     <div id="section-about" class="space-y-6 pt-2">
-      <!-- Main Game Header & Title -->
+      
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 class="text-3xl sm:text-4xl font-black text-white font-display tracking-wide">
           {game.title}
@@ -311,13 +304,10 @@
         </div>
       </div>
 
-      <!-- Main Showcase Grid (Gallery on Left + Purchase & Info Card on Right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- Left Column: Media Showcase & Description -->
+
         <div class="lg:col-span-8 space-y-6">
-          
-          <!-- Main Media Preview Box -->
+
           <div class="relative w-full aspect-[16/9] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-500/20 shadow-2xl shadow-cyan-950/40 group">
             <img
               src={activeMedia.url}
@@ -325,10 +315,8 @@
               class="w-full h-full object-cover transition-all duration-300"
             />
 
-            <!-- Gradient Overlay -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"></div>
 
-            <!-- Carousel Controls -->
             {#if mediaList.length > 1}
               <button
                 onclick={prevMedia}
@@ -347,7 +335,6 @@
             {/if}
           </div>
 
-          <!-- Thumbnail Carousel Strip -->
           {#if mediaList.length > 1}
             <div class="relative flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-cyan-500/30">
               <button
@@ -378,7 +365,6 @@
             </div>
           {/if}
 
-          <!-- Tags Row -->
           <div class="flex flex-wrap items-center gap-2 pt-2">
             {#each visibleTags as tag}
               <button
@@ -404,7 +390,6 @@
             {/if}
           </div>
 
-          <!-- Description Block with Expand -->
           <div class="space-y-3 pt-2">
             <p class="text-sm text-slate-300 leading-relaxed {isDescriptionExpanded ? '' : 'line-clamp-3'}">
               {game.description || game.shortDescription || `${game.title} — захоплива гра на платформі Dteam Gaming Hub.`}
@@ -424,13 +409,10 @@
           </div>
         </div>
 
-        <!-- Right Column: Purchasing & Real Metadata Card -->
         <div class="lg:col-span-4 space-y-6">
-          
-          <!-- Game Logo Banner & Price Card -->
+
           <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-cyan-950/50 space-y-5">
-            
-            <!-- Banner Image with Logo -->
+
             <div class="w-full aspect-[21/9] rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 shadow-inner">
               <img
                 src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'}
@@ -439,7 +421,6 @@
               />
             </div>
 
-            <!-- Real Price Display -->
             <div class="flex items-baseline justify-between pt-1">
               <div class="flex items-center gap-2">
                 <span class="text-3xl font-black text-white font-display tracking-tight">
@@ -459,7 +440,6 @@
               {/if}
             </div>
 
-            <!-- Primary CTA Button (Купити) -->
             <button
               onclick={() => handleBuy(game.title, true)}
               class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-base tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
@@ -467,7 +447,6 @@
               <span>Купити</span>
             </button>
 
-            <!-- Secondary Action Row: Додати у кошик & Wishlist Heart -->
             <div class="flex items-center gap-2">
               <button
                 onclick={() => handleBuy(game.title, false)}
@@ -489,7 +468,6 @@
               </button>
             </div>
 
-            <!-- Repost & Report Actions -->
             <div class="flex items-center justify-between pt-2 border-t border-cyan-950/80 text-xs font-semibold text-slate-400">
               <button
                 onclick={() => {
@@ -513,7 +491,6 @@
               </button>
             </div>
 
-            <!-- Real Metadata Table -->
             <div class="space-y-2.5 pt-3 border-t border-cyan-950/80 text-xs">
               <div class="flex justify-between text-slate-400">
                 <span>Дата виходу:</span>
@@ -548,15 +525,13 @@
         </div>
       </div>
 
-      <!-- Комплекти (Real Bundles & Editions Section) -->
       <div class="space-y-4 pt-6">
         <h2 class="text-2xl font-black text-white font-display tracking-wide">
           Комплекти
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <!-- Standard Edition Card (Real Price) -->
+
           <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4">
             <div>
               <h3 class="text-lg font-black text-white">{game.title} (Стандартне видання)</h3>
@@ -593,7 +568,6 @@
             </div>
           </div>
 
-          <!-- Complete Edition Card (Rendered only if real DLCs exist!) -->
           {#if dlcs.length > 0}
             <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4">
               <div>
@@ -650,7 +624,6 @@
         </div>
       </div>
 
-      <!-- Інші DLC (Only Real DLCs from Database) -->
       {#if dlcs.length > 0}
         <div class="space-y-4 pt-6">
           <div class="flex items-center justify-between">
@@ -712,7 +685,6 @@
       {/if}
     </div>
 
-    <!-- SECTION: SPECS (Характеристики) -->
     <div id="section-specs" class="space-y-4 pt-8 border-t border-cyan-950/80">
       <h2 class="text-2xl font-black text-white font-display tracking-wide flex items-center gap-2.5">
         <Cpu class="w-6 h-6 text-cyan-400" />
@@ -720,7 +692,7 @@
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- System Requirements Box -->
+        
         <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl space-y-4">
           <h3 class="text-sm font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
             <Monitor class="w-4 h-4 text-cyan-400" />
@@ -751,7 +723,6 @@
           </div>
         </div>
 
-        <!-- Features & Technical Details Box -->
         <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl space-y-4">
           <h3 class="text-sm font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
             <ShieldCheck class="w-4 h-4 text-cyan-400" />
@@ -786,7 +757,6 @@
       </div>
     </div>
 
-    <!-- SECTION: COMMUNITY / REVIEWS (Спільнота) -->
     <div id="section-community" class="space-y-6 pt-8 border-t border-cyan-950/80">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -818,7 +788,6 @@
         </button>
       </div>
 
-      <!-- Real Review Cards Grid -->
       {#if isLoadingReviews}
         <div class="flex items-center justify-center py-12">
           <Loader2 class="w-8 h-8 text-cyan-400 animate-spin" />
@@ -828,7 +797,7 @@
           {#each reviews as review}
             <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4 group hover:border-cyan-400/60 transition-all">
               <div class="space-y-3">
-                <!-- Author header -->
+                
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
@@ -864,7 +833,6 @@
                 </p>
               </div>
 
-              <!-- Recommendation badge -->
               <div class="flex items-center justify-between pt-3 border-t border-cyan-950/80 text-xs text-slate-400">
                 <span class="text-[11px] font-semibold {review.isRecommended ? 'text-emerald-400' : 'text-slate-500'}">
                   {review.isRecommended ? '✓ Рекомендує гру' : 'Не рекомендує'}
@@ -899,7 +867,6 @@
 
   </div>
 
-  <!-- Real Review Modal -->
   {#if isReviewModalOpen}
     <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
       <div class="relative w-full max-w-lg bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 space-y-5">
