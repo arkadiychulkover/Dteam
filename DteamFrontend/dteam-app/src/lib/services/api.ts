@@ -4,23 +4,38 @@ class ApiClient {
   private token: string | null = null;
 
   constructor() {
-    if (typeof localStorage !== 'undefined') {
-      this.token = localStorage.getItem('dteam_token');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        this.token = localStorage.getItem('dteam_token');
+      } catch (e) {
+        console.warn('[API] Failed to read token from localStorage:', e);
+      }
     }
   }
 
   public setToken(token: string | null) {
     this.token = token;
-    if (typeof localStorage !== 'undefined') {
-      if (token) {
-        localStorage.setItem('dteam_token', token);
-      } else {
-        localStorage.removeItem('dteam_token');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        if (token) {
+          localStorage.setItem('dteam_token', token);
+        } else {
+          localStorage.removeItem('dteam_token');
+        }
+      } catch (e) {
+        console.warn('[API] Failed to save token to localStorage:', e);
       }
     }
   }
 
   public getToken(): string | null {
+    if (!this.token && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        this.token = localStorage.getItem('dteam_token');
+      } catch {
+        // ignore
+      }
+    }
     return this.token;
   }
 
@@ -32,8 +47,9 @@ class ApiClient {
       headers.set('Content-Type', 'application/json');
     }
 
-    if (this.token && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${this.token}`);
+    const currentToken = this.getToken();
+    if (currentToken && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${currentToken}`);
     }
 
     try {
@@ -44,6 +60,7 @@ class ApiClient {
 
       if (!response.ok) {
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+        let status = response.status;
         try {
           const errorData = await response.json();
           if (errorData.message) {
@@ -59,7 +76,10 @@ class ApiClient {
         } catch {
           // ignore json parse error
         }
-        throw new Error(errorMessage);
+
+        const err: any = new Error(errorMessage);
+        err.status = status;
+        throw err;
       }
 
       if (response.status === 204) {

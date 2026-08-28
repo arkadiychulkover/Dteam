@@ -1,43 +1,151 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-ton-blue: #0098ea;
+  --color-cyan-glow: #00f2fe;
+  --color-emerald-glow: #0df2c9;
+  --bg-deep-teal: #030d12;
+  --bg-teal-surface: #061820;
+  --bg-teal-card: #0a232c;
+  --border-teal-glow: rgba(13, 242, 201, 0.25);
+}
+
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --color-ton-blue: #0098ea;
-  --color-ton-dark: #0f1c2e;
-  --color-steam-dark: #12141c;
-  --color-steam-card: #1b1e2a;
-  --color-steam-surface: #222636;
+  --font-display: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
-  background-color: #0b0d13;
+  background-color: #040e14;
   color: #e2e8f0;
   min-height: 100vh;
   overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
-/* Custom sleek scrollbar for Steam aesthetic */
+h1, h2, h3, h4, h5, h6, .font-display, .font-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+button, input, select, textarea {
+  font-family: var(--font-sans);
+}
+
+code, kbd, samp, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d1017;
+  background: #030d12;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a3142;
+  background: #0d3844;
   border-radius: 3px;
+  border: 1px solid rgba(13, 242, 201, 0.2);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0098ea;
+  background: #0df2c9;
+  box-shadow: 0 0 10px rgba(13, 242, 201, 0.5);
+}
+
+.glass-panel {
+  background: rgba(6, 24, 32, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(13, 242, 201, 0.15);
+}
+
+.glass-panel-glow {
+  background: rgba(8, 30, 39, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(13, 242, 201, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.08), inset 0 0 20px rgba(13, 242, 201, 0.05);
+}
+
+.neon-border-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neon-border-hover:hover {
+  border-color: rgba(13, 242, 201, 0.6);
+  box-shadow: 0 0 20px rgba(13, 242, 201, 0.25), inset 0 0 10px rgba(0, 242, 254, 0.1);
+  transform: translateY(-2px);
+}
+
+.cyan-text-glow {
+  text-shadow: 0 0 12px rgba(13, 242, 201, 0.6), 0 0 24px rgba(0, 242, 254, 0.3);
+}
+
+.emerald-text-glow {
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+@keyframes aurora-flow {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(5%, -8%) scale(1.15) rotate(5deg);
+  }
+  66% {
+    transform: translate(-6%, 5%) scale(0.9) rotate(-4deg);
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+}
+
+.animate-aurora {
+  animation: aurora-flow 18s ease-in-out infinite alternate;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(13, 242, 201, 0.6));
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
 }

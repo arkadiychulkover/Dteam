@@ -1,38 +1,58 @@
 using System.Text;
 using DteamBackend.Data;
+using DteamBackend.Interfaces;
+using DteamBackend.Middlewares;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DteamBackend
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             // Database Context (SQLite)
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddDbContextFactory<AppDbContext>(options =>
+            {
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            });
+            builder.Services.AddScoped(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
+
+            // HTTP Client
+            builder.Services.AddHttpClient();
 
             // Application Services
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-            
+            builder.Services.AddScoped<IInitDataService, InitDataService>();
+            builder.Services.AddScoped<TonService>();
+
             // SMTP Email Service Configuration
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
             builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
-            // CORS Policy for Frontend App
+            // CORS Policy
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend", policy =>
+                options.AddPolicy("DteamCorsPolicy", policy =>
                 {
-                    policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost" || new Uri(origin).Host == "127.0.0.1")
-                          .AllowAnyHeader()
+                    policy.WithOrigins(
+                              "http://localhost:5173",
+                              "https://localhost:5173",
+                              "http://127.0.0.1:5173",
+                              "https://127.0.0.1:5173",
+                              "http://localhost:5174",
+                              "http://localhost:3000",
+                              "http://localhost:5117",
+                              "https://localhost:7264")
                           .AllowAnyMethod()
+                          .AllowAnyHeader()
                           .AllowCredentials();
                 });
             });
@@ -56,12 +76,18 @@ namespace DteamBackend
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                    ValidateIssuer = true,
-                    ValidIssuer = issuer,
-                    ValidateAudience = true,
-                    ValidAudience = audience,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.FromMinutes(5)
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"[JWT Bearer] Auth failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -69,38 +95,42 @@ namespace DteamBackend
 
             var app = builder.Build();
 
-            // Automatic Database Initialization
+            // Automatic Database Migration and Seed
             using (var scope = app.Services.CreateScope())
             {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var services = scope.ServiceProvider;
                 try
                 {
-                    db.Database.EnsureCreated();
-                    logger.LogInformation("[DB] SQLite Database created / verified successfully.");
+                    var context = services.GetRequiredService<AppDbContext>();
+                    await context.Database.EnsureCreatedAsync();
+
+                    var initDataService = services.GetRequiredService<IInitDataService>();
+                    await initDataService.InitializeAsync(context);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "[DB] Failed to initialize SQLite database.");
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "Ошибка при инициализации начальных данных в базе данных.");
                 }
             }
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            app.UseCors("DteamCorsPolicy");
 
-            app.UseCors("AllowFrontend");
+            app.UseStaticFiles();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.UseMiddleware<CheckBannedUserMiddleware>();
+
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.MapControllers();
 
-            var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
-            appLogger.LogInformation("[STARTUP] Backend is running. Listening on configured URLs.");
-
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

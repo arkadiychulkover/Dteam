@@ -3,12 +3,14 @@ import type { Duser } from './user';
 export interface Review {
   id: string;
   userId: string;
+  username?: string;
+  userAvatarUrl?: string | null;
   user?: Duser;
   gameId: string;
-  rating: number; // 1 - 5
+  rating: number;
   content: string;
   isRecommended: boolean;
-  playTimeHoursAtReview: number;
+  playTimeHoursAtReview?: number;
   createdAt: string;
   updatedAt?: string | null;
 }
@@ -19,6 +21,8 @@ export interface Game {
   description: string;
   shortDescription?: string | null;
   priceInNanoTons: number | string;
+  discountPercentage?: number;
+  originalPriceInNanoTons?: number | string;
   serverArchivePath: string;
   ownerId: string;
   owner?: Duser;
@@ -27,8 +31,13 @@ export interface Game {
   reviewsCount: number;
   isDlc: boolean;
   parentGameId?: string | null;
+  parentGameTitle?: string | null;
   parentGame?: Game | null;
   dlcs?: Game[];
+  genres?: string[];
+  platforms?: string[];
+  features?: string[];
+  tags?: string[];
   version: string;
   sizeInBytes: number;
   isPublished: boolean;
@@ -36,8 +45,21 @@ export interface Game {
   coverImageUrl?: string | null;
   screenshotUrls: string[];
   trailerUrl?: string | null;
-  tags?: string[];
   createdAt: string;
   updatedAt?: string | null;
   reviews?: Review[];
+}
+
+export interface GameFilterParams {
+  search?: string;
+  genre?: string;
+  isDlc?: boolean;
+  isDiscounted?: boolean;
+  isFree?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  platform?: string;
+  feature?: string;
+  tag?: string;
+  sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'downloads';
 }

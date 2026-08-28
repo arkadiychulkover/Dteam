@@ -1,114 +1,202 @@
 <script lang="ts">
   import { gamesStore } from '../../stores/gamesStore';
-  import { libraryStore } from '../../stores/libraryStore';
-  import { formatPrice } from '../../utils/formatters';
+  import { uiStore } from '../../stores/uiStore';
+  import { wishlistStore } from '../../stores/wishlistStore';
+  import { formatPrice, formatBasePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
-  import { Star, Download, Sparkles, ChevronRight, ShoppingCart } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, Search, Heart, ShoppingBag, ShoppingCart } from 'lucide-svelte';
 
   let currentIndex = $state(0);
-  const featuredGames = $derived($gamesStore.games.slice(0, 3));
-  const activeGame = $derived(featuredGames[currentIndex] || $gamesStore.games[0]);
+  let searchQuery = $state('');
 
-  function handleBuy(game: Game) {
-    libraryStore.buyGame(game);
+  const allGames = $derived($gamesStore.games);
+  const activeGame = $derived(allGames[currentIndex] || allGames[0]);
+  const isHeroWishlisted = $derived(activeGame ? $wishlistStore.wishlistGameIds.has(activeGame.id) : false);
+
+  function nextSlide() {
+    if (allGames.length === 0) return;
+    currentIndex = (currentIndex + 1) % allGames.length;
+  }
+
+  function prevSlide() {
+    if (allGames.length === 0) return;
+    currentIndex = (currentIndex - 1 + allGames.length) % allGames.length;
+  }
+
+  function handleSearch(e: Event) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      gamesStore.setFilters({ search: searchQuery.trim() });
+      uiStore.setTab('catalog');
+    }
+  }
+
+  function handleHeroWishlistToggle(e: MouseEvent) {
+    e.stopPropagation();
+    if (activeGame) {
+      wishlistStore.toggleWishlist(activeGame);
+    }
   }
 </script>
 
 {#if activeGame}
-  <div class="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/80 shadow-2xl group mb-10">
-    <!-- Background backdrop with blur -->
-    <div class="absolute inset-0 z-0">
-      <img
-        src={activeGame.headerImageUrl || activeGame.coverImageUrl}
-        alt={activeGame.title}
-        class="w-full h-full object-cover object-center brightness-40 filter blur-sm scale-105 transform transition-transform duration-1000"
-      />
-      <div class="absolute inset-0 bg-gradient-to-t from-[#0a0c14] via-[#0a0c14]/70 to-transparent"></div>
-      <div class="absolute inset-0 bg-gradient-to-r from-[#0a0c14] via-[#0a0c14]/80 to-transparent"></div>
+  <div class="space-y-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <form onsubmit={handleSearch} class="relative w-full sm:w-80">
+        <input
+          type="text"
+          placeholder="Пошук у Крамниці..."
+          bind:value={searchQuery}
+          class="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-[#061820]/90 border border-cyan-500/30 focus:border-cyan-400 focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+        />
+        <button type="submit" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1">
+          <Search class="w-4 h-4" />
+        </button>
+      </form>
+
+      <div class="flex items-center gap-4 text-xs font-semibold text-slate-300">
+        <button
+          onclick={() => uiStore.setTab('catalog')}
+          class="hover:text-cyan-300 transition-colors cursor-pointer"
+        >
+          Каталог
+        </button>
+        <button
+          onclick={() => uiStore.addToast({ title: 'Новини', message: 'Розділ оновлень та новин платформи.', type: 'info' })}
+          class="hover:text-cyan-300 transition-colors cursor-pointer"
+        >
+          Новини
+        </button>
+
+        <div class="flex items-center gap-2 border-l border-cyan-900/60 pl-3">
+          <button
+            onclick={() => uiStore.setTab('wishlist')}
+            class="relative p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/70 border border-cyan-500/20 text-slate-300 hover:text-rose-400 transition-colors cursor-pointer"
+            title="Список бажань"
+          >
+            <Heart class="w-4 h-4 {$wishlistStore.items.length > 0 ? 'fill-rose-500 text-rose-500' : ''}" />
+            {#if $wishlistStore.items.length > 0}
+              <span class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center">
+                {$wishlistStore.items.length}
+              </span>
+            {/if}
+          </button>
+          <button
+            onclick={() => uiStore.addToast({ title: 'Кошик', message: 'Кошик порожній.', type: 'info' })}
+            class="p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/70 border border-cyan-500/20 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
+            title="Кошик"
+          >
+            <ShoppingBag class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Content Grid -->
-    <div class="relative z-10 p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[380px]">
-      <!-- Left Info -->
-      <div class="lg:col-span-7 flex flex-col justify-between">
+    <div
+      role="button"
+      tabindex="0"
+      onclick={() => { gamesStore.selectGame(activeGame); uiStore.setTab('game'); }}
+      onkeydown={(e) => { if (e.key === 'Enter') { gamesStore.selectGame(activeGame); uiStore.setTab('game'); } }}
+      class="group relative w-full aspect-[16/7] min-h-[300px] rounded-3xl overflow-hidden border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 cursor-pointer text-left bg-slate-950"
+    >
+      <img
+        src={activeGame.headerImageUrl || activeGame.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'}
+        alt={activeGame.title}
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+      />
+
+      <div class="absolute inset-0 bg-gradient-to-t from-[#020b0f] via-[#020b0f]/30 to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#020b0f]/80 via-transparent to-[#020b0f]/80"></div>
+
+      {#if allGames.length > 1}
+        <button
+          type="button"
+          onclick={(e) => {
+            e.stopPropagation();
+            prevSlide();
+          }}
+          class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-cyan-500 text-white hover:text-black border border-white/20 flex items-center justify-center backdrop-blur-md transition-all z-20 cursor-pointer shadow-lg"
+          aria-label="Previous game"
+        >
+          <ChevronLeft class="w-5 h-5" />
+        </button>
+
+        <button
+          type="button"
+          onclick={(e) => {
+            e.stopPropagation();
+            nextSlide();
+          }}
+          class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-cyan-500 text-white hover:text-black border border-white/20 flex items-center justify-center backdrop-blur-md transition-all z-20 cursor-pointer shadow-lg"
+          aria-label="Next game"
+        >
+          <ChevronRight class="w-5 h-5" />
+        </button>
+      {/if}
+
+      <div class="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 z-10">
         <div>
-          <!-- Badge -->
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold tracking-wide uppercase mb-4">
-            <Sparkles class="w-3.5 h-3.5" /> Featured Spotlight
+          <div class="flex items-center gap-2.5">
+            {#if (activeGame.discountPercentage || 0) > 0}
+              <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-extrabold text-xs">
+                -{activeGame.discountPercentage}%
+              </span>
+            {/if}
+
+            <span class="text-xl sm:text-2xl font-black text-white font-mono tracking-tight">
+              {formatPrice(activeGame.priceInNanoTons, activeGame.discountPercentage)}
+            </span>
+
+            {#if (activeGame.discountPercentage || 0) > 0}
+              <span class="text-xs sm:text-sm text-slate-400 line-through font-mono">
+                {formatBasePrice(activeGame.priceInNanoTons)}
+              </span>
+            {/if}
+
+            <button
+              type="button"
+              onclick={handleHeroWishlistToggle}
+              class="p-2 rounded-xl bg-black/60 hover:bg-rose-950/80 border transition-all cursor-pointer backdrop-blur-md
+                {isHeroWishlisted ? 'border-rose-500/80 text-rose-500' : 'border-white/20 text-slate-300 hover:text-rose-400'}"
+              title={isHeroWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}
+            >
+              <Heart class="w-4 h-4 {isHeroWishlisted ? 'fill-rose-500' : ''}" />
+            </button>
           </div>
 
-          <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight font-['Outfit'] leading-none">
+          <span class="text-[10px] text-slate-400 mt-1 block">
+            {(activeGame.discountPercentage || 0) > 0 ? 'Знижка діє обмежений час' : 'Офіційний реліз у Dteam'}
+          </span>
+        </div>
+
+        <div class="sm:text-right max-w-md">
+          <h2 class="text-lg sm:text-2xl font-extrabold text-white group-hover:text-cyan-300 transition-colors drop-shadow-md">
             {activeGame.title}
           </h2>
-
-          <p class="mt-3 text-slate-300 text-sm md:text-base line-clamp-3 leading-relaxed max-w-xl">
+          <p class="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed drop-shadow">
             {activeGame.shortDescription || activeGame.description}
           </p>
-
-          <!-- Tags & Stats -->
-          <div class="flex flex-wrap items-center gap-2 mt-4">
-            {#if activeGame.tags}
-              {#each activeGame.tags as tag}
-                <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 text-xs font-medium border border-slate-700">
-                  {tag}
-                </span>
-              {/each}
-            {/if}
-            <div class="flex items-center gap-1 text-amber-400 text-xs font-bold ml-2">
-              <Star class="w-4 h-4 fill-amber-400" />
-              <span>{activeGame.averageRating}</span>
-              <span class="text-slate-400 font-normal">({activeGame.reviewsCount} reviews)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pricing & Action Button -->
-        <div class="flex items-center gap-4 mt-8">
-          <div class="bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-700">
-            <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Price</span>
-            <span class="text-lg md:text-xl font-black text-cyan-400 font-mono">
-              {formatPrice(activeGame.priceInNanoTons)}
-            </span>
-          </div>
-
-          <button
-            onclick={() => handleBuy(activeGame)}
-            class="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
-          >
-            <ShoppingCart class="w-4 h-4" />
-            <span>Buy with TON</span>
-          </button>
-
-          <button
-            onclick={() => gamesStore.selectGame(activeGame)}
-            class="px-4 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition-all cursor-pointer"
-          >
-            Details
-          </button>
-        </div>
-      </div>
-
-      <!-- Right Screenshots / Thumbnail Preview -->
-      <div class="lg:col-span-5 hidden lg:flex flex-col gap-3">
-        <div class="rounded-xl overflow-hidden shadow-2xl border border-slate-700/60 aspect-video">
-          <img
-            src={activeGame.coverImageUrl || activeGame.headerImageUrl}
-            alt={activeGame.title}
-            class="w-full h-full object-cover"
-          />
-        </div>
-
-        <!-- Carousel navigation indicators -->
-        <div class="flex items-center gap-2 justify-end mt-2">
-          {#each featuredGames as game, idx}
-            <button
-              onclick={() => currentIndex = idx}
-              class="h-2 rounded-full transition-all cursor-pointer {currentIndex === idx ? 'w-8 bg-cyan-400' : 'w-2 bg-slate-700 hover:bg-slate-600'}"
-              aria-label="Slide {idx + 1}"
-            ></button>
-          {/each}
         </div>
       </div>
     </div>
+
+    {#if allGames.length > 1}
+      <div class="flex items-center gap-2.5 overflow-x-auto py-1 scrollbar-none justify-start sm:justify-center">
+        {#each allGames.slice(0, 10) as game, idx}
+          <button
+            type="button"
+            onclick={() => currentIndex = idx}
+            class="relative w-16 sm:w-20 aspect-[16/9] rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0
+              {currentIndex === idx ? 'border-cyan-400 scale-105 shadow-lg shadow-cyan-500/30' : 'border-transparent opacity-60 hover:opacity-100'}"
+          >
+            <img
+              src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'}
+              alt={game.title}
+              class="w-full h-full object-cover"
+            />
+          </button>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}

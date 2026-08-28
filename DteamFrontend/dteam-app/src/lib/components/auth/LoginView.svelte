@@ -36,23 +36,23 @@
   }
 </script>
 
-<div class="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+<div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-md">
     <!-- Glow Backdrops -->
     <div class="absolute -top-10 -left-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="relative bg-[#111422]/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/30">
+    <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30 mb-4">
-          <Gamepad2 class="w-7 h-7 text-white" />
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 shadow-lg shadow-cyan-500/30 mb-4">
+          <Gamepad2 class="w-7 h-7 text-black font-black" />
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-white font-['Outfit'] tracking-wide">
+        <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
           Вход в <span class="text-cyan-400">DTEAM</span>
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Ввод в мир Web3 гейминга и цифровых коллекций
+          Вход в мир Web3 гейминга и цифровых коллекций
         </p>
       </div>
 
@@ -78,7 +78,7 @@
               bind:value={identifier}
               placeholder="username или user@example.com"
               required
-              class="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-4 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
         </div>
@@ -107,7 +107,7 @@
               bind:value={password}
               placeholder="••••••••••••"
               required
-              class="w-full pl-10 pr-11 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-11 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
             <button
               type="button"
@@ -129,7 +129,7 @@
             <input
               type="checkbox"
               bind:checked={rememberMe}
-              class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
+              class="w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
             />
             <span class="text-xs text-slate-300 group-hover:text-white transition-colors">
               Запомнить меня
@@ -137,7 +137,7 @@
           </label>
 
           <span class="text-[11px] text-slate-500 flex items-center gap-1">
-            <ShieldCheck class="w-3.5 h-3.5 text-cyan-500/70" /> TON Encrypted
+            <ShieldCheck class="w-3.5 h-3.5 text-cyan-400/80" /> TON Encrypted
           </span>
         </div>
 
@@ -145,21 +145,21 @@
         <button
           type="submit"
           disabled={isSubmitting}
-          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           {#if isSubmitting}
-            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             <span>Вход...</span>
           {:else}
-            <LogIn class="w-4 h-4" />
+            <LogIn class="w-4 h-4 text-black" />
             <span>Войти</span>
-            <ArrowRight class="w-4 h-4 ml-1" />
+            <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
       </form>
 
       <!-- Footer Switch to Register -->
-      <div class="mt-8 pt-6 border-t border-slate-800/80 text-center">
+      <div class="mt-8 pt-6 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
           Еще нет аккаунта?
           <button

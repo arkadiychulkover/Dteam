@@ -11,7 +11,17 @@ namespace DteamBackend.Services
 
     public class PasswordHasher : IPasswordHasher
     {
-        public void CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
+        void IPasswordHasher.CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
+        {
+            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+        }
+
+        bool IPasswordHasher.VerifyPasswordHash(string password, string storedHash, string storedSalt)
+        {
+            return VerifyPasswordHash(password, storedHash, storedSalt);
+        }
+
+        public static void CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
         {
             using var hmac = new HMACSHA512();
             var saltBytes = hmac.Key;
@@ -21,7 +31,7 @@ namespace DteamBackend.Services
             passwordHash = Convert.ToBase64String(hashBytes);
         }
 
-        public bool VerifyPasswordHash(string password, string storedHash, string storedSalt)
+        public static bool VerifyPasswordHash(string password, string storedHash, string storedSalt)
         {
             if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(storedHash) || string.IsNullOrWhiteSpace(storedSalt))
                 return false;
@@ -40,6 +50,11 @@ namespace DteamBackend.Services
             {
                 return false;
             }
+        }
+
+        public static bool VerifyPassword(string password, string storedHash, string storedSalt)
+        {
+            return VerifyPasswordHash(password, storedHash, storedSalt);
         }
     }
 }

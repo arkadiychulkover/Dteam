@@ -130,8 +130,19 @@ namespace DteamBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("DiscountPercentage")
+                        .HasColumnType("integer");
+
                     b.Property<long>("DownloadCount")
                         .HasColumnType("bigint");
+
+                    b.PrimitiveCollection<List<string>>("Features")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.PrimitiveCollection<List<string>>("Genres")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<string>("HeaderImageUrl")
                         .HasMaxLength(500)
@@ -148,6 +159,10 @@ namespace DteamBackend.Migrations
 
                     b.Property<Guid?>("ParentGameId")
                         .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<List<string>>("Platforms")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<long>("PriceInNanoTons")
                         .HasColumnType("bigint");
@@ -170,6 +185,10 @@ namespace DteamBackend.Migrations
 
                     b.Property<long>("SizeInBytes")
                         .HasColumnType("bigint");
+
+                    b.PrimitiveCollection<List<string>>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -239,6 +258,54 @@ namespace DteamBackend.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("DteamBackend.Models.Tranxaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TxhHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TxhHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Tranxactions");
+                });
+
+            modelBuilder.Entity("DteamBackend.Models.UserCartItem", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "GameId");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("UserCartItems");
+                });
+
             modelBuilder.Entity("DteamBackend.Models.UserFriend", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -285,6 +352,31 @@ namespace DteamBackend.Migrations
                     b.HasIndex("GameId");
 
                     b.ToTable("UserGames");
+                });
+
+            modelBuilder.Entity("DteamBackend.Models.UserWishlist", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "GameId");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("UserWishlists");
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Duser", b =>
@@ -334,6 +426,35 @@ namespace DteamBackend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("DteamBackend.Models.Tranxaction", b =>
+                {
+                    b.HasOne("DteamBackend.Models.Duser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DteamBackend.Models.UserCartItem", b =>
+                {
+                    b.HasOne("DteamBackend.Models.Game", "Game")
+                        .WithMany("InCartsOf")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DteamBackend.Models.Duser", "User")
+                        .WithMany("CartItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DteamBackend.Models.UserFriend", b =>
                 {
                     b.HasOne("DteamBackend.Models.Duser", "Friend")
@@ -372,8 +493,29 @@ namespace DteamBackend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("DteamBackend.Models.UserWishlist", b =>
+                {
+                    b.HasOne("DteamBackend.Models.Game", "Game")
+                        .WithMany("WishlistedBy")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DteamBackend.Models.Duser", "User")
+                        .WithMany("Wishlist")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DteamBackend.Models.Duser", b =>
                 {
+                    b.Navigation("CartItems");
+
                     b.Navigation("CreatedGames");
 
                     b.Navigation("FamilyMembers");
@@ -383,15 +525,21 @@ namespace DteamBackend.Migrations
                     b.Navigation("Library");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("Wishlist");
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Game", b =>
                 {
                     b.Navigation("Dlcs");
 
+                    b.Navigation("InCartsOf");
+
                     b.Navigation("Owners");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("WishlistedBy");
                 });
 #pragma warning restore 612, 618
         }

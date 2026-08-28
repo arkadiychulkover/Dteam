@@ -13,10 +13,27 @@ export function tonToNanoTon(ton: number): bigint {
   return BigInt(Math.floor(ton * 1_000_000_000));
 }
 
-export function formatPrice(nanoTon: number | string | bigint): string {
-  const tons = nanoTonToTon(nanoTon);
-  if (tons === 0) return 'Free to Play';
-  return `${tons.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} TON`;
+export function formatTon(tons: number): string {
+  return `${tons.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TON`;
+}
+
+export function getEffectivePrice(nanoTon: number | string | bigint, discountPercentage: number = 0): number {
+  const baseTons = nanoTonToTon(nanoTon);
+  if (baseTons === 0 || discountPercentage >= 100) return 0;
+  if (discountPercentage <= 0) return baseTons;
+  return baseTons * (1 - discountPercentage / 100);
+}
+
+export function formatPrice(nanoTon: number | string | bigint, discountPercentage: number = 0): string {
+  const finalTons = getEffectivePrice(nanoTon, discountPercentage);
+  if (finalTons === 0) return 'Безкоштовно';
+  return `${finalTons.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TON`;
+}
+
+export function formatBasePrice(nanoTon: number | string | bigint): string {
+  const baseTons = nanoTonToTon(nanoTon);
+  if (baseTons === 0) return 'Безкоштовно';
+  return `${baseTons.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TON`;
 }
 
 export function formatAddress(address?: string | null): string {
@@ -34,14 +51,14 @@ export function formatBytes(bytes: number): string {
 }
 
 export function formatPlayTime(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 60) return `${minutes} хв`;
   const hours = (minutes / 60).toFixed(1);
-  return `${hours} hrs`;
+  return `${hours} год`;
 }
 
 export function formatDate(isoDate: string): string {
   try {
-    return new Date(isoDate).toLocaleDateString(undefined, {
+    return new Date(isoDate).toLocaleDateString('uk-UA', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

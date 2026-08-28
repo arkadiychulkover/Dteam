@@ -51,23 +51,23 @@
   <div 
     onclick={handleBackdropClick}
     role="presentation"
-    class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
   >
-    <div class="relative w-full max-w-md bg-[#111422] border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/50 animate-in zoom-in-95 duration-200">
+    <div class="relative w-full max-w-md bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
       <!-- Close Button -->
       <button
         onclick={closeModal}
-        class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+        class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors cursor-pointer"
       >
         <X class="w-5 h-5" />
       </button>
 
       <!-- Modal Header -->
       <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/20 mb-3">
-          <Gamepad2 class="w-6 h-6 text-white" />
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 shadow-md shadow-cyan-500/20 mb-3">
+          <Gamepad2 class="w-6 h-6 text-black font-black" />
         </div>
-        <h2 class="text-xl sm:text-2xl font-extrabold text-white font-['Outfit']">
+        <h2 class="text-xl sm:text-2xl font-extrabold text-white font-display">
           Быстрый вход в <span class="text-cyan-400">DTEAM</span>
         </h2>
       </div>
@@ -92,9 +92,9 @@
               id="modal-login-id"
               type="text"
               bind:value={identifier}
-              placeholder="user@example.com"
+              placeholder="user@example.com или логин"
               required
-              class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
         </div>
@@ -123,7 +123,7 @@
               bind:value={password}
               placeholder="••••••••••••"
               required
-              class="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-10 py-2.5 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
             <button
               type="button"
@@ -145,7 +145,7 @@
             <input
               type="checkbox"
               bind:checked={rememberMe}
-              class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500/20 cursor-pointer"
+              class="w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 cursor-pointer"
             />
             <span class="text-xs text-slate-300">Запомнить меня</span>
           </label>
@@ -155,21 +155,21 @@
         <button
           type="submit"
           disabled={isSubmitting}
-          class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           {#if isSubmitting}
-            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             <span>Вход...</span>
           {:else}
-            <LogIn class="w-4 h-4" />
+            <LogIn class="w-4 h-4 text-black" />
             <span>Войти</span>
-            <ArrowRight class="w-4 h-4 ml-1" />
+            <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
       </form>
 
       <!-- Switch to Register -->
-      <div class="mt-6 pt-4 border-t border-slate-800 text-center">
+      <div class="mt-6 pt-4 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
           Нет аккаунта?
           <button

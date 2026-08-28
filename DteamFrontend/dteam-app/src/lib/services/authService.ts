@@ -15,7 +15,13 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    api.setToken(null);
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore if failed on server
+    } finally {
+      api.setToken(null);
+    }
   },
 
   async getProfile(): Promise<Duser> {

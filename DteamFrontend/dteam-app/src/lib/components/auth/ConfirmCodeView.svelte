@@ -1,10 +1,10 @@
 <script lang="ts">
   import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
-  import { ShieldCheck, ArrowLeft, RefreshCw, CheckCircle } from 'lucide-svelte';
+  import { ShieldCheck, ArrowLeft, RefreshCw, CheckCircle, Key } from 'lucide-svelte';
   import { onMount, onDestroy } from 'svelte';
 
-  let codeDigits = $state(['', '', '', '', '', '']);
+  let resetCode = $state('');
   let isSubmitting = $state(false);
   let errorMessage = $state('');
   let resendCountdown = $state(60);
@@ -30,31 +30,6 @@
     }, 1000);
   }
 
-  function handleInput(index: number, e: Event) {
-    const target = e.target as HTMLInputElement;
-    const val = target.value;
-    
-    // Only take the last character
-    if (val.length > 0) {
-      codeDigits[index] = val[val.length - 1];
-      // Focus next input if available
-      if (index < 5) {
-        const nextInput = document.getElementById(`code-input-${index + 1}`) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
-      }
-    }
-  }
-
-  function handleKeyDown(index: number, e: KeyboardEvent) {
-    if (e.key === 'Backspace' && !codeDigits[index] && index > 0) {
-      const prevInput = document.getElementById(`code-input-${index - 1}`) as HTMLInputElement;
-      if (prevInput) {
-        prevInput.focus();
-        codeDigits[index - 1] = '';
-      }
-    }
-  }
-
   async function handleResend() {
     if (resendCountdown > 0) return;
     let currentEmail = '';
@@ -70,7 +45,7 @@
       const res = await authStore.requestPasswordReset(currentEmail);
       uiStore.addToast({
         title: 'Код переотправлен',
-        message: res.debugCode ? `Новый код: ${res.debugCode}` : 'Новый код отправлен на ваш адрес.',
+        message: res.debugCode ? `Новый GUID код: ${res.debugCode}` : 'Новый код отправлен на ваш адрес.',
         type: 'info'
       });
       startCountdown();
@@ -81,10 +56,10 @@
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    const fullCode = codeDigits.join('');
+    const trimmedCode = resetCode.trim();
 
-    if (fullCode.length < 6) {
-      errorMessage = 'Введите полный 6-значный код';
+    if (!trimmedCode) {
+      errorMessage = 'Введите код подтверждения (GUID)';
       return;
     }
 
@@ -92,7 +67,7 @@
     isSubmitting = true;
 
     try {
-      await authStore.verifyResetCode(fullCode);
+      await authStore.verifyResetCode(trimmedCode);
       uiStore.addToast({
         title: 'Код подтвержден',
         message: 'Теперь установите новый пароль.',
@@ -107,22 +82,22 @@
   }
 </script>
 
-<div class="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+<div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-md">
     <div class="absolute -top-10 -right-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-10 -left-10 w-72 h-72 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-10 -left-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="relative bg-[#111422]/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/30">
+    <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
 
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
           <ShieldCheck class="w-7 h-7" />
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-white font-['Outfit'] tracking-wide">
+        <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
           Подтверждение кода
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Введите 6-значный код, отправленный на ваш email или логин
+          Введите код подтверждения из письма
         </p>
       </div>
 
@@ -133,19 +108,23 @@
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-6">
-        <div class="flex justify-center gap-2 sm:gap-3">
-          {#each codeDigits as digit, i}
+        <div>
+          <label for="code-input" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+            Код подтверждения
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+              <Key class="w-4 h-4" />
+            </div>
             <input
-              id="code-input-{i}"
+              id="code-input"
               type="text"
-              inputmode="numeric"
-              maxlength="1"
-              value={digit}
-              oninput={(e) => handleInput(i, e)}
-              onkeydown={(e) => handleKeyDown(i, e)}
-              class="w-11 h-13 sm:w-12 sm:h-14 bg-slate-900/90 border border-slate-800 rounded-xl text-center text-xl font-mono font-extrabold text-cyan-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30 transition-all shadow-inner"
+              bind:value={resetCode}
+              placeholder="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              required
+              class="w-full pl-10 pr-4 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm font-mono text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
-          {/each}
+          </div>
         </div>
 
         <div class="text-center">
@@ -169,19 +148,19 @@
         <button
           type="submit"
           disabled={isSubmitting}
-          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           {#if isSubmitting}
-            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             <span>Проверка...</span>
           {:else}
-            <CheckCircle class="w-4 h-4" />
+            <CheckCircle class="w-4 h-4 text-black" />
             <span>Подтвердить код</span>
           {/if}
         </button>
       </form>
 
-      <div class="mt-8 pt-6 border-t border-slate-800/80 text-center">
+      <div class="mt-8 pt-6 border-t border-cyan-950/80 text-center">
         <button
           onclick={() => uiStore.setTab('login')}
           class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"

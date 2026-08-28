@@ -23,7 +23,7 @@
     }
 
     if (newPassword.length < 6) {
-      errorMessage = 'Пароль должен быть длиннее 6 символов';
+      errorMessage = 'Пароль должен быть не менее 6 символов';
       return;
     }
 
@@ -46,19 +46,19 @@
   }
 </script>
 
-<div class="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+<div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-md">
     <!-- Glow Backdrops -->
     <div class="absolute -top-10 -left-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="relative bg-[#111422]/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/30">
+    <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-4 shadow-lg">
           <Lock class="w-7 h-7" />
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-white font-['Outfit'] tracking-wide">
+        <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
           Создание нового пароля
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
@@ -88,7 +88,7 @@
               bind:value={newPassword}
               placeholder="••••••••••••"
               required
-              class="w-full pl-10 pr-11 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-11 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
             <button
               type="button"
@@ -119,7 +119,7 @@
               bind:value={confirmPassword}
               placeholder="••••••••••••"
               required
-              class="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              class="w-full pl-10 pr-4 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
         </div>
@@ -128,15 +128,15 @@
         <button
           type="submit"
           disabled={isSubmitting}
-          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           {#if isSubmitting}
-            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
             <span>Сохранение...</span>
           {:else}
-            <CheckCircle2 class="w-4 h-4" />
+            <CheckCircle2 class="w-4 h-4 text-black" />
             <span>Сохранить пароль</span>
-            <ArrowRight class="w-4 h-4 ml-1" />
+            <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
       </form>

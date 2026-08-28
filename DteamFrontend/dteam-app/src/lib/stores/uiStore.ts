@@ -2,10 +2,13 @@ import { writable } from 'svelte/store';
 
 export type MainTab = 
   | 'store' 
-  | 'library' 
-  | 'community' 
-  | 'profile' 
-  | 'developer'
+  | 'library'
+  | 'community'
+  | 'catalog' 
+  | 'game'
+  | 'wishlist' 
+  | 'cart'
+  | 'admin'
   | 'login'
   | 'register'
   | 'forgot-password'
@@ -22,33 +25,33 @@ export interface ToastMessage {
 function createUiStore() {
   const { subscribe, update, set } = writable<{
     activeTab: MainTab;
-    isWalletModalOpen: boolean;
-    isAddFriendModalOpen: boolean;
-    isPublishGameModalOpen: boolean;
-    isFriendsSidebarOpen: boolean;
     isLoginModalOpen: boolean;
     isConfirmCodeModalOpen: boolean;
+    isDepositModalOpen: boolean;
+    isFriendsSidebarOpen: boolean;
+    isWalletModalOpen: boolean;
+    isPublishGameModalOpen: boolean;
     toasts: ToastMessage[];
   }>({
     activeTab: 'store',
-    isWalletModalOpen: false,
-    isAddFriendModalOpen: false,
-    isPublishGameModalOpen: false,
-    isFriendsSidebarOpen: false,
     isLoginModalOpen: false,
     isConfirmCodeModalOpen: false,
+    isDepositModalOpen: false,
+    isFriendsSidebarOpen: false,
+    isWalletModalOpen: false,
+    isPublishGameModalOpen: false,
     toasts: [],
   });
 
   return {
     subscribe,
     setTab: (tab: MainTab) => update((s) => ({ ...s, activeTab: tab })),
-    setWalletModal: (isOpen: boolean) => update((s) => ({ ...s, isWalletModalOpen: isOpen })),
-    setAddFriendModal: (isOpen: boolean) => update((s) => ({ ...s, isAddFriendModalOpen: isOpen })),
-    setPublishGameModal: (isOpen: boolean) => update((s) => ({ ...s, isPublishGameModalOpen: isOpen })),
     setLoginModal: (isOpen: boolean) => update((s) => ({ ...s, isLoginModalOpen: isOpen })),
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
+    setDepositModal: (isOpen: boolean) => update((s) => ({ ...s, isDepositModalOpen: isOpen })),
     toggleFriendsSidebar: () => update((s) => ({ ...s, isFriendsSidebarOpen: !s.isFriendsSidebarOpen })),
+    setWalletModal: (isOpen: boolean) => update((s) => ({ ...s, isWalletModalOpen: isOpen })),
+    setPublishGameModal: (isOpen: boolean) => update((s) => ({ ...s, isPublishGameModalOpen: isOpen })),
     addToast: (toast: Omit<ToastMessage, 'id'>) => {
       const id = Math.random().toString(36).substring(2, 9);
       update((s) => ({

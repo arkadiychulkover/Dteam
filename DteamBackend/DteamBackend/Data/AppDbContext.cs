@@ -15,6 +15,9 @@ namespace DteamBackend.Data
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<UserGame> UserGames => Set<UserGame>();
         public DbSet<UserFriend> UserFriends => Set<UserFriend>();
+        public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
+        public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
+        public DbSet<Tranxaction> Tranxactions => Set<Tranxaction>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,21 +41,6 @@ namespace DteamBackend.Data
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<UserFriend>(entity =>
-            {
-                entity.HasKey(f => new { f.UserId, f.FriendId });
-
-                entity.HasOne(f => f.User)
-                    .WithMany(u => u.Friendships)
-                    .HasForeignKey(f => f.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(f => f.Friend)
-                    .WithMany()
-                    .HasForeignKey(f => f.FriendId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
             modelBuilder.Entity<UserGame>(entity =>
             {
                 entity.HasKey(ug => new { ug.UserId, ug.GameId });
@@ -65,6 +53,51 @@ namespace DteamBackend.Data
                 entity.HasOne(ug => ug.Game)
                     .WithMany(g => g.Owners)
                     .HasForeignKey(ug => ug.GameId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserFriend>(entity =>
+            {
+                entity.HasKey(uf => new { uf.UserId, uf.FriendId });
+
+                entity.HasOne(uf => uf.User)
+                    .WithMany(u => u.Friendships)
+                    .HasForeignKey(uf => uf.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(uf => uf.Friend)
+                    .WithMany()
+                    .HasForeignKey(uf => uf.FriendId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserWishlist>(entity =>
+            {
+                entity.HasKey(w => new { w.UserId, w.GameId });
+
+                entity.HasOne(w => w.User)
+                    .WithMany(u => u.Wishlist)
+                    .HasForeignKey(w => w.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(w => w.Game)
+                    .WithMany(g => g.WishlistedBy)
+                    .HasForeignKey(w => w.GameId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserCartItem>(entity =>
+            {
+                entity.HasKey(c => new { c.UserId, c.GameId });
+
+                entity.HasOne(c => c.User)
+                    .WithMany(u => u.CartItems)
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Game)
+                    .WithMany(g => g.InCartsOf)
+                    .HasForeignKey(c => c.GameId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -99,6 +132,19 @@ namespace DteamBackend.Data
                     .WithMany(g => g.Reviews)
                     .HasForeignKey(r => r.GameId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Tranxaction>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+
+                entity.HasIndex(t => t.TxhHash)
+                    .IsUnique();
+
+                entity.HasOne(t => t.User)
+                    .WithMany()
+                    .HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

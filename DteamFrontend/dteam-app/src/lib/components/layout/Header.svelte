@@ -1,210 +1,270 @@
 <script lang="ts">
-  import { authStore, currentUser } from '../../stores/authStore';
   import { uiStore, type MainTab } from '../../stores/uiStore';
-  import { friendsStore } from '../../stores/friendsStore';
-  import { formatPrice, formatAddress } from '../../utils/formatters';
-  import { UserStatus } from '../../types';
+  import { wishlistStore } from '../../stores/wishlistStore';
+  import { cartStore } from '../../stores/cartStore';
+  import { gamesStore } from '../../stores/gamesStore';
+  import { authStore, currentUser, isUserAdmin } from '../../stores/authStore';
   import { 
     Gamepad2, 
-    Layers, 
-    Users, 
-    User, 
-    Wallet, 
-    PlusCircle, 
-    Bell, 
-    Sparkles, 
-    ChevronDown,
+    Shield, 
+    Compass, 
+    Heart, 
+    ShoppingCart, 
     LogIn,
     UserPlus,
-    LogOut
+    LogOut,
+    User,
+    ChevronDown,
+    Search,
+    Newspaper,
+    Coins,
+    Plus,
+    Wallet,
+    Library,
+    Users
   } from 'lucide-svelte';
+  import { formatTon, nanoTonToTon } from '../../utils/formatters';
 
-  let isStatusDropdownOpen = $state(false);
+  let isUserDropdownOpen = $state(false);
+  let headerSearchQuery = $state('');
 
-  const tabs: { id: MainTab; label: string; icon: any }[] = [
-    { id: 'store', label: 'STORE', icon: Gamepad2 },
-    { id: 'library', label: 'LIBRARY', icon: Layers },
-    { id: 'community', label: 'COMMUNITY', icon: Users },
-    { id: 'profile', label: 'PROFILE', icon: User },
+  const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
+    { id: 'store', label: 'Крамниця', icon: Gamepad2 },
+    { id: 'library', label: 'Бібліотека', icon: Library },
+    { id: 'community', label: 'Спільнота', icon: Users },
+    { id: 'catalog', label: 'Каталог', icon: Compass },
+    { id: 'admin', label: 'Адмінка', icon: Shield, adminOnly: true },
   ];
 
-  const onlineFriendsCount = $derived(
-    $friendsStore.friends.filter(f => f.friend.status !== UserStatus.Offline).length
+  const visibleTabs = $derived(
+    baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin)
   );
 
-  function handleStatusChange(status: UserStatus) {
-    authStore.setStatus(status);
-    isStatusDropdownOpen = false;
+  function handleLogout() {
+    authStore.logout();
+    isUserDropdownOpen = false;
+    uiStore.setTab('store');
+  }
+
+  function handleSearchSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    if (headerSearchQuery.trim()) {
+      gamesStore.setFilters({ search: headerSearchQuery.trim() });
+      uiStore.setTab('catalog');
+    }
+  }
+
+  function handleSearchInput(e: Event) {
+    const query = (e.target as HTMLInputElement).value;
+    headerSearchQuery = query;
+    if (query.trim()) {
+      gamesStore.setFilters({ search: query.trim() });
+      if ($uiStore.activeTab !== 'catalog') {
+        uiStore.setTab('catalog');
+      }
+    }
+  }
+
+  function handleLogoClick() {
+    gamesStore.resetFilters();
+    headerSearchQuery = '';
+    uiStore.setTab('store');
   }
 </script>
 
-<header class="sticky top-0 z-40 bg-[#0f121d]/95 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3">
+<header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-    <!-- Left: Logo & Brand -->
-    <div class="flex items-center gap-8">
+    <!-- Left: Logo & Nav -->
+    <div class="flex items-center gap-6">
       <button 
-        onclick={() => uiStore.setTab('store')}
-        class="flex items-center gap-2.5 group cursor-pointer"
+        onclick={handleLogoClick}
+        class="flex items-center gap-2.5 group cursor-pointer text-left"
       >
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-all">
-          <Gamepad2 class="w-6 h-6 text-white" />
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform">
+          <Gamepad2 class="w-5 h-5" />
         </div>
-        <div class="text-left">
-          <span class="font-extrabold text-xl tracking-wider text-white font-['Outfit'] flex items-center gap-1">
-            D<span class="text-cyan-400">TEAM</span>
-            <span class="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-              TON
-            </span>
+        <div>
+          <span class="font-black text-xl tracking-tighter text-white font-display flex items-center gap-1 leading-none">
+            DTEAM<span class="text-cyan-400">.</span>
           </span>
-          <span class="block text-[10px] text-slate-400 tracking-wider">WEB3 GAMING</span>
+          <span class="block text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">GAMING HUB</span>
         </div>
       </button>
 
-      <!-- Nav Tabs -->
-      <nav class="hidden md:flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
-        {#each tabs as tab}
+      <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner">
+        {#each visibleTabs as tab}
           {@const Icon = tab.icon}
           <button
             onclick={() => uiStore.setTab(tab.id)}
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all cursor-pointer
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
               {$uiStore.activeTab === tab.id 
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20' 
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'}"
+                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
           >
-            <Icon class="w-4 h-4" />
-            {tab.label}
+            <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
+            <span>{tab.label}</span>
+            {#if tab.id === 'admin'}
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
+            {/if}
           </button>
         {/each}
       </nav>
     </div>
 
-    <!-- Right: Wallet, Actions, User Profile -->
-    <div class="flex items-center gap-3">
-      <!-- Publish Game Button -->
+    <!-- Center: Search Input (Matching Reference Image 3) -->
+    <form onsubmit={handleSearchSubmit} class="relative flex-1 max-w-md mx-1 sm:mx-2">
+      <input
+        type="text"
+        placeholder="Пошук у Крамниці..."
+        bind:value={headerSearchQuery}
+        oninput={handleSearchInput}
+        class="w-full pl-4 pr-10 py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+      />
       <button
-        onclick={() => uiStore.setPublishGameModal(true)}
-        class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-cyan-500/30 transition-all cursor-pointer"
+        type="submit"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
+        title="Пошук"
       >
-        <PlusCircle class="w-4 h-4 text-cyan-400" />
-        <span>Publish Game</span>
+        <Search class="w-4 h-4" />
       </button>
+    </form>
 
-      <!-- Wallet Balance Pill -->
+    <!-- Right: Wishlist, Cart & Auth -->
+    <div class="flex items-center gap-2 shrink-0">
       <button
-        onclick={() => uiStore.setWalletModal(true)}
-        class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/80 to-blue-950/80 border border-cyan-500/40 hover:border-cyan-400/80 text-white transition-all cursor-pointer group shadow-inner"
-        title="Open TON Wallet"
+        onclick={() => uiStore.setTab('wishlist')}
+        class="relative p-2 rounded-xl border transition-all cursor-pointer group
+          {$uiStore.activeTab === 'wishlist'
+            ? 'bg-cyan-500/20 border-cyan-400 text-rose-400 shadow-md shadow-cyan-500/20'
+            : 'bg-[#061820] hover:bg-cyan-950/60 border-cyan-500/20 hover:border-cyan-400 text-slate-300 hover:text-rose-400'}"
+        title="Список бажань"
       >
-        <div class="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
-          <Wallet class="w-3.5 h-3.5" />
-        </div>
-        <div class="text-right">
-          <span class="text-xs font-black text-cyan-300 font-mono tracking-tight">
-            {formatPrice($currentUser?.balanceInNanoTons ?? 0)}
-          </span>
-        </div>
-      </button>
-
-      <!-- Friends Panel Toggle -->
-      <button
-        onclick={() => uiStore.toggleFriendsSidebar()}
-        class="relative p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
-        title="Friends List"
-      >
-        <Users class="w-5 h-5" />
-        {#if onlineFriendsCount > 0}
-          <span class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-black text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-[#0f121d]">
-            {onlineFriendsCount}
+        <Heart class="w-4 h-4 {$wishlistStore.items.length > 0 || $uiStore.activeTab === 'wishlist' ? 'fill-rose-500 text-rose-500' : 'group-hover:scale-110'}" />
+        {#if $wishlistStore.items.length > 0}
+          <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-md shadow-rose-600/40 animate-in zoom-in">
+            {$wishlistStore.items.length}
           </span>
         {/if}
       </button>
 
-      <!-- User Profile & Status -->
+      <button
+        onclick={() => uiStore.setTab('cart')}
+        class="relative p-2 rounded-xl border transition-all cursor-pointer group
+          {$uiStore.activeTab === 'cart'
+            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20'
+            : 'bg-[#061820] hover:bg-cyan-950/60 border-cyan-500/20 hover:border-cyan-400 text-slate-300 hover:text-cyan-300'}"
+        title="Кошик"
+      >
+        <ShoppingCart class="w-4 h-4 {$cartStore.items.length > 0 || $uiStore.activeTab === 'cart' ? 'text-cyan-400' : 'group-hover:scale-110'}" />
+        {#if $cartStore.items.length > 0}
+          <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-500 text-black text-[10px] font-black flex items-center justify-center shadow-md shadow-cyan-500/40 animate-in zoom-in">
+            {$cartStore.items.length}
+          </span>
+        {/if}
+      </button>
+
+      <!-- Auth Section -->
       {#if $currentUser}
+        <!-- TON Balance Top-Up Pill -->
+        <button
+          onclick={() => uiStore.setDepositModal(true)}
+          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
+          title="Поповнити баланс (The Open Network)"
+        >
+          <span class="text-cyan-400 font-bold text-xs group-hover:scale-110 transition-transform">💎</span>
+          <span class="font-bold text-white font-mono text-xs tracking-tight">
+            {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+          </span>
+          <span class="w-4 h-4 rounded-md bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-400 group-hover:text-black flex items-center justify-center text-[11px] font-black transition-all ml-0.5 shadow-sm">
+            +
+          </span>
+        </button>
+
         <div class="relative">
           <button
-            onclick={() => isStatusDropdownOpen = !isStatusDropdownOpen}
-            class="flex items-center gap-2 p-1 pl-2 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800 transition-all cursor-pointer"
+            onclick={() => isUserDropdownOpen = !isUserDropdownOpen}
+            class="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer"
           >
-            <div class="relative">
-              <img
-                src={$currentUser.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80'}
-                alt={$currentUser.username}
-                class="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-700"
-              />
-              <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f121d]
-                {$currentUser.status === UserStatus.Online ? 'bg-emerald-500' : ''}
-                {$currentUser.status === UserStatus.InGame ? 'bg-cyan-400 animate-pulse' : ''}
-                {$currentUser.status === UserStatus.Away ? 'bg-amber-500' : ''}
-                {$currentUser.status === UserStatus.Offline ? 'bg-slate-500' : ''}">
-              </span>
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs">
+              {#if $currentUser.avatarUrl}
+                <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
+              {:else}
+                {$currentUser.username.charAt(0).toUpperCase()}
+              {/if}
             </div>
-            <span class="hidden sm:block text-xs font-semibold text-slate-200">
+            <span class="hidden sm:block text-xs font-bold text-slate-200">
               {$currentUser.username}
             </span>
             <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
           </button>
 
-          {#if isStatusDropdownOpen}
-            <div class="absolute right-0 mt-2 w-48 bg-[#141724] border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50 animate-in fade-in slide-in-from-top-2">
-              <div class="px-3 py-2 border-b border-slate-800 text-[11px] text-slate-400">
-                Set Status:
+          {#if isUserDropdownOpen}
+            <div class="absolute right-0 mt-2 w-56 bg-[#09151e] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+              <div class="px-3 py-2 border-b border-cyan-950/80 text-[11px] text-slate-400">
+                <p class="font-bold text-white truncate">{$currentUser.username}</p>
+                <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
+                  <span class="text-slate-400 text-[10px]">Баланс:</span>
+                  <span class="text-cyan-300 font-bold font-mono text-[11px]">
+                    💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                  </span>
+                </div>
               </div>
+
               <button
-                onclick={() => handleStatusChange(UserStatus.Online)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
+                onclick={() => { uiStore.setTab('library'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
               >
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Online
+                <Library class="w-3.5 h-3.5 text-cyan-400" /> Бібліотека
               </button>
+
               <button
-                onclick={() => handleStatusChange(UserStatus.InGame)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
+                onclick={() => { uiStore.setTab('community'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold"
               >
-                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> In-Game
+                <Users class="w-3.5 h-3.5 text-cyan-400" /> Спільнота
               </button>
+
               <button
-                onclick={() => handleStatusChange(UserStatus.Away)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
+                onclick={() => { uiStore.setDepositModal(true); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 cursor-pointer font-bold mt-1"
               >
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Away
+                <Coins class="w-3.5 h-3.5 text-cyan-400" /> Поповнити баланс (TON)
               </button>
+
+              {#if $currentUser.isAdmin}
+                <button
+                  onclick={() => { uiStore.setTab('admin'); isUserDropdownOpen = false; }}
+                  class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer font-bold mt-1"
+                >
+                  <Shield class="w-3.5 h-3.5" /> Панель Адміністратора
+                </button>
+              {/if}
+
               <button
-                onclick={() => handleStatusChange(UserStatus.Offline)}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-200 cursor-pointer"
+                onclick={handleLogout}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-red-500/10 text-red-400 cursor-pointer font-bold mt-1"
               >
-                <span class="w-2 h-2 rounded-full bg-slate-500"></span> Offline (Invisible)
-              </button>
-              <div class="border-t border-slate-800 my-1"></div>
-              <button
-                onclick={() => { uiStore.setTab('profile'); isStatusDropdownOpen = false; }}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-slate-800 text-slate-300 cursor-pointer"
-              >
-                <User class="w-3.5 h-3.5" /> View Profile
-              </button>
-              <button
-                onclick={() => { authStore.logout(); isStatusDropdownOpen = false; }}
-                class="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-2 hover:bg-red-500/10 text-red-400 cursor-pointer"
-              >
-                <LogOut class="w-3.5 h-3.5" /> Выйти
+                <LogOut class="w-3.5 h-3.5" /> Вийти з акаунту
               </button>
             </div>
           {/if}
         </div>
       {:else}
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
           <button
             onclick={() => uiStore.setLoginModal(true)}
-            class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700/80 transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 text-xs font-bold text-slate-200 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <LogIn class="w-3.5 h-3.5 text-cyan-400" />
-            <span>Войти</span>
+            <span class="hidden sm:inline">Увійти</span>
           </button>
           <button
             onclick={() => uiStore.setTab('register')}
-            class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-xs font-black text-black shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            <UserPlus class="w-3.5 h-3.5" />
-            <span>Регистрация</span>
+            <UserPlus class="w-3.5 h-3.5 text-black" />
+            <span class="hidden sm:inline">Реєстрація</span>
           </button>
         </div>
       {/if}

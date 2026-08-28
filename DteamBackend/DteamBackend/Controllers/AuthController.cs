@@ -1,11 +1,13 @@
+using System.Security.Claims;
 using DteamBackend.Data;
-using DteamBackend.DTOs.Auth;
 using DteamBackend.Models;
+using DteamBackend.Models.DTO;
+using DteamBackend.Models.DTO.Auth;
 using DteamBackend.Models.Enums;
 using DteamBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace DteamBackend.Controllers
 {
@@ -131,6 +133,7 @@ namespace DteamBackend.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("me")]
         public async Task<ActionResult<UserDto>> GetMe()
         {
@@ -167,7 +170,7 @@ namespace DteamBackend.Controllers
                 return Ok(new { message = "If the email exists, instructions have been sent" });
             }
 
-            var resetCode = new Random().Next(100000, 999999).ToString();
+            var resetCode = Guid.NewGuid().ToString();
             user.PasswordResetToken = resetCode;
             user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(15);
             await _db.SaveChangesAsync();
@@ -183,8 +186,7 @@ namespace DteamBackend.Controllers
 
             return Ok(new
             {
-                message = "Код подтверждения отправлен на ваш Email",
-                debugCode = resetCode 
+                message = "Код подтверждения отправлен на ваш Email"
             });
         }
 
@@ -199,7 +201,7 @@ namespace DteamBackend.Controllers
             var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
-            if (user == null || user.PasswordResetToken != dto.Code || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+            if (user == null || user.PasswordResetToken != dto.Code.Trim() || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
             {
                 return BadRequest(new { message = "Incorrect code" });
             }
@@ -241,10 +243,13 @@ namespace DteamBackend.Controllers
             return Ok(new { message = "Password successfully changed" });
         }
 
+        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                           ?? User.FindFirst("sub")?.Value;
+
             if (Guid.TryParse(userIdClaim, out var userId))
             {
                 var user = await _db.Users.FindAsync(userId);

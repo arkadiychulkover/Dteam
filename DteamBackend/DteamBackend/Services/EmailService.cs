@@ -6,12 +6,12 @@ namespace DteamBackend.Services
 {
     public class EmailSettings
     {
-        public string Host { get; set; } = "smtp.gmail.com";
+        public string Host { get; set; } = string.Empty;
         public int Port { get; set; } = 587;
-        public string Username { get; set; } = "noreply.dteam.support@gmail.com";
-        public string Password { get; set; } = "xgox dawa rbaj vska";
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
         public bool EnableSsl { get; set; } = true;
-        public string FromEmail { get; set; } = "noreply.dteam.support@gmail.com";
+        public string FromEmail { get; set; } = string.Empty;
         public string FromName { get; set; } = "DTEAM Gaming";
     }
 
@@ -75,7 +75,7 @@ namespace DteamBackend.Services
                     <p>Здравствуйте!</p>
                     <p>Вы запросили сброс пароля для вашей учетной записи DTEAM.</p>
                     <p>Ваш одноразовый код подтверждения:</p>
-                    <div style=""background-color: #1e293b; color: #38bdf8; font-size: 28px; font-weight: bold; letter-spacing: 4px; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0;"">
+                    <div style=""background-color: #1e293b; color: #38bdf8; font-size: 20px; font-weight: bold; letter-spacing: 1px; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; word-break: break-all;"">
                         {resetCode}
                     </div>
                     <p style=""font-size: 13px; color: #94a3b8;"">Код действителен в течение 15 минут. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>

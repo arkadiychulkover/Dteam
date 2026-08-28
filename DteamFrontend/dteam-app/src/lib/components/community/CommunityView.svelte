@@ -1,217 +1,592 @@
 <script lang="ts">
-  import {
-    Heart,
-    MessageSquare,
-    Share2,
-    MoreHorizontal,
-    Play,
-    Search,
-    ChevronLeft,
-    Sparkles,
-    Image,
-    Video,
-    MessageCircle,
-    BookOpen,
-    Newspaper
-  } from 'lucide-svelte';
+  import { onMount } from 'svelte';
+  import { communityService, type CommunityPost } from '../../services/communityService';
+  import { uiStore } from '../../stores/uiStore';
+  import { ThumbsUp, MessageSquare, Loader2 } from 'lucide-svelte';
 
-  let activeTab = $state<'subscriptions' | 'library' | 'recommended'>('recommended');
-  let activeCategory = $state<string>('Усі розділи');
-  let sortBy = $state<string>('Популярні');
-  let searchQuery = $state('');
+  interface Props {
+    gameId?: string | null;
+    gameName?: string;
+    subscribersCount?: number;
+    onlineCount?: number;
+  }
 
-  const sampleCommunityPosts = [
-    {
-      id: 'cp-1',
-      authorName: 'NikaNii',
-      authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      timestamp: '25.02.2024',
-      title: 'Епічний світанок у відкритому космосі!',
-      body: 'Сьогодні досліджували нову зоряну систему з командою у No Man\'s Sky. Удалося відшукати рідкісну планету з неоновою атмосферою.',
-      mediaType: 'image',
-      mediaUrl: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=1000&auto=format&fit=crop&q=80',
-      likes: '2.5k',
-      comments: '2.5k',
-    },
-    {
-      id: 'cp-2',
-      authorName: 'CyberViper',
-      authorAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
-      timestamp: '24.02.2024',
-      title: 'Спідран турнір — Фінальний забіг',
-      body: 'Подивіться моменти з нашого турніру по Sekiro. Таймінги паррування просто божевільні!',
-      mediaType: 'video',
-      mediaUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=80',
-      likes: '2.5k',
-      comments: '2.5k',
-    },
-    {
-      id: 'cp-3',
-      authorName: 'AstraWalker',
-      authorAvatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80',
-      timestamp: '23.02.2024',
-      title: 'Гайд по оптимізації середньовічної фортеці',
-      body: 'Детальний розбір того, як правильно розподіляти видобуток ресурсів у Lords of the Manor.',
-      mediaType: 'image',
-      mediaUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1000&auto=format&fit=crop&q=80',
-      likes: '2.5k',
-      comments: '2.5k',
-    },
-  ];
+  let {
+    gameId = null,
+    gameName = "Якась гра, яка дуже всім сподобається",
+    subscribersCount = 3421,
+    onlineCount = 121
+  }: Props = $props();
 
-  const categories = [
-    { name: 'Усі розділи', icon: Sparkles },
-    { name: 'Форум', icon: MessageCircle },
-    { name: 'Скріншоти', icon: Image },
-    { name: 'Відео', icon: Video },
-    { name: 'Гайди', icon: BookOpen },
-    { name: 'Новини', icon: Newspaper },
-  ];
+  // Види постів: 'discussion' | 'screenshot' | 'video' | 'guide'
+  type TabType = 'discussion' | 'screenshot' | 'video' | 'guide';
+  let activeTab = $state<TabType>('discussion');
+
+  // Поля форми
+  let title = $state('');
+  let description = $state('');
+  let content = $state('');
+  let caption = $state('');
+  let mediaUrl = $state('');
+  let isSubmitting = $state(false);
+
+  // Скидання полей при перемиканні вкладок
+  function setTab(tab: TabType) {
+    activeTab = tab;
+    title = '';
+    description = '';
+    content = '';
+    caption = '';
+    mediaUrl = '';
+  }
+
+  // ==== Стрічка публікацій спільноти ====
+  // Мапа розділів для сортування: Дискусія, Скріншот, Відео, Гайд
+  const feedCategoryLabels: Record<'all' | 'forum' | 'screenshots' | 'videos' | 'guides', string> = {
+    all: 'Усі',
+    forum: 'Дискусія',
+    screenshots: 'Скріншот',
+    videos: 'Відео',
+    guides: 'Гайд',
+  };
+  const feedCategories = Object.keys(feedCategoryLabels) as Array<keyof typeof feedCategoryLabels>;
+
+  let posts = $state<CommunityPost[]>([]);
+  let isLoadingPosts = $state(false);
+  let activeFeedCategory = $state<keyof typeof feedCategoryLabels>('all');
+
+  async function loadPosts() {
+    isLoadingPosts = true;
+    try {
+      const res = await communityService.getPosts(gameId, activeFeedCategory);
+      posts = res.posts;
+    } catch (e) {
+      console.warn('[CommunityView] Не вдалося завантажити пости спільноти:', e);
+    } finally {
+      isLoadingPosts = false;
+    }
+  }
+
+  function setFeedCategory(category: keyof typeof feedCategoryLabels) {
+    activeFeedCategory = category;
+    loadPosts();
+  }
+
+  async function handleToggleLike(post: CommunityPost) {
+    // Оптимістичне оновлення
+    post.stats.isLiked = !post.stats.isLiked;
+    post.stats.likesCount += post.stats.isLiked ? 1 : -1;
+    try {
+      await communityService.toggleLikePost(post.id);
+    } catch (e) {
+      // Відкат при помилці
+      post.stats.isLiked = !post.stats.isLiked;
+      post.stats.likesCount += post.stats.isLiked ? 1 : -1;
+    }
+  }
+
+  onMount(() => {
+    loadPosts();
+  });
+
+  // Емуляція вставки форматування
+  function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
+    const formats = {
+      bold: { start: '**', end: '**' },
+      italic: { start: '*', end: '*' },
+      underline: { start: '<u>', end: '</u>' },
+      image: { start: '![опис](', end: ')' }
+    };
+    const chunk = formats[format];
+    content += `${chunk.start}текст${chunk.end}`;
+  }
+
+  // Відправка форми на бекенд
+  async function handleSubmit(e?: Event) {
+    if (e) e.preventDefault();
+
+    // Валідація
+    if ((activeTab === 'discussion' || activeTab === 'guide') && !title.trim()) {
+      uiStore.addToast({
+        title: 'Помилка валідації',
+        message: 'Заголовок обов’язковий для заповнення.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    isSubmitting = true;
+
+    // Мапимо UI-таби в категорії для бекенду
+    const categoryMap: Record<TabType, string> = {
+      discussion: 'forum',
+      screenshot: 'screenshots',
+      video: 'videos',
+      guide: 'guides'
+    };
+
+    const finalTitle = activeTab === 'screenshot' || activeTab === 'video' 
+      ? (caption || `${activeTab.toUpperCase()} post`) 
+      : title;
+
+    const finalContent = activeTab === 'guide' 
+      ? `${description}\n\n${content}` 
+      : (content || caption || 'Без опису');
+
+    const postPayload = {
+      category: categoryMap[activeTab],
+      title: finalTitle,
+      content: finalContent,
+      mediaType: (activeTab === 'screenshot' || activeTab === 'guide') ? 'image' : (activeTab === 'video' ? 'video' : 'none'),
+      mediaUrl: mediaUrl || (activeTab === 'screenshot' ? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800' : '')
+    };
+
+    try {
+      await communityService.createPost(gameId, postPayload);
+      uiStore.addToast({
+        title: 'Успіх! 🎉',
+        message: 'Пост успішно опубліковано!',
+        type: 'success'
+      });
+      
+      // Повернення до дефолтного стану
+      setTab('discussion');
+      // Оновлюємо стрічку, щоб щойно опублікований пост одразу з'явився
+      loadPosts();
+    } catch (error: any) {
+      console.error('Failed to create post:', error);
+      uiStore.addToast({
+        title: 'Помилка при публікації',
+        message: error?.message || 'Не вдалося створити пост.',
+        type: 'error'
+      });
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  function handleCancel() {
+    setTab('discussion');
+  }
+
+  // Симуляція завантаження файлу
+  function simulateUpload(type: 'image' | 'video') {
+    if (type === 'image') {
+      mediaUrl = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800';
+      uiStore.addToast({
+        title: 'Завантаження',
+        message: 'Зображення завантажено успішно!',
+        type: 'success'
+      });
+    } else {
+      mediaUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+      uiStore.addToast({
+        title: 'Завантаження',
+        message: 'Відео завантажено успішно!',
+        type: 'success'
+      });
+    }
+  }
 </script>
 
-<div class="min-h-[90vh] bg-[#070C12] text-[#F1F5F9] font-sans p-6 space-y-6 max-w-7xl mx-auto">
-  
-  <!-- 1. Top Navigation Tabs -->
-  <div class="bg-[#0A1118] border border-white/5 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center gap-4 text-xs font-bold">
-      <!-- Back Arrow -->
-      <button class="p-1.5 rounded-lg bg-[#101922] hover:bg-[#162330] text-[#94A3B8] hover:text-white transition-colors cursor-pointer border border-white/5">
-        <ChevronLeft class="w-4 h-4" />
-      </button>
+<div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
+  <!-- Заголовок сторінки -->
+  <h1 class="text-3xl font-black mb-6 tracking-wide text-white font-display">Створення публікації</h1>
 
-      <button
-        onclick={() => activeTab = 'subscriptions'}
-        class="px-4 py-2 rounded-lg transition-all cursor-pointer {activeTab === 'subscriptions' ? 'bg-[#101922] text-cyan-400 border border-cyan-400/40 font-bold' : 'text-[#94A3B8] hover:text-white'}"
-      >
-        Підписки
-      </button>
-
-      <button
-        onclick={() => activeTab = 'library'}
-        class="px-4 py-2 rounded-lg transition-all cursor-pointer {activeTab === 'library' ? 'bg-[#101922] text-cyan-400 border border-cyan-400/40 font-bold' : 'text-[#94A3B8] hover:text-white'}"
-      >
-        З Бібліотеки
-      </button>
-
-      <button
-        onclick={() => activeTab = 'recommended'}
-        class="px-4 py-2 rounded-lg transition-all cursor-pointer {activeTab === 'recommended' ? 'bg-[#101922] text-cyan-400 border border-cyan-400/40 font-bold' : 'text-[#94A3B8] hover:text-white'}"
-      >
-        Рекомендоване
-      </button>
-    </div>
-  </div>
-
-  <!-- 2. Two-Column Layout (75% Left Feed / 25% Right Sidebar) -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
     
-    <!-- Left Timeline Feed (75%) -->
-    <div class="lg:col-span-8 space-y-6">
-      {#each sampleCommunityPosts as post}
-        <div class="bg-[#101922] border border-white/[0.06] rounded-xl p-6 space-y-4 shadow-xl hover:border-cyan-400/30 transition-all">
+    <!-- Ліва частина: Форма -->
+    <div class="lg:col-span-3 bg-[#03232c] border border-cyan-900/60 rounded-2xl p-6 shadow-2xl flex flex-col justify-between min-h-[600px]">
+      
+      <div>
+        <!-- Навігація типів поста (Таби) -->
+        <div class="grid grid-cols-4 gap-2 mb-6">
+          <button
+            type="button"
+            onclick={() => setTab('discussion')}
+            class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'discussion' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
+          >
+            Обговорення
+          </button>
           
-          <!-- User Header -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <img src={post.authorAvatar} alt={post.authorName} class="w-8 h-8 rounded-full object-cover ring-1 ring-white/10" />
-              <div>
-                <span class="block text-xs font-bold text-[#F1F5F9]">{post.authorName}</span>
-                <span class="block text-[10px] text-[#64748B]">{post.timestamp}</span>
+          <button
+            type="button"
+            onclick={() => setTab('screenshot')}
+            class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'screenshot' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
+          >
+            Скріншот
+          </button>
+          
+          <button
+            type="button"
+            onclick={() => setTab('video')}
+            class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'video' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
+          >
+            Відео
+          </button>
+          
+          <button
+            type="button"
+            onclick={() => setTab('guide')}
+            class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'guide' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
+          >
+            Гайд
+          </button>
+        </div>
+
+        <!-- 1. ОБГОВОРЕННЯ -->
+        {#if activeTab === 'discussion'}
+          <div class="space-y-5">
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1.5 font-bold">
+                <label for="title">Заголовок</label>
+                <span>{title.length}/160</span>
+              </div>
+              <input
+                id="title"
+                type="text"
+                maxlength="160"
+                bind:value={title}
+                placeholder="Тема вашого обговорення..."
+                class="w-full bg-[#02171d] border border-cyan-900/60 rounded-xl px-5 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
+              <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
+                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </button>
+                </div>
+                <textarea
+                  id="content"
+                  rows="5"
+                  bind:value={content}
+                  placeholder="Що ви хочете обговорити?"
+                  class="w-full bg-transparent px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none"
+                ></textarea>
               </div>
             </div>
-            <button class="text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
-              <MoreHorizontal class="w-4 h-4" />
+
+            <!-- Зона перетягування файлу -->
+            <button
+              type="button"
+              onclick={() => simulateUpload('image')}
+              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+            >
+              {#if mediaUrl}
+                <img src={mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
+                <p class="text-xs text-cyan-400">Файл успішно завантажено</p>
+              {:else}
+                <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
+                <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors shadow-md">
+                  Завантажити
+                </span>
+              {/if}
             </button>
           </div>
+        {/if}
 
-          <!-- Post Title & Content -->
-          <div class="space-y-1">
-            <h3 class="text-base font-bold text-[#F1F5F9]">{post.title}</h3>
-            <p class="text-xs text-[#94A3B8] leading-relaxed">{post.body}</p>
+        <!-- 2. СКРІНШОТ -->
+        {#if activeTab === 'screenshot'}
+          <div class="space-y-5">
+            <!-- Велика пунктирна зона завантаження зображення -->
+            <button
+              type="button"
+              onclick={() => simulateUpload('image')}
+              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+            >
+              {#if mediaUrl}
+                <img src={mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
+                <p class="text-xs text-cyan-400">Зображення успішно завантажено</p>
+              {:else}
+                <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
+                <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-md">
+                  Завантажити
+                </span>
+              {/if}
+            </button>
+
+            <div>
+              <label for="caption-ss" class="block text-xs text-slate-400 mb-1.5 font-bold">Підпис</label>
+              <input
+                id="caption-ss"
+                type="text"
+                bind:value={caption}
+                placeholder="Ваш коментар до скріншота..."
+                class="w-full bg-[#02171d] border border-cyan-900/60 rounded-full px-5 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
           </div>
+        {/if}
 
-          <!-- Full-Width Embedded Media -->
-          <div class="relative rounded-xl overflow-hidden border border-white/5 max-h-[400px] bg-slate-900 group">
-            <img src={post.mediaUrl} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            {#if post.mediaType === 'video'}
-              <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
-                <div class="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                  <Play class="w-6 h-6 fill-black ml-0.5" />
+        <!-- 3. ВІДЕО -->
+        {#if activeTab === 'video'}
+          <div class="space-y-5">
+            <!-- Велика пунктирна зона завантаження відео -->
+            <button
+              type="button"
+              onclick={() => simulateUpload('video')}
+              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+            >
+              {#if mediaUrl}
+                <video src={mediaUrl} class="max-h-48 rounded-lg object-cover mb-2" controls></video>
+                <p class="text-xs text-cyan-400">Відео успішно завантажено</p>
+              {:else}
+                <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
+                <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-md">
+                  Завантажити
+                </span>
+              {/if}
+            </button>
+
+            <div>
+              <label for="caption-vid" class="block text-xs text-slate-400 mb-1.5 font-bold">Підпис</label>
+              <input
+                id="caption-vid"
+                type="text"
+                bind:value={caption}
+                placeholder="Ваш коментар до відео..."
+                class="w-full bg-[#02171d] border border-cyan-900/60 rounded-full px-5 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
+          </div>
+        {/if}
+
+        <!-- 4. ГАЙД -->
+        {#if activeTab === 'guide'}
+          <div class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <!-- Обкладинка -->
+              <div>
+                <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
+                <button
+                  type="button"
+                  onclick={() => simulateUpload('image')}
+                  class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors h-[180px] cursor-pointer"
+                >
+                  {#if mediaUrl}
+                    <img src={mediaUrl} alt="Guide Cover" class="max-h-24 rounded-lg object-cover mb-1" />
+                    <p class="text-xs text-cyan-400">Обкладинку завантажено</p>
+                  {:else}
+                    <p class="text-xs text-slate-400 mb-3 text-center">Перетягніть файл сюди або</p>
+                    <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors shadow-md">
+                      Завантажити
+                    </span>
+                  {/if}
+                </button>
+              </div>
+
+              <!-- Заголовок + Опис -->
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-xs text-slate-400 mb-1 font-bold">
+                    <label for="guide-title">Заголовок</label>
+                    <span>{title.length}/160</span>
+                  </div>
+                  <input
+                    id="guide-title"
+                    type="text"
+                    maxlength="160"
+                    bind:value={title}
+                    placeholder="Про що ваш гайд?"
+                    class="w-full bg-[#02171d] border border-cyan-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs text-slate-400 mb-1 font-bold">
+                    <label for="guide-desc">Опис</label>
+                    <span>{description.length}/300</span>
+                  </div>
+                  <textarea
+                    id="guide-desc"
+                    rows="3"
+                    maxlength="300"
+                    bind:value={description}
+                    placeholder="Опишіть тему детальніше..."
+                    class="w-full bg-[#02171d] border border-cyan-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors resize-none"
+                  ></textarea>
                 </div>
               </div>
-            {/if}
-          </div>
-
-          <!-- Interactive Footer -->
-          <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-[#94A3B8]">
-            <div class="flex items-center gap-6">
-              <button class="flex items-center gap-2 text-rose-500 font-semibold hover:opacity-80 transition-opacity cursor-pointer">
-                <Heart class="w-4 h-4 fill-rose-500 text-rose-500" /> {post.likes}
-              </button>
-              <button class="flex items-center gap-2 hover:text-white transition-colors cursor-pointer font-medium">
-                <MessageSquare class="w-4 h-4" /> {post.comments}
-              </button>
             </div>
-            <button class="flex items-center gap-2 hover:text-white transition-colors cursor-pointer font-medium">
-              <Share2 class="w-4 h-4" /> Поділитись
-            </button>
-          </div>
 
-        </div>
-      {/each}
+            <!-- Текст гайда -->
+            <div>
+              <label for="guide-content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
+              <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
+                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </button>
+                </div>
+                <textarea
+                  id="guide-content"
+                  rows="5"
+                  bind:value={content}
+                  placeholder="Текст вашого гайду..."
+                  class="w-full bg-transparent px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Нижні кнопки дії -->
+      <div class="flex justify-end items-center gap-4 mt-8 pt-4">
+        <button
+          type="button"
+          onclick={handleCancel}
+          class="text-sm font-bold text-slate-300 hover:text-white px-4 py-2 transition-colors cursor-pointer"
+        >
+          Відхилити
+        </button>
+        
+        <button
+          type="button"
+          onclick={() => handleSubmit()}
+          disabled={isSubmitting}
+          class="bg-[#21e6c1] hover:bg-[#1cd4b0] text-[#03232c] font-black text-sm px-6 py-2.5 rounded-full shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+        >
+          {isSubmitting ? 'Публікація...' : 'Опублікувати'}
+        </button>
+      </div>
+
     </div>
 
-    <!-- Right Filter Sidebar (25% Panel: bg-[#0D151D] p-4 rounded-xl) -->
-    <div class="lg:col-span-4 space-y-6">
-      <div class="bg-[#0D151D] border border-white/[0.06] p-4 rounded-xl space-y-4 sticky top-24">
-        
-        <!-- Dropdown Selector -->
-        <div class="space-y-1.5">
-          <label for="community-sort" class="block text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Сортування</label>
-          <select
-            id="community-sort"
-            bind:value={sortBy}
-            class="w-full bg-[#101922] text-xs font-bold text-cyan-400 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-400 cursor-pointer"
-          >
-            <option value="Популярні">Сортування: Популярні</option>
-            <option value="Нові">Сортування: Нові</option>
-            <option value="Обговорювані">Сортування: Обговорювані</option>
-          </select>
+    <!-- Права частина: Дані спільноти та правила -->
+    <div class="space-y-4">
+      <div class="text-right">
+        <div class="text-sm font-bold text-slate-200">{gameName}</div>
+        <div class="text-xs text-slate-400 mt-0.5 flex items-center justify-end gap-1.5">
+          <span class="font-bold text-slate-300">{subscribersCount}</span> підписників 
+          <span>•</span> 
+          <span class="font-bold text-slate-300">{onlineCount}</span> онлайн
+          <span class="inline-block w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
         </div>
+      </div>
 
-        <!-- Search Box -->
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-            <Search class="w-3.5 h-3.5" />
-          </div>
-          <input
-            type="text"
-            bind:value={searchQuery}
-            placeholder="Пошук: Усі розділи"
-            class="w-full pl-9 pr-3 py-2 bg-[#101922] border border-white/10 rounded-lg text-xs text-[#F1F5F9] placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
-          />
-        </div>
-
-        <!-- Category List Items -->
-        <div class="space-y-1 pt-2">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block px-1 mb-1">Розділи</span>
-          {#each categories as cat}
-            {@const Icon = cat.icon}
+      <!-- Сортування публікацій за розділом -->
+      <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-base font-bold text-white mb-4">Сортувати за розділом</h2>
+        <nav class="space-y-1.5">
+          {#each feedCategories as key}
             <button
-              onclick={() => activeCategory = cat.name}
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border
-                {activeCategory === cat.name
-                  ? 'bg-cyan-400 text-black border-cyan-400 font-bold'
-                  : 'text-[#94A3B8] hover:bg-[#162330] border-transparent hover:text-[#F1F5F9]'}"
+              type="button"
+              onclick={() => setFeedCategory(key)}
+              class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer
+                {activeFeedCategory === key
+                  ? 'bg-[#0b4e63] text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
             >
-              <Icon class="w-3.5 h-3.5" />
-              <span>{cat.name}</span>
+              {feedCategoryLabels[key]}
             </button>
           {/each}
-        </div>
+        </nav>
+      </div>
 
+      <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-base font-bold text-white mb-4">Правила спільноти</h2>
+        
+        <ol class="space-y-4 text-xs text-slate-300 leading-relaxed">
+          <li class="pb-3 border-b border-cyan-900/40">
+            <span class="font-bold text-slate-200">1.</span> Публікуйте тільки оригінальний контент.
+          </li>
+          <li class="pb-3 border-b border-cyan-900/40">
+            <span class="font-bold text-slate-200">2.</span> Не допускайте образ та принижень на адресу інших гравців, розробників чи груп.
+          </li>
+          <li class="pb-3 border-b border-cyan-900/40">
+            <span class="font-bold text-slate-200">3.</span> Не включайте погрози або заохочення до заподіяння шкоди.
+          </li>
+          <li class="pb-3 border-b border-cyan-900/40">
+            <span class="font-bold text-slate-200">4.</span> Не завантажуйте контент, на який у вас немає прав.
+          </li>
+          <li class="pb-3 border-b border-cyan-900/40">
+            <span class="font-bold text-slate-200">5.</span> Не рекламуйте комерційний контент.
+          </li>
+          <li>
+            <span class="font-bold text-slate-200">6.</span> Переконайтеся, що контент, який ви публікуєте, відповідає місцю, де він розміщується.
+          </li>
+        </ol>
       </div>
     </div>
 
+  </div>
+
+  <!-- Стрічка публікацій спільноти -->
+  <div class="w-full max-w-7xl mt-8">
+    <h2 class="text-xl font-black mb-4 text-white font-display">
+      Публікації{activeFeedCategory !== 'all' ? `: ${feedCategoryLabels[activeFeedCategory]}` : ''}
+    </h2>
+
+    {#if isLoadingPosts}
+      <div class="flex items-center justify-center py-16 bg-[#03232c] border border-cyan-900/60 rounded-2xl">
+        <Loader2 class="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
+    {:else if posts.length === 0}
+      <div class="text-center py-16 bg-[#03232c] border border-cyan-900/60 rounded-2xl">
+        <p class="text-sm text-slate-400">Поки що немає публікацій у цьому розділі.</p>
+      </div>
+    {:else}
+      <div class="space-y-4">
+        {#each posts as post (post.id)}
+          <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
+            <div class="flex items-center gap-3 mb-3">
+              <img
+                src={post.author.avatarUrl}
+                alt={post.author.username}
+                class="w-9 h-9 rounded-full object-cover ring-1 ring-cyan-900/60"
+              />
+              <div>
+                <span class="block text-sm font-bold text-slate-200">{post.author.username}</span>
+                <span class="block text-[11px] text-slate-500">
+                  {new Date(post.createdAt).toLocaleString('uk-UA')}
+                </span>
+              </div>
+              <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-md bg-[#0b4e63]/50 text-cyan-300 uppercase tracking-wide">
+                {feedCategoryLabels[post.category as keyof typeof feedCategoryLabels] ?? post.category}
+              </span>
+            </div>
+
+            {#if post.title}
+              <h3 class="text-base font-bold text-white mb-1.5">{post.title}</h3>
+            {/if}
+
+            <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{post.content}</p>
+
+            {#if post.media?.type === 'image' && post.media.url}
+              <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />
+            {:else if post.media?.type === 'video' && post.media.url}
+              <video src={post.media.url} class="mt-3 rounded-xl max-h-96 w-full" controls></video>
+            {/if}
+
+            <div class="flex items-center gap-5 mt-4 pt-3 border-t border-cyan-900/40">
+              <button
+                type="button"
+                onclick={() => handleToggleLike(post)}
+                class="flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer
+                  {post.stats.isLiked ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+              >
+                <ThumbsUp class="w-3.5 h-3.5 {post.stats.isLiked ? 'fill-cyan-400' : ''}" />
+                {post.stats.likesCount}
+              </button>
+              <span class="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                <MessageSquare class="w-3.5 h-3.5" />
+                {post.stats.commentsCount}
+              </span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 </div>
