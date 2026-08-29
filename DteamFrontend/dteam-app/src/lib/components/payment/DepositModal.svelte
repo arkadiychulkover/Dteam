@@ -19,6 +19,7 @@
   import { authStore, currentUser } from '../../stores/authStore';
   import { paymentService } from '../../services/paymentService';
   import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
 
   let depositAddress = $state('Завантаження адреси...');
   let amount = $state<number>(1);
@@ -200,8 +201,9 @@
             <Wallet class="w-3.5 h-3.5 text-cyan-400" />
             <span>Ваш поточний баланс:</span>
           </div>
-          <span class="font-bold text-white font-mono flex items-center gap-1 text-sm">
-            💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+          <span class="font-bold text-white font-mono flex items-center gap-1.5 text-sm">
+            <TonIcon class="w-4 h-4 text-cyan-400" />
+            <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
           </span>
         </div>
       {/if}

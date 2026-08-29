@@ -19,9 +19,8 @@ namespace DteamBackend.Models.DTO
         [Range(0, 100)]
         public int DiscountPercentage { get; set; } = 0;
 
-        [Required(ErrorMessage = "Server archive path is required")]
         [MaxLength(500)]
-        public string ServerArchivePath { get; set; } = string.Empty;
+        public string? ServerArchivePath { get; set; }
 
         public Guid? OwnerId { get; set; }
 
