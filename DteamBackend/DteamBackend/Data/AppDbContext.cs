@@ -11,14 +11,15 @@ namespace DteamBackend.Data
         }
 
         public DbSet<Duser> Users => Set<Duser>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<Game> Games => Set<Game>();
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<UserGame> UserGames => Set<UserGame>();
         public DbSet<UserFriend> UserFriends => Set<UserFriend>();
+        public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
         public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
         public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
         public DbSet<Tranxaction> Tranxactions => Set<Tranxaction>();
-        public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,6 +71,23 @@ namespace DteamBackend.Data
                     .WithMany()
                     .HasForeignKey(uf => uf.FriendId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FriendRequest>(entity =>
+            {
+                entity.HasKey(fr => fr.Id);
+
+                entity.HasOne(fr => fr.Sender)
+                    .WithMany(u => u.SentFriendRequests)
+                    .HasForeignKey(fr => fr.SenderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(fr => fr.Receiver)
+                    .WithMany(u => u.ReceivedFriendRequests)
+                    .HasForeignKey(fr => fr.ReceiverId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(fr => new { fr.SenderId, fr.ReceiverId });
             });
 
             modelBuilder.Entity<UserWishlist>(entity =>
@@ -146,23 +164,6 @@ namespace DteamBackend.Data
                     .WithMany()
                     .HasForeignKey(t => t.UserId)
                     .OnDelete(DeleteBehavior.SetNull);
-            });
-
-            modelBuilder.Entity<FriendRequest>(entity =>
-            {
-                entity.HasKey(fr => fr.Id);
-
-                entity.HasIndex(fr => new { fr.SenderId, fr.ReceiverId });
-
-                entity.HasOne(fr => fr.Sender)
-                    .WithMany(u => u.SentFriendRequests)
-                    .HasForeignKey(fr => fr.SenderId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(fr => fr.Receiver)
-                    .WithMany(u => u.ReceivedFriendRequests)
-                    .HasForeignKey(fr => fr.ReceiverId)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -15,12 +15,10 @@ namespace DteamBackend.Controllers
     public class FriendsController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<FriendsController> _logger;
 
-        public FriendsController(AppDbContext context, ILogger<FriendsController> logger)
+        public FriendsController(AppDbContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
         private Guid GetCurrentUserId()
@@ -31,311 +29,9 @@ namespace DteamBackend.Controllers
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
 
-        private static FriendRequestDto MapToFriendRequestDto(FriendRequest fr) => new()
-        {
-            Id = fr.Id,
-            SenderId = fr.SenderId,
-            SenderUsername = fr.Sender?.Username ?? string.Empty,
-            SenderAvatarUrl = fr.Sender?.AvatarUrl,
-            ReceiverId = fr.ReceiverId,
-            ReceiverUsername = fr.Receiver?.Username ?? string.Empty,
-            ReceiverAvatarUrl = fr.Receiver?.AvatarUrl,
-            Status = fr.Status,
-            CreatedAt = fr.CreatedAt
-        };
-
-        [HttpPost("requests")]
-        [HttpPost("send-request")]
-        public async Task<ActionResult<FriendRequestDto>> SendFriendRequest([FromBody] SendFriendRequestDto dto)
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "Користувач не авторизований." });
-            }
-
-            var sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
-            if (sender == null)
-            {
-                return NotFound(new { message = "Користувача не знайдено." });
-            }
-
-            if (sender.IsBanned)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ваш акаунт заблоковано." });
-            }
-
-            Duser? receiver = null;
-            if (dto.ReceiverId.HasValue && dto.ReceiverId.Value != Guid.Empty)
-            {
-                receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.ReceiverId.Value);
-            }
-            else if (!string.IsNullOrWhiteSpace(dto.ReceiverUsername))
-            {
-                var normUsername = dto.ReceiverUsername.Trim().ToLower();
-                receiver = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == normUsername);
-            }
-
-            if (receiver == null)
-            {
-                return NotFound(new { message = "Користувача-одержувача не знайдено." });
-            }
-
-            if (receiver.Id == currentUserId)
-            {
-                return BadRequest(new { message = "Ви не можете надіслати заявку в друзі самому собі." });
-            }
-
-            if (receiver.IsBanned)
-            {
-                return BadRequest(new { message = "Цей користувач заблокований в системі." });
-            }
-
-            var alreadyFriends = await _context.UserFriends.AnyAsync(f => 
-                (f.UserId == currentUserId && f.FriendId == receiver.Id && f.Status == FriendshipStatus.Accepted) ||
-                (f.UserId == receiver.Id && f.FriendId == currentUserId && f.Status == FriendshipStatus.Accepted));
-
-            if (alreadyFriends)
-            {
-                return BadRequest(new { message = $"Ви вже є друзями з користувачем '{receiver.Username}'." });
-            }
-
-            var existingOutgoingRequest = await _context.FriendRequests.FirstOrDefaultAsync(fr =>
-                fr.SenderId == currentUserId && fr.ReceiverId == receiver.Id && fr.Status == FriendRequestStatus.Pending);
-
-            if (existingOutgoingRequest != null)
-            {
-                return BadRequest(new { message = "Ви вже надіслали заявку в друзі цьому користувачу. Заявка очікує на розгляд." });
-            }
-
-            var existingIncomingRequest = await _context.FriendRequests.FirstOrDefaultAsync(fr =>
-                fr.SenderId == receiver.Id && fr.ReceiverId == currentUserId && fr.Status == FriendRequestStatus.Pending);
-
-            if (existingIncomingRequest != null)
-            {
-                return BadRequest(new { 
-                    message = $"Користувач '{receiver.Username}' вже надіслав вам заявку в друзі. Ви можете просто прийняти її.",
-                    existingRequestId = existingIncomingRequest.Id
-                });
-            }
-
-            var friendRequest = new FriendRequest
-            {
-                Id = Guid.NewGuid(),
-                SenderId = currentUserId,
-                Sender = sender,
-                ReceiverId = receiver.Id,
-                Receiver = receiver,
-                Status = FriendRequestStatus.Pending,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _context.FriendRequests.AddAsync(friendRequest);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation($"[FriendsController] User {sender.Username} ({currentUserId}) sent friend request to {receiver.Username} ({receiver.Id})");
-
-            return Ok(MapToFriendRequestDto(friendRequest));
-        }
-
-        [HttpGet("requests")]
-        public async Task<ActionResult<List<FriendRequestDto>>> GetFriendRequests([FromQuery] string? type = "incoming")
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "Користувач не авторизований." });
-            }
-
-            IQueryable<FriendRequest> query = _context.FriendRequests
-                .Include(fr => fr.Sender)
-                .Include(fr => fr.Receiver)
-                .AsNoTracking();
-
-            var normType = type?.Trim().ToLower() ?? "incoming";
-
-            if (normType == "outgoing")
-            {
-                query = query.Where(fr => fr.SenderId == currentUserId && fr.Status == FriendRequestStatus.Pending);
-            }
-            else if (normType == "all")
-            {
-                query = query.Where(fr => (fr.ReceiverId == currentUserId || fr.SenderId == currentUserId) && fr.Status == FriendRequestStatus.Pending);
-            }
-            else
-            {
-                query = query.Where(fr => fr.ReceiverId == currentUserId && fr.Status == FriendRequestStatus.Pending);
-            }
-
-            var requests = await query
-                .OrderByDescending(fr => fr.CreatedAt)
-                .Select(fr => MapToFriendRequestDto(fr))
-                .ToListAsync();
-
-            return Ok(requests);
-        }
-
-        [HttpPost("requests/{requestId:guid}/accept")]
-        [HttpPost("accept/{requestId:guid}")]
-        public async Task<ActionResult<FriendActionResponseDto>> AcceptFriendRequest(Guid requestId)
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "Користувач не авторизований." });
-            }
-
-            var request = await _context.FriendRequests
-                .Include(fr => fr.Sender)
-                .Include(fr => fr.Receiver)
-                .FirstOrDefaultAsync(fr => fr.Id == requestId);
-
-            if (request == null)
-            {
-                return NotFound(new { message = "Заявку в друзі не знайдено." });
-            }
-
-            if (request.ReceiverId != currentUserId)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Тільки одержувач заявки може прийняти її." });
-            }
-
-            if (request.Status != FriendRequestStatus.Pending)
-            {
-                return BadRequest(new { message = $"Ця заявка вже має статус: {request.Status}." });
-            }
-
-            request.Status = FriendRequestStatus.Accepted;
-            request.RespondedAt = DateTime.UtcNow;
-
-            var existingSenderFriend = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == request.SenderId && f.FriendId == request.ReceiverId);
-
-            if (existingSenderFriend == null)
-            {
-                await _context.UserFriends.AddAsync(new UserFriend
-                {
-                    UserId = request.SenderId,
-                    FriendId = request.ReceiverId,
-                    Status = FriendshipStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-            else
-            {
-                existingSenderFriend.Status = FriendshipStatus.Accepted;
-            }
-
-            var existingReceiverFriend = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == request.ReceiverId && f.FriendId == request.SenderId);
-
-            if (existingReceiverFriend == null)
-            {
-                await _context.UserFriends.AddAsync(new UserFriend
-                {
-                    UserId = request.ReceiverId,
-                    FriendId = request.SenderId,
-                    Status = FriendshipStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-            else
-            {
-                existingReceiverFriend.Status = FriendshipStatus.Accepted;
-            }
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation($"[FriendsController] User {request.Receiver.Username} accepted friend request from {request.Sender.Username}");
-
-            return Ok(new FriendActionResponseDto
-            {
-                Success = true,
-                Message = $"Заявку в друзі від '{request.Sender?.Username}' успішно прийнято! Тепер ви друзі."
-            });
-        }
-
-        [HttpPost("requests/{requestId:guid}/reject")]
-        public async Task<ActionResult<FriendActionResponseDto>> RejectFriendRequest(Guid requestId)
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "Користувач не авторизований." });
-            }
-
-            var request = await _context.FriendRequests
-                .Include(fr => fr.Sender)
-                .FirstOrDefaultAsync(fr => fr.Id == requestId);
-
-            if (request == null)
-            {
-                return NotFound(new { message = "Заявку в друзі не знайдено." });
-            }
-
-            if (request.ReceiverId != currentUserId)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Тільки одержувач заявки може відхилити її." });
-            }
-
-            if (request.Status != FriendRequestStatus.Pending)
-            {
-                return BadRequest(new { message = $"Ця заявка вже має статус: {request.Status}." });
-            }
-
-            request.Status = FriendRequestStatus.Rejected;
-            request.RespondedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new FriendActionResponseDto
-            {
-                Success = true,
-                Message = $"Заявку в друзі від '{request.Sender?.Username}' відхилено."
-            });
-        }
-
-        [HttpPost("requests/{requestId:guid}/cancel")]
-        public async Task<ActionResult<FriendActionResponseDto>> CancelFriendRequest(Guid requestId)
-        {
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "Користувач не авторизований." });
-            }
-
-            var request = await _context.FriendRequests.FirstOrDefaultAsync(fr => fr.Id == requestId);
-
-            if (request == null)
-            {
-                return NotFound(new { message = "Заявку в друзі не знайдено." });
-            }
-
-            if (request.SenderId != currentUserId)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ви можете скасувати тільки власну заявку." });
-            }
-
-            if (request.Status != FriendRequestStatus.Pending)
-            {
-                return BadRequest(new { message = $"Заявка вже має статус: {request.Status}." });
-            }
-
-            request.Status = FriendRequestStatus.Cancelled;
-            request.RespondedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new FriendActionResponseDto
-            {
-                Success = true,
-                Message = "Заявку в друзі успішно скасовано."
-            });
-        }
-
         [HttpGet]
         [HttpGet("list")]
-        public async Task<ActionResult<List<FriendDto>>> GetFriendsList()
+        public async Task<ActionResult<List<FriendDto>>> GetFriends()
         {
             var currentUserId = GetCurrentUserId();
             if (currentUserId == Guid.Empty)
@@ -343,11 +39,11 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var friendships = await _context.UserFriends
+            var friends = await _context.UserFriends
                 .Include(f => f.Friend)
-                .AsNoTracking()
-                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted)
-                .OrderBy(f => f.Friend.Username)
+                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted && f.Friend != null)
+                .GroupBy(f => f.FriendId)
+                .Select(g => g.First())
                 .Select(f => new FriendDto
                 {
                     Id = f.Friend.Id,
@@ -361,7 +57,276 @@ namespace DteamBackend.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(friendships);
+            return Ok(friends);
+        }
+
+        [HttpGet("requests")]
+        public async Task<ActionResult<List<FriendRequestDto>>> GetFriendRequests()
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var requests = await _context.FriendRequests
+                .Include(r => r.Sender)
+                .Include(r => r.Receiver)
+                .Where(r => (r.ReceiverId == currentUserId || r.SenderId == currentUserId) && r.Status == FriendRequestStatus.Pending)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new FriendRequestDto
+                {
+                    Id = r.Id,
+                    SenderId = r.SenderId,
+                    SenderUsername = r.Sender.Username,
+                    SenderAvatarUrl = r.Sender.AvatarUrl,
+                    ReceiverId = r.ReceiverId,
+                    ReceiverUsername = r.Receiver.Username,
+                    ReceiverAvatarUrl = r.Receiver.AvatarUrl,
+                    Status = r.Status,
+                    CreatedAt = r.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(requests);
+        }
+
+        [HttpPost("requests")]
+        public async Task<ActionResult<FriendActionResponseDto>> SendFriendRequest([FromBody] SendFriendRequestDto requestDto)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
+            if (sender == null)
+            {
+                return NotFound(new { message = "Відправника не знайдено." });
+            }
+
+            Duser? receiver = null;
+
+            if (requestDto.ReceiverId.HasValue && requestDto.ReceiverId.Value != Guid.Empty)
+            {
+                receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == requestDto.ReceiverId.Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(requestDto.ReceiverUsername))
+            {
+                var search = requestDto.ReceiverUsername.Trim();
+                receiver = await _context.Users.FirstOrDefaultAsync(u => 
+                    u.Username.ToLower() == search.ToLower() || 
+                    u.Email.ToLower() == search.ToLower());
+                
+                if (receiver == null && Guid.TryParse(search, out var parsedId))
+                {
+                    receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == parsedId);
+                }
+            }
+
+            if (receiver == null)
+            {
+                return NotFound(new { message = "Користувача, якому надсилається запит, не знайдено." });
+            }
+
+            if (receiver.Id == currentUserId)
+            {
+                return BadRequest(new { message = "Ви не можете надіслати запит у друзі самому собі." });
+            }
+
+            var alreadyFriends = await _context.UserFriends
+                .AnyAsync(f => f.UserId == currentUserId && f.FriendId == receiver.Id && f.Status == FriendshipStatus.Accepted);
+
+            if (alreadyFriends)
+            {
+                return BadRequest(new { message = $"Ви вже є друзями з користувачем '{receiver.Username}'." });
+            }
+
+            var isBlocked = await _context.UserFriends
+                .AnyAsync(f => (f.UserId == currentUserId && f.FriendId == receiver.Id && f.Status == FriendshipStatus.Blocked) ||
+                               (f.UserId == receiver.Id && f.FriendId == currentUserId && f.Status == FriendshipStatus.Blocked));
+
+            if (isBlocked)
+            {
+                return BadRequest(new { message = "Неможливо надіслати запит: один із користувачів заблокований." });
+            }
+
+            var pendingRequest = await _context.FriendRequests
+                .FirstOrDefaultAsync(r => 
+                    ((r.SenderId == currentUserId && r.ReceiverId == receiver.Id) ||
+                     (r.SenderId == receiver.Id && r.ReceiverId == currentUserId)) &&
+                    r.Status == FriendRequestStatus.Pending);
+
+            if (pendingRequest != null)
+            {
+                if (pendingRequest.SenderId == currentUserId)
+                {
+                    return BadRequest(new { message = "Ви вже надіслали запит цьому користувачеві. Запит очікує на відповідь." });
+                }
+                else
+                {
+                    return BadRequest(new { message = $"Користувач '{receiver.Username}' вже надіслав вам запит. Ви можете його прийняти." });
+                }
+            }
+
+            var newRequest = new FriendRequest
+            {
+                SenderId = currentUserId,
+                ReceiverId = receiver.Id,
+                Status = FriendRequestStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.FriendRequests.Add(newRequest);
+            await _context.SaveChangesAsync();
+
+            return Ok(new FriendActionResponseDto
+            {
+                Success = true,
+                Message = $"Запит у друзі успішно надіслано користувачеві '{receiver.Username}'."
+            });
+        }
+
+        [HttpPost("requests/{requestId:guid}/accept")]
+        public async Task<ActionResult<FriendActionResponseDto>> AcceptFriendRequest(Guid requestId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var request = await _context.FriendRequests
+                .Include(r => r.Sender)
+                .Include(r => r.Receiver)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.ReceiverId == currentUserId);
+
+            if (request == null)
+            {
+                return NotFound(new { message = "Запит у друзі не знайдено або у вас немає прав на його прийняття." });
+            }
+
+            if (request.Status != FriendRequestStatus.Pending)
+            {
+                return BadRequest(new { message = "Цей запит уже був оброблений раніше." });
+            }
+
+            request.Status = FriendRequestStatus.Accepted;
+            request.RespondedAt = DateTime.UtcNow;
+
+            var existingDirect = await _context.UserFriends
+                .FirstOrDefaultAsync(f => f.UserId == request.ReceiverId && f.FriendId == request.SenderId);
+
+            if (existingDirect == null)
+            {
+                _context.UserFriends.Add(new UserFriend
+                {
+                    UserId = request.ReceiverId,
+                    FriendId = request.SenderId,
+                    Status = FriendshipStatus.Accepted,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                existingDirect.Status = FriendshipStatus.Accepted;
+            }
+
+            var existingReverse = await _context.UserFriends
+                .FirstOrDefaultAsync(f => f.UserId == request.SenderId && f.FriendId == request.ReceiverId);
+
+            if (existingReverse == null)
+            {
+                _context.UserFriends.Add(new UserFriend
+                {
+                    UserId = request.SenderId,
+                    FriendId = request.ReceiverId,
+                    Status = FriendshipStatus.Accepted,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                existingReverse.Status = FriendshipStatus.Accepted;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new FriendActionResponseDto
+            {
+                Success = true,
+                Message = $"Запит у друзі від '{request.Sender.Username}' успішно прийнято!"
+            });
+        }
+
+        [HttpPost("requests/{requestId:guid}/reject")]
+        public async Task<ActionResult<FriendActionResponseDto>> RejectFriendRequest(Guid requestId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var request = await _context.FriendRequests
+                .Include(r => r.Sender)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.ReceiverId == currentUserId);
+
+            if (request == null)
+            {
+                return NotFound(new { message = "Запит у друзі не знайдено або у вас немає прав на його відхилення." });
+            }
+
+            if (request.Status != FriendRequestStatus.Pending)
+            {
+                return BadRequest(new { message = "Цей запит уже був оброблений раніше." });
+            }
+
+            request.Status = FriendRequestStatus.Rejected;
+            request.RespondedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new FriendActionResponseDto
+            {
+                Success = true,
+                Message = $"Запит у друзі від '{request.Sender.Username}' відхилено."
+            });
+        }
+
+        [HttpPost("requests/{requestId:guid}/cancel")]
+        public async Task<ActionResult<FriendActionResponseDto>> CancelFriendRequest(Guid requestId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var request = await _context.FriendRequests
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.SenderId == currentUserId);
+
+            if (request == null)
+            {
+                return NotFound(new { message = "Запит у друзі не знайдено або ви не є його відправником." });
+            }
+
+            if (request.Status != FriendRequestStatus.Pending)
+            {
+                return BadRequest(new { message = "Цей запит уже був оброблений і не може бути скасований." });
+            }
+
+            request.Status = FriendRequestStatus.Cancelled;
+            request.RespondedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new FriendActionResponseDto
+            {
+                Success = true,
+                Message = "Запит у друзі успішно скасовано."
+            });
         }
 
         [HttpDelete("{friendId:guid}")]
@@ -373,17 +338,27 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var mutualFriendships = await _context.UserFriends
-                .Where(f => (f.UserId == currentUserId && f.FriendId == friendId) ||
-                            (f.UserId == friendId && f.FriendId == currentUserId))
-                .ToListAsync();
+            var direct = await _context.UserFriends
+                .FirstOrDefaultAsync(f => f.UserId == currentUserId && f.FriendId == friendId);
 
-            if (mutualFriendships.Count == 0)
+            var reverse = await _context.UserFriends
+                .FirstOrDefaultAsync(f => f.UserId == friendId && f.FriendId == currentUserId);
+
+            if (direct == null && reverse == null)
             {
-                return NotFound(new { message = "Користувача не знайдено у вашому списку друзів." });
+                return NotFound(new { message = "Дружбу між користувачами не знайдено." });
             }
 
-            _context.UserFriends.RemoveRange(mutualFriendships);
+            if (direct != null)
+            {
+                _context.UserFriends.Remove(direct);
+            }
+
+            if (reverse != null)
+            {
+                _context.UserFriends.Remove(reverse);
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(new FriendActionResponseDto
@@ -518,9 +493,7 @@ namespace DteamBackend.Controllers
 
             var blocked = await _context.UserFriends
                 .Include(f => f.Friend)
-                .AsNoTracking()
                 .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Blocked)
-                .OrderBy(f => f.Friend.Username)
                 .Select(f => new FriendDto
                 {
                     Id = f.Friend.Id,

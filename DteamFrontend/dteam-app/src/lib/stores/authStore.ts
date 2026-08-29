@@ -57,7 +57,7 @@ function createAuthStore() {
       })
       .catch((err: any) => {
         if (err.status === 401) {
-          api.setToken(null);
+          api.setTokens(null, null);
           saveStoredUser(null);
           update((s) => ({ ...s, user: null, token: null, isLoading: false }));
         } else {
@@ -90,13 +90,21 @@ function createAuthStore() {
         return { ...s, user: updated };
       });
     },
+    patchUser: (patch: Partial<Duser>) => {
+      update((s) => {
+        if (!s.user) return s;
+        const updated = { ...s.user, ...patch };
+        saveStoredUser(updated);
+        return { ...s, user: updated };
+      });
+    },
     register: async (email: string, username: string, password: string, walletAddress?: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
         const res = await authService.register({ email, username, password, walletAddress });
-        api.setToken(res.token);
+        api.setTokens(res.accessToken, res.refreshToken);
         saveStoredUser(res.user);
-        set({ user: res.user, token: res.token, resetEmail: null, resetToken: null, isLoading: false, error: null });
+        set({ user: res.user, token: res.accessToken, resetEmail: null, resetToken: null, isLoading: false, error: null });
         return res;
       } catch (err: any) {
         const message = err.message || 'Ошибка регистрации';
@@ -108,9 +116,9 @@ function createAuthStore() {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
         const res = await authService.login({ emailOrUsername, password });
-        api.setToken(res.token);
+        api.setTokens(res.accessToken, res.refreshToken);
         saveStoredUser(res.user);
-        set({ user: res.user, token: res.token, resetEmail: null, resetToken: null, isLoading: false, error: null });
+        set({ user: res.user, token: res.accessToken, resetEmail: null, resetToken: null, isLoading: false, error: null });
         return res;
       } catch (err: any) {
         const message = err.message || 'Ошибка входа';
@@ -165,7 +173,7 @@ function createAuthStore() {
     },
     logout: async () => {
       await authService.logout();
-      api.setToken(null);
+      api.setTokens(null, null);
       saveStoredUser(null);
       set({ user: null, token: null, resetEmail: null, resetToken: null, isLoading: false, error: null });
     },

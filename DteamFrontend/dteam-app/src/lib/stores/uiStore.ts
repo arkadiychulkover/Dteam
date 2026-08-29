@@ -2,12 +2,16 @@ import { writable } from 'svelte/store';
 
 export type MainTab = 
   | 'store' 
+  | 'library'
+  | 'community'
+  | 'friends'
   | 'catalog' 
   | 'game'
   | 'wishlist' 
   | 'cart'
-  | 'friends'
   | 'admin'
+  | 'profile'
+  | 'my-profile'
   | 'login'
   | 'register'
   | 'forgot-password'
@@ -27,12 +31,18 @@ function createUiStore() {
     isLoginModalOpen: boolean;
     isConfirmCodeModalOpen: boolean;
     isDepositModalOpen: boolean;
+    isFriendsSidebarOpen: boolean;
+    isWalletModalOpen: boolean;
+    isPublishGameModalOpen: boolean;
     toasts: ToastMessage[];
   }>({
     activeTab: 'store',
     isLoginModalOpen: false,
     isConfirmCodeModalOpen: false,
     isDepositModalOpen: false,
+    isFriendsSidebarOpen: false,
+    isWalletModalOpen: false,
+    isPublishGameModalOpen: false,
     toasts: [],
   });
 
@@ -42,6 +52,9 @@ function createUiStore() {
     setLoginModal: (isOpen: boolean) => update((s) => ({ ...s, isLoginModalOpen: isOpen })),
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
     setDepositModal: (isOpen: boolean) => update((s) => ({ ...s, isDepositModalOpen: isOpen })),
+    toggleFriendsSidebar: () => update((s) => ({ ...s, isFriendsSidebarOpen: !s.isFriendsSidebarOpen })),
+    setWalletModal: (isOpen: boolean) => update((s) => ({ ...s, isWalletModalOpen: isOpen })),
+    setPublishGameModal: (isOpen: boolean) => update((s) => ({ ...s, isPublishGameModalOpen: isOpen })),
     addToast: (toast: Omit<ToastMessage, 'id'>) => {
       const id = Math.random().toString(36).substring(2, 9);
       update((s) => ({

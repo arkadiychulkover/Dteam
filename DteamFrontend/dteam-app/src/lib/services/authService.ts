@@ -4,13 +4,13 @@ import type { Duser, LoginRequest, RegisterRequest, AuthResponse } from '../type
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/login', payload);
-    api.setToken(res.token);
+    api.setTokens(res.accessToken, res.refreshToken);
     return res;
   },
 
   async register(payload: RegisterRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/register', payload);
-    api.setToken(res.token);
+    api.setTokens(res.accessToken, res.refreshToken);
     return res;
   },
 
@@ -19,7 +19,7 @@ export const authService = {
       await api.post('/auth/logout');
     } catch {
     } finally {
-      api.setToken(null);
+      api.setTokens(null, null);
     }
   },
 

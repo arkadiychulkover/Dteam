@@ -37,9 +37,10 @@ function createFriendsStore() {
           friendsService.getBlocked().catch(() => [])
         ]);
 
+        const uniqueFriendsList = Array.from(new Map(friendsList.map((f) => [f.id, f])).values());
         update((s) => ({
           ...s,
-          friends: friendsList.map((f) => ({
+          friends: uniqueFriendsList.map((f) => ({
             ...f,
             status: s.onlineUserIds.has(f.id.toLowerCase()) ? UserStatus.Online : f.status
           })),
@@ -58,7 +59,8 @@ function createFriendsStore() {
 
       try {
         const list = await friendsService.getFriends();
-        update((s) => ({ ...s, friends: list }));
+        const uniqueList = Array.from(new Map(list.map((f) => [f.id, f])).values());
+        update((s) => ({ ...s, friends: uniqueList }));
       } catch (err: any) {
         console.warn('Failed to load friends', err);
       }

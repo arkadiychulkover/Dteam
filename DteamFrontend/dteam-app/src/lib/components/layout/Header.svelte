@@ -4,6 +4,7 @@
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { authStore, currentUser, isUserAdmin } from '../../stores/authStore';
+  import { myProfileStore } from '../../stores/myProfileStore';
   import { 
     Gamepad2, 
     Shield, 
@@ -20,6 +21,7 @@
     Coins,
     Plus,
     Wallet,
+    Library,
     Users
   } from 'lucide-svelte';
   import { formatTon, nanoTonToTon } from '../../utils/formatters';
@@ -30,8 +32,10 @@
 
   const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
-    { id: 'catalog', label: 'Каталог', icon: Compass },
+    { id: 'library', label: 'Бібліотека', icon: Library },
+    { id: 'community', label: 'Спільнота', icon: Newspaper },
     { id: 'friends', label: 'Друзі', icon: Users },
+    { id: 'catalog', label: 'Каталог', icon: Compass },
     { id: 'admin', label: 'Адмінка', icon: Shield, adminOnly: true },
   ];
 
@@ -48,7 +52,7 @@
   function handleSearchSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (headerSearchQuery.trim()) {
-      gamesStore.setSearch(headerSearchQuery.trim());
+      gamesStore.setFilters({ search: headerSearchQuery.trim() });
       uiStore.setTab('catalog');
     }
   }
@@ -57,7 +61,7 @@
     const query = (e.target as HTMLInputElement).value;
     headerSearchQuery = query;
     if (query.trim()) {
-      gamesStore.setSearch(query.trim());
+      gamesStore.setFilters({ search: query.trim() });
       if ($uiStore.activeTab !== 'catalog') {
         uiStore.setTab('catalog');
       }
@@ -65,8 +69,7 @@
   }
 
   function handleLogoClick() {
-    gamesStore.setSearch('');
-    gamesStore.setGenre(null);
+    gamesStore.resetFilters();
     headerSearchQuery = '';
     uiStore.setTab('store');
   }
@@ -74,6 +77,7 @@
 
 <header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    
     <div class="flex items-center gap-6">
       <button 
         onclick={handleLogoClick}
@@ -161,6 +165,7 @@
       </button>
 
       {#if $currentUser}
+        
         <button
           onclick={() => uiStore.setDepositModal(true)}
           class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
@@ -207,6 +212,27 @@
               </div>
 
               <button
+                onclick={() => { myProfileStore.viewMyProfile(); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
+              >
+                <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('library'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
+              >
+                <Library class="w-3.5 h-3.5 text-cyan-400" /> Бібліотека
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('community'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold"
+              >
+                <Users class="w-3.5 h-3.5 text-cyan-400" /> Спільнота
+              </button>
+
+              <button
                 onclick={() => { uiStore.setDepositModal(true); isUserDropdownOpen = false; }}
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 cursor-pointer font-bold mt-1"
               >
@@ -217,7 +243,7 @@
                 onclick={() => { uiStore.setTab('friends'); isUserDropdownOpen = false; }}
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 hover:text-white cursor-pointer font-bold mt-1"
               >
-                <Users class="w-3.5 h-3.5 text-cyan-400" /> Мої друзі
+                <Users class="w-3.5 h-3.5 text-cyan-400" /> Друзі
                 {#if $friendsStore.requests.length > 0}
                   <span class="ml-auto px-1.5 py-0.5 rounded-md bg-[#0df2c9] text-black text-[10px] font-black">
                     +{$friendsStore.requests.length}

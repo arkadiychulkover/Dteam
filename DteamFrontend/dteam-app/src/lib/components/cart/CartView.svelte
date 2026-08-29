@@ -70,6 +70,7 @@
 </script>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+  
   <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
     <div>
       <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
@@ -104,6 +105,7 @@
   </div>
 
   {#if items.length === 0}
+    
     <div class="p-12 sm:p-16 rounded-3xl bg-[#061820]/70 border border-cyan-500/20 text-center max-w-xl mx-auto shadow-2xl backdrop-blur-xl">
       <div class="w-20 h-20 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 text-cyan-400 shadow-lg shadow-cyan-500/10">
         <ShoppingCart class="w-10 h-10" />
@@ -133,17 +135,20 @@
     </div>
 
   {:else}
+    
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
       <div class="lg:col-span-8 space-y-4">
         {#each items as item (item.gameId)}
           <div class="p-4 sm:p-5 rounded-3xl bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 group shadow-lg">
+
             <button
               type="button"
               onclick={() => openGame(item.game)}
               class="w-full sm:w-44 h-28 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 relative cursor-pointer group-hover:scale-[1.02] transition-transform text-left border border-cyan-500/20"
             >
               <img
-                src={item.game.capsuleImageUrl || item.game.headerImageUrl || item.game.coverUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80'}
+                src={item.game.headerImageUrl || item.game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80'}
                 alt={item.game.title}
                 class="w-full h-full object-cover"
               />
@@ -190,6 +195,7 @@
             </div>
 
             <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-between shrink-0 self-stretch sm:pl-4 sm:border-l sm:border-cyan-950/80">
+
               <button
                 type="button"
                 onclick={() => cartStore.removeFromCart(item.gameId, item.game.title)}
@@ -227,6 +233,7 @@
 
       <div class="lg:col-span-4 sticky top-20 space-y-4">
         <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-6 shadow-2xl shadow-cyan-950/60 space-y-5">
+
           {#if $currentUser}
             <div class="p-3 rounded-2xl bg-[#041219] border border-cyan-500/20 flex items-center justify-between text-xs">
               <div class="flex items-center gap-1.5 text-slate-300">
@@ -249,6 +256,7 @@
           {/if}
 
           <div class="space-y-3 text-sm">
+            
             <div class="flex items-center justify-between text-slate-300">
               <span>Ви заощадите</span>
               <span class="font-bold text-cyan-300 font-mono">

@@ -512,10 +512,10 @@
                 <span>Платформи:</span>
                 <div class="flex items-center gap-2 text-white">
                   {#if !game.platforms || game.platforms.includes('Windows')}
-                    <Monitor class="w-4 h-4 text-slate-300" title="Windows" />
+                    <span title="Windows"><Monitor class="w-4 h-4 text-slate-300" /></span>
                   {/if}
                   {#if game.platforms && game.platforms.includes('MacOS')}
-                    <Apple class="w-4 h-4 text-slate-300" title="MacOS" />
+                    <span title="MacOS"><Apple class="w-4 h-4 text-slate-300" /></span>
                   {/if}
                 </div>
               </div>

@@ -27,6 +27,7 @@ export interface Duser {
   isBanned: boolean;
   status: UserStatus;
   avatarUrl?: string | null;
+  bannerUrl?: string | null;
   bio?: string | null;
 }
 

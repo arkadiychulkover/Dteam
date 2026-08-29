@@ -59,7 +59,13 @@ namespace DteamBackend.Models
         [MaxLength(1000)]
         public string? Bio { get; set; }
 
+        public string? BannerUrl { get; set; }
+
         public ICollection<UserFriend> Friendships { get; set; } = new List<UserFriend>();
+
+        public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
+
+        public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = new List<FriendRequest>();
 
         public ICollection<UserGame> Library { get; set; } = new List<UserGame>();
 
@@ -70,7 +76,5 @@ namespace DteamBackend.Models
         public ICollection<UserWishlist> Wishlist { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> CartItems { get; set; } = new List<UserCartItem>();
-        public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
-        public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = new List<FriendRequest>();
     }
 }

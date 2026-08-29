@@ -1,78 +1,90 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { UserGame, Game } from '../types';
 import { gamesStore } from './gamesStore';
 import { authStore } from './authStore';
 import { uiStore } from './uiStore';
-
-const INITIAL_LIBRARY: UserGame[] = [
-  {
-    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-    gameId: '1',
-    purchasedAt: '2026-02-10T15:00:00Z',
-    playTimeMinutes: 450,
-    lastPlayedAt: '2026-08-20T21:30:00Z',
-    isFavorite: true,
-  },
-  {
-    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-    gameId: '3',
-    purchasedAt: '2026-03-12T11:00:00Z',
-    playTimeMinutes: 120,
-    lastPlayedAt: '2026-08-18T18:15:00Z',
-    isFavorite: false,
-  },
-];
+import { userService } from '../services/userService';
 
 function createLibraryStore() {
   const { subscribe, set, update } = writable<{
     items: UserGame[];
     selectedGameId: string | null;
+    isLoading: boolean;
+    hasLoaded: boolean;
   }>({
-    items: INITIAL_LIBRARY,
-    selectedGameId: '1',
+    items: [],
+    selectedGameId: null,
+    isLoading: false,
+    hasLoaded: false,
   });
 
   return {
     subscribe,
+
+    loadLibrary: async () => {
+      update((s) => ({ ...s, isLoading: true }));
+      try {
+        const items = await userService.getLibrary();
+        update((s) => {
+          const stillExists = s.selectedGameId && items.some((i) => i.gameId === s.selectedGameId);
+          return {
+            ...s,
+            items: items || [],
+            selectedGameId: stillExists ? s.selectedGameId : (items[0]?.gameId ?? null),
+            isLoading: false,
+            hasLoaded: true,
+          };
+        });
+      } catch (err) {
+        console.warn('[libraryStore] Не вдалося завантажити бібліотеку:', err);
+        update((s) => ({ ...s, items: [], isLoading: false, hasLoaded: true }));
+      }
+    },
+
+    clear: () => set({ items: [], selectedGameId: null, isLoading: false, hasLoaded: false }),
+
     selectGame: (gameId: string | null) => update((s) => ({ ...s, selectedGameId: gameId })),
-    toggleFavorite: (gameId: string) => {
+
+    toggleFavorite: async (gameId: string) => {
       update((s) => ({
         ...s,
         items: s.items.map((item) =>
           item.gameId === gameId ? { ...item, isFavorite: !item.isFavorite } : item
         ),
       }));
-    },
-    buyGame: (game: Game) => {
-      let isAlreadyOwned = false;
-      update((s) => {
-        if (s.items.some((i) => i.gameId === game.id)) {
-          isAlreadyOwned = true;
-          return s;
-        }
-        const price = Number(game.priceInNanoTons);
-        authStore.updateBalance(-price);
-        uiStore.addToast({
-          title: 'Purchase Successful!',
-          message: `${game.title} has been added to your Library.`,
-          type: 'success',
-        });
-        return {
+
+      try {
+        await userService.toggleFavorite(gameId);
+      } catch (err: any) {
+        update((s) => ({
           ...s,
-          items: [
-            ...s.items,
-            {
-              userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-              gameId: game.id,
-              purchasedAt: new Date().toISOString(),
-              playTimeMinutes: 0,
-              lastPlayedAt: null,
-              isFavorite: false,
-            },
-          ],
-        };
+          items: s.items.map((item) =>
+            item.gameId === gameId ? { ...item, isFavorite: !item.isFavorite } : item
+          ),
+        }));
+        uiStore.addToast({
+          title: 'Помилка',
+          message: err?.message || 'Не вдалося оновити обране.',
+          type: 'error',
+        });
+      }
+    },
+
+    buyGame: async (game: Game) => {
+      const alreadyOwned = get({ subscribe }).items.some((i) => i.gameId === game.id);
+      if (alreadyOwned) return false;
+
+      uiStore.addToast({
+        title: 'Purchase Successful!',
+        message: `${game.title} has been added to your Library.`,
+        type: 'success',
       });
-      return !isAlreadyOwned;
+
+      await userService.getLibrary().then((items) => {
+        update((s) => ({ ...s, items: items || [], hasLoaded: true }));
+      }).catch(() => {});
+
+      return true;
     },
   };
 }

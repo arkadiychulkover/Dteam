@@ -82,11 +82,13 @@ namespace DteamBackend.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            var token = _jwtTokenService.GenerateToken(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user);
+            var refreshToken = await _jwtTokenService.GenerateRefreshTokenAsync(user);
 
             return Ok(new AuthResponseDto
             {
-                Token = token,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
                 User = UserDto.FromEntity(user)
             });
         }
@@ -124,20 +126,41 @@ namespace DteamBackend.Controllers
             user.Status = UserStatus.Online;
             await _db.SaveChangesAsync();
 
-            var token = _jwtTokenService.GenerateToken(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user);
+            var refreshToken = await _jwtTokenService.GenerateRefreshTokenAsync(user);
 
             return Ok(new AuthResponseDto
             {
-                Token = token,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
                 User = UserDto.FromEntity(user)
             });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<ActionResult<AuthResponseDto>> Refresh([FromBody] RefreshTokenRequestDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var response = await _jwtTokenService.RefreshTokensAsync(dto.RefreshToken);
+                return Ok(response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
 
         [Authorize]
         [HttpGet("me")]
         public async Task<ActionResult<UserDto>> GetMe()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -207,7 +230,7 @@ namespace DteamBackend.Controllers
             }
 
             var secureResetToken = Guid.NewGuid().ToString();
-            user.PasswordResetToken = secureResetToken; 
+            user.PasswordResetToken = secureResetToken;
             user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(10);
             await _db.SaveChangesAsync();
 
@@ -222,8 +245,8 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = await _db.Users.FirstOrDefaultAsync(u => 
-                u.PasswordResetToken == dto.Token && 
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                u.PasswordResetToken == dto.Token &&
                 u.PasswordResetTokenExpiresAt > DateTime.UtcNow);
 
             if (user == null)
@@ -247,7 +270,7 @@ namespace DteamBackend.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             if (Guid.TryParse(userIdClaim, out var userId))
@@ -256,8 +279,8 @@ namespace DteamBackend.Controllers
                 if (user != null)
                 {
                     user.Status = UserStatus.Offline;
-                    await _db.SaveChangesAsync();
                 }
+                await _jwtTokenService.RevokeUserTokensAsync(userId);
             }
 
             return Ok(new { message = "Success logout" });

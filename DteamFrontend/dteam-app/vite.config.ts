@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     svelte(),
@@ -12,6 +11,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
+        target: 'http://localhost:5117',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/game_images': {
         target: 'http://localhost:5117',
         changeOrigin: true,
         secure: false,
@@ -28,7 +32,12 @@ export default defineConfig({
         secure: false,
         ws: true,
       },
-      '/game_images': {
+      '/comunity': {
+        target: 'http://localhost:5117',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
         target: 'http://localhost:5117',
         changeOrigin: true,
         secure: false,

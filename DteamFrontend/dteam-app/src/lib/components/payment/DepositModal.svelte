@@ -122,6 +122,7 @@
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
   <div class="relative w-full max-w-lg bg-[#09151e]/95 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 overflow-hidden text-slate-200">
+    
     <div class="absolute -top-24 -right-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -134,6 +135,7 @@
     </button>
 
     {#if successResult}
+      
       <div class="text-center py-4 space-y-5 animate-in zoom-in-95 duration-300">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-black shadow-lg shadow-emerald-500/30 mx-auto animate-bounce">
           <CheckCircle2 class="w-9 h-9 stroke-[2.5]" />
@@ -177,6 +179,7 @@
       </div>
 
     {:else}
+      
       <div class="flex items-center gap-3.5 mb-6">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black shadow-lg shadow-cyan-500/25 shrink-0">
           <Coins class="w-6 h-6" />
@@ -211,6 +214,7 @@
       {/if}
 
       <div class="space-y-5 text-xs">
+        
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <span class="font-bold text-slate-300 flex items-center gap-1.5">

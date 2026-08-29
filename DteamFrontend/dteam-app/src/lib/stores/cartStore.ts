@@ -4,6 +4,7 @@ import { cartService } from '../services/cartService';
 import { authStore, currentUser } from './authStore';
 import { wishlistStore } from './wishlistStore';
 import { uiStore } from './uiStore';
+import { libraryStore } from './libraryStore';
 
 function createCartStore() {
   const { subscribe, set, update } = writable<{
@@ -224,6 +225,7 @@ function createCartStore() {
           message: res.message || 'Ігри додано до вашої бібліотеки!',
           type: 'success',
         });
+        libraryStore.loadLibrary();
         return res;
       } catch (err: any) {
         update((s) => ({ ...s, isLoading: false }));

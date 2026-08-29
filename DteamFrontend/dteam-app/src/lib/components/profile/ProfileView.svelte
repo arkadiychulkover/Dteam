@@ -133,7 +133,7 @@
       </h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {#each $currentUser.createdGames || [] as game}
+        {#each ($currentUser as any)?.createdGames || [] as game}
           <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex items-center gap-4">
             <img src={game.coverUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl" />
             <div>

@@ -20,7 +20,7 @@ namespace DteamBackend
 
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
             {
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
                 options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
             builder.Services.AddScoped(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
@@ -111,7 +111,7 @@ namespace DteamBackend
                 try
                 {
                     var context = services.GetRequiredService<AppDbContext>();
-                    await context.Database.MigrateAsync();
+                    await context.Database.EnsureCreatedAsync();
 
                     var initDataService = services.GetRequiredService<IInitDataService>();
                     await initDataService.InitializeAsync(context);

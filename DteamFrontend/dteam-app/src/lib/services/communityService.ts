@@ -1,0 +1,120 @@
+import { api } from './api';
+
+export interface CommunityPost {
+  id: string;
+  gameId: string;
+  author: {
+    id: string;
+    username: string;
+    avatarUrl: string;
+  };
+  createdAt: string;
+  category: 'all' | 'forum' | 'screenshots' | 'videos' | 'guides' | 'news';
+  title: string;
+  content: string;
+  media: {
+    type: 'image' | 'video' | 'none';
+    url: string;
+    thumbnailUrl?: string;
+  };
+  stats: {
+    likesCount: number;
+    commentsCount: number;
+    isLiked: boolean;
+  };
+}
+
+export interface CommunityComment {
+  id: string;
+  postId: string;
+  author: {
+    id: string;
+    username: string;
+    avatarUrl: string;
+  };
+  createdAt: string;
+  content: string;
+  likesCount: number;
+  isLiked: boolean;
+  replies: {
+    id: string;
+    author: {
+      id: string;
+      username: string;
+      avatarUrl: string;
+    };
+    createdAt: string;
+    content: string;
+  }[];
+}
+
+export interface GetPostsResponse {
+  gameTitle: string;
+  subscribersCount: number;
+  onlineCount: number;
+  posts: CommunityPost[];
+}
+
+export interface GetPostDetailsResponse {
+  post: CommunityPost;
+  comments: CommunityComment[];
+}
+
+export const communityService = {
+  getPosts: async (gameId: string | null, category = 'all', search = '', sortBy = 'newest'): Promise<GetPostsResponse> => {
+    const params = new URLSearchParams({ category, search, sortBy });
+    const url = gameId
+      ? `community/${gameId}/posts?${params.toString()}`
+      : `community/posts?${params.toString()}`;
+    return await api.get<GetPostsResponse>(url);
+  },
+
+  getPostDetails: async (postId: string): Promise<GetPostDetailsResponse> => {
+    return await api.get<GetPostDetailsResponse>(`community/posts/${postId}`);
+  },
+
+  createPost: async (
+    gameId: string | null, 
+    post: { 
+      category: string; 
+      title: string; 
+      content: string; 
+      mediaType?: string; 
+      mediaUrl?: string; 
+      mediaThumbnailUrl?: string;
+      file?: File | null;
+    }
+  ): Promise<CommunityPost> => {
+    const url = gameId ? `community/${gameId}/posts` : `community/posts`;
+    if (post.file) {
+      const formData = new FormData();
+      formData.append('category', post.category);
+      formData.append('title', post.title);
+      formData.append('content', post.content);
+      formData.append('mediaType', post.mediaType || 'none');
+      if (post.mediaUrl) formData.append('mediaUrl', post.mediaUrl);
+      if (post.mediaThumbnailUrl) formData.append('mediaThumbnailUrl', post.mediaThumbnailUrl);
+      formData.append('file', post.file);
+      return await api.post<CommunityPost>(url, formData);
+    }
+    return await api.post<CommunityPost>(url, post);
+  },
+
+  uploadMedia: async (file: File): Promise<{ url: string; fileName: string; type: 'image' | 'video' }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await api.post<{ url: string; fileName: string; type: 'image' | 'video' }>('community/upload', formData);
+  },
+
+  toggleLikePost: async (postId: string): Promise<{ liked: boolean; likesCount: number }> => {
+    return await api.post<{ liked: boolean; likesCount: number }>(`community/posts/${postId}/like`);
+  },
+
+  addComment: async (postId: string, content: string): Promise<CommunityComment> => {
+    return await api.post<CommunityComment>(`community/posts/${postId}/comments`, { content });
+  },
+
+  addReply: async (commentId: string, content: string): Promise<any> => {
+    return await api.post<any>(`community/comments/${commentId}/reply`, { content });
+  }
+};
