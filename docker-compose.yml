@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: dteam-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dteam_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - db-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dteam_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./DteamBackend
+      dockerfile: Dockerfile
+    container_name: dteam-backend
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5117
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=dteam_db;Username=postgres;Password=postgres
+    ports:
+      - "5117:5117"
+    volumes:
+      - ./DteamBackend/DteamBackend/wwwroot/game_images:/app/wwwroot/game_images
+    networks:
+      - db-internal
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  db-internal:
+    internal: true
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

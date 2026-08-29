@@ -306,7 +306,6 @@ namespace DteamBackend.Controllers
 
             var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
 
-            // Deduct balance
             user.BalanceInNanoTons -= totalRequiredNanoTons;
             user.UpdatedAt = DateTime.UtcNow;
 
@@ -334,7 +333,6 @@ namespace DteamBackend.Controllers
                 }
             }
 
-            // Remove from wishlist if present
             var purchasedGameIds = gamesToPurchase.Select(g => g.game.Id).ToList();
             var wishlistsToRemove = await _context.UserWishlists
                 .Where(w => w.UserId == userId && purchasedGameIds.Contains(w.GameId))
@@ -345,7 +343,6 @@ namespace DteamBackend.Controllers
                 _context.UserWishlists.RemoveRange(wishlistsToRemove);
             }
 
-            // Clear Cart
             _context.UserCartItems.RemoveRange(cartItems);
 
             await _context.SaveChangesAsync();

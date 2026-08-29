@@ -175,8 +175,10 @@ namespace DteamBackend.Controllers
             }
 
             var friendsCount = await _context.UserFriends
-                .CountAsync(uf => (uf.UserId == userId || uf.FriendId == userId)
-                                && uf.Status == FriendshipStatus.Accepted);
+                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted)
+                .Select(uf => uf.FriendId)
+                .Distinct()
+                .CountAsync();
 
             var gamesCount = await _context.UserGames
                 .CountAsync(ug => ug.UserId == userId);
@@ -195,10 +197,6 @@ namespace DteamBackend.Controllers
                 })
                 .ToListAsync();
 
-            // Ігри, придбані/додані користувачем у бібліотеку (те, що показує вкладка "Ігри"
-            // на публічному профілі). Раніше там помилково показувались лише publishedGames —
-            // ігри, які цей користувач сам випустив як розробник, тому у звичайних гравців
-            // вкладка "Ігри" завжди була порожня.
             var libraryGames = await _context.UserGames
                 .Include(ug => ug.Game)
                 .AsNoTracking()
@@ -266,28 +264,21 @@ namespace DteamBackend.Controllers
         [HttpGet("{userId:guid}/friends")]
         public async Task<IActionResult> GetPublicFriends(Guid userId)
         {
-            var friendships = await _context.UserFriends
-                .Include(uf => uf.User)
+            var friends = await _context.UserFriends
                 .Include(uf => uf.Friend)
                 .AsNoTracking()
-                .Where(uf => (uf.UserId == userId || uf.FriendId == userId)
-                          && uf.Status == FriendshipStatus.Accepted)
+                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted && uf.Friend != null)
+                .Select(uf => new
+                {
+                    id = uf.Friend.Id,
+                    username = uf.Friend.Username,
+                    avatarUrl = uf.Friend.AvatarUrl,
+                    status = (int)uf.Friend.Status
+                })
+                .Distinct()
                 .ToListAsync();
 
-            var result = friendships.Select(uf =>
-            {
-                var isOwner = uf.UserId == userId;
-                var other = isOwner ? uf.Friend : uf.User;
-                return new
-                {
-                    id = other.Id,
-                    username = other.Username,
-                    avatarUrl = other.AvatarUrl,
-                    status = (int)other.Status
-                };
-            });
-
-            return Ok(result);
+            return Ok(friends);
         }
 
         [HttpGet("library")]

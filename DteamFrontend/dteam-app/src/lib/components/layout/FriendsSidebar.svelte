@@ -26,7 +26,7 @@
   <aside
     class="fixed right-0 top-0 bottom-0 w-80 bg-[#0f121d] border-l border-slate-800 shadow-2xl z-50 flex flex-col p-4 animate-in slide-in-from-right"
   >
-    <!-- Header -->
+    
     <div class="flex items-center justify-between pb-3 border-b border-slate-800">
       <div class="flex items-center gap-2">
         <Users class="w-4 h-4 text-cyan-400" />
@@ -40,7 +40,6 @@
       </button>
     </div>
 
-    <!-- Quick Add Friend Form -->
     <div class="py-3 border-b border-slate-800">
       {#if isAdding}
         <form onsubmit={(e) => { e.preventDefault(); handleAddFriend(); }} class="flex gap-2">
@@ -68,7 +67,6 @@
       {/if}
     </div>
 
-    <!-- Friends List -->
     <div class="flex-1 overflow-y-auto py-2 space-y-1">
       {#each $friendsStore.friends as f}
         <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/60 transition-all group">

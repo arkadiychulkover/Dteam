@@ -20,9 +20,6 @@ function createProfileStore() {
   return {
     subscribe,
 
-    // Відкриває вкладку "Профіль" для вказаного користувача.
-    // Використовується скрізь, де є клікабельне посилання на профіль
-    // (список друзів, автор поста спільноти тощо).
     viewProfile: (userId: string) => {
       set({ viewedUserId: userId, profile: null, friends: [], isLoading: true, error: null });
       uiStore.setTab('profile');
@@ -45,9 +42,11 @@ function createProfileStore() {
         userService.getPublicProfile(userId),
         userService.getPublicFriends(userId).catch(() => []),
       ]);
+      const uniqueFriends = Array.from(new Map((friends || []).map((f) => [f.id, f])).values());
+      const updatedProfile = profile ? { ...profile, friendsCount: uniqueFriends.length } : null;
       update((s) =>
         s.viewedUserId === userId
-          ? { ...s, profile, friends, isLoading: false, error: null }
+          ? { ...s, profile: updatedProfile, friends: uniqueFriends, isLoading: false, error: null }
           : s
       );
     } catch (err: any) {

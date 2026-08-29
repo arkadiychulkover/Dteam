@@ -38,12 +38,12 @@
 
 <div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-md">
-    <!-- Glow Backdrops -->
+    
     <div class="absolute -top-10 -left-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-10 -right-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
-      <!-- Header -->
+      
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#030d12] border border-cyan-500/30 text-cyan-400 mb-4 shadow-lg">
           <KeyRound class="w-7 h-7" />
@@ -63,7 +63,7 @@
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-5">
-        <!-- Email Input -->
+        
         <div>
           <label for="forgot-identifier" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
             Email
@@ -83,7 +83,6 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
         <button
           type="submit"
           disabled={isSubmitting}
@@ -99,7 +98,6 @@
         </button>
       </form>
 
-      <!-- Back to Login Link -->
       <div class="mt-8 pt-6 border-t border-cyan-950/80 text-center">
         <button
           onclick={() => uiStore.setTab('login')}

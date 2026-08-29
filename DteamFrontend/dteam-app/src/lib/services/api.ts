@@ -3,7 +3,6 @@ import { API_BASE_URL } from '../utils/constants';
 class ApiClient {
   private token: string | null = null;
   private refreshToken: string | null = null;
-  // Щоб паралельні 401-запити не спричиняли декілька одночасних /auth/refresh
   private refreshPromise: Promise<string | null> | null = null;
 
   constructor() {
@@ -37,7 +36,6 @@ class ApiClient {
       try {
         this.token = localStorage.getItem('dteam_token');
       } catch {
-        // ignore
       }
     }
     return this.token;
@@ -63,20 +61,16 @@ class ApiClient {
       try {
         this.refreshToken = localStorage.getItem('dteam_refresh_token');
       } catch {
-        // ignore
       }
     }
     return this.refreshToken;
   }
 
-  // Викликається після успішного логіну/реєстрації/рефрешу — зберігає обидва токени одразу.
   public setTokens(accessToken: string | null, refreshToken: string | null) {
     this.setToken(accessToken);
     this.setRefreshToken(refreshToken);
   }
 
-  // Намагається оновити access-токен за допомогою refresh-токена.
-  // Повертає новий access-токен або null, якщо оновити не вдалося.
   private async refreshAccessToken(): Promise<string | null> {
     const currentRefreshToken = this.getRefreshToken();
     if (!currentRefreshToken) {
@@ -136,8 +130,6 @@ class ApiClient {
       });
 
       if (!response.ok) {
-        // Токен протух — пробуємо один раз оновити його через refresh-токен і повторити запит,
-        // щоб користувача не викидало з "Спільноти" чи інших авторизованих дій кожні 15 хвилин.
         if (
           response.status === 401 &&
           !isRetry &&
@@ -167,7 +159,6 @@ class ApiClient {
             errorMessage = errorData.title;
           }
         } catch {
-          // ignore json parse error
         }
 
         const err: any = new Error(errorMessage);

@@ -12,26 +12,26 @@
     ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft
   } from 'lucide-svelte';
 
-  // Стан активної вкладки лівої колонки
   type TabId = 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
   let activeTab = $state<TabId>('обговорення');
 
   const profile = $derived($profileStore.profile);
   const friends = $derived($profileStore.friends);
+  const uniqueFriends = $derived(
+    Array.from(new Map(friends.map((f) => [f.id, f])).values())
+  );
   const isLoading = $derived($profileStore.isLoading);
   const error = $derived($profileStore.error);
 
   const menuItems: { id: TabId; label: string; count: (() => number | null) }[] = [
     { id: 'ігри', label: 'Ігри', count: () => profile?.gamesCount ?? null },
-    { id: 'друзі', label: 'Друзі', count: () => profile?.friendsCount ?? null },
+    { id: 'друзі', label: 'Друзі', count: () => uniqueFriends.length },
     { id: 'обговорення', label: 'Обговорення', count: () => null },
     { id: 'скріншоти', label: 'Скріншоти', count: () => null },
     { id: 'відео', label: 'Відео', count: () => null },
     { id: 'гайди', label: 'Гайди', count: () => null },
   ];
 
-  // Пости спільноти цього користувача (клієнтський фільтр за автором,
-  // бо бекенд community/posts не підтримує фільтр за authorId)
   let allPosts = $state<CommunityPost[]>([]);
   let isLoadingPosts = $state(false);
 
@@ -108,7 +108,7 @@
       </button>
     </div>
   {:else}
-    <!-- Банер (лише перегляд — редагувати можна тільки свій банер) -->
+    
     <div
       class="w-full h-48 md:h-64 bg-cover bg-center bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e]"
       style={profile.bannerUrl ? `background-image: url('${profile.bannerUrl}')` : ''}
@@ -116,10 +116,9 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <!-- Шапка профілю -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
-          <!-- Аватар -->
+          
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
             {#if profile.avatarUrl}
               <img src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
@@ -130,7 +129,6 @@
             {/if}
           </div>
 
-          <!-- Інфо користувача -->
           <div class="pb-2">
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <h1 class="text-2xl font-bold text-white">{profile.username}</h1>
@@ -152,7 +150,6 @@
           </div>
         </div>
 
-        <!-- Кнопки дій -->
         {#if !profile.isOwnProfile}
           <div class="flex items-center gap-3 pb-2 w-full md:w-auto">
             {#if profile.friendshipStatus === 'friends'}
@@ -183,10 +180,8 @@
         {/if}
       </div>
 
-      <!-- Основний контент (2 колонки) -->
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
 
-        <!-- Ліва колонка (Контент) -->
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
 
           {#if activeTab === 'ігри'}
@@ -242,13 +237,13 @@
           {/if}
 
           {#if activeTab === 'друзі'}
-            {#if friends.length === 0}
+            {#if uniqueFriends.length === 0}
               <div class="text-center py-16 text-slate-500 text-sm">
                 У користувача поки немає друзів.
               </div>
             {:else}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {#each friends as f}
+                {#each uniqueFriends as f}
                   <button
                     onclick={() => profileStore.viewProfile(f.id)}
                     class="flex items-center gap-3 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-600/60 transition-colors text-left cursor-pointer"
@@ -370,10 +365,8 @@
 
         </div>
 
-        <!-- Права колонка (Сайдбар) -->
         <div class="space-y-6">
 
-          <!-- Меню -->
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
             <div class="flex items-center gap-3 px-4 mb-4">
               <span class="text-base font-medium">Приєднався</span>
@@ -395,14 +388,13 @@
             </nav>
           </div>
 
-          <!-- Друзі (превью) -->
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
             <div class="flex items-center justify-between px-2 mb-4">
               <span class="font-medium text-white flex items-center gap-1.5"><Users class="w-4 h-4 text-cyan-400" /> Друзі</span>
-              <span class="bg-[#0b4e63] px-2.5 py-0.5 rounded-full text-xs text-white">{profile.friendsCount}</span>
+              <span class="bg-[#0b4e63] px-2.5 py-0.5 rounded-full text-xs text-white">{uniqueFriends.length}</span>
             </div>
             <div class="space-y-2">
-              {#each friends.slice(0, 5) as f}
+              {#each uniqueFriends.slice(0, 5) as f}
                 <button
                   onclick={() => profileStore.viewProfile(f.id)}
                   class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-cyan-900/20 transition-colors text-left cursor-pointer"

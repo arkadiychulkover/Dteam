@@ -21,7 +21,6 @@ function createLibraryStore() {
   return {
     subscribe,
 
-    // Завантажує бібліотеку користувача з бекенду — тільки куплені ігри
     loadLibrary: async () => {
       update((s) => ({ ...s, isLoading: true }));
       try {
@@ -47,7 +46,6 @@ function createLibraryStore() {
     selectGame: (gameId: string | null) => update((s) => ({ ...s, selectedGameId: gameId })),
 
     toggleFavorite: async (gameId: string) => {
-      // Оптимістичне оновлення UI
       update((s) => ({
         ...s,
         items: s.items.map((item) =>
@@ -58,7 +56,6 @@ function createLibraryStore() {
       try {
         await userService.toggleFavorite(gameId);
       } catch (err: any) {
-        // Відкат при помилці
         update((s) => ({
           ...s,
           items: s.items.map((item) =>
@@ -73,9 +70,6 @@ function createLibraryStore() {
       }
     },
 
-    // Купівля гри лишається як зручний локальний тригер після оплати:
-    // основне джерело правди — бекенд, тому одразу після виклику
-    // перезавантажуємо бібліотеку, щоб отримати актуальні дані.
     buyGame: async (game: Game) => {
       const alreadyOwned = get({ subscribe }).items.some((i) => i.gameId === game.id);
       if (alreadyOwned) return false;

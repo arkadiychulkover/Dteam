@@ -8,10 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DteamBackend.Controllers
 {
-    // Загальний ендпоінт завантаження медіа для будь-якого авторизованого користувача.
-    // На відміну від GamesController.UploadGameImage (тільки для адмінів і тільки картинки),
-    // цей ендпоінт дозволяє звичайним користувачам завантажувати картинки ТА відео —
-    // потрібно для постів у спільноті та банера профілю.
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]

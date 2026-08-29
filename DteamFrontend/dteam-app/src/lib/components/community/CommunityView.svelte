@@ -1,30 +1,27 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
   import { ThumbsUp, MessageSquare, Loader2 } from 'lucide-svelte';
+  import { onlineHubService } from '../../services/onlineHubService';
 
   interface Props {
     gameId?: string | null;
     gameName?: string;
-    subscribersCount?: number;
-    onlineCount?: number;
   }
 
   let {
     gameId = null,
-    gameName = "Якась гра, яка дуже всім сподобається",
-    subscribersCount = 3421,
-    onlineCount = 121
+    gameName = "Якась гра, яка дуже всім сподобається"
   }: Props = $props();
 
-  // Види постів: 'discussion' | 'screenshot' | 'video' | 'guide'
+  let onlineCount = $state(onlineHubService.getOnlineCount());
+
   type TabType = 'discussion' | 'screenshot' | 'video' | 'guide';
   let activeTab = $state<TabType>('discussion');
 
-  // Поля форми
   let title = $state('');
   let description = $state('');
   let content = $state('');
@@ -33,12 +30,11 @@
   let mediaThumbnailUrl = $state('');
   let isSubmitting = $state(false);
 
-  // Стан реального завантаження медіа
   let isUploadingMedia = $state(false);
   let isDraggingOver = $state(false);
   let fileInputEl: HTMLInputElement | undefined = $state();
+  let selectedFile = $state<File | null>(null);
 
-  // Скидання полей при перемиканні вкладок
   function setTab(tab: TabType) {
     activeTab = tab;
     title = '';
@@ -47,10 +43,10 @@
     caption = '';
     mediaUrl = '';
     mediaThumbnailUrl = '';
+    selectedFile = null;
     isDraggingOver = false;
   }
 
-  // Визначаємо, який тип файлу очікуємо на поточній вкладці
   function expectedMediaKind(): 'image' | 'video' {
     return activeTab === 'video' ? 'video' : 'image';
   }
@@ -61,15 +57,20 @@
   }
 
   function validateFile(file: File, kind: 'image' | 'video'): string | null {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
     if (kind === 'image') {
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+      const isValid = allowedExts.includes(ext) || file.type.startsWith('image/') || ALLOWED_IMAGE_TYPES.includes(file.type);
+      if (!isValid) {
         return 'Непідтримуваний формат зображення. Дозволені: JPG, PNG, WEBP, GIF.';
       }
       if (file.size > MAX_IMAGE_SIZE_BYTES) {
         return `Розмір зображення перевищує ліміт ${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)} МБ.`;
       }
     } else {
-      if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      const allowedExts = ['mp4', 'webm', 'mov', 'm4v'];
+      const isValid = allowedExts.includes(ext) || file.type.startsWith('video/') || ALLOWED_VIDEO_TYPES.includes(file.type);
+      if (!isValid) {
         return 'Непідтримуваний формат відео. Дозволені: MP4, WEBM, MOV.';
       }
       if (file.size > MAX_VIDEO_SIZE_BYTES) {
@@ -79,7 +80,6 @@
     return null;
   }
 
-  // Реальне завантаження файлу на бекенд (замінює попередню заглушку simulateUpload)
   async function uploadFile(file: File) {
     const kind = expectedMediaKind();
     const validationError = validateFile(file, kind);
@@ -88,16 +88,16 @@
       return;
     }
 
+    selectedFile = file;
     isUploadingMedia = true;
     try {
-      const uploaded = await mediaService.upload(file);
+      const uploaded = await communityService.uploadMedia(file);
       mediaUrl = uploaded.url;
 
       if (kind === 'video') {
         try {
           mediaThumbnailUrl = await mediaService.generateAndUploadVideoThumbnail(file);
-        } catch (thumbErr) {
-          console.warn('[CommunityView] Не вдалося створити прев\'ю відео:', thumbErr);
+        } catch {
           mediaThumbnailUrl = '';
         }
       } else {
@@ -149,8 +149,6 @@
     isDraggingOver = false;
   }
 
-  // ==== Стрічка публікацій спільноти ====
-  // Мапа розділів для сортування: Дискусія, Скріншот, Відео, Гайд
   const feedCategoryLabels: Record<'all' | 'forum' | 'screenshots' | 'videos' | 'guides', string> = {
     all: 'Усі',
     forum: 'Дискусія',
@@ -182,13 +180,11 @@
   }
 
   async function handleToggleLike(post: CommunityPost) {
-    // Оптимістичне оновлення
     post.stats.isLiked = !post.stats.isLiked;
     post.stats.likesCount += post.stats.isLiked ? 1 : -1;
     try {
       await communityService.toggleLikePost(post.id);
     } catch (e) {
-      // Відкат при помилці
       post.stats.isLiked = !post.stats.isLiked;
       post.stats.likesCount += post.stats.isLiked ? 1 : -1;
     }
@@ -196,9 +192,14 @@
 
   onMount(() => {
     loadPosts();
+
+    const unsubscribeOnline = onlineHubService.onOnlineCountChanged((count) => {
+      onlineCount = count;
+    });
+
+    onDestroy(unsubscribeOnline);
   });
 
-  // Емуляція вставки форматування
   function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
     const formats = {
       bold: { start: '**', end: '**' },
@@ -210,11 +211,9 @@
     content += `${chunk.start}текст${chunk.end}`;
   }
 
-  // Відправка форми на бекенд
   async function handleSubmit(e?: Event) {
     if (e) e.preventDefault();
 
-    // Валідація
     if ((activeTab === 'discussion' || activeTab === 'guide') && !title.trim()) {
       uiStore.addToast({
         title: 'Помилка валідації',
@@ -226,7 +225,6 @@
 
     isSubmitting = true;
 
-    // Мапимо UI-таби в категорії для бекенду
     const categoryMap: Record<TabType, string> = {
       discussion: 'forum',
       screenshot: 'screenshots',
@@ -248,7 +246,8 @@
       content: finalContent,
       mediaType: mediaUrl ? (activeTab === 'video' ? 'video' : 'image') : 'none',
       mediaUrl,
-      mediaThumbnailUrl: mediaThumbnailUrl || undefined
+      mediaThumbnailUrl: mediaThumbnailUrl || undefined,
+      file: selectedFile || null
     };
 
     try {
@@ -259,9 +258,7 @@
         type: 'success'
       });
       
-      // Повернення до дефолтного стану
       setTab('discussion');
-      // Оновлюємо стрічку, щоб щойно опублікований пост одразу з'явився
       loadPosts();
     } catch (error: any) {
       console.error('Failed to create post:', error);
@@ -279,28 +276,26 @@
     setTab('discussion');
   }
 
-  // Прихований input для вибору файлу, спільний для всіх вкладок
 </script>
 
 <input
   bind:this={fileInputEl}
   type="file"
-  accept={expectedMediaKind() === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/jpeg,image/png,image/webp,image/gif'}
+  accept={expectedMediaKind() === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime' : 'image/*,image/jpeg,image/png,image/webp,image/gif'}
   class="hidden"
   onchange={handleFileInputChange}
 />
 
 <div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
-  <!-- Заголовок сторінки -->
+  
   <h1 class="text-3xl font-black mb-6 tracking-wide text-white font-display">Створення публікації</h1>
 
   <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-    
-    <!-- Ліва частина: Форма -->
+
     <div class="lg:col-span-3 bg-[#03232c] border border-cyan-900/60 rounded-2xl p-6 shadow-2xl flex flex-col justify-between min-h-[600px]">
       
       <div>
-        <!-- Навігація типів поста (Таби) -->
+        
         <div class="grid grid-cols-4 gap-2 mb-6">
           <button
             type="button"
@@ -335,7 +330,6 @@
           </button>
         </div>
 
-        <!-- 1. ОБГОВОРЕННЯ -->
         {#if activeTab === 'discussion'}
           <div class="space-y-5">
             <div>
@@ -374,7 +368,6 @@
               </div>
             </div>
 
-            <!-- Зона перетягування файлу -->
             <button
               type="button"
               onclick={openFilePicker}
@@ -401,10 +394,9 @@
           </div>
         {/if}
 
-        <!-- 2. СКРІНШОТ -->
         {#if activeTab === 'screenshot'}
           <div class="space-y-5">
-            <!-- Велика пунктирна зона завантаження зображення -->
+            
             <button
               type="button"
               onclick={openFilePicker}
@@ -442,10 +434,9 @@
           </div>
         {/if}
 
-        <!-- 3. ВІДЕО -->
         {#if activeTab === 'video'}
           <div class="space-y-5">
-            <!-- Велика пунктирна зона завантаження відео -->
+            
             <button
               type="button"
               onclick={openFilePicker}
@@ -483,11 +474,10 @@
           </div>
         {/if}
 
-        <!-- 4. ГАЙД -->
         {#if activeTab === 'guide'}
           <div class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <!-- Обкладинка -->
+              
               <div>
                 <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
                 <button
@@ -515,7 +505,6 @@
                 </button>
               </div>
 
-              <!-- Заголовок + Опис -->
               <div class="space-y-3">
                 <div>
                   <div class="flex justify-between text-xs text-slate-400 mb-1 font-bold">
@@ -549,7 +538,6 @@
               </div>
             </div>
 
-            <!-- Текст гайда -->
             <div>
               <label for="guide-content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
               <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
@@ -574,7 +562,6 @@
         {/if}
       </div>
 
-      <!-- Нижні кнопки дії -->
       <div class="flex justify-end items-center gap-4 mt-8 pt-4">
         <button
           type="button"
@@ -596,19 +583,15 @@
 
     </div>
 
-    <!-- Права частина: Дані спільноти та правила -->
     <div class="space-y-4">
       <div class="text-right">
         <div class="text-sm font-bold text-slate-200">{gameName}</div>
         <div class="text-xs text-slate-400 mt-0.5 flex items-center justify-end gap-1.5">
-          <span class="font-bold text-slate-300">{subscribersCount}</span> підписників 
-          <span>•</span> 
           <span class="font-bold text-slate-300">{onlineCount}</span> онлайн
           <span class="inline-block w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
         </div>
       </div>
 
-      <!-- Сортування публікацій за розділом -->
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Сортувати за розділом</h2>
         <nav class="space-y-1.5">
@@ -655,7 +638,6 @@
 
   </div>
 
-  <!-- Стрічка публікацій спільноти -->
   <div class="w-full max-w-7xl mt-8">
     <h2 class="text-xl font-black mb-4 text-white font-display">
       Публікації{activeFeedCategory !== 'all' ? `: ${feedCategoryLabels[activeFeedCategory]}` : ''}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
@@ -13,10 +13,10 @@
   import LiveBackground from './lib/components/ui/LiveBackground.svelte';
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
+  import FriendsView from './lib/components/friends/FriendsView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
 
-  // Auth Components
   import LoginView from './lib/components/auth/LoginView.svelte';
   import RegisterView from './lib/components/auth/RegisterView.svelte';
   import ForgotPasswordView from './lib/components/auth/ForgotPasswordView.svelte';
@@ -31,6 +31,8 @@
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
+  import { friendsHubService } from './lib/services/friendsHubService';
+  import { onlineHubService } from './lib/services/onlineHubService'; // 👈 Импортируем Online Hub
   import { userService } from './lib/services/userService';
 
   let isBanned = $state(false);
@@ -53,17 +55,31 @@
       checkUserBanStatus();
       wishlistStore.loadWishlist();
       cartStore.loadCart();
-      friendsStore.loadFriends();
+      friendsStore.loadAll();
+      friendsHubService.start();
+    } else {
+      friendsHubService.stop();
     }
   });
 
   onMount(() => {
+    // 👈 Запускаем сокет подсчета онлайна при открытии приложения
+    onlineHubService.startConnection();
+
     checkUserBanStatus();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
-    friendsStore.loadFriends();
+    if ($currentUser?.id) {
+      friendsStore.loadAll();
+      friendsHubService.start();
+    }
     const interval = setInterval(checkUserBanStatus, 5000);
     return () => clearInterval(interval);
+  });
+
+  onDestroy(() => {
+    friendsHubService.stop();
+    onlineHubService.stopConnection(); // 👈 Отключаем сокет при закрытии/деструкции
   });
 </script>
 
@@ -83,6 +99,8 @@
       <LibraryView />
     {:else if $uiStore.activeTab === 'community'}
       <CommunityView />
+    {:else if $uiStore.activeTab === 'friends'}
+      <FriendsView />
     {:else if $uiStore.activeTab === 'profile'}
       <PublicProfileView />
     {:else if $uiStore.activeTab === 'my-profile'}
@@ -110,7 +128,6 @@
     {/if}
   </main>
 
-  <!-- Global Modals -->
   <LoginModal />
   <ConfirmCodeModal />
   {#if $uiStore.isDepositModalOpen}

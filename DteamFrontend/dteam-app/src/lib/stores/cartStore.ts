@@ -71,7 +71,6 @@ function createCartStore() {
         return true;
       }
 
-      // Optimistic Add
       const dummyItem: CartItem = {
         userId: user.id,
         gameId: game.id,
@@ -175,7 +174,6 @@ function createCartStore() {
       const user = get(currentUser);
       if (!user?.id) return;
 
-      // Optimistic update
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
         nextGameIds.delete(game.id);
@@ -227,7 +225,6 @@ function createCartStore() {
           message: res.message || 'Ігри додано до вашої бібліотеки!',
           type: 'success',
         });
-        // Оновлюємо бібліотеку, щоб щойно куплені ігри одразу з'явилися
         libraryStore.loadLibrary();
         return res;
       } catch (err: any) {

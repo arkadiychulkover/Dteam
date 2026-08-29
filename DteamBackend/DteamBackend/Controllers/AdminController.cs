@@ -218,6 +218,49 @@ namespace DteamBackend.Controllers
             return Ok(MapToUserDto(user));
         }
 
+        [HttpPost("users/{id:guid}/credit-balance")]
+        public async Task<ActionResult<UserDto>> CreditUserBalance(Guid id, [FromBody] CreditBalanceDto dto)
+        {
+            if (dto.AmountInNanoTons == 0)
+            {
+                return BadRequest(new { message = "Сумма начисления не может быть равна нулю" });
+            }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
+            }
+
+            var newBalance = user.BalanceInNanoTons + dto.AmountInNanoTons;
+            if (newBalance < 0)
+            {
+                return BadRequest(new { message = "Недостаточно средств на балансе пользователя для списания такой суммы" });
+            }
+
+            user.BalanceInNanoTons = newBalance;
+            if (dto.AmountInNanoTons > 0)
+            {
+                user.TotalEarningsInNanoTons += dto.AmountInNanoTons;
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            _logger.LogInformation(
+                "Admin {AdminId} {Action} {Amount} nanoTON {Direction} user {UserId} balance. Reason: {Reason}",
+                adminIdClaim,
+                dto.AmountInNanoTons > 0 ? "credited" : "debited",
+                Math.Abs(dto.AmountInNanoTons),
+                dto.AmountInNanoTons > 0 ? "to" : "from",
+                id,
+                dto.Reason ?? "—"
+            );
+
+            return Ok(MapToUserDto(user));
+        }
+
         [HttpDelete("users/{id:guid}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
@@ -268,7 +311,7 @@ namespace DteamBackend.Controllers
         [HttpPost("games")]
         public async Task<ActionResult<GameDto>> CreateGame([FromBody] CreateGameDto dto)
         {
-            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                   ?? User.FindFirst("sub")?.Value;
             Guid.TryParse(currentUserIdClaim, out var currentAdminId);
 

@@ -63,7 +63,6 @@ export interface GetPostDetailsResponse {
 export const communityService = {
   getPosts: async (gameId: string | null, category = 'all', search = '', sortBy = 'newest'): Promise<GetPostsResponse> => {
     const params = new URLSearchParams({ category, search, sortBy });
-    // Убрали дублирующий /api во всех путях
     const url = gameId
       ? `community/${gameId}/posts?${params.toString()}`
       : `community/posts?${params.toString()}`;
@@ -74,12 +73,37 @@ export const communityService = {
     return await api.get<GetPostDetailsResponse>(`community/posts/${postId}`);
   },
 
-  createPost: async (gameId: string | null, post: { category: string; title: string; content: string; mediaType: string; mediaUrl: string; mediaThumbnailUrl?: string }): Promise<CommunityPost> => {
-    // Вызываем с /community/... вместо /api/community/...
-    if (gameId) {
-      return await api.post<CommunityPost>(`community/${gameId}/posts`, post);
+  createPost: async (
+    gameId: string | null, 
+    post: { 
+      category: string; 
+      title: string; 
+      content: string; 
+      mediaType?: string; 
+      mediaUrl?: string; 
+      mediaThumbnailUrl?: string;
+      file?: File | null;
     }
-    return await api.post<CommunityPost>(`community/posts`, post);
+  ): Promise<CommunityPost> => {
+    const url = gameId ? `community/${gameId}/posts` : `community/posts`;
+    if (post.file) {
+      const formData = new FormData();
+      formData.append('category', post.category);
+      formData.append('title', post.title);
+      formData.append('content', post.content);
+      formData.append('mediaType', post.mediaType || 'none');
+      if (post.mediaUrl) formData.append('mediaUrl', post.mediaUrl);
+      if (post.mediaThumbnailUrl) formData.append('mediaThumbnailUrl', post.mediaThumbnailUrl);
+      formData.append('file', post.file);
+      return await api.post<CommunityPost>(url, formData);
+    }
+    return await api.post<CommunityPost>(url, post);
+  },
+
+  uploadMedia: async (file: File): Promise<{ url: string; fileName: string; type: 'image' | 'video' }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await api.post<{ url: string; fileName: string; type: 'image' | 'video' }>('community/upload', formData);
   },
 
   toggleLikePost: async (postId: string): Promise<{ liked: boolean; likesCount: number }> => {

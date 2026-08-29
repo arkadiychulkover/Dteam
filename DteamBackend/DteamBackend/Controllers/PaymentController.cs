@@ -72,7 +72,6 @@ namespace DteamBackend.Controllers
 
             var cleanHash = dto.TxhHash.Trim();
 
-            // Pre-check if transaction was already processed in database
             var alreadyProcessed = await _context.Tranxactions
                 .AnyAsync(t => t.TxhHash.ToLower() == cleanHash.ToLower());
 
@@ -89,7 +88,6 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            // Verify with TonService (TonAPI blockchain check)
             var isValid = await _tonService.CheckTranzaction(cleanHash, dto.Amount);
             if (!isValid)
             {
@@ -104,7 +102,6 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            // Double check to prevent race conditions
             var raceCheck = await _context.Tranxactions
                 .AnyAsync(t => t.TxhHash.ToLower() == cleanHash.ToLower());
 
@@ -120,7 +117,6 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            // Record transaction in DB
             var transactionRecord = new Tranxaction
             {
                 Id = Guid.NewGuid(),
@@ -132,7 +128,6 @@ namespace DteamBackend.Controllers
 
             await _context.Tranxactions.AddAsync(transactionRecord);
 
-            // Credit user balance (convert TON to NanoTONs: 1 TON = 1,000,000,000 NanoTONs)
             long nanoTonsToAdd = (long)Math.Round(dto.Amount * 1_000_000_000m);
             user.BalanceInNanoTons += nanoTonsToAdd;
             user.UpdatedAt = DateTime.UtcNow;

@@ -1,9 +1,11 @@
 using System.Text;
 using DteamBackend.Data;
+using DteamBackend.Hubs;
 using DteamBackend.Interfaces;
 using DteamBackend.Middlewares;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
@@ -16,7 +18,6 @@ namespace DteamBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Database Context (SQLite)
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
             {
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -24,20 +25,19 @@ namespace DteamBackend
             });
             builder.Services.AddScoped(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 
-            // HTTP Client
             builder.Services.AddHttpClient();
 
-            // Application Services
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
             builder.Services.AddScoped<TonService>();
 
-            // SMTP Email Service Configuration
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
             builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 
-            // CORS Policy
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("DteamCorsPolicy", policy =>
@@ -57,8 +57,7 @@ namespace DteamBackend
                 });
             });
 
-            // JWT Authentication Setup
-            var secretKey = builder.Configuration["Jwt:Secret"] 
+            var secretKey = builder.Configuration["Jwt:Secret"]
                 ?? "DteamSuperSecretJwtKey2026_dteam_io_security_token_key_spec_32bytes_long";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "DteamBackend";
             var audience = builder.Configuration["Jwt:Audience"] ?? "DteamApp";
@@ -83,6 +82,17 @@ namespace DteamBackend
                 };
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/hub")))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = context =>
                     {
                         Console.WriteLine($"[JWT Bearer] Auth failed: {context.Exception.Message}");
@@ -95,7 +105,6 @@ namespace DteamBackend
 
             var app = builder.Build();
 
-            // Automatic Database Migration and Seed
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -114,6 +123,8 @@ namespace DteamBackend
                 }
             }
 
+            app.UseRouting();
+
             app.UseCors("DteamCorsPolicy");
 
             app.UseStaticFiles();
@@ -129,6 +140,12 @@ namespace DteamBackend
             }
 
             app.MapControllers();
+
+            // SignalR hubs
+            app.MapHub<FriendsHub>("/hubs/friends");
+            app.MapHub<FriendsHub>("/hub/friends");
+            app.MapHub<OnlineHub>("/hubs/online");
+            app.MapHub<OnlineHub>("/hub/online");
 
             await app.RunAsync();
         }

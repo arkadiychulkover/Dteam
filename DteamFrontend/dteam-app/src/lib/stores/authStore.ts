@@ -49,7 +49,6 @@ function createAuthStore() {
     error: null,
   });
 
-  // If token exists, validate session in background with backend
   if (initialToken) {
     authService.getProfile()
       .then((freshUser) => {
@@ -57,7 +56,6 @@ function createAuthStore() {
         update((s) => ({ ...s, user: freshUser, token: initialToken, isLoading: false }));
       })
       .catch((err: any) => {
-        // Only wipe credentials if explicitly 401 Unauthorized (token invalid / expired)
         if (err.status === 401) {
           api.setTokens(null, null);
           saveStoredUser(null);
@@ -92,7 +90,6 @@ function createAuthStore() {
         return { ...s, user: updated };
       });
     },
-    // Оновлює локальний профіль (bio/avatarUrl) після успішного збереження на бекенді
     patchUser: (patch: Partial<Duser>) => {
       update((s) => {
         if (!s.user) return s;

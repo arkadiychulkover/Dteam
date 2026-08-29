@@ -82,22 +82,18 @@ export const userService = {
     await api.post(`/users/library/${gameId}/favorite`);
   },
 
-  // Публічний профіль будь-якого користувача за id
   async getPublicProfile(userId: string): Promise<PublicProfile> {
     return await api.get<PublicProfile>(`/users/${userId}/profile`);
   },
 
-  // Публічний список друзів користувача
   async getPublicFriends(userId: string): Promise<PublicFriend[]> {
     return await api.get<PublicFriend[]>(`/users/${userId}/friends`);
   },
 
-  // Рецензії, залишені поточним користувачем
   async getMyReviews(): Promise<MyReview[]> {
     return await api.get<MyReview[]>('/users/me/reviews');
   },
 
-  // Оновлення власного профілю (bio / аватар / банер)
   async updateMyProfile(patch: { bio?: string; avatarUrl?: string; bannerUrl?: string }): Promise<{ id: string; username: string; avatarUrl?: string | null; bannerUrl?: string | null; bio?: string | null }> {
     return await api.put('/users/me', patch);
   },

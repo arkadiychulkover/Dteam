@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using DteamBackend.Data;
 using DteamBackend.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,11 +73,8 @@ namespace DteamBackend.Controllers
 
         private CommunityStore CreateInitialStore()
         {
-            // Seed some realistic data
             var store = new CommunityStore();
 
-            // We can bind to game IDs dynamically, but let's seed generic ones. 
-            // The frontend will link real game IDs to these.
             string[] gameIds = { "lib-1", "lib-2", "lib-3", "lib-4" };
 
             var author1 = new AuthorDto { Id = "a1", Username = "GamerPro_UA", AvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" };
@@ -86,7 +84,6 @@ namespace DteamBackend.Controllers
             int postIndex = 1;
             foreach (var gId in gameIds)
             {
-                // Forum post
                 store.Posts.Add(new CommunityPost
                 {
                     Id = $"post-{postIndex++}",
@@ -100,7 +97,6 @@ namespace DteamBackend.Controllers
                     LikedByUsers = new List<string> { "a2" }
                 });
 
-                // Screenshot post
                 store.Posts.Add(new CommunityPost
                 {
                     Id = $"post-{postIndex++}",
@@ -114,7 +110,6 @@ namespace DteamBackend.Controllers
                     LikedByUsers = new List<string> { "a1", "a3" }
                 });
 
-                // Video post
                 store.Posts.Add(new CommunityPost
                 {
                     Id = $"post-{postIndex++}",
@@ -128,7 +123,6 @@ namespace DteamBackend.Controllers
                     LikedByUsers = new List<string>()
                 });
 
-                // Guide post
                 store.Posts.Add(new CommunityPost
                 {
                     Id = $"post-{postIndex++}",
@@ -142,7 +136,6 @@ namespace DteamBackend.Controllers
                     LikedByUsers = new List<string> { "a2" }
                 });
 
-                // News post
                 store.Posts.Add(new CommunityPost
                 {
                     Id = $"post-{postIndex++}",
@@ -157,7 +150,6 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            // Add some comments
             store.Comments.Add(new CommunityComment
             {
                 Id = "c-1",
@@ -192,23 +184,19 @@ namespace DteamBackend.Controllers
             var store = LoadStore();
             var userId = GetCurrentUserId().ToString();
 
-            // Find posts for game
             var query = store.Posts.Where(p => p.GameId.Equals(gameId, StringComparison.OrdinalIgnoreCase));
 
-            // Filter by category
             if (!string.IsNullOrEmpty(category) && !category.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
                 query = query.Where(p => p.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Search query
             if (!string.IsNullOrEmpty(search))
             {
                 var s = search.ToLower();
                 query = query.Where(p => p.Title.ToLower().Contains(s) || p.Content.ToLower().Contains(s));
             }
 
-            // Sort
             var list = query.ToList();
             if (sortBy.Equals("popular", StringComparison.OrdinalIgnoreCase) || sortBy.Equals("rating", StringComparison.OrdinalIgnoreCase))
             {
@@ -219,7 +207,6 @@ namespace DteamBackend.Controllers
                 list = list.OrderByDescending(p => p.CreatedAt).ToList();
             }
 
-            // Map and calculate comments count dynamically
             var postsDto = list.Select(p => new
             {
                 id = p.Id,
@@ -238,11 +225,9 @@ namespace DteamBackend.Controllers
                 }
             });
 
-            // Get dynamic game header metrics
             var game = await _context.Games.FirstOrDefaultAsync(g => g.Id.ToString() == gameId);
             var title = game?.Title ?? "Гра";
 
-            // Dynamic random metrics for fun
             var subscribersCount = Math.Abs(title.GetHashCode() % 15000) + 1200;
             var onlineCount = Math.Abs(title.GetHashCode() % 800) + 45;
 
@@ -255,7 +240,6 @@ namespace DteamBackend.Controllers
             });
         }
 
-        /// <summary>GET all community posts across all games (global community feed)</summary>
         [HttpGet("posts")]
         public IActionResult GetAllPosts(
             [FromQuery] string category = "all",
@@ -367,6 +351,71 @@ namespace DteamBackend.Controllers
             });
         }
 
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        private static readonly string[] AllowedVideoExtensions = { ".mp4", ".webm", ".mov", ".m4v" };
+
+        private async Task<string?> SaveCommunityFileAsync(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext) && !AllowedVideoExtensions.Contains(ext))
+            {
+                return null;
+            }
+
+            var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
+            var folders = new HashSet<string>
+            {
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "comunity"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "comunity")
+            };
+
+            foreach (var folder in folders)
+            {
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
+
+                var filePath = Path.Combine(folder, uniqueFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+
+            return $"/comunity/{uniqueFileName}";
+        }
+
+        [HttpPost("upload")]
+        [RequestSizeLimit(150L * 1024 * 1024)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 150L * 1024 * 1024)]
+        public async Task<IActionResult> UploadMedia(IFormFile? file)
+        {
+            var uploadedFile = file ?? Request.Form.Files.FirstOrDefault();
+            if (uploadedFile == null || uploadedFile.Length == 0)
+            {
+                return BadRequest(new { message = "Файл не передано або він порожній." });
+            }
+
+            var savedUrl = await SaveCommunityFileAsync(uploadedFile);
+            if (string.IsNullOrEmpty(savedUrl))
+            {
+                return BadRequest(new { message = "Непідтримуваний формат файлу. Дозволені зображення та відео." });
+            }
+
+            var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
+            var isVideo = AllowedVideoExtensions.Contains(ext);
+
+            return Ok(new
+            {
+                url = savedUrl,
+                fileName = Path.GetFileName(savedUrl),
+                type = isVideo ? "video" : "image"
+            });
+        }
+
         public class CreatePostDto
         {
             public string Category { get; set; } = "forum";
@@ -374,30 +423,74 @@ namespace DteamBackend.Controllers
             public string Content { get; set; } = string.Empty;
             public string MediaType { get; set; } = "none";
             public string MediaUrl { get; set; } = string.Empty;
-            // Опційна прев'ю-картинка для відео (генерується на фронтенді зі скріншоту кадру
-            // при завантаженні файлу). Якщо не передано — пробуємо дістати YouTube-прев'ю.
             public string? MediaThumbnailUrl { get; set; }
+            public IFormFile? File { get; set; }
+            public IFormFile? MediaFile { get; set; }
+            public IFormFile? ThumbnailFile { get; set; }
         }
 
-        // Створення поста, прив'язаного до конкретної гри (напр. вкладка "Спільнота" на сторінці гри)
         [HttpPost("{gameId}/posts")]
-        public async Task<IActionResult> CreatePost(string gameId, [FromBody] CreatePostDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreatePostForm(string gameId, [FromForm] CreatePostDto dto)
         {
             return await CreatePostInternal(gameId, dto);
         }
 
-        // Створення поста без прив'язки до гри (напр. публікація зі свого профілю).
-        // Раніше цього маршруту не існувало: фронтенд викликав POST /api/community/posts,
-        // але єдиний наявний маршрут був POST /api/community/{gameId}/posts (2 сегменти),
-        // тому ASP.NET Core знаходив збіг лише за GET /api/community/posts і повертав 405.
+        [HttpPost("{gameId}/posts")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> CreatePostJson(string gameId, [FromBody] CreatePostDto dto)
+        {
+            return await CreatePostInternal(gameId, dto);
+        }
+
         [HttpPost("posts")]
-        public async Task<IActionResult> CreateProfilePost([FromBody] CreatePostDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateProfilePostForm([FromForm] CreatePostDto dto)
+        {
+            return await CreatePostInternal(string.Empty, dto);
+        }
+
+        [HttpPost("posts")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> CreateProfilePostJson([FromBody] CreatePostDto dto)
         {
             return await CreatePostInternal(string.Empty, dto);
         }
 
         private async Task<IActionResult> CreatePostInternal(string gameId, CreatePostDto dto)
         {
+            var uploadedFile = dto.File ?? dto.MediaFile;
+            if (uploadedFile != null && uploadedFile.Length > 0)
+            {
+                var savedUrl = await SaveCommunityFileAsync(uploadedFile);
+                if (!string.IsNullOrEmpty(savedUrl))
+                {
+                    dto.MediaUrl = savedUrl;
+                    var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
+                    if (AllowedVideoExtensions.Contains(ext))
+                    {
+                        dto.MediaType = "video";
+                    }
+                    else
+                    {
+                        dto.MediaType = "image";
+                        if (string.IsNullOrWhiteSpace(dto.MediaThumbnailUrl))
+                        {
+                            dto.MediaThumbnailUrl = savedUrl;
+                        }
+                    }
+                }
+            }
+
+            if (dto.ThumbnailFile != null && dto.ThumbnailFile.Length > 0)
+            {
+                var savedThumbUrl = await SaveCommunityFileAsync(dto.ThumbnailFile);
+                if (!string.IsNullOrEmpty(savedThumbUrl))
+                {
+                    dto.MediaThumbnailUrl = savedThumbUrl;
+                }
+            }
+
             var userId = GetCurrentUserId();
             var store = LoadStore();
 

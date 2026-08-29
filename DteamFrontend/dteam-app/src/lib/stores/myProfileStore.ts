@@ -20,7 +20,6 @@ function createMyProfileStore() {
   return {
     subscribe,
 
-    // Відкриває вкладку "Мій профіль" і завантажує дані
     viewMyProfile: () => {
       uiStore.setTab('my-profile');
       loadMyPosts();

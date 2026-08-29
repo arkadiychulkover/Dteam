@@ -25,6 +25,7 @@
     Users
   } from 'lucide-svelte';
   import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import { friendsStore } from '../../stores/friendsStore';
 
   let isUserDropdownOpen = $state(false);
   let headerSearchQuery = $state('');
@@ -32,7 +33,8 @@
   const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
     { id: 'library', label: 'Бібліотека', icon: Library },
-    { id: 'community', label: 'Спільнота', icon: Users },
+    { id: 'community', label: 'Спільнота', icon: Newspaper },
+    { id: 'friends', label: 'Друзі', icon: Users },
     { id: 'catalog', label: 'Каталог', icon: Compass },
     { id: 'admin', label: 'Адмінка', icon: Shield, adminOnly: true },
   ];
@@ -75,7 +77,7 @@
 
 <header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-    <!-- Left: Logo & Nav -->
+    
     <div class="flex items-center gap-6">
       <button 
         onclick={handleLogoClick}
@@ -112,7 +114,6 @@
       </nav>
     </div>
 
-    <!-- Center: Search Input (Matching Reference Image 3) -->
     <form onsubmit={handleSearchSubmit} class="relative flex-1 max-w-md mx-1 sm:mx-2">
       <input
         type="text"
@@ -130,7 +131,6 @@
       </button>
     </form>
 
-    <!-- Right: Wishlist, Cart & Auth -->
     <div class="flex items-center gap-2 shrink-0">
       <button
         onclick={() => uiStore.setTab('wishlist')}
@@ -164,9 +164,8 @@
         {/if}
       </button>
 
-      <!-- Auth Section -->
       {#if $currentUser}
-        <!-- TON Balance Top-Up Pill -->
+        
         <button
           onclick={() => uiStore.setDepositModal(true)}
           class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
@@ -238,6 +237,18 @@
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 cursor-pointer font-bold mt-1"
               >
                 <Coins class="w-3.5 h-3.5 text-cyan-400" /> Поповнити баланс (TON)
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('friends'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 hover:text-white cursor-pointer font-bold mt-1"
+              >
+                <Users class="w-3.5 h-3.5 text-cyan-400" /> Друзі
+                {#if $friendsStore.requests.length > 0}
+                  <span class="ml-auto px-1.5 py-0.5 rounded-md bg-[#0df2c9] text-black text-[10px] font-black">
+                    +{$friendsStore.requests.length}
+                  </span>
+                {/if}
               </button>
 
               {#if $currentUser.isAdmin}

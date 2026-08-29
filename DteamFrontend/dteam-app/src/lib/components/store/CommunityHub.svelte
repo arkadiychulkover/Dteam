@@ -20,10 +20,8 @@
     news: 'Новини'
   };
 
-  // Props
   let { gameId } = $props<{ gameId: string }>();
 
-  // State
   let posts = $state<CommunityPost[]>([]);
   let otherPosts = $derived(posts.filter(p => p.id !== selectedPostId).slice(0, 5));
   
@@ -41,7 +39,6 @@
   let isLoading = $state(false);
   let isCreateModalOpen = $state(false);
 
-  // Detail View State
   let selectedPostId = $state<string | null>(null);
   let selectedPost = $state<CommunityPost | null>(null);
   let comments = $state<CommunityComment[]>([]);
@@ -51,7 +48,6 @@
   let replyText = $state<Record<string, string>>({});
   let activeReplyCommentId = $state<string | null>(null);
 
-  // Creation State
   let targetGameId = $state(gameId || '');
   let newPostCategory = $state<'forum' | 'screenshots' | 'videos' | 'guides'>('forum');
   let newPostTitle = $state('');
@@ -68,7 +64,6 @@
     gamesStore.loadGames();
   });
 
-  // Fetch posts
   async function loadPosts() {
     isLoading = true;
     try {
@@ -84,7 +79,6 @@
     }
   }
 
-  // Fetch post details & comments
   async function loadPostDetails(postId: string) {
     isLoadingPostDetails = true;
     try {
@@ -98,9 +92,7 @@
     }
   }
 
-  // React to tab/sort/search changes
   $effect(() => {
-    // Depend on filter state so this re-runs when they change
     const _cat = activeCategory;
     const _sort = sortBy;
     const _search = searchQuery;
@@ -109,7 +101,6 @@
     }
   });
 
-  // Handle post click
   function handleSelectPost(postId: string) {
     selectedPostId = postId;
     loadPostDetails(postId);
@@ -122,7 +113,6 @@
     loadPosts();
   }
 
-  // Post Actions
   async function handleToggleLikePost(postId: string, isDetail = false) {
     if (!$currentUser) {
       uiStore.addToast({ title: 'Потрібна авторизація', message: 'Будь ласка, увійдіть в акаунт, щоб ставити вподобайки.', type: 'warning' });
@@ -133,7 +123,6 @@
     try {
       const res = await communityService.toggleLikePost(postId);
       
-      // Update local state
       posts = posts.map(p => p.id === postId ? { ...p, stats: { ...p.stats, likesCount: res.likesCount, isLiked: res.liked } } : p);
       if (isDetail && selectedPost && selectedPost.id === postId) {
         selectedPost = { ...selectedPost, stats: { ...selectedPost.stats, likesCount: res.likesCount, isLiked: res.liked } };
@@ -154,7 +143,40 @@
     }
   }
 
-  // Create Post Submit
+  async function handleHubFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isImage = file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+    const isVideo = file.type.startsWith('video/') || ['mp4', 'webm', 'mov', 'm4v'].includes(ext);
+
+    if (!isImage && !isVideo) {
+      uiStore.addToast({ title: 'Невірний формат', message: 'Оберіть файл зображення або відео.', type: 'error' });
+      input.value = '';
+      return;
+    }
+
+    newPostFile = file;
+    hubFilePreview = URL.createObjectURL(file);
+    isUploadingHubFile = true;
+
+    try {
+      const res = await communityService.uploadMedia(file);
+      newPostMediaUrl = res.url;
+      hubUploadedType = res.type;
+      uiStore.addToast({ title: 'Файл завантажено', message: 'Медіафайл успішно прикріплено.', type: 'success' });
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка завантаження', message: err?.message || 'Не вдалося завантажити файл.', type: 'error' });
+      newPostFile = null;
+      hubFilePreview = '';
+      newPostMediaUrl = '';
+    } finally {
+      isUploadingHubFile = false;
+    }
+  }
+
   async function handleCreatePostSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!newPostTitle.trim() && newPostCategory !== 'screenshots') {
@@ -172,8 +194,9 @@
         category: newPostCategory,
         title: newPostTitle,
         content: newPostContent,
-        mediaType: newPostMediaType,
-        mediaUrl: newPostMediaUrl
+        mediaType: newPostMediaType === 'upload' ? hubUploadedType : newPostMediaType,
+        mediaUrl: newPostMediaUrl,
+        file: newPostFile || null
       });
 
       uiStore.addToast({
@@ -182,14 +205,14 @@
         type: 'success'
       });
 
-      // Clear form
       newPostTitle = '';
       newPostContent = '';
       newPostMediaType = 'none';
       newPostMediaUrl = '';
+      newPostFile = null;
+      hubFilePreview = '';
       isCreateModalOpen = false;
 
-      // Reload list
       loadPosts();
     } catch (e: any) {
       uiStore.addToast({ title: 'Помилка публікації', message: e?.message || 'Не вдалося створити пост.', type: 'error' });
@@ -198,7 +221,6 @@
     }
   }
 
-  // Add Comment
   async function handleAddCommentSubmit() {
     if (!$currentUser) {
       uiStore.addToast({ title: 'Потрібна авторизація', message: 'Будь ласка, увійдіть в акаунт, щоб залишати коментарі.', type: 'warning' });
@@ -224,7 +246,6 @@
     }
   }
 
-  // Add Nested Reply
   async function handleAddReplySubmit(commentId: string) {
     if (!$currentUser) {
       uiStore.addToast({ title: 'Потрібна авторизація', message: 'Будь ласка, увійдіть в акаунт, щоб залишати відповіді.', type: 'warning' });
@@ -260,7 +281,6 @@
     }
   }
 
-  // Category Icon Match
   function getCategoryIcon(cat: string) {
     switch (cat) {
       case 'forum': return MessageCircle;
@@ -272,7 +292,6 @@
     }
   }
 
-  // Sorted Comments based on selection
   const sortedComments = $derived.by(() => {
     const list = [...comments];
     if (commentSortBy === 'oldest') {
@@ -282,7 +301,7 @@
   });
 </script>
 
-<!-- Subheader metrics -->
+
 <div class="p-5 sm:p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
   <div class="space-y-1">
     <span class="text-[10px] uppercase font-black tracking-widest text-cyan-400">Спільнота гри</span>
@@ -299,7 +318,7 @@
     </div>
   </div>
   
-  <!-- Header Controls -->
+  
   <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
     <button
       onclick={() => {
@@ -327,13 +346,13 @@
 </div>
 
 {#if !selectedPostId}
-  <!-- LIST VIEW -->
+  
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
     
-    <!-- Left Column: Feed -->
+    
     <div class="lg:col-span-8 space-y-6">
 
-      <!-- Feed Grid -->
+      
       {#if isLoading}
         <div class="flex items-center justify-center py-24">
           <Loader2 class="w-10 h-10 text-cyan-400 animate-spin" />
@@ -349,7 +368,7 @@
               onkeydown={(e) => e.key === 'Enter' && handleSelectPost(post.id)}
               class="p-5 rounded-3xl bg-[#092635] border border-cyan-500/20 hover:border-cyan-500/50 shadow-lg transition-all text-left cursor-pointer group space-y-4"
             >
-              <!-- Author header -->
+              
               <div class="flex items-center justify-between">
                 <button
                   type="button"
@@ -377,9 +396,9 @@
                 </span>
               </div>
 
-              <!-- Content Layout mapping specifically per Category specs -->
+              
               {#if post.category === 'guides'}
-                <!-- Guides layout: wide horizontal thumbnail preview on left + title/description on right -->
+                
                 <div class="flex flex-col sm:flex-row gap-4 items-stretch">
                   {#if post.media.url}
                     <div class="w-full sm:w-44 h-24 rounded-2xl overflow-hidden shrink-0 border border-cyan-500/25">
@@ -396,7 +415,7 @@
                   </div>
                 </div>
               {:else if post.category === 'news'}
-                <!-- News layout: Prominent big banner, header/title and rich text layout -->
+                
                 <div class="space-y-3">
                   {#if post.media.url}
                     <div class="w-full aspect-[21/9] rounded-2xl overflow-hidden border border-cyan-500/20 shadow-inner">
@@ -411,7 +430,7 @@
                   </p>
                 </div>
               {:else}
-                <!-- Default (Forum, Screenshot, Video) -->
+                
                 <div class="space-y-3">
                   {#if post.title}
                     <h3 class="text-base font-black text-white group-hover:text-cyan-400 transition-colors">
@@ -422,7 +441,7 @@
                     {post.content}
                   </p>
 
-                  <!-- Media Display -->
+                  
                   {#if post.media.type === 'image' && post.media.url}
                     <div class="w-full max-h-96 rounded-2xl overflow-hidden border border-cyan-500/20">
                       <img src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
@@ -444,7 +463,7 @@
                 </div>
               {/if}
 
-              <!-- Footer Statistics interaction bar -->
+              
               <div class="flex items-center justify-between pt-3 border-t border-cyan-950/60 text-[11px] font-semibold text-slate-400">
                 <div class="flex items-center gap-4">
                   <button
@@ -486,11 +505,11 @@
       {/if}
     </div>
 
-    <!-- Right Sidebar: Filters & Navigation Panel -->
+    
     <div class="lg:col-span-4 sticky top-36 space-y-4">
       <div class="bg-[#092635] border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5">
         
-        <!-- In-Section Search Input -->
+        
         <div class="space-y-2">
           <label for="search-community" class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Пошук у розділі
@@ -508,7 +527,7 @@
           </div>
         </div>
 
-        <!-- Sorting dropdown -->
+        
         <div class="space-y-2">
           <label for="sort-community" class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Сортування
@@ -528,7 +547,7 @@
           </div>
         </div>
 
-        <!-- Section Switcher Category List -->
+        
         <div class="space-y-2">
           <span class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Категорії
@@ -552,13 +571,13 @@
     </div>
   </div>
 {:else}
-  <!-- DETAILED POST VIEW -->
+  
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
     
-    <!-- Left Column: Main Post details & Comments -->
+    
     <div class="lg:col-span-8 space-y-6">
       
-      <!-- Back button -->
+      
       <button
         onclick={handleBackToList}
         class="inline-flex items-center gap-2 text-xs font-extrabold text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
@@ -573,10 +592,10 @@
         </div>
       {:else}
         {@const Icon = getCategoryIcon(selectedPost.category)}
-        <!-- Main post card -->
+        
         <div class="p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl space-y-5">
           
-          <!-- Author header -->
+          
           <div class="flex items-center justify-between">
             <button
               type="button"
@@ -602,21 +621,21 @@
             </span>
           </div>
 
-          <!-- Post Content -->
+          
           <div class="space-y-4">
             {#if selectedPost.title}
               <h1 class="text-xl sm:text-2xl font-black text-white leading-snug">{selectedPost.title}</h1>
             {/if}
             <p class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedPost.content}</p>
 
-            <!-- Full-size Hero Media -->
+            
             {#if selectedPost.media.type === 'image' && selectedPost.media.url}
               <div class="w-full rounded-2xl overflow-hidden border border-cyan-500/20">
                 <img src={selectedPost.media.url} alt={selectedPost.title} class="w-full h-auto max-h-[500px] object-cover" />
               </div>
             {:else if selectedPost.media.type === 'video' && selectedPost.media.url}
               <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/25">
-                <!-- Check if youtube to embed iframe, else standard video -->
+                
                 {#if selectedPost.media.url.includes('youtube.com') || selectedPost.media.url.includes('youtu.be')}
                   {@const ytId = selectedPost.media.url.split('v=')[1]?.split('&')[0] || selectedPost.media.url.split('/').pop()}
                   <iframe
@@ -635,7 +654,7 @@
             {/if}
           </div>
 
-          <!-- Interaction bar -->
+          
           <div class="flex items-center justify-between pt-4 border-t border-cyan-950/60 text-xs font-semibold text-slate-400">
             <div class="flex items-center gap-4">
               <button
@@ -665,7 +684,7 @@
           </div>
         </div>
 
-        <!-- COMMENT SECTION (Bottom Area) -->
+        
         <div class="p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl space-y-6">
           <div class="flex items-center justify-between">
             <h3 class="text-base font-black text-white uppercase tracking-wider font-display">Обговорення</h3>
@@ -682,7 +701,7 @@
             </div>
           </div>
 
-          <!-- Active Comment Input Box -->
+          
           <div class="flex gap-3">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden">
               {#if $currentUser?.avatarUrl}
@@ -726,7 +745,7 @@
             </div>
           </div>
 
-          <!-- Comments List -->
+          
           <div class="space-y-4 pt-2 border-t border-cyan-950/60">
             {#each sortedComments as c (c.id)}
               <div class="space-y-3">
@@ -756,7 +775,7 @@
                     </div>
                     <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{c.content}</p>
 
-                    <!-- Reply trigger and comment likes -->
+                    
                     <div class="flex items-center gap-4 pt-1.5 text-[10px] font-bold text-slate-400">
                       <button
                         type="button"
@@ -769,7 +788,7 @@
                   </div>
                 </div>
 
-                <!-- Nested Replies list -->
+                
                 {#if c.replies && c.replies.length > 0}
                   <div class="pl-8 space-y-3 border-l border-cyan-500/20 ml-4">
                     {#each c.replies as reply (reply.id)}
@@ -803,7 +822,7 @@
                   </div>
                 {/if}
 
-                <!-- Active reply input box -->
+                
                 {#if activeReplyCommentId === c.id && $currentUser}
                   <div class="pl-8 ml-4 flex gap-3">
                     <textarea
@@ -839,7 +858,7 @@
       {/if}
     </div>
 
-    <!-- Right Sidebar ("Інші обговорення") -->
+    
     <div class="lg:col-span-4 sticky top-36 space-y-4">
       <div class="bg-[#092635] border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
         <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider">
@@ -880,7 +899,7 @@
   </div>
 {/if}
 
-<!-- CREATE POST MODAL -->
+
 {#if isCreateModalOpen}
   <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
     <div class="relative w-full max-w-lg bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 space-y-5">
@@ -896,7 +915,7 @@
 
       <form onsubmit={handleCreatePostSubmit} class="space-y-4">
         
-        <!-- Explicit Game Selector Field -->
+        
         <div class="space-y-1.5">
           <label for="new-post-game" class="block text-xs font-bold text-slate-300">Оберіть гру</label>
           <select
@@ -912,7 +931,7 @@
           </select>
         </div>
 
-        <!-- Category picker -->
+        
         <div class="space-y-1.5">
           <label for="new-post-cat" class="block text-xs font-bold text-slate-300">Категорія публікації</label>
           <select
@@ -927,7 +946,7 @@
           </select>
         </div>
 
-        <!-- Title -->
+        
         {#if newPostCategory !== 'screenshots'}
           <div class="space-y-1.5">
             <label for="new-post-title" class="block text-xs font-bold text-slate-300">Заголовок</label>
@@ -941,7 +960,7 @@
           </div>
         {/if}
 
-        <!-- Text Description Area -->
+        
         <div class="space-y-1.5">
           <label for="new-post-desc" class="block text-xs font-bold text-slate-300">Опис / Вміст</label>
           <textarea
@@ -953,7 +972,7 @@
           ></textarea>
         </div>
 
-        <!-- Media Linking options -->
+        
         <div class="space-y-2 p-3.5 rounded-2xl bg-[#041219]/60 border border-cyan-500/10">
           <span class="block text-xs font-bold text-slate-300 mb-1.5">Медіафайли</span>
           
@@ -970,9 +989,13 @@
               <input type="radio" name="media-type" value="video" bind:group={newPostMediaType} />
               <span>Відео (YouTube URL)</span>
             </label>
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input type="radio" name="media-type" value="upload" bind:group={newPostMediaType} />
+              <span>Завантажити файл</span>
+            </label>
           </div>
 
-          {#if newPostMediaType !== 'none'}
+          {#if newPostMediaType === 'image' || newPostMediaType === 'video'}
             <div class="pt-2">
               <input
                 type="text"
@@ -981,10 +1004,44 @@
                 class="w-full px-3 py-2 rounded-xl bg-[#030d12] border border-cyan-500/20 text-[11px] text-white focus:outline-none focus:border-cyan-400"
               />
             </div>
+          {:else if newPostMediaType === 'upload'}
+            <div class="pt-2 space-y-2">
+              <input
+                bind:this={hubFileInput}
+                type="file"
+                accept="image/*,video/*"
+                class="hidden"
+                onchange={handleHubFileChange}
+              />
+              <button
+                type="button"
+                onclick={() => hubFileInput?.click()}
+                disabled={isUploadingHubFile}
+                class="w-full py-3 px-4 rounded-xl border border-dashed border-cyan-500/40 hover:border-cyan-400 text-xs font-bold text-cyan-300 flex items-center justify-center gap-2 cursor-pointer transition-colors bg-[#030d12]"
+              >
+                {#if isUploadingHubFile}
+                  <Loader2 class="w-4 h-4 animate-spin text-cyan-400" />
+                  <span>Завантаження на сервер...</span>
+                {:else if newPostMediaUrl}
+                  <span>Змінити файл ({newPostFile?.name || 'Завантажено'})</span>
+                {:else}
+                  <span>Оберіть файл (JPG, PNG, WEBP, GIF, MP4, WEBM)</span>
+                {/if}
+              </button>
+              {#if hubFilePreview}
+                <div class="mt-2 rounded-xl overflow-hidden max-h-48 border border-cyan-500/20 bg-black/40 flex items-center justify-center">
+                  {#if hubUploadedType === 'video' || newPostFile?.type.startsWith('video/')}
+                    <video src={hubFilePreview} class="max-h-48 w-full object-contain" controls></video>
+                  {:else}
+                    <img src={hubFilePreview} alt="Preview" class="max-h-48 w-full object-contain" />
+                  {/if}
+                </div>
+              {/if}
+            </div>
           {/if}
         </div>
 
-        <!-- Buttons -->
+        
         <div class="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"

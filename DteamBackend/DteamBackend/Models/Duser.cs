@@ -63,6 +63,10 @@ namespace DteamBackend.Models
 
         public ICollection<UserFriend> Friendships { get; set; } = new List<UserFriend>();
 
+        public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
+
+        public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = new List<FriendRequest>();
+
         public ICollection<UserGame> Library { get; set; } = new List<UserGame>();
 
         public ICollection<Game> CreatedGames { get; set; } = new List<Game>();

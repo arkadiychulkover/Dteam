@@ -1,4 +1,5 @@
 import { api } from './api';
+import { communityService } from './communityService';
 
 export interface UploadMediaResponse {
   url: string;
@@ -8,22 +9,30 @@ export interface UploadMediaResponse {
   message: string;
 }
 
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/pjpeg', 'image/x-png'];
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska', 'video/avi'];
 
-export const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20 МБ
-export const MAX_VIDEO_SIZE_BYTES = 150 * 1024 * 1024; // 150 МБ
+export const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024;
+export const MAX_VIDEO_SIZE_BYTES = 150 * 1024 * 1024;
 
 export const mediaService = {
-  // Завантажує зображення або відео на сервер і повертає публічний URL файлу.
   async upload(file: File): Promise<UploadMediaResponse> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return await api.post<UploadMediaResponse>('/media/upload', formData);
+    try {
+      const res = await communityService.uploadMedia(file);
+      return {
+        url: res.url,
+        fileName: res.fileName,
+        size: file.size,
+        type: res.type,
+        message: 'Файл успішно завантажено'
+      };
+    } catch {
+      const formData = new FormData();
+      formData.append('file', file);
+      return await api.post<UploadMediaResponse>('/media/upload', formData);
+    }
   },
 
-  // Генерує прев'ю (кадр) з відеофайлу прямо в браузері та завантажує його як картинку.
-  // Повертає URL згенерованого прев'ю, який можна використати як thumbnailUrl поста.
   async generateAndUploadVideoThumbnail(file: File): Promise<string> {
     const objectUrl = URL.createObjectURL(file);
     try {
@@ -64,8 +73,13 @@ export const mediaService = {
 
       const blob = await (await fetch(dataUrl)).blob();
       const thumbFile = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
-      const uploaded = await mediaService.upload(thumbFile);
-      return uploaded.url;
+      try {
+        const uploaded = await communityService.uploadMedia(thumbFile);
+        return uploaded.url;
+      } catch {
+        const uploaded = await mediaService.upload(thumbFile);
+        return uploaded.url;
+      }
     } finally {
       URL.revokeObjectURL(objectUrl);
     }

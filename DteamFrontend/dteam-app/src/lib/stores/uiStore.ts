@@ -4,6 +4,7 @@ export type MainTab =
   | 'store' 
   | 'library'
   | 'community'
+  | 'friends'
   | 'catalog' 
   | 'game'
   | 'wishlist' 

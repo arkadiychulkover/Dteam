@@ -20,6 +20,10 @@
   let activeTab = $state<TabId>('головна');
   let showCreateDropdown = $state(false);
 
+  const uniqueFriends = $derived(
+    Array.from(new Map($friendsStore.friends.map((f) => [f.friend?.id || (f as any).id, f])).values())
+  );
+
   const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
     { id: 'значки', label: 'Значки', count: () => badges.length },
@@ -30,18 +34,6 @@
     { id: 'відео', label: 'Відео', count: () => myVideoPosts.length },
     { id: 'гайди', label: 'Гайди', count: () => myGuidePosts.length },
     { id: 'рецензії', label: 'Рецензії', count: () => $myProfileStore.reviews.length },
-  ];
-
-  // ==== Значки (декоративний блок — на бекенді немає системи досягнень) ====
-  const badges = [
-    { title: 'Золотий зубарик', desc: '10 років на сайті', points: '500 очок', date: '23.10.2022', icon: '🐟' },
-    { title: 'Соціальна пташка', desc: 'Опубліковано 20 постів кожного типу у Спільноті', points: '100 очок', date: '23.10.2022', icon: '💖' },
-    { title: 'Справжній ґеймер', desc: 'Куплено 50 ігор', points: '220 очок', date: '23.10.2022', icon: '🎮' },
-    { title: 'Срібний зубарик', desc: '5 років на сайті', points: '300 очок', date: '23.10.2022', icon: '🐟' },
-    { title: 'Критик', desc: 'Опубліковано 25 рецензій', points: '120 очок', date: '23.10.2022', icon: '⭐' },
-    { title: 'Картоґрай', desc: 'Додано до бібліотеки 10 ігор у жанрі "карткова гра"', points: '80 очок', date: '23.10.2022', icon: '🎴' },
-    { title: 'Бронзовий зубарик', desc: '1 рік на сайті', points: '150 очок', date: '23.10.2022', icon: '🐟' },
-    { title: 'Воїн світла', desc: 'Написано 15 гайдів', points: '150 очок', date: '23.10.2022', icon: '⚔️' },
   ];
 
   const dlcCount = $derived($libraryStore.items.filter((i) => i.game?.isDlc).length);
@@ -59,7 +51,6 @@
     friendsStore.loadFriends();
   });
 
-  // ==== Створення поста ====
   let isCreatingPost = $state(false);
   let createPostType = $state<'forum' | 'screenshots' | 'videos' | 'guides'>('forum');
   let postTitle = $state('');
@@ -68,6 +59,7 @@
   let postMediaThumbnailUrl = $state('');
   let postMediaPreviewUrl = $state('');
   let isUploadingMedia = $state(false);
+  let selectedPostFile = $state<File | null>(null);
   let isSubmittingPost = $state(false);
   let postFileInput: HTMLInputElement | undefined = $state();
 
@@ -101,12 +93,15 @@
     if (!file) return;
 
     const isVideo = createPostType === 'videos';
-    if (isVideo && !file.type.startsWith('video/')) {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isAllowedVideo = file.type.startsWith('video/') || ['mp4', 'webm', 'mov', 'm4v'].includes(ext);
+    const isAllowedImage = file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+    if (isVideo && !isAllowedVideo) {
       uiStore.addToast({ title: 'Невірний формат', message: 'Оберіть відеофайл.', type: 'error' });
       input.value = '';
       return;
     }
-    if (!isVideo && !file.type.startsWith('image/')) {
+    if (!isVideo && !isAllowedImage) {
       uiStore.addToast({ title: 'Невірний формат', message: 'Оберіть файл зображення.', type: 'error' });
       input.value = '';
       return;
@@ -125,6 +120,7 @@
     postMediaThumbnailUrl = '';
     isUploadingMedia = true;
     try {
+      selectedPostFile = file;
       const uploaded = await mediaService.upload(file);
       postMediaUrl = uploaded.url;
       if (isVideo) {
@@ -160,6 +156,7 @@
         mediaType: createPostType === 'videos' ? 'video' : (postMediaUrl ? 'image' : 'none'),
         mediaUrl: postMediaUrl,
         mediaThumbnailUrl: postMediaThumbnailUrl || undefined,
+        file: selectedPostFile || null,
       });
       uiStore.addToast({ title: 'Успіх! 🎉', message: 'Публікацію створено.', type: 'success' });
       isCreatingPost = false;
@@ -172,7 +169,6 @@
     }
   }
 
-  // ==== Банер профілю ====
   let isUploadingBanner = $state(false);
   let bannerFileInput: HTMLInputElement | undefined = $state();
 
@@ -181,7 +177,8 @@
     const file = input.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    const bannerExt = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!file.type.startsWith('image/') && !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(bannerExt)) {
       uiStore.addToast({ title: 'Невірний формат', message: 'Банер має бути зображенням.', type: 'error' });
       input.value = '';
       return;
@@ -206,7 +203,6 @@
     }
   }
 
-  // ==== Редагування профілю ====
   let isEditingProfile = $state(false);
   let editBio = $state('');
   let editAvatarUrl = $state('');
@@ -244,7 +240,7 @@
 
 {#if $currentUser}
 <div class="min-h-screen bg-[#05181e] text-slate-200 font-sans pb-12">
-  <!-- Банер -->
+  
   <div
     class="w-full h-48 md:h-64 relative bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e] bg-cover bg-center"
     style={$currentUser.bannerUrl ? `background-image: url('${$currentUser.bannerUrl}')` : ''}
@@ -270,7 +266,7 @@
   </div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Профіль: Аватар, Ім'я, Кнопка редагування -->
+    
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
         <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
@@ -291,7 +287,7 @@
         </div>
       </div>
 
-      <!-- Кнопка Редагувати профіль -->
+      
       <div class="pb-2 w-full md:w-auto">
         <button
           onclick={openEditProfile}
@@ -303,12 +299,12 @@
       </div>
     </div>
 
-    <!-- Основна сітка -->
+    
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-      <!-- Лівий блок (Контент) -->
+      
       <div class="space-y-6">
 
-        <!-- ВКЛАДКА: ГОЛОВНА -->
+        
         {#if activeTab === 'головна'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <h2 class="text-lg font-bold text-white mb-4">Галерея значків</h2>
@@ -353,7 +349,7 @@
           </div>
         {/if}
 
-        <!-- ВКЛАДКА: ЗНАЧКИ -->
+        
         {#if activeTab === 'значки'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -374,7 +370,7 @@
           </div>
         {/if}
 
-        <!-- ВКЛАДКА: ІГРИ -->
+        
         {#if activeTab === 'ігри'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $libraryStore.items.length === 0}
@@ -399,7 +395,7 @@
           </div>
         {/if}
 
-        <!-- ВКЛАДКА: БАЖАНЕ -->
+        
         {#if activeTab === 'бажане'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $wishlistStore.items.length === 0}
@@ -417,7 +413,7 @@
           </div>
         {/if}
 
-        <!-- ВКЛАДКИ КОНТЕНТУ СПІЛЬНОТИ -->
+        
         {#if ['обговорення', 'скріншоти', 'відео', 'гайди', 'рецензії'].includes(activeTab)}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 text-sm text-slate-400">
@@ -554,9 +550,9 @@
 
       </div>
 
-      <!-- Правий блок (Сайдбар) -->
+      
       <div class="space-y-6">
-        <!-- Навігація профілю -->
+        
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
           <nav class="space-y-1">
             {#each menuItems as item}
@@ -573,24 +569,24 @@
           </nav>
         </div>
 
-        <!-- Список друзів -->
+        
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
           <div class="flex items-center justify-between px-2 mb-4">
             <span class="font-medium text-white">Друзі</span>
-            <span class="bg-[#0b4e63] px-2.5 py-0.5 rounded-full text-xs text-white">{$friendsStore.friends.length}</span>
+            <span class="bg-[#0b4e63] px-2.5 py-0.5 rounded-full text-xs text-white">{uniqueFriends.length}</span>
           </div>
-          {#if $friendsStore.friends.length === 0}
+          {#if uniqueFriends.length === 0}
             <p class="text-xs text-slate-500 px-2 py-2">Список друзів порожній.</p>
           {:else}
             <div class="space-y-2">
-              {#each $friendsStore.friends as f}
+              {#each uniqueFriends as f}
                 <button
-                  onclick={() => profileStore.viewProfile(f.friend.id)}
+                  onclick={() => profileStore.viewProfile(f.friend?.id || (f as any).id)}
                   class="w-full flex items-center justify-between px-2 cursor-pointer hover:bg-cyan-900/20 p-2 rounded-xl transition-colors text-left"
                 >
                   <div class="flex items-center gap-3">
-                    <img src={f.friend.avatarUrl || undefined} alt={f.friend.username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
-                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.friend.username}</span>
+                    <img src={f.friend?.avatarUrl || (f as any).avatarUrl || undefined} alt={f.friend?.username || (f as any).username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
+                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.friend?.username || (f as any).username}</span>
                   </div>
                 </button>
               {/each}
@@ -602,7 +598,7 @@
   </div>
 </div>
 
-<!-- Модалка створення поста -->
+
 {#if isCreatingPost}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) { isCreatingPost = false; resetPostMedia(); } }}>
     <div class="bg-[#092635] border border-cyan-500/30 rounded-3xl p-6 w-full max-w-lg space-y-4">
@@ -634,7 +630,7 @@
           {#if postMediaPreviewUrl}
             <div class="relative rounded-xl overflow-hidden border border-cyan-900/60 bg-[#02171d]">
               {#if createPostType === 'videos'}
-                <!-- svelte-ignore a11y_media_has_caption -->
+                
                 <video src={postMediaPreviewUrl} class="w-full max-h-56 object-cover" muted controls></video>
               {:else}
                 <img src={postMediaPreviewUrl} alt="" class="w-full max-h-56 object-cover" />
@@ -677,7 +673,7 @@
   </div>
 {/if}
 
-<!-- Модалка редагування профілю -->
+
 {#if isEditingProfile}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) isEditingProfile = false; }}>
     <div class="bg-[#092635] border border-cyan-500/30 rounded-3xl p-6 w-full max-w-lg space-y-4">
