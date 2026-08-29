@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+import { onMount, onDestroy } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
@@ -134,3 +134,4 @@
     <Footer />
   {/if}
 </div>
+

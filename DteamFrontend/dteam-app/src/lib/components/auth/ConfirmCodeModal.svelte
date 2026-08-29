@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { uiStore } from '../../stores/uiStore';
+import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { X, ShieldCheck, CheckCircle, Key } from 'lucide-svelte';
 
@@ -47,7 +47,7 @@
 </script>
 
 {#if $uiStore.isConfirmCodeModalOpen}
-  <div 
+  <div
     onclick={handleBackdropClick}
     role="presentation"
     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
@@ -109,3 +109,4 @@
     </div>
   </div>
 {/if}
+

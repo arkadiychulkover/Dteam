@@ -18,6 +18,8 @@ namespace DteamBackend.Controllers
 
         [HttpGet("check-status")]
         [HttpGet("/api/check-status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
         public async Task<IActionResult> CheckStatus()
         {
             try
@@ -52,3 +54,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

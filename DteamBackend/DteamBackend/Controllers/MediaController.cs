@@ -16,12 +16,15 @@ namespace DteamBackend.Controllers
         private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
         private static readonly string[] VideoExtensions = { ".mp4", ".webm", ".mov", ".m4v" };
 
-        private const long MaxImageSizeBytes = 20L * 1024 * 1024;   // 20 МБ
-        private const long MaxVideoSizeBytes = 150L * 1024 * 1024;  // 150 МБ
+        private const long MaxImageSizeBytes = 20L * 1024 * 1024;
+        private const long MaxVideoSizeBytes = 150L * 1024 * 1024;
 
         [HttpPost("upload")]
         [RequestSizeLimit(MaxVideoSizeBytes)]
         [RequestFormLimits(MultipartBodyLengthLimit = MaxVideoSizeBytes)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<object>> Upload(IFormFile? file)
         {
             if (file == null || file.Length == 0)
@@ -89,3 +92,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

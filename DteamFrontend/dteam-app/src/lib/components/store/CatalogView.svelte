@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
-  import type { Game } from '../../types';
+  import type { Game, GameRecommendation } from '../../types';
+  import { gamesService } from '../../services/gamesService';
+  import GameRecommendationsDropdown from '../ui/GameRecommendationsDropdown.svelte';
   import GameDetailsModal from './GameDetailsModal.svelte';
   import {
     Search,
@@ -34,9 +36,14 @@
 
   let searchInput = $state($gamesStore.filters.search);
   let tagInput = $state($gamesStore.filters.tagQuery);
+  let catalogSearchWrapperEl = $state<HTMLElement | null>(null);
+  let catalogDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let catalogRecommendations = $state<GameRecommendation[]>([]);
+  let isCatalogLoadingRecs = $state(false);
+  let isCatalogRecsOpen = $state(false);
 
   const genres = [
-    'All Games', 'Action', 'RPG', 'Strategy', 'Adventure', 
+    'All Games', 'Action', 'RPG', 'Strategy', 'Adventure',
     'Shooter', 'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi'
   ];
 
@@ -64,7 +71,87 @@
 
   function handleSearchSubmit(e?: Event) {
     if (e) e.preventDefault();
+    if (catalogDebounceTimer) clearTimeout(catalogDebounceTimer);
+    isCatalogRecsOpen = false;
     applyFilter({ search: searchInput });
+  }
+
+  function handleCatalogSearchInput(e: Event) {
+    const query = (e.target as HTMLInputElement).value;
+    searchInput = query;
+
+    if (catalogDebounceTimer) {
+      clearTimeout(catalogDebounceTimer);
+    }
+
+    if (!query.trim()) {
+      catalogRecommendations = [];
+      isCatalogRecsOpen = false;
+      isCatalogLoadingRecs = false;
+      return;
+    }
+
+    catalogDebounceTimer = setTimeout(async () => {
+      isCatalogLoadingRecs = true;
+      isCatalogRecsOpen = true;
+      try {
+        const res = await gamesService.getRecommendations(query.trim(), 8);
+        if (res && res.length > 0) {
+          catalogRecommendations = res;
+        } else {
+          const lower = query.trim().toLowerCase();
+          catalogRecommendations = $gamesStore.games
+            .filter(g => g.title.toLowerCase().startsWith(lower))
+            .slice(0, 8)
+            .map(g => ({
+              id: g.id,
+              title: g.title,
+              banner: g.headerImageUrl || g.coverImageUrl || '',
+              bannerUrl: g.headerImageUrl || g.coverImageUrl || '',
+              headerImageUrl: g.headerImageUrl,
+              coverImageUrl: g.coverImageUrl
+            }));
+        }
+      } catch {
+        const lower = query.trim().toLowerCase();
+        catalogRecommendations = $gamesStore.games
+          .filter(g => g.title.toLowerCase().startsWith(lower))
+          .slice(0, 8)
+          .map(g => ({
+            id: g.id,
+            title: g.title,
+            banner: g.headerImageUrl || g.coverImageUrl || '',
+            bannerUrl: g.headerImageUrl || g.coverImageUrl || '',
+            headerImageUrl: g.headerImageUrl,
+            coverImageUrl: g.coverImageUrl
+          }));
+      } finally {
+        isCatalogLoadingRecs = false;
+      }
+    }, 500);
+  }
+
+  async function handleSelectCatalogRecommendation(rec: GameRecommendation) {
+    if (catalogDebounceTimer) clearTimeout(catalogDebounceTimer);
+    isCatalogRecsOpen = false;
+    searchInput = rec.title;
+    try {
+      const fullGame = await gamesService.getGameById(rec.id);
+      openGame(fullGame);
+    } catch {
+      const cached = $gamesStore.games.find(g => g.id === rec.id);
+      if (cached) {
+        openGame(cached);
+      } else {
+        applyFilter({ search: rec.title });
+      }
+    }
+  }
+
+  function handleCatalogClickOutside(e: MouseEvent) {
+    if (catalogSearchWrapperEl && !catalogSearchWrapperEl.contains(e.target as Node)) {
+      isCatalogRecsOpen = false;
+    }
   }
 
   function handleTagSubmit(e?: Event) {
@@ -75,6 +162,7 @@
   function handleReset() {
     searchInput = '';
     tagInput = '';
+    isCatalogRecsOpen = false;
     gamesStore.resetFilters();
     gamesStore.loadCatalogGames();
   }
@@ -100,26 +188,43 @@
   });
 </script>
 
+<svelte:window onclick={handleCatalogClickOutside} />
+
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 animate-in fade-in">
   <div class="mb-6">
     <form onsubmit={handleSearchSubmit} class="relative flex items-center gap-3">
-      <div class="relative flex-1">
+      <div bind:this={catalogSearchWrapperEl} class="relative flex-1">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
         <input
           type="text"
           placeholder="Пошук у Крамниці Dteam..."
           bind:value={searchInput}
+          oninput={handleCatalogSearchInput}
+          onfocus={() => {
+            if (searchInput.trim() && catalogRecommendations.length > 0) {
+              isCatalogRecsOpen = true;
+            }
+          }}
           class="w-full pl-11 pr-10 py-3 rounded-2xl bg-[#061820]/95 border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 shadow-inner transition-all"
         />
         {#if searchInput}
           <button
             type="button"
-            onclick={() => { searchInput = ''; handleSearchSubmit(); }}
-            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
+            onclick={() => { searchInput = ''; isCatalogRecsOpen = false; handleSearchSubmit(); }}
+            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 cursor-pointer"
           >
             <X class="w-3.5 h-3.5" />
           </button>
         {/if}
+
+        <GameRecommendationsDropdown
+          recommendations={catalogRecommendations}
+          isOpen={isCatalogRecsOpen}
+          isLoading={isCatalogLoadingRecs}
+          searchQuery={searchInput}
+          onSelect={handleSelectCatalogRecommendation}
+          onViewAll={handleSearchSubmit}
+        />
       </div>
 
       <button
@@ -535,3 +640,4 @@
     </main>
   </div>
 </div>
+

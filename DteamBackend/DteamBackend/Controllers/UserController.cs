@@ -27,6 +27,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPut("me")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileRequest dto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -69,6 +72,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("me/reviews")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetMyReviews()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -103,12 +108,15 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("is-banned")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CheckIsBanned([FromQuery] Guid? userId)
         {
             var targetId = userId;
             if ((targetId == null || targetId == Guid.Empty) && User.Identity?.IsAuthenticated == true)
             {
-                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
                 if (Guid.TryParse(idClaim, out var parsedId))
                 {
@@ -150,6 +158,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{userId:guid}/profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPublicProfile(Guid userId)
         {
             var user = await _context.Users
@@ -180,9 +190,6 @@ namespace DteamBackend.Controllers
                 .Distinct()
                 .CountAsync();
 
-            var gamesCount = await _context.UserGames
-                .CountAsync(ug => ug.UserId == userId);
-
             var publishedGames = await _context.Games
                 .AsNoTracking()
                 .Where(g => g.OwnerId == userId && g.IsPublished)
@@ -191,7 +198,7 @@ namespace DteamBackend.Controllers
                 {
                     id = g.Id,
                     title = g.Title,
-                    coverImageUrl = g.CoverImageUrl,
+                    coverImageUrl = g.CoverImageUrl ?? g.HeaderImageUrl ?? "",
                     priceInNanoTons = g.PriceInNanoTons,
                     discountPercentage = g.DiscountPercentage
                 })
@@ -206,12 +213,14 @@ namespace DteamBackend.Controllers
                 {
                     id = ug.Game.Id,
                     title = ug.Game.Title,
-                    coverImageUrl = ug.Game.CoverImageUrl,
+                    coverImageUrl = ug.Game.CoverImageUrl ?? ug.Game.HeaderImageUrl ?? "",
                     priceInNanoTons = ug.Game.PriceInNanoTons,
                     discountPercentage = ug.Game.DiscountPercentage,
                     isDlc = ug.Game.IsDlc
                 })
                 .ToListAsync();
+
+            var gamesCount = libraryGames.Count + publishedGames.Count;
 
             Guid? viewerId = null;
             var viewerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -262,6 +271,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{userId:guid}/friends")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPublicFriends(Guid userId)
         {
             var friends = await _context.UserFriends
@@ -282,9 +292,11 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("library")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetUserLibrary()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             if (!Guid.TryParse(userIdClaim, out var userId))
@@ -315,9 +327,12 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("library/{gameId}/favorite")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ToggleFavorite(Guid gameId)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             if (!Guid.TryParse(userIdClaim, out var userId))
@@ -370,3 +385,4 @@ namespace DteamBackend.Controllers
         };
     }
 }
+

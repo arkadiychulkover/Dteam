@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
@@ -52,7 +52,7 @@
   let selectedFeatures = $state<string[]>([]);
 
   const genres = [
-    'All', 'Action', 'RPG', 'Strategy', 'Adventure', 
+    'All', 'Action', 'RPG', 'Strategy', 'Adventure',
     'Shooter', 'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi'
   ];
 
@@ -682,3 +682,4 @@
 
   <GameDetailsModal />
 </div>
+

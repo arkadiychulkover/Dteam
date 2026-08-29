@@ -8,8 +8,8 @@ namespace DteamBackend.Models.DTO
         public string? ShortDescription { get; set; }
         public long PriceInNanoTons { get; set; }
         public int DiscountPercentage { get; set; }
-        public long OriginalPriceInNanoTons => DiscountPercentage > 0 
-            ? (long)Math.Round(PriceInNanoTons / (1.0 - (DiscountPercentage / 100.0))) 
+        public long OriginalPriceInNanoTons => DiscountPercentage > 0
+            ? (long)Math.Round(PriceInNanoTons / (1.0 - (DiscountPercentage / 100.0)))
             : PriceInNanoTons;
         public string ServerArchivePath { get; set; } = string.Empty;
         public Guid OwnerId { get; set; }
@@ -36,3 +36,4 @@ namespace DteamBackend.Models.DTO
         public DateTime? UpdatedAt { get; set; }
     }
 }
+

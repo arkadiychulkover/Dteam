@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { wishlistStore } from '../../stores/wishlistStore';
+import { wishlistStore } from '../../stores/wishlistStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
   import type { WishlistItem } from '../../types';
-  import { 
-    X, 
-    Heart, 
-    Trash2, 
-    ShoppingCart, 
-    Search, 
-    ArrowUpDown, 
-    Sparkles, 
+  import {
+    X,
+    Heart,
+    Trash2,
+    ShoppingCart,
+    Search,
+    ArrowUpDown,
+    Sparkles,
     Gamepad2,
     ExternalLink
   } from 'lucide-svelte';
@@ -219,3 +219,4 @@
     </div>
   </div>
 {/if}
+

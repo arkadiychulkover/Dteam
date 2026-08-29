@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { adminService, type UpdateGameDto } from '../../services/adminService';
+import { adminService, type UpdateGameDto } from '../../services/adminService';
   import { gamesService } from '../../services/gamesService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
@@ -32,7 +32,7 @@
   let selectedPlatforms = $state<string[]>(['Windows']);
   let selectedFeatures = $state<string[]>([]);
   let tagsText = $state('');
-  
+
   let headerImageUrl = $state('');
   let coverImageUrl = $state('');
   let screenshotUrls = $state<string[]>([]);
@@ -45,7 +45,7 @@
   let errorMessage = $state('');
 
   const availableGenres = [
-    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter', 
+    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter',
     'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi', 'Fantasy'
   ];
 
@@ -698,3 +698,4 @@
     </div>
   </div>
 {/if}
+

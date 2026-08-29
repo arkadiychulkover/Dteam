@@ -105,6 +105,7 @@ namespace DteamBackend.Controllers
         };
 
         [HttpGet("users")]
+        [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
         {
             var users = await _context.Users
@@ -116,6 +117,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("users/{id:guid}")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserDto>> GetUserById(Guid id)
         {
             var user = await _context.Users
@@ -131,6 +134,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("users")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto)
         {
             if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
@@ -170,6 +175,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPut("users/{id:guid}")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto dto)
         {
             var user = await _context.Users.FindAsync(id);
@@ -219,6 +227,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("users/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -234,6 +244,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("games")]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<GameDto>>> GetAllGames()
         {
             var games = await _context.Games
@@ -248,6 +259,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("games/{id:guid}")]
+        [ProducesResponseType(typeof(GameDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<GameDto>> GetGameById(Guid id)
         {
             var game = await _context.Games
@@ -266,9 +279,11 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("games")]
+        [ProducesResponseType(typeof(GameDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<GameDto>> CreateGame([FromBody] CreateGameDto dto)
         {
-            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                   ?? User.FindFirst("sub")?.Value;
             Guid.TryParse(currentUserIdClaim, out var currentAdminId);
 
@@ -322,6 +337,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPut("games/{id:guid}")]
+        [ProducesResponseType(typeof(GameDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<GameDto>> UpdateGame(Guid id, [FromBody] UpdateGameDto dto)
         {
             var game = await _context.Games
@@ -372,6 +390,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("games/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteGame(Guid id)
         {
             var game = await _context.Games.FindAsync(id);
@@ -387,3 +407,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

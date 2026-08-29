@@ -56,3 +56,4 @@ namespace DteamBackend.Models.DTO
         public string? TrailerUrl { get; set; }
     }
 }
+

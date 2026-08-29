@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { libraryStore } from '../../stores/libraryStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
@@ -178,7 +178,7 @@
       </button>
     </div>
   {:else}
-    
+
     <div class="flex flex-col lg:flex-row items-start gap-6">
 
       <aside class="w-full lg:w-[300px] shrink-0 lg:sticky lg:top-24">
@@ -257,7 +257,7 @@
 
       <div class="flex-1 min-w-0 w-full">
         {#if isDetailOpen && selectedGameDetails && selectedUserGame}
-          
+
           <div class="flex flex-col justify-between p-6 md:p-8 relative bg-gradient-to-b from-[#131726]/60 to-[#0e111a] border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl min-h-[680px]">
         <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
           <img
@@ -492,7 +492,7 @@
         <p class="text-sm text-slate-400">Ігор за цим фільтром не знайдено.</p>
       </div>
     {:else if viewMode === 'grid'}
-      
+
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {#each filteredUserGames as item (item.gameId)}
           {@const g = getGameFor(item)}
@@ -527,7 +527,7 @@
         {/each}
       </div>
     {:else}
-      
+
       <div class="flex flex-col gap-2.5">
         {#each filteredUserGames as item (item.gameId)}
           {@const g = getGameFor(item)}

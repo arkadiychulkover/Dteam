@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { 
-    ArrowLeft, 
-    UserPlus, 
-    Search, 
-    MoreHorizontal, 
-    Check, 
-    X, 
-    Gamepad2, 
-    ChevronDown, 
-    Shield, 
-    UserMinus, 
-    Ban, 
+import { onMount } from 'svelte';
+  import {
+    ArrowLeft,
+    UserPlus,
+    Search,
+    MoreHorizontal,
+    Check,
+    X,
+    Gamepad2,
+    ChevronDown,
+    Shield,
+    UserMinus,
+    Ban,
     Users,
     MessageSquare,
     Loader2,
@@ -48,8 +48,8 @@
     let list = activeTab === 'online' ? onlineFriends : friends;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      list = list.filter(f => 
-        f.username.toLowerCase().includes(q) || 
+      list = list.filter(f =>
+        f.username.toLowerCase().includes(q) ||
         (searchByGame && f.currentGame?.toLowerCase().includes(q))
       );
     }
@@ -73,6 +73,12 @@
 
   onMount(() => {
     friendsStore.loadAll();
+  });
+
+  $effect(() => {
+    if ($currentUser?.id) {
+      friendsStore.loadAll();
+    }
   });
 
   function getStatusDotColor(status: UserStatus): string {
@@ -175,8 +181,8 @@
     <button
       onclick={() => activeTab = 'all'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'all' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'all'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Усі друзі</span>
@@ -189,8 +195,8 @@
     <button
       onclick={() => activeTab = 'online'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'online' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'online'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Онлайн</span>
@@ -203,8 +209,8 @@
     <button
       onclick={() => activeTab = 'blocked'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'blocked' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'blocked'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Заблоковані</span>
@@ -217,8 +223,8 @@
     <button
       onclick={() => activeTab = 'requests'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'requests' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'requests'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Поточні запити</span>
@@ -449,3 +455,4 @@
 </div>
 
 <AddFriendModal bind:isOpen={isAddFriendOpen} />
+

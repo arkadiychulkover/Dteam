@@ -80,3 +80,4 @@ namespace DteamBackend.Models
         public ICollection<UserCartItem> InCartsOf { get; set; } = new List<UserCartItem>();
     }
 }
+

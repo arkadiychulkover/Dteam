@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
@@ -15,9 +15,9 @@
 
   let {
     gameId = null,
-    gameName = "Якась гра, яка дуже всім сподобається",
-    subscribersCount = 3421,
-    onlineCount = 121
+    gameName = '',
+    subscribersCount = 0,
+    onlineCount = 0
   }: Props = $props();
 
   type TabType = 'discussion' | 'screenshot' | 'video' | 'guide';
@@ -227,12 +227,12 @@
       guide: 'guides'
     };
 
-    const finalTitle = activeTab === 'screenshot' || activeTab === 'video' 
-      ? (caption || `${activeTab.toUpperCase()} post`) 
+    const finalTitle = activeTab === 'screenshot' || activeTab === 'video'
+      ? (caption || `${activeTab.toUpperCase()} post`)
       : title;
 
-    const finalContent = activeTab === 'guide' 
-      ? `${description}\n\n${content}` 
+    const finalContent = activeTab === 'guide'
+      ? `${description}\n\n${content}`
       : (content || caption || 'Без опису');
 
     const postPayload = {
@@ -252,7 +252,7 @@
         message: 'Пост успішно опубліковано!',
         type: 'success'
       });
-      
+
       setTab('discussion');
       loadPosts();
     } catch (error: any) {
@@ -270,7 +270,6 @@
   function handleCancel() {
     setTab('discussion');
   }
-
 </script>
 
 <input
@@ -282,15 +281,15 @@
 />
 
 <div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
-  
+
   <h1 class="text-3xl font-black mb-6 tracking-wide text-white font-display">Створення публікації</h1>
 
   <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
     <div class="lg:col-span-3 bg-[#03232c] border border-cyan-900/60 rounded-2xl p-6 shadow-2xl flex flex-col justify-between min-h-[600px]">
-      
+
       <div>
-        
+
         <div class="grid grid-cols-4 gap-2 mb-6">
           <button
             type="button"
@@ -299,7 +298,7 @@
           >
             Обговорення
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('screenshot')}
@@ -307,7 +306,7 @@
           >
             Скріншот
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('video')}
@@ -315,7 +314,7 @@
           >
             Відео
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('guide')}
@@ -391,7 +390,7 @@
 
         {#if activeTab === 'screenshot'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -431,7 +430,7 @@
 
         {#if activeTab === 'video'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -472,7 +471,7 @@
         {#if activeTab === 'guide'}
           <div class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-              
+
               <div>
                 <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
                 <button
@@ -565,7 +564,7 @@
         >
           Відхилити
         </button>
-        
+
         <button
           type="button"
           onclick={() => handleSubmit()}
@@ -579,15 +578,11 @@
     </div>
 
     <div class="space-y-4">
-      <div class="text-right">
-        <div class="text-sm font-bold text-slate-200">{gameName}</div>
-        <div class="text-xs text-slate-400 mt-0.5 flex items-center justify-end gap-1.5">
-          <span class="font-bold text-slate-300">{subscribersCount}</span> підписників 
-          <span>•</span> 
-          <span class="font-bold text-slate-300">{onlineCount}</span> онлайн
-          <span class="inline-block w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
+      {#if gameId && gameName}
+        <div class="text-right">
+          <div class="text-sm font-bold text-slate-200">{gameName}</div>
         </div>
-      </div>
+      {/if}
 
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Сортувати за розділом</h2>
@@ -609,7 +604,7 @@
 
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Правила спільноти</h2>
-        
+
         <ol class="space-y-4 text-xs text-slate-300 leading-relaxed">
           <li class="pb-3 border-b border-cyan-900/40">
             <span class="font-bold text-slate-200">1.</span> Публікуйте тільки оригінальний контент.
@@ -708,3 +703,4 @@
     {/if}
   </div>
 </div>
+

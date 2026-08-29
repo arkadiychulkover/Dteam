@@ -7,3 +7,4 @@ namespace DteamBackend.Interfaces
         Task InitializeAsync(AppDbContext context);
     }
 }
+

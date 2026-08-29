@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { uiStore } from '../../stores/uiStore';
+import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { X, LogIn, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight } from 'lucide-svelte';
 
@@ -47,14 +47,14 @@
 </script>
 
 {#if $uiStore.isLoginModalOpen}
-  
-  <div 
+
+  <div
     onclick={handleBackdropClick}
     role="presentation"
     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
   >
     <div class="relative w-full max-w-md bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
-      
+
       <button
         onclick={closeModal}
         class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors cursor-pointer"
@@ -78,7 +78,7 @@
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-4">
-        
+
         <div>
           <label for="modal-login-id" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Логин / Email
@@ -178,3 +178,4 @@
     </div>
   </div>
 {/if}
+

@@ -39,3 +39,4 @@ export const authService = {
     return await api.post<{ message: string }>('/auth/reset-password', { token, newPassword });
   },
 };
+

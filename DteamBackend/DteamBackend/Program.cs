@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 namespace DteamBackend
 {
@@ -57,7 +58,7 @@ namespace DteamBackend
                 });
             });
 
-            var secretKey = builder.Configuration["Jwt:Secret"] 
+            var secretKey = builder.Configuration["Jwt:Secret"]
                 ?? "DteamSuperSecretJwtKey2026_dteam_io_security_token_key_spec_32bytes_long";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "DteamBackend";
             var audience = builder.Configuration["Jwt:Audience"] ?? "DteamApp";
@@ -86,7 +87,7 @@ namespace DteamBackend
                     {
                         var accessToken = context.Request.Query["access_token"];
                         var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && 
+                        if (!string.IsNullOrEmpty(accessToken) &&
                             (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/hub")))
                         {
                             context.Token = accessToken;
@@ -102,6 +103,31 @@ namespace DteamBackend
             });
 
             builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Dteam API",
+                    Version = "v1",
+                    Description = "API documentation for Dteam Backend"
+                });
+
+                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description = "Введите JWT токен (авторизация Bearer)"
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+                });
+            });
 
             var app = builder.Build();
 
@@ -125,6 +151,13 @@ namespace DteamBackend
 
             app.UseCors("DteamCorsPolicy");
 
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dteam API v1");
+                c.RoutePrefix = "swagger";
+            });
+
             app.UseStaticFiles();
 
             app.UseAuthentication();
@@ -145,3 +178,4 @@ namespace DteamBackend
         }
     }
 }
+

@@ -52,8 +52,8 @@ namespace DteamBackend.Services
                 using var client = new SmtpClient(_settings.Host, _settings.Port)
                 {
                     EnableSsl = _settings.EnableSsl,
-                    Credentials = !string.IsNullOrWhiteSpace(_settings.Username) 
-                        ? new NetworkCredential(_settings.Username, _settings.Password) 
+                    Credentials = !string.IsNullOrWhiteSpace(_settings.Username)
+                        ? new NetworkCredential(_settings.Username, _settings.Password)
                         : null
                 };
 
@@ -86,3 +86,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

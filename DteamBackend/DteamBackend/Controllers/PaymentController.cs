@@ -20,8 +20,8 @@ namespace DteamBackend.Controllers
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
-            AppDbContext context, 
-            TonService tonService, 
+            AppDbContext context,
+            TonService tonService,
             IConfiguration configuration,
             ILogger<PaymentController> logger)
         {
@@ -33,7 +33,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -42,6 +42,7 @@ namespace DteamBackend.Controllers
         [AllowAnonymous]
         [HttpGet("deposit-address")]
         [HttpGet("wallet-address")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<object> GetDepositAddress()
         {
             var address = _configuration["Ton:Address"] ?? string.Empty;
@@ -51,6 +52,11 @@ namespace DteamBackend.Controllers
         [HttpPost("verify")]
         [HttpPost("validate")]
         [HttpPost("deposit")]
+        [ProducesResponseType(typeof(PaymentVerificationResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PaymentVerificationResultDto), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PaymentVerificationResultDto>> VerifyTransaction([FromBody] VerifyTransactionDto dto)
         {
             var userId = GetCurrentUserId();
@@ -147,6 +153,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("history")]
+        [ProducesResponseType(typeof(List<TranxactionDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<List<TranxactionDto>>> GetUserTransactions()
         {
             var userId = GetCurrentUserId();
@@ -173,3 +181,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

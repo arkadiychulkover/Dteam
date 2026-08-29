@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+import { onMount, onDestroy } from 'svelte';
   import { adminService, activeAdminIdStore } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
@@ -728,3 +728,4 @@
     </div>
   </div>
 {/if}
+

@@ -28,7 +28,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
@@ -175,6 +175,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{gameId}/posts")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPosts(
             string gameId,
             [FromQuery] string category = "all",
@@ -241,6 +242,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("posts")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAllPosts(
             [FromQuery] string category = "all",
             [FromQuery] string search = "",
@@ -296,6 +298,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("posts/{postId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetPostDetails(string postId)
         {
             var store = LoadStore();
@@ -391,6 +395,8 @@ namespace DteamBackend.Controllers
         [HttpPost("upload")]
         [RequestSizeLimit(150L * 1024 * 1024)]
         [RequestFormLimits(MultipartBodyLengthLimit = 150L * 1024 * 1024)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UploadMedia(IFormFile? file)
         {
             var uploadedFile = file ?? Request.Form.Files.FirstOrDefault();
@@ -431,6 +437,8 @@ namespace DteamBackend.Controllers
 
         [HttpPost("{gameId}/posts")]
         [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(CommunityPost), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreatePostForm(string gameId, [FromForm] CreatePostDto dto)
         {
             return await CreatePostInternal(gameId, dto);
@@ -438,6 +446,8 @@ namespace DteamBackend.Controllers
 
         [HttpPost("{gameId}/posts")]
         [Consumes("application/json")]
+        [ProducesResponseType(typeof(CommunityPost), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreatePostJson(string gameId, [FromBody] CreatePostDto dto)
         {
             return await CreatePostInternal(gameId, dto);
@@ -445,6 +455,8 @@ namespace DteamBackend.Controllers
 
         [HttpPost("posts")]
         [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(CommunityPost), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProfilePostForm([FromForm] CreatePostDto dto)
         {
             return await CreatePostInternal(string.Empty, dto);
@@ -452,6 +464,8 @@ namespace DteamBackend.Controllers
 
         [HttpPost("posts")]
         [Consumes("application/json")]
+        [ProducesResponseType(typeof(CommunityPost), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProfilePostJson([FromBody] CreatePostDto dto)
         {
             return await CreatePostInternal(string.Empty, dto);
@@ -549,6 +563,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("posts/{postId}/like")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult ToggleLikePost(string postId)
         {
             var userId = GetCurrentUserId().ToString();
@@ -591,6 +608,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("posts/{postId}/comments")]
+        [ProducesResponseType(typeof(CommunityComment), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AddComment(string postId, [FromBody] CreateCommentDto dto)
         {
             var userId = GetCurrentUserId();
@@ -634,6 +653,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("comments/{commentId}/reply")]
+        [ProducesResponseType(typeof(CommunityComment), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AddReply(string commentId, [FromBody] CreateCommentDto dto)
         {
             var userId = GetCurrentUserId();
@@ -735,3 +756,4 @@ namespace DteamBackend.Controllers
         public List<CommunityComment> Replies { get; set; } = new List<CommunityComment>();
     }
 }
+

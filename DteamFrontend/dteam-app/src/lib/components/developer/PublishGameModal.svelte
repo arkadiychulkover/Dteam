@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { uiStore } from '../../stores/uiStore';
+import { uiStore } from '../../stores/uiStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { tonToNanoTon } from '../../utils/formatters';
   import type { Game } from '../../types';
@@ -153,3 +153,4 @@
     </form>
   </div>
 </div>
+

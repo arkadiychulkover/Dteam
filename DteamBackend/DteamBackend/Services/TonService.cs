@@ -14,9 +14,9 @@ namespace DteamBackend.Services
         private readonly string _address;
 
         public TonService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            IHttpClientFactory httpFactory, 
-            IConfiguration configuration, 
+            IDbContextFactory<AppDbContext> contextFactory,
+            IHttpClientFactory httpFactory,
+            IConfiguration configuration,
             ILogger<TonService> logger)
         {
             _contextFactory = contextFactory;
@@ -232,3 +232,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

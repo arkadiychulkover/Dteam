@@ -1,13 +1,13 @@
 import { writable } from 'svelte/store';
 
-export type MainTab = 
-  | 'store' 
+export type MainTab =
+  | 'store'
   | 'library'
   | 'community'
   | 'friends'
-  | 'catalog' 
+  | 'catalog'
   | 'game'
-  | 'wishlist' 
+  | 'wishlist'
   | 'cart'
   | 'admin'
   | 'profile'
@@ -78,3 +78,4 @@ function createUiStore() {
 }
 
 export const uiStore = createUiStore();
+
