@@ -1,98 +1,66 @@
-import { writable } from 'svelte/store';
-import type { UserFriend, Duser } from '../types';
-import { UserStatus, FriendshipStatus } from '../types';
-
-const SAMPLE_FRIENDS: UserFriend[] = [
-  {
-    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-    friendId: 'f1',
-    status: FriendshipStatus.Accepted,
-    createdAt: '2026-01-10T12:00:00Z',
-    friend: {
-      id: 'f1',
-      username: 'NeoValkyrie',
-      email: 'valk@dteam.io',
-      balanceInNanoTons: 0,
-      totalEarningsInNanoTons: 0,
-      createdAt: '',
-      isInFamily: false,
-      isAdmin: false,
-      isBanned: false,
-      status: UserStatus.InGame,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      bio: 'Playing Neon Odyssey 2088',
-    },
-  },
-  {
-    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-    friendId: 'f2',
-    status: FriendshipStatus.Accepted,
-    createdAt: '2026-01-12T12:00:00Z',
-    friend: {
-      id: 'f2',
-      username: 'TonWhale99',
-      email: 'whale@dteam.io',
-      balanceInNanoTons: 0,
-      totalEarningsInNanoTons: 0,
-      createdAt: '',
-      isInFamily: true,
-      isAdmin: false,
-      isBanned: false,
-      status: UserStatus.Online,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    },
-  },
-  {
-    userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-    friendId: 'f3',
-    status: FriendshipStatus.Accepted,
-    createdAt: '2026-01-20T12:00:00Z',
-    friend: {
-      id: 'f3',
-      username: 'ShadowNinja',
-      email: 'ninja@dteam.io',
-      balanceInNanoTons: 0,
-      totalEarningsInNanoTons: 0,
-      createdAt: '',
-      isInFamily: false,
-      isAdmin: false,
-      isBanned: false,
-      status: UserStatus.Offline,
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    },
-  },
-];
+import { writable, get } from 'svelte/store';
+import type { UserFriend } from '../types';
+import { friendsService } from '../services/friendsService';
+import { currentUser } from './authStore';
+import { uiStore } from './uiStore';
 
 function createFriendsStore() {
   const { subscribe, set, update } = writable<{
     friends: UserFriend[];
+    isLoading: boolean;
+    hasLoaded: boolean;
   }>({
-    friends: SAMPLE_FRIENDS,
+    friends: [],
+    isLoading: false,
+    hasLoaded: false,
   });
+
+  async function fetchFriends() {
+    return await friendsService.getFriends();
+  }
 
   return {
     subscribe,
-    addFriend: (usernameOrEmail: string) => {
-      const newFriend: UserFriend = {
-        userId: '3f7fc92f-8a38-4c48-98ff-cff02335e850',
-        friendId: Math.random().toString(36).substring(2, 9),
-        status: FriendshipStatus.Accepted,
-        createdAt: new Date().toISOString(),
-        friend: {
-          id: Math.random().toString(36).substring(2, 9),
-          username: usernameOrEmail.split('@')[0],
-          email: usernameOrEmail,
-          balanceInNanoTons: 0,
-          totalEarningsInNanoTons: 0,
-          createdAt: new Date().toISOString(),
-          isInFamily: false,
-          isAdmin: false,
-          isBanned: false,
-          status: UserStatus.Online,
-          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-        },
-      };
-      update((s) => ({ ...s, friends: [newFriend, ...s.friends] }));
+
+    loadFriends: async () => {
+      const me = get(currentUser);
+      if (!me?.id) {
+        set({ friends: [], isLoading: false, hasLoaded: true });
+        return;
+      }
+      update((s) => ({ ...s, isLoading: true }));
+      try {
+        const friends = await fetchFriends();
+        update((s) => ({ ...s, friends: friends || [], isLoading: false, hasLoaded: true }));
+      } catch (err) {
+        console.warn('[friendsStore] Не вдалося завантажити друзів:', err);
+        update((s) => ({ ...s, friends: [], isLoading: false, hasLoaded: true }));
+      }
+    },
+
+    clear: () => set({ friends: [], isLoading: false, hasLoaded: false }),
+
+    addFriend: async (usernameOrEmail: string) => {
+      try {
+        await friendsService.sendFriendRequest(usernameOrEmail);
+        uiStore.addToast({
+          title: 'Запит надіслано',
+          message: `Запит у друзі надіслано користувачеві ${usernameOrEmail}.`,
+          type: 'success',
+        });
+        try {
+          const friends = await fetchFriends();
+          update((s) => ({ ...s, friends: friends || [] }));
+        } catch {
+          /* мовчки ігноруємо — список і так покаже попередній стан */
+        }
+      } catch (err: any) {
+        uiStore.addToast({
+          title: 'Помилка',
+          message: err?.message || 'Не вдалося надіслати запит у друзі.',
+          type: 'error',
+        });
+      }
     },
   };
 }

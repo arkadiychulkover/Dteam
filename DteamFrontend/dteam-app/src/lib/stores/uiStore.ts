@@ -9,6 +9,8 @@ export type MainTab =
   | 'wishlist' 
   | 'cart'
   | 'admin'
+  | 'profile'
+  | 'my-profile'
   | 'login'
   | 'register'
   | 'forgot-password'

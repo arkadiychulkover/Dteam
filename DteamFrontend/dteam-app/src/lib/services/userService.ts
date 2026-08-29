@@ -9,6 +9,54 @@ export interface UserBanStatus {
   isAdmin: boolean;
 }
 
+export interface PublicGameSummary {
+  id: string;
+  title: string;
+  coverImageUrl?: string | null;
+  priceInNanoTons: number | string;
+  discountPercentage: number;
+  isDlc?: boolean;
+}
+
+export interface PublicProfile {
+  id: string;
+  username: string;
+  avatarUrl?: string | null;
+  bannerUrl?: string | null;
+  bio?: string | null;
+  status: number;
+  isInFamily: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+  friendsCount: number;
+  gamesCount: number;
+  publishedGames: PublicGameSummary[];
+  libraryGames: PublicGameSummary[];
+  isOwnProfile: boolean;
+  friendshipStatus: 'none' | 'pending' | 'friends';
+  isIncomingRequest: boolean;
+}
+
+export interface PublicFriend {
+  id: string;
+  username: string;
+  avatarUrl?: string | null;
+  status: number;
+}
+
+export interface MyReview {
+  id: string;
+  gameId: string;
+  gameTitle: string;
+  gameCoverImageUrl?: string | null;
+  rating: number;
+  content: string;
+  isRecommended: boolean;
+  playTimeHoursAtReview: number;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
 export const userService = {
   async checkIsBanned(userId: string): Promise<UserBanStatus> {
     return await api.get<UserBanStatus>(`/users/is-banned?userId=${userId}`);
@@ -32,5 +80,25 @@ export const userService = {
 
   async toggleFavorite(gameId: string): Promise<void> {
     await api.post(`/users/library/${gameId}/favorite`);
+  },
+
+  // Публічний профіль будь-якого користувача за id
+  async getPublicProfile(userId: string): Promise<PublicProfile> {
+    return await api.get<PublicProfile>(`/users/${userId}/profile`);
+  },
+
+  // Публічний список друзів користувача
+  async getPublicFriends(userId: string): Promise<PublicFriend[]> {
+    return await api.get<PublicFriend[]>(`/users/${userId}/friends`);
+  },
+
+  // Рецензії, залишені поточним користувачем
+  async getMyReviews(): Promise<MyReview[]> {
+    return await api.get<MyReview[]>('/users/me/reviews');
+  },
+
+  // Оновлення власного профілю (bio / аватар / банер)
+  async updateMyProfile(patch: { bio?: string; avatarUrl?: string; bannerUrl?: string }): Promise<{ id: string; username: string; avatarUrl?: string | null; bannerUrl?: string | null; bio?: string | null }> {
+    return await api.put('/users/me', patch);
   },
 };

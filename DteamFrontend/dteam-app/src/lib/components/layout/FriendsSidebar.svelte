@@ -1,6 +1,7 @@
 <script lang="ts">
   import { uiStore } from '../../stores/uiStore';
   import { friendsStore } from '../../stores/friendsStore';
+  import { profileStore } from '../../stores/profileStore';
   import { UserStatus } from '../../types';
   import { X, UserPlus, Users, MessageSquare } from 'lucide-svelte';
 
@@ -71,7 +72,11 @@
     <div class="flex-1 overflow-y-auto py-2 space-y-1">
       {#each $friendsStore.friends as f}
         <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/60 transition-all group">
-          <div class="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onclick={() => profileStore.viewProfile(f.friend.id)}
+            class="flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+          >
             <div class="relative">
               <img
                 src={f.friend.avatarUrl}
@@ -87,7 +92,7 @@
             </div>
 
             <div class="truncate">
-              <span class="block text-xs font-bold text-slate-200 truncate">
+              <span class="block text-xs font-bold text-slate-200 truncate hover:text-cyan-300 transition-colors">
                 {f.friend.username}
               </span>
               <span class="block text-[10px] text-slate-400 truncate">
@@ -102,7 +107,7 @@
                 {/if}
               </span>
             </div>
-          </div>
+          </button>
 
           <button
             class="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-slate-700/60 transition-colors opacity-0 group-hover:opacity-100"

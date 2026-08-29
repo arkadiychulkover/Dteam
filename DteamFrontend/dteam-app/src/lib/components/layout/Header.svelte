@@ -4,6 +4,7 @@
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { authStore, currentUser, isUserAdmin } from '../../stores/authStore';
+  import { myProfileStore } from '../../stores/myProfileStore';
   import { 
     Gamepad2, 
     Shield, 
@@ -210,6 +211,13 @@
                   </span>
                 </div>
               </div>
+
+              <button
+                onclick={() => { myProfileStore.viewMyProfile(); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
+              >
+                <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
+              </button>
 
               <button
                 onclick={() => { uiStore.setTab('library'); isUserDropdownOpen = false; }}

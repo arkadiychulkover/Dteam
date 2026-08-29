@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
+  import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
+  import { profileStore } from '../../stores/profileStore';
   import { ThumbsUp, MessageSquare, Loader2 } from 'lucide-svelte';
 
   interface Props {
@@ -28,7 +30,13 @@
   let content = $state('');
   let caption = $state('');
   let mediaUrl = $state('');
+  let mediaThumbnailUrl = $state('');
   let isSubmitting = $state(false);
+
+  // Стан реального завантаження медіа
+  let isUploadingMedia = $state(false);
+  let isDraggingOver = $state(false);
+  let fileInputEl: HTMLInputElement | undefined = $state();
 
   // Скидання полей при перемиканні вкладок
   function setTab(tab: TabType) {
@@ -38,6 +46,107 @@
     content = '';
     caption = '';
     mediaUrl = '';
+    mediaThumbnailUrl = '';
+    isDraggingOver = false;
+  }
+
+  // Визначаємо, який тип файлу очікуємо на поточній вкладці
+  function expectedMediaKind(): 'image' | 'video' {
+    return activeTab === 'video' ? 'video' : 'image';
+  }
+
+  function openFilePicker() {
+    if (isUploadingMedia) return;
+    fileInputEl?.click();
+  }
+
+  function validateFile(file: File, kind: 'image' | 'video'): string | null {
+    if (kind === 'image') {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        return 'Непідтримуваний формат зображення. Дозволені: JPG, PNG, WEBP, GIF.';
+      }
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        return `Розмір зображення перевищує ліміт ${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)} МБ.`;
+      }
+    } else {
+      if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+        return 'Непідтримуваний формат відео. Дозволені: MP4, WEBM, MOV.';
+      }
+      if (file.size > MAX_VIDEO_SIZE_BYTES) {
+        return `Розмір відео перевищує ліміт ${MAX_VIDEO_SIZE_BYTES / (1024 * 1024)} МБ.`;
+      }
+    }
+    return null;
+  }
+
+  // Реальне завантаження файлу на бекенд (замінює попередню заглушку simulateUpload)
+  async function uploadFile(file: File) {
+    const kind = expectedMediaKind();
+    const validationError = validateFile(file, kind);
+    if (validationError) {
+      uiStore.addToast({ title: 'Помилка файлу', message: validationError, type: 'warning' });
+      return;
+    }
+
+    isUploadingMedia = true;
+    try {
+      const uploaded = await mediaService.upload(file);
+      mediaUrl = uploaded.url;
+
+      if (kind === 'video') {
+        try {
+          mediaThumbnailUrl = await mediaService.generateAndUploadVideoThumbnail(file);
+        } catch (thumbErr) {
+          console.warn('[CommunityView] Не вдалося створити прев\'ю відео:', thumbErr);
+          mediaThumbnailUrl = '';
+        }
+      } else {
+        mediaThumbnailUrl = uploaded.url;
+      }
+
+      uiStore.addToast({
+        title: 'Завантаження',
+        message: kind === 'image' ? 'Зображення завантажено успішно!' : 'Відео завантажено успішно!',
+        type: 'success'
+      });
+    } catch (err: any) {
+      console.error('[CommunityView] Помилка завантаження файлу:', err);
+      uiStore.addToast({
+        title: 'Помилка завантаження',
+        message: err?.message || 'Не вдалося завантажити файл.',
+        type: 'error'
+      });
+    } finally {
+      isUploadingMedia = false;
+    }
+  }
+
+  function handleFileInputChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      uploadFile(file);
+    }
+    input.value = '';
+  }
+
+  function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    isDraggingOver = false;
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      uploadFile(file);
+    }
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    isDraggingOver = true;
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    isDraggingOver = false;
   }
 
   // ==== Стрічка публікацій спільноти ====
@@ -137,8 +246,9 @@
       category: categoryMap[activeTab],
       title: finalTitle,
       content: finalContent,
-      mediaType: (activeTab === 'screenshot' || activeTab === 'guide') ? 'image' : (activeTab === 'video' ? 'video' : 'none'),
-      mediaUrl: mediaUrl || (activeTab === 'screenshot' ? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800' : '')
+      mediaType: mediaUrl ? (activeTab === 'video' ? 'video' : 'image') : 'none',
+      mediaUrl,
+      mediaThumbnailUrl: mediaThumbnailUrl || undefined
     };
 
     try {
@@ -169,25 +279,16 @@
     setTab('discussion');
   }
 
-  // Симуляція завантаження файлу
-  function simulateUpload(type: 'image' | 'video') {
-    if (type === 'image') {
-      mediaUrl = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800';
-      uiStore.addToast({
-        title: 'Завантаження',
-        message: 'Зображення завантажено успішно!',
-        type: 'success'
-      });
-    } else {
-      mediaUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
-      uiStore.addToast({
-        title: 'Завантаження',
-        message: 'Відео завантажено успішно!',
-        type: 'success'
-      });
-    }
-  }
+  // Прихований input для вибору файлу, спільний для всіх вкладок
 </script>
+
+<input
+  bind:this={fileInputEl}
+  type="file"
+  accept={expectedMediaKind() === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/jpeg,image/png,image/webp,image/gif'}
+  class="hidden"
+  onchange={handleFileInputChange}
+/>
 
 <div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
   <!-- Заголовок сторінки -->
@@ -276,10 +377,18 @@
             <!-- Зона перетягування файлу -->
             <button
               type="button"
-              onclick={() => simulateUpload('image')}
-              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+              onclick={openFilePicker}
+              ondragover={handleDragOver}
+              ondragleave={handleDragLeave}
+              ondrop={handleDrop}
+              disabled={isUploadingMedia}
+              class="w-full border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer disabled:cursor-wait
+                {isDraggingOver ? 'border-cyan-400 bg-[#02171d]' : 'border-cyan-900/60'}"
             >
-              {#if mediaUrl}
+              {#if isUploadingMedia}
+                <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
+                <p class="text-xs text-slate-400">Завантаження...</p>
+              {:else if mediaUrl}
                 <img src={mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
                 <p class="text-xs text-cyan-400">Файл успішно завантажено</p>
               {:else}
@@ -298,10 +407,18 @@
             <!-- Велика пунктирна зона завантаження зображення -->
             <button
               type="button"
-              onclick={() => simulateUpload('image')}
-              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+              onclick={openFilePicker}
+              ondragover={handleDragOver}
+              ondragleave={handleDragLeave}
+              ondrop={handleDrop}
+              disabled={isUploadingMedia}
+              class="w-full border-2 border-dashed rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer disabled:cursor-wait
+                {isDraggingOver ? 'border-cyan-400 bg-[#02171d]' : 'border-cyan-900/60'}"
             >
-              {#if mediaUrl}
+              {#if isUploadingMedia}
+                <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
+                <p class="text-xs text-slate-400">Завантаження...</p>
+              {:else if mediaUrl}
                 <img src={mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
                 <p class="text-xs text-cyan-400">Зображення успішно завантажено</p>
               {:else}
@@ -331,10 +448,18 @@
             <!-- Велика пунктирна зона завантаження відео -->
             <button
               type="button"
-              onclick={() => simulateUpload('video')}
-              class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer"
+              onclick={openFilePicker}
+              ondragover={handleDragOver}
+              ondragleave={handleDragLeave}
+              ondrop={handleDrop}
+              disabled={isUploadingMedia}
+              class="w-full border-2 border-dashed rounded-2xl p-16 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer disabled:cursor-wait
+                {isDraggingOver ? 'border-cyan-400 bg-[#02171d]' : 'border-cyan-900/60'}"
             >
-              {#if mediaUrl}
+              {#if isUploadingMedia}
+                <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
+                <p class="text-xs text-slate-400">Завантаження...</p>
+              {:else if mediaUrl}
                 <video src={mediaUrl} class="max-h-48 rounded-lg object-cover mb-2" controls></video>
                 <p class="text-xs text-cyan-400">Відео успішно завантажено</p>
               {:else}
@@ -367,10 +492,18 @@
                 <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
                 <button
                   type="button"
-                  onclick={() => simulateUpload('image')}
-                  class="w-full border-2 border-dashed border-cyan-900/60 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors h-[180px] cursor-pointer"
+                  onclick={openFilePicker}
+                  ondragover={handleDragOver}
+                  ondragleave={handleDragLeave}
+                  ondrop={handleDrop}
+                  disabled={isUploadingMedia}
+                  class="w-full border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors h-[180px] cursor-pointer disabled:cursor-wait
+                    {isDraggingOver ? 'border-cyan-400 bg-[#02171d]' : 'border-cyan-900/60'}"
                 >
-                  {#if mediaUrl}
+                  {#if isUploadingMedia}
+                    <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
+                    <p class="text-xs text-slate-400">Завантаження...</p>
+                  {:else if mediaUrl}
                     <img src={mediaUrl} alt="Guide Cover" class="max-h-24 rounded-lg object-cover mb-1" />
                     <p class="text-xs text-cyan-400">Обкладинку завантажено</p>
                   {:else}
@@ -454,7 +587,7 @@
         <button
           type="button"
           onclick={() => handleSubmit()}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploadingMedia}
           class="bg-[#21e6c1] hover:bg-[#1cd4b0] text-[#03232c] font-black text-sm px-6 py-2.5 rounded-full shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           {isSubmitting ? 'Публікація...' : 'Опублікувати'}
@@ -541,17 +674,23 @@
         {#each posts as post (post.id)}
           <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
             <div class="flex items-center gap-3 mb-3">
-              <img
-                src={post.author.avatarUrl}
-                alt={post.author.username}
-                class="w-9 h-9 rounded-full object-cover ring-1 ring-cyan-900/60"
-              />
-              <div>
-                <span class="block text-sm font-bold text-slate-200">{post.author.username}</span>
-                <span class="block text-[11px] text-slate-500">
-                  {new Date(post.createdAt).toLocaleString('uk-UA')}
-                </span>
-              </div>
+              <button
+                type="button"
+                onclick={() => profileStore.viewProfile(post.author.id)}
+                class="flex items-center gap-3 cursor-pointer text-left group"
+              >
+                <img
+                  src={post.author.avatarUrl}
+                  alt={post.author.username}
+                  class="w-9 h-9 rounded-full object-cover ring-1 ring-cyan-900/60"
+                />
+                <div>
+                  <span class="block text-sm font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
+                  <span class="block text-[11px] text-slate-500">
+                    {new Date(post.createdAt).toLocaleString('uk-UA')}
+                  </span>
+                </div>
+              </button>
               <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-md bg-[#0b4e63]/50 text-cyan-300 uppercase tracking-wide">
                 {feedCategoryLabels[post.category as keyof typeof feedCategoryLabels] ?? post.category}
               </span>

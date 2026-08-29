@@ -11,6 +11,7 @@ namespace DteamBackend.Data
         }
 
         public DbSet<Duser> Users => Set<Duser>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<Game> Games => Set<Game>();
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<UserGame> UserGames => Set<UserGame>();

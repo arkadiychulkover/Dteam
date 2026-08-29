@@ -3,6 +3,7 @@
   import { communityService, type CommunityPost, type CommunityComment } from '../../services/communityService';
   import { currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
+  import { profileStore } from '../../stores/profileStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { 
     Users, Search, Filter, MessageSquare, ThumbsUp, Share2, 
@@ -12,22 +13,15 @@
 
   const categoryLabels = {
     all: 'Усі розділи',
-    forum: 'Дискусія',
-    screenshots: 'Скріншот',
+    forum: 'Форум',
+    screenshots: 'Скріншоти',
     videos: 'Відео',
-    guides: 'Гайд',
+    guides: 'Гайди',
     news: 'Новини'
   };
 
-  // Категорії, які показуємо у сортуванні праворуч (без "Усі" та "Новини" —
-  // саме ці 4 пункти запросили: Дискусія, Скріншот, Відео, Гайд)
-  const sidebarCategories: Array<'all' | 'forum' | 'screenshots' | 'videos' | 'guides'> = [
-    'all', 'forum', 'screenshots', 'videos', 'guides'
-  ];
-
-  // Props. gameId необов'язковий: якщо не передано — показуємо загальну стрічку
-  // спільноти по всіх іграх (використовується у вкладці "Спільнота").
-  let { gameId = null }: { gameId?: string | null } = $props();
+  // Props
+  let { gameId } = $props<{ gameId: string }>();
 
   // State
   let posts = $state<CommunityPost[]>([]);
@@ -357,7 +351,11 @@
             >
               <!-- Author header -->
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  onclick={(e) => { e.stopPropagation(); profileStore.viewProfile(post.author.id); }}
+                  class="flex items-center gap-3 cursor-pointer text-left"
+                >
                   <div class="w-8 h-8 rounded-full bg-[#041219] border border-cyan-500/30 overflow-hidden flex items-center justify-center text-cyan-300 font-bold text-xs">
                     {#if post.author.avatarUrl}
                       <img src={post.author.avatarUrl} alt={post.author.username} class="w-full h-full object-cover" />
@@ -366,12 +364,12 @@
                     {/if}
                   </div>
                   <div>
-                    <span class="block text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    <span class="block text-xs font-bold text-white hover:text-cyan-300 transition-colors">
                       {post.author.username}
                     </span>
                     <span class="block text-[9px] text-slate-500">{post.createdAt}</span>
                   </div>
-                </div>
+                </button>
 
                 <span class="px-2.5 py-0.5 rounded-lg bg-[#041219] text-cyan-300 font-bold text-[9px] border border-cyan-500/25 uppercase flex items-center gap-1">
                   <Icon class="w-3 h-3" />
@@ -530,23 +528,21 @@
           </div>
         </div>
 
-        <!-- Сортування за типом публікації: Дискусія, Скріншот, Відео, Гайд -->
+        <!-- Section Switcher Category List -->
         <div class="space-y-2">
           <span class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
-            Сортувати за розділом
+            Категорії
           </span>
           <nav class="space-y-1.5">
-            {#each sidebarCategories as key}
-              {@const Icon = getCategoryIcon(key)}
+            {#each Object.entries(categoryLabels) as [key, label]}
               <button
-                onclick={() => { activeCategory = key; loadPosts(); }}
-                class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer
+                onclick={() => { activeCategory = key as any; loadPosts(); }}
+                class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer
                   {activeCategory === key 
                     ? 'bg-[#088395] text-white shadow-lg font-black' 
                     : 'text-slate-400 hover:text-white hover:bg-slate-900/60'}"
               >
-                <Icon class="w-3.5 h-3.5" />
-                <span>{categoryLabels[key]}</span>
+                <span>{label}</span>
               </button>
             {/each}
           </nav>
@@ -582,7 +578,11 @@
           
           <!-- Author header -->
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
+            <button
+              type="button"
+              onclick={() => profileStore.viewProfile(selectedPost.author.id)}
+              class="flex items-center gap-3 cursor-pointer text-left"
+            >
               <div class="w-10 h-10 rounded-full bg-[#041219] border border-cyan-500/30 overflow-hidden flex items-center justify-center text-cyan-300 font-bold">
                 {#if selectedPost.author.avatarUrl}
                   <img src={selectedPost.author.avatarUrl} alt={selectedPost.author.username} class="w-full h-full object-cover" />
@@ -591,10 +591,10 @@
                 {/if}
               </div>
               <div>
-                <span class="block text-sm font-black text-white">{selectedPost.author.username}</span>
+                <span class="block text-sm font-black text-white hover:text-cyan-300 transition-colors">{selectedPost.author.username}</span>
                 <span class="block text-xs text-slate-400">{selectedPost.createdAt}</span>
               </div>
-            </div>
+            </button>
 
             <span class="px-2.5 py-0.5 rounded-lg bg-[#041219] text-cyan-300 font-bold text-[10px] border border-cyan-500/25 uppercase flex items-center gap-1">
               <Icon class="w-3.5 h-3.5" />
@@ -731,17 +731,27 @@
             {#each sortedComments as c (c.id)}
               <div class="space-y-3">
                 <div class="flex gap-3">
-                  <div class="w-8 h-8 rounded-full bg-[#041219] border border-cyan-500/25 overflow-hidden flex items-center justify-center text-cyan-300 font-black text-xs shrink-0">
+                  <button
+                    type="button"
+                    onclick={() => profileStore.viewProfile(c.author.id)}
+                    class="w-8 h-8 rounded-full bg-[#041219] border border-cyan-500/25 overflow-hidden flex items-center justify-center text-cyan-300 font-black text-xs shrink-0 cursor-pointer"
+                  >
                     {#if c.author.avatarUrl}
                       <img src={c.author.avatarUrl} alt={c.author.username} class="w-full h-full object-cover" />
                     {:else}
                       {c.author.username.charAt(0).toUpperCase()}
                     {/if}
-                  </div>
+                  </button>
 
                   <div class="flex-1 min-w-0 space-y-1">
                     <div class="flex items-baseline justify-between gap-2">
-                      <span class="text-xs font-bold text-slate-200">{c.author.username}</span>
+                      <button
+                        type="button"
+                        onclick={() => profileStore.viewProfile(c.author.id)}
+                        class="text-xs font-bold text-slate-200 hover:text-cyan-300 transition-colors cursor-pointer text-left"
+                      >
+                        {c.author.username}
+                      </button>
                       <span class="text-[9px] text-slate-500">{c.createdAt}</span>
                     </div>
                     <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{c.content}</p>
@@ -764,16 +774,26 @@
                   <div class="pl-8 space-y-3 border-l border-cyan-500/20 ml-4">
                     {#each c.replies as reply (reply.id)}
                       <div class="flex gap-2">
-                        <div class="w-6 h-6 rounded-full bg-[#041219] border border-cyan-500/20 overflow-hidden flex items-center justify-center text-cyan-300 font-bold text-[10px] shrink-0">
+                        <button
+                          type="button"
+                          onclick={() => profileStore.viewProfile(reply.author.id)}
+                          class="w-6 h-6 rounded-full bg-[#041219] border border-cyan-500/20 overflow-hidden flex items-center justify-center text-cyan-300 font-bold text-[10px] shrink-0 cursor-pointer"
+                        >
                           {#if reply.author.avatarUrl}
                             <img src={reply.author.avatarUrl} alt={reply.author.username} class="w-full h-full object-cover" />
                           {:else}
                             {reply.author.username.charAt(0).toUpperCase()}
                           {/if}
-                        </div>
+                        </button>
                         <div class="flex-1 min-w-0">
                           <div class="flex items-baseline justify-between gap-2">
-                            <span class="text-[11px] font-bold text-slate-300">{reply.author.username}</span>
+                            <button
+                              type="button"
+                              onclick={() => profileStore.viewProfile(reply.author.id)}
+                              class="text-[11px] font-bold text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer text-left"
+                            >
+                              {reply.author.username}
+                            </button>
                             <span class="text-[8px] text-slate-500">{reply.createdAt}</span>
                           </div>
                           <p class="text-[11px] text-slate-400 leading-relaxed whitespace-pre-wrap">{reply.content}</p>
@@ -900,10 +920,10 @@
             bind:value={newPostCategory}
             class="w-full px-3 py-2 rounded-xl bg-[#041219] border border-cyan-500/20 text-xs text-white focus:outline-none focus:border-cyan-400"
           >
-            <option value="forum">Дискусія</option>
-            <option value="screenshots">Скріншот</option>
+            <option value="forum">Форум</option>
+            <option value="screenshots">Скріншоти</option>
             <option value="videos">Відео</option>
-            <option value="guides">Гайд</option>
+            <option value="guides">Гайди</option>
           </select>
         </div>
 

@@ -61,7 +61,7 @@ export interface GetPostDetailsResponse {
 }
 
 export const communityService = {
-  getPosts: async (gameId: string, category = 'all', search = '', sortBy = 'newest'): Promise<GetPostsResponse> => {
+  getPosts: async (gameId: string | null, category = 'all', search = '', sortBy = 'newest'): Promise<GetPostsResponse> => {
     const params = new URLSearchParams({ category, search, sortBy });
     // Убрали дублирующий /api во всех путях
     const url = gameId
@@ -74,7 +74,7 @@ export const communityService = {
     return await api.get<GetPostDetailsResponse>(`community/posts/${postId}`);
   },
 
-  createPost: async (gameId: string | null, post: { category: string; title: string; content: string; mediaType: string; mediaUrl: string }): Promise<CommunityPost> => {
+  createPost: async (gameId: string | null, post: { category: string; title: string; content: string; mediaType: string; mediaUrl: string; mediaThumbnailUrl?: string }): Promise<CommunityPost> => {
     // Вызываем с /community/... вместо /api/community/...
     if (gameId) {
       return await api.post<CommunityPost>(`community/${gameId}/posts`, post);

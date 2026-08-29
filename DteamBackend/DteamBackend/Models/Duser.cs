@@ -59,6 +59,8 @@ namespace DteamBackend.Models
         [MaxLength(1000)]
         public string? Bio { get; set; }
 
+        public string? BannerUrl { get; set; }
+
         public ICollection<UserFriend> Friendships { get; set; } = new List<UserFriend>();
 
         public ICollection<UserGame> Library { get; set; } = new List<UserGame>();

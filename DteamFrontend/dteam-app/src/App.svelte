@@ -13,6 +13,8 @@
   import LiveBackground from './lib/components/ui/LiveBackground.svelte';
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
+  import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
+  import MyProfileView from './lib/components/profile/MyProfileView.svelte';
 
   // Auth Components
   import LoginView from './lib/components/auth/LoginView.svelte';
@@ -28,6 +30,7 @@
   import { authStore, currentUser } from './lib/stores/authStore';
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
+  import { friendsStore } from './lib/stores/friendsStore';
   import { userService } from './lib/services/userService';
 
   let isBanned = $state(false);
@@ -50,6 +53,7 @@
       checkUserBanStatus();
       wishlistStore.loadWishlist();
       cartStore.loadCart();
+      friendsStore.loadFriends();
     }
   });
 
@@ -57,6 +61,7 @@
     checkUserBanStatus();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
+    friendsStore.loadFriends();
     const interval = setInterval(checkUserBanStatus, 5000);
     return () => clearInterval(interval);
   });
@@ -78,6 +83,10 @@
       <LibraryView />
     {:else if $uiStore.activeTab === 'community'}
       <CommunityView />
+    {:else if $uiStore.activeTab === 'profile'}
+      <PublicProfileView />
+    {:else if $uiStore.activeTab === 'my-profile'}
+      <MyProfileView />
     {:else if $uiStore.activeTab === 'catalog'}
       <CatalogView />
     {:else if $uiStore.activeTab === 'game'}

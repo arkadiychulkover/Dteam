@@ -374,10 +374,29 @@ namespace DteamBackend.Controllers
             public string Content { get; set; } = string.Empty;
             public string MediaType { get; set; } = "none";
             public string MediaUrl { get; set; } = string.Empty;
+            // Опційна прев'ю-картинка для відео (генерується на фронтенді зі скріншоту кадру
+            // при завантаженні файлу). Якщо не передано — пробуємо дістати YouTube-прев'ю.
+            public string? MediaThumbnailUrl { get; set; }
         }
 
+        // Створення поста, прив'язаного до конкретної гри (напр. вкладка "Спільнота" на сторінці гри)
         [HttpPost("{gameId}/posts")]
         public async Task<IActionResult> CreatePost(string gameId, [FromBody] CreatePostDto dto)
+        {
+            return await CreatePostInternal(gameId, dto);
+        }
+
+        // Створення поста без прив'язки до гри (напр. публікація зі свого профілю).
+        // Раніше цього маршруту не існувало: фронтенд викликав POST /api/community/posts,
+        // але єдиний наявний маршрут був POST /api/community/{gameId}/posts (2 сегменти),
+        // тому ASP.NET Core знаходив збіг лише за GET /api/community/posts і повертав 405.
+        [HttpPost("posts")]
+        public async Task<IActionResult> CreateProfilePost([FromBody] CreatePostDto dto)
+        {
+            return await CreatePostInternal(string.Empty, dto);
+        }
+
+        private async Task<IActionResult> CreatePostInternal(string gameId, CreatePostDto dto)
         {
             var userId = GetCurrentUserId();
             var store = LoadStore();
@@ -395,6 +414,23 @@ namespace DteamBackend.Controllers
                 AvatarUrl = user?.AvatarUrl ?? ""
             };
 
+            string thumbnailUrl;
+            if (!string.IsNullOrWhiteSpace(dto.MediaThumbnailUrl))
+            {
+                thumbnailUrl = dto.MediaThumbnailUrl;
+            }
+            else if (dto.MediaType == "video")
+            {
+                var youtubeId = ExtractYoutubeId(dto.MediaUrl);
+                thumbnailUrl = !string.IsNullOrEmpty(youtubeId)
+                    ? $"https://img.youtube.com/vi/{youtubeId}/hqdefault.jpg"
+                    : dto.MediaUrl;
+            }
+            else
+            {
+                thumbnailUrl = dto.MediaUrl;
+            }
+
             var newPost = new CommunityPost
             {
                 Id = $"post-{Guid.NewGuid():N}",
@@ -408,7 +444,7 @@ namespace DteamBackend.Controllers
                 {
                     Type = dto.MediaType,
                     Url = dto.MediaUrl,
-                    ThumbnailUrl = dto.MediaType == "video" ? "https://img.youtube.com/vi/" + ExtractYoutubeId(dto.MediaUrl) + "/hqdefault.jpg" : dto.MediaUrl
+                    ThumbnailUrl = thumbnailUrl
                 },
                 LikedByUsers = new List<string>()
             };
