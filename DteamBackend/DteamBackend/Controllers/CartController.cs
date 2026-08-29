@@ -22,7 +22,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -69,6 +69,8 @@ namespace DteamBackend.Controllers
         };
 
         [HttpGet]
+        [ProducesResponseType(typeof(CartSummaryDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<CartSummaryDto>> GetCart()
         {
             var userId = GetCurrentUserId();
@@ -96,6 +98,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(CartItemDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CartItemDto>> AddToCart([FromBody] AddToCartDto dto)
         {
             var userId = GetCurrentUserId();
@@ -139,6 +144,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("{gameId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RemoveFromCart(Guid gameId)
         {
             var userId = GetCurrentUserId();
@@ -167,6 +175,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ClearCart()
         {
             var userId = GetCurrentUserId();
@@ -196,6 +206,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("move-to-wishlist/{gameId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> MoveToWishlist(Guid gameId)
         {
             var userId = GetCurrentUserId();
@@ -241,6 +253,11 @@ namespace DteamBackend.Controllers
 
         [HttpPost("checkout")]
         [HttpPost("buy")]
+        [ProducesResponseType(typeof(CheckoutResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CheckoutResultDto>> Checkout()
         {
             var userId = GetCurrentUserId();
@@ -350,8 +367,8 @@ namespace DteamBackend.Controllers
             return Ok(new CheckoutResultDto
             {
                 Success = true,
-                Message = addedCount == 1 
-                    ? "Гру успішно придбано та додано до вашої бібліотеки!" 
+                Message = addedCount == 1
+                    ? "Гру успішно придбано та додано до вашої бібліотеки!"
                     : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!",
                 NewBalanceInNanoTons = user.BalanceInNanoTons,
                 TotalSpentInNanoTons = totalRequiredNanoTons,
