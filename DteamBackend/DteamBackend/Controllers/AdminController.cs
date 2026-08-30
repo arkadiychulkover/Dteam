@@ -350,7 +350,7 @@ namespace DteamBackend.Controllers
                 ShortDescription = dto.ShortDescription,
                 PriceInNanoTons = dto.PriceInNanoTons,
                 DiscountPercentage = dto.DiscountPercentage,
-                ServerArchivePath = dto.ServerArchivePath,
+                ServerArchivePath = dto.ServerArchivePath ?? string.Empty,
                 OwnerId = ownerId,
                 DownloadCount = 0,
                 AverageRating = 0.0,

@@ -63,3 +63,14 @@ export interface GameFilterParams {
   tag?: string;
   sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'downloads';
 }
+
+export interface GameRecommendation {
+  id: string;
+  title: string;
+  banner: string;
+  bannerUrl: string;
+  headerImageUrl?: string | null;
+  coverImageUrl?: string | null;
+}
+
+

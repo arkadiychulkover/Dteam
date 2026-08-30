@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Game, Review, GameFilterParams } from '../types';
+import type { Game, Review, GameFilterParams, GameRecommendation  } from '../types';
 
 export interface UploadImageResponse {
   url: string;

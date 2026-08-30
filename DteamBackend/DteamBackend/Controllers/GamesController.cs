@@ -82,6 +82,7 @@ namespace DteamBackend.Controllers
         };
 
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<GameDto>>> GetGames(
             [FromQuery] string? search,
             [FromQuery] string? genre,
@@ -178,6 +179,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(GameDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<GameDto>> GetGameById(Guid id)
         {
             var game = await _context.Games
@@ -196,6 +199,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{id:guid}/reviews")]
+        [ProducesResponseType(typeof(IEnumerable<ReviewDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ReviewDto>>> GetGameReviews(Guid id)
         {
             var reviews = await _context.Reviews
@@ -224,9 +228,12 @@ namespace DteamBackend.Controllers
 
         [Authorize]
         [HttpPost("{id:guid}/reviews")]
+        [ProducesResponseType(typeof(ReviewDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ReviewDto>> PostReview(Guid id, [FromBody] CreateReviewDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -293,6 +300,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{id:guid}/dlcs")]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<GameDto>>> GetGameDlcs(Guid id)
         {
             var dlcs = await _context.Games
@@ -306,6 +314,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("genres")]
+        [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<string>> GetGenres()
         {
             var genres = Enum.GetNames(typeof(GameGenre)).ToList();
@@ -314,6 +323,10 @@ namespace DteamBackend.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("upload-image")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<object>> UploadGameImage(IFormFile? file)
         {
             if (file == null || file.Length == 0)
@@ -362,3 +375,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

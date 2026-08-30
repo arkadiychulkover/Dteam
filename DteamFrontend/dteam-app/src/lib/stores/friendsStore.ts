@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import type { FriendDto, FriendRequestDto } from '../types/friend';
 import { UserStatus } from '../types/user';
 import { friendsService } from '../services/friendsService';
+import { api } from '../services/api';
 import { currentUser } from './authStore';
 import { uiStore } from './uiStore';
 
@@ -26,15 +27,23 @@ function createFriendsStore() {
     subscribe,
 
     loadAll: async () => {
-      const user = get(currentUser);
-      if (!user?.id) return;
+      if (!api.getToken()) return;
 
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
         const [friendsList, requestsList, blockedList] = await Promise.all([
-          friendsService.getFriends().catch(() => []),
-          friendsService.getFriendRequests('incoming').catch(() => []),
-          friendsService.getBlocked().catch(() => [])
+          friendsService.getFriends().catch((err) => {
+            console.warn('Failed to load friends list:', err);
+            return [];
+          }),
+          friendsService.getFriendRequests('incoming').catch((err) => {
+            console.warn('Failed to load friend requests:', err);
+            return [];
+          }),
+          friendsService.getBlocked().catch((err) => {
+            console.warn('Failed to load blocked list:', err);
+            return [];
+          })
         ]);
 
         const uniqueFriendsList = Array.from(new Map(friendsList.map((f) => [f.id, f])).values());
@@ -54,8 +63,7 @@ function createFriendsStore() {
     },
 
     loadFriends: async () => {
-      const user = get(currentUser);
-      if (!user?.id) return;
+      if (!api.getToken()) return;
 
       try {
         const list = await friendsService.getFriends();
@@ -67,8 +75,7 @@ function createFriendsStore() {
     },
 
     loadRequests: async () => {
-      const user = get(currentUser);
-      if (!user?.id) return;
+      if (!api.getToken()) return;
 
       try {
         const list = await friendsService.getFriendRequests('incoming');
@@ -242,7 +249,7 @@ function createFriendsStore() {
 
         uiStore.addToast({
           title: 'Розблоковано',
-          message: unblockedUser?.username 
+          message: unblockedUser?.username
             ? `Користувача '${unblockedUser.username}' розблоковано та повернено у список друзів!`
             : 'Користувача успішно розблоковано та повернено у список друзів!',
           type: 'success'
@@ -278,8 +285,8 @@ function createFriendsStore() {
         return {
           ...s,
           onlineUserIds: updatedSet,
-          friends: s.friends.map((f) => 
-            f.id.toLowerCase() === lower 
+          friends: s.friends.map((f) =>
+            f.id.toLowerCase() === lower
               ? { ...f, status: UserStatus.Online }
               : f
           )
@@ -295,8 +302,8 @@ function createFriendsStore() {
         return {
           ...s,
           onlineUserIds: updatedSet,
-          friends: s.friends.map((f) => 
-            f.id.toLowerCase() === lower 
+          friends: s.friends.map((f) =>
+            f.id.toLowerCase() === lower
               ? { ...f, status: UserStatus.Offline }
               : f
           )
@@ -307,3 +314,4 @@ function createFriendsStore() {
 }
 
 export const friendsStore = createFriendsStore();
+

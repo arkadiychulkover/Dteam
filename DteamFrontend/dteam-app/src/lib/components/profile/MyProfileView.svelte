@@ -26,7 +26,6 @@
 
   const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
-    { id: 'значки', label: 'Значки', count: () => badges.length },
     { id: 'ігри', label: 'Ігри', count: () => $libraryStore.items.length },
     { id: 'бажане', label: 'Бажане', count: () => $wishlistStore.items.length },
     { id: 'обговорення', label: 'Обговорення', count: () => myDiscussionPosts.length },
@@ -306,18 +305,6 @@
 
         
         {#if activeTab === 'головна'}
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
-            <h2 class="text-lg font-bold text-white mb-4">Галерея значків</h2>
-            <div class="flex items-center gap-4 bg-[#02171d] p-4 rounded-xl border border-cyan-900/30">
-              <div class="bg-[#03232c] px-4 py-3 rounded-xl text-center border border-cyan-900/40">
-                <span class="text-2xl font-bold text-white block">{badges.length}</span>
-                <span class="text-xs text-slate-400">Значків</span>
-              </div>
-              <div class="flex items-center gap-4 text-3xl overflow-x-auto py-2">
-                {#each badges.slice(0, 5) as b}<span>{b.icon}</span>{/each}
-              </div>
-            </div>
-          </div>
 
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <h2 class="text-lg font-bold text-white mb-4">Колекція ігор</h2>
@@ -346,27 +333,6 @@
                 {/each}
               </div>
             {/if}
-          </div>
-        {/if}
-
-        
-        {#if activeTab === 'значки'}
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {#each badges as badge}
-                <div class="bg-[#02171d] p-4 rounded-2xl border border-cyan-900/30 flex gap-4 items-center">
-                  <div class="text-4xl bg-[#03232c] p-3 rounded-xl border border-cyan-900/40 shrink-0">{badge.icon}</div>
-                  <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-white text-base truncate">{badge.title}</h4>
-                    <p class="text-xs text-slate-400 mb-2 line-clamp-2">{badge.desc}</p>
-                    <div class="flex justify-between items-center text-[11px] text-slate-500">
-                      <span class="text-cyan-400 font-medium">{badge.points}</span>
-                      <span>{badge.date}</span>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
           </div>
         {/if}
 

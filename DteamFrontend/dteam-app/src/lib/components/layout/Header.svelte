@@ -5,12 +5,12 @@
   import { gamesStore } from '../../stores/gamesStore';
   import { authStore, currentUser, isUserAdmin } from '../../stores/authStore';
   import { myProfileStore } from '../../stores/myProfileStore';
-  import { 
-    Gamepad2, 
-    Shield, 
-    Compass, 
-    Heart, 
-    ShoppingCart, 
+  import {
+    Gamepad2,
+    Shield,
+    Compass,
+    Heart,
+    ShoppingCart,
     LogIn,
     UserPlus,
     LogOut,
@@ -22,13 +22,30 @@
     Plus,
     Wallet,
     Library,
-    Users
+    Users,
+    Sparkles,
+    Menu,
+    X,
+    Code2
   } from 'lucide-svelte';
-  import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
+  import { formatAddress, formatTon, nanoTonToTon } from '../../utils/formatters';
   import { friendsStore } from '../../stores/friendsStore';
+  import { gamesService } from '../../services/gamesService';
+  import type { GameRecommendation } from '../../types';
+  import type { CatalogFilterState } from '../../stores/gamesStore';
+  import GameRecommendationsDropdown from '../ui/GameRecommendationsDropdown.svelte';
+  import SearchCategoriesModal from '../ui/SearchCategoriesModal.svelte';
 
   let isUserDropdownOpen = $state(false);
   let headerSearchQuery = $state('');
+  let searchWrapperEl = $state<HTMLElement | null>(null);
+  let categoriesModalEl = $state<HTMLElement | null>(null);
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let recommendations = $state<GameRecommendation[]>([]);
+  let isLoadingRecommendations = $state(false);
+  let isRecommendationsOpen = $state(false);
+  let isCategoriesModalOpen = $state(false);
 
   const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
@@ -49,37 +66,175 @@
     uiStore.setTab('store');
   }
 
-  function handleSearchSubmit(e: SubmitEvent) {
-    e.preventDefault();
+  function handleSearchSubmit(e?: SubmitEvent) {
+    if (e) e.preventDefault();
+    if (debounceTimer) clearTimeout(debounceTimer);
+    isRecommendationsOpen = false;
+    isCategoriesModalOpen = false;
     if (headerSearchQuery.trim()) {
       gamesStore.setFilters({ search: headerSearchQuery.trim() });
       uiStore.setTab('catalog');
     }
   }
 
+  async function fetchRecommendations(query: string) {
+    if (!query.trim()) {
+      recommendations = [];
+      isRecommendationsOpen = false;
+      isLoadingRecommendations = false;
+      return;
+    }
+
+    isLoadingRecommendations = true;
+    isRecommendationsOpen = true;
+    try {
+      const res = await gamesService.getRecommendations(query.trim(), 8);
+      if (res && res.length > 0) {
+        recommendations = res;
+      } else {
+        const lower = query.trim().toLowerCase();
+        recommendations = $gamesStore.games
+          .filter(g =>
+            g.title.toLowerCase().startsWith(lower) ||
+            g.title.toLowerCase().includes(lower) ||
+            (g.tags && g.tags.some(t => t.toLowerCase().includes(lower)))
+          )
+          .slice(0, 8)
+          .map(g => ({
+            id: g.id,
+            title: g.title,
+            banner: g.headerImageUrl || g.coverImageUrl || '',
+            bannerUrl: g.headerImageUrl || g.coverImageUrl || '',
+            headerImageUrl: g.headerImageUrl,
+            coverImageUrl: g.coverImageUrl
+          }));
+      }
+    } catch {
+      const lower = query.trim().toLowerCase();
+      recommendations = $gamesStore.games
+        .filter(g =>
+          g.title.toLowerCase().startsWith(lower) ||
+          g.title.toLowerCase().includes(lower) ||
+          (g.tags && g.tags.some(t => t.toLowerCase().includes(lower)))
+        )
+        .slice(0, 8)
+        .map(g => ({
+          id: g.id,
+          title: g.title,
+          banner: g.headerImageUrl || g.coverImageUrl || '',
+          bannerUrl: g.headerImageUrl || g.coverImageUrl || '',
+          headerImageUrl: g.headerImageUrl,
+          coverImageUrl: g.coverImageUrl
+        }));
+    } finally {
+      isLoadingRecommendations = false;
+    }
+  }
+
   function handleSearchInput(e: Event) {
     const query = (e.target as HTMLInputElement).value;
     headerSearchQuery = query;
-    if (query.trim()) {
-      gamesStore.setFilters({ search: query.trim() });
-      if ($uiStore.activeTab !== 'catalog') {
+
+    if (query.trim().length > 0) {
+      isCategoriesModalOpen = false;
+    } else {
+      isCategoriesModalOpen = true;
+      recommendations = [];
+      isRecommendationsOpen = false;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      return;
+    }
+
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    debounceTimer = setTimeout(() => {
+      fetchRecommendations(query);
+    }, 500);
+  }
+
+  function handleSearchFocus() {
+    if (!headerSearchQuery.trim()) {
+      isCategoriesModalOpen = true;
+      isRecommendationsOpen = false;
+    } else {
+      isCategoriesModalOpen = false;
+      if (recommendations.length > 0) {
+        isRecommendationsOpen = true;
+      } else {
+        fetchRecommendations(headerSearchQuery);
+      }
+    }
+  }
+
+  function handleSelectCategoryFilter(filter: Partial<CatalogFilterState>) {
+    gamesStore.resetFilters();
+    gamesStore.setFilters(filter);
+    gamesStore.loadCatalogGames();
+
+    isCategoriesModalOpen = false;
+    isRecommendationsOpen = false;
+    headerSearchQuery = '';
+
+    uiStore.setTab('catalog');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }
+
+  async function handleSelectRecommendation(rec: GameRecommendation) {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    isRecommendationsOpen = false;
+    isCategoriesModalOpen = false;
+    headerSearchQuery = rec.title;
+    try {
+      const fullGame = await gamesService.getGameById(rec.id);
+      gamesStore.selectGame(fullGame);
+      uiStore.setTab('game');
+    } catch {
+      const cached = $gamesStore.games.find(g => g.id === rec.id);
+      if (cached) {
+        gamesStore.selectGame(cached);
+        uiStore.setTab('game');
+      } else {
+        gamesStore.setFilters({ search: rec.title });
         uiStore.setTab('catalog');
       }
+    }
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as Node;
+    if (searchWrapperEl && !searchWrapperEl.contains(target) && (!categoriesModalEl || !categoriesModalEl.contains(target))) {
+      isRecommendationsOpen = false;
+      isCategoriesModalOpen = false;
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      isRecommendationsOpen = false;
+      isCategoriesModalOpen = false;
     }
   }
 
   function handleLogoClick() {
     gamesStore.resetFilters();
     headerSearchQuery = '';
+    isRecommendationsOpen = false;
+    isCategoriesModalOpen = false;
     uiStore.setTab('store');
   }
 </script>
 
+<svelte:window onclick={handleClickOutside} onkeydown={handleKeydown} />
+
 <header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-    
+
     <div class="flex items-center gap-6">
-      <button 
+      <button
         onclick={handleLogoClick}
         class="flex items-center gap-2.5 group cursor-pointer text-left"
       >
@@ -100,8 +255,8 @@
           <button
             onclick={() => uiStore.setTab(tab.id)}
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
-              {$uiStore.activeTab === tab.id 
-                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black' 
+              {$uiStore.activeTab === tab.id
+                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
           >
             <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
@@ -114,24 +269,37 @@
       </nav>
     </div>
 
-    <form onsubmit={handleSearchSubmit} class="relative flex-1 max-w-md mx-1 sm:mx-2">
-      <input
-        type="text"
-        placeholder="Пошук у Крамниці..."
-        bind:value={headerSearchQuery}
-        oninput={handleSearchInput}
-        class="w-full pl-4 pr-10 py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
-      />
-      <button
-        type="submit"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
-        title="Пошук"
-      >
-        <Search class="w-4 h-4" />
-      </button>
-    </form>
+    <div bind:this={searchWrapperEl} class="relative w-full max-w-[130px] sm:max-w-[220px] md:max-w-xs lg:max-w-md mx-2 transition-all">
+      <form onsubmit={handleSearchSubmit} class="relative w-full">
+        <input
+          type="text"
+          placeholder="Пошук у Крамниці..."
+          bind:value={headerSearchQuery}
+          oninput={handleSearchInput}
+          onfocus={handleSearchFocus}
+          class="w-full pl-4 pr-10 py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+        />
+        <button
+          type="submit"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
+          title="Пошук"
+        >
+          <Search class="w-4 h-4" />
+        </button>
+      </form>
 
-    <div class="flex items-center gap-2 shrink-0">
+      <GameRecommendationsDropdown
+        {recommendations}
+        isOpen={isRecommendationsOpen}
+        isLoading={isLoadingRecommendations}
+        searchQuery={headerSearchQuery}
+        onSelect={handleSelectRecommendation}
+        onViewAll={handleSearchSubmit}
+      />
+    </div>
+
+    <!-- Змінено класи тут: додано ml-auto та збільшено gap -->
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
       <button
         onclick={() => uiStore.setTab('wishlist')}
         class="relative p-2 rounded-xl border transition-all cursor-pointer group
@@ -165,13 +333,13 @@
       </button>
 
       {#if $currentUser}
-        
+
         <button
           onclick={() => uiStore.setDepositModal(true)}
           class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
           title="Поповнити баланс (The Open Network)"
         >
-          <span class="text-cyan-400 font-bold text-xs group-hover:scale-110 transition-transform">💎</span>
+          <TonIcon class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
           <span class="font-bold text-white font-mono text-xs tracking-tight">
             {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
           </span>
@@ -205,14 +373,15 @@
                 <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
                 <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
                   <span class="text-slate-400 text-[10px]">Баланс:</span>
-                  <span class="text-cyan-300 font-bold font-mono text-[11px]">
-                    💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                  <span class="text-cyan-300 font-bold font-mono text-[11px] flex items-center gap-1">
+                    <TonIcon class="w-3 h-3 text-cyan-400" />
+                    <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
                   </span>
                 </div>
               </div>
 
               <button
-                onclick={() => { myProfileStore.viewMyProfile(); isUserDropdownOpen = false; }}
+                onclick={async () => { uiStore.setTab('my-profile'); isUserDropdownOpen = false; }}
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
               >
                 <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
@@ -259,6 +428,12 @@
                   <Shield class="w-3.5 h-3.5" /> Панель Адміністратора
                 </button>
               {/if}
+              <button
+                onclick={() => { uiStore.setTab('developer'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-emerald-400 hover:text-emerald-300 cursor-pointer font-bold mt-1"
+              >
+                <Code2 class="w-3.5 h-3.5 text-emerald-400" /> Кабінет розробника
+              </button>
 
               <button
                 onclick={handleLogout}
@@ -288,5 +463,13 @@
         </div>
       {/if}
     </div>
+  </div>
+
+  <div bind:this={categoriesModalEl}>
+    <SearchCategoriesModal
+      isOpen={isCategoriesModalOpen}
+      onSelectFilter={handleSelectCategoryFilter}
+      onClose={() => isCategoriesModalOpen = false}
+    />
   </div>
 </header>

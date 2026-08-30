@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { profileStore } from '../../stores/profileStore';
   import { currentUser } from '../../stores/authStore';
   import { friendsService } from '../../services/friendsService';
@@ -11,6 +11,8 @@
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
     ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft
   } from 'lucide-svelte';
+  import { gamesStore } from '../../stores/gamesStore';
+  import { gamesService } from '../../services/gamesService';
 
   type TabId = 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
   let activeTab = $state<TabId>('обговорення');
@@ -31,6 +33,29 @@
     { id: 'відео', label: 'Відео', count: () => null },
     { id: 'гайди', label: 'Гайди', count: () => null },
   ];
+
+  async function navigateToGame(game: { id: string; title?: string; description?: string }) {
+    if (!game?.id) return;
+    const existing = $gamesStore.games.find((g) => g.id === game.id);
+    if (existing) {
+      gamesStore.selectGame(existing);
+      uiStore.setTab('game');
+      return;
+    }
+    if (game.title && game.description) {
+      gamesStore.selectGame(game as any);
+      uiStore.setTab('game');
+      return;
+    }
+    try {
+      const fullGame = await gamesService.getGameById(game.id);
+      gamesStore.selectGame(fullGame);
+      uiStore.setTab('game');
+    } catch {
+      gamesStore.selectGame(game as any);
+      uiStore.setTab('game');
+    }
+  }
 
   let allPosts = $state<CommunityPost[]>([]);
   let isLoadingPosts = $state(false);
@@ -108,7 +133,7 @@
       </button>
     </div>
   {:else}
-    
+
     <div
       class="w-full h-48 md:h-64 bg-cover bg-center bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e]"
       style={profile.bannerUrl ? `background-image: url('${profile.bannerUrl}')` : ''}
@@ -118,7 +143,7 @@
 
       <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
-          
+
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
             {#if profile.avatarUrl}
               <img src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
@@ -196,10 +221,20 @@
                     <h3 class="text-sm font-bold text-slate-300 mb-3">Бібліотека ({profile.libraryGames.length})</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {#each profile.libraryGames as game}
-                        <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
-                          <img src={game.coverImageUrl || undefined} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
-                          <div class="min-w-0">
-                            <h4 class="font-bold text-white text-sm truncate">{game.title}</h4>
+                        <button
+                          type="button"
+                          onclick={() => navigateToGame(game)}
+                          class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
+                        >
+                          {#if game.coverImageUrl}
+                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                          {:else}
+                            <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
+                              {game.title}
+                            </div>
+                          {/if}
+                          <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{game.title}</h4>
                             {#if game.isDlc}
                               <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase">DLC</span>
                             {:else}
@@ -208,7 +243,7 @@
                               </span>
                             {/if}
                           </div>
-                        </div>
+                        </button>
                       {/each}
                     </div>
                   </div>
@@ -219,15 +254,25 @@
                     <h3 class="text-sm font-bold text-slate-300 mb-3">Опубліковані ігри ({profile.publishedGames.length})</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {#each profile.publishedGames as game}
-                        <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
-                          <img src={game.coverImageUrl || undefined} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
-                          <div class="min-w-0">
-                            <h4 class="font-bold text-white text-sm truncate">{game.title}</h4>
+                        <button
+                          type="button"
+                          onclick={() => navigateToGame(game)}
+                          class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
+                        >
+                          {#if game.coverImageUrl}
+                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                          {:else}
+                            <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
+                              {game.title}
+                            </div>
+                          {/if}
+                          <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{game.title}</h4>
                             <span class="text-xs text-cyan-400 font-mono">
                               {formatPrice(game.priceInNanoTons, game.discountPercentage)}
                             </span>
                           </div>
-                        </div>
+                        </button>
                       {/each}
                     </div>
                   </div>
@@ -421,3 +466,4 @@
     </div>
   {/if}
 </div>
+

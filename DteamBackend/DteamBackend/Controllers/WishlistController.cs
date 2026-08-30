@@ -22,7 +22,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -71,6 +71,8 @@ namespace DteamBackend.Controllers
         };
 
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<WishlistItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<WishlistItemDto>>> GetWishlist(
             [FromQuery] string? search,
             [FromQuery] string? sortBy = "date_added")
@@ -115,6 +117,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("{gameId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<object>> CheckGameInWishlist(Guid gameId)
         {
             var userId = GetCurrentUserId();
@@ -138,6 +142,10 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(WishlistItemDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(WishlistItemDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<WishlistItemDto>> AddToWishlist([FromBody] AddToWishlistDto dto)
         {
             var userId = GetCurrentUserId();
@@ -188,6 +196,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPut("{gameId:guid}")]
+        [ProducesResponseType(typeof(WishlistItemDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<WishlistItemDto>> UpdateWishlistItem(
             Guid gameId,
             [FromBody] UpdateWishlistItemDto dto)
@@ -217,6 +228,9 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete("{gameId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RemoveFromWishlist(Guid gameId)
         {
             var userId = GetCurrentUserId();
@@ -245,6 +259,8 @@ namespace DteamBackend.Controllers
         }
 
         [HttpDelete]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ClearWishlist()
         {
             var userId = GetCurrentUserId();
@@ -274,3 +290,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

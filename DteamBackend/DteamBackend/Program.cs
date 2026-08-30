@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Microsoft.AspNetCore.Builder;
 
 namespace DteamBackend
 {
@@ -103,6 +105,32 @@ namespace DteamBackend
 
             builder.Services.AddControllers();
 
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Dteam API",
+                    Version = "v1",
+                    Description = "API documentation for Dteam Backend"
+                });
+
+                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description = "Введите JWT токен (авторизация Bearer)"
+                });
+
+                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+                });
+            });
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
@@ -126,6 +154,13 @@ namespace DteamBackend
             app.UseRouting();
 
             app.UseCors("DteamCorsPolicy");
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dteam API v1");
+                c.RoutePrefix = "swagger";
+            });
 
             app.UseStaticFiles();
 

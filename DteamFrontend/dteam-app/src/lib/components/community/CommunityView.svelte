@@ -14,7 +14,7 @@
 
   let {
     gameId = null,
-    gameName = "Якась гра, яка дуже всім сподобається"
+    gameName = "Онлайн людей на сайті"
   }: Props = $props();
 
   let onlineCount = $state(onlineHubService.getOnlineCount());
@@ -34,6 +34,9 @@
   let isDraggingOver = $state(false);
   let fileInputEl: HTMLInputElement | undefined = $state();
   let selectedFile = $state<File | null>(null);
+
+  // Ссылки на поля ввода текста для модификатора
+  let contentTextareaEl: HTMLTextAreaElement | undefined = $state();
 
   function setTab(tab: TabType) {
     activeTab = tab;
@@ -200,7 +203,46 @@
     onDestroy(unsubscribeOnline);
   });
 
+  // Экранируем HTML, затем превращаем розмітку тулбара (**bold**, *italic*,
+  // <u>underline</u>, ![alt](url)) у реальні теги. Раніше пост рендерився
+  // як звичайний текст, тому вся розмітка показувалась "як є" — буквально
+  // зі зірочками й тегами. Тепер вона реально застосовується.
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderPostContent(raw: string): string {
+    let safe = escapeHtml(raw);
+
+    // ![опис](url) -> <img>
+    safe = safe.replace(
+      /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<img src="$2" alt="$1" class="my-2 rounded-lg max-h-80 max-w-full object-contain" />'
+    );
+
+    // **bold**
+    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // *italic* (одиночні зірочки, після того як bold вже "з'їв" подвійні)
+    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // <u>underline</u> вище був заекранований у &lt;u&gt;...&lt;/u&gt; — повертаємо тег
+    safe = safe.replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, '<u>$1</u>');
+
+    // зберігаємо переноси рядків
+    safe = safe.replace(/\n/g, '<br />');
+
+    return safe;
+  }
+
   function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
+    if (!contentTextareaEl) return;
+
     const formats = {
       bold: { start: '**', end: '**' },
       italic: { start: '*', end: '*' },
@@ -208,7 +250,24 @@
       image: { start: '![опис](', end: ')' }
     };
     const chunk = formats[format];
-    content += `${chunk.start}текст${chunk.end}`;
+
+    const start = contentTextareaEl.selectionStart;
+    const end = contentTextareaEl.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    // Если текст выделен — оборачиваем его, если нет — подставляем слово "текст"
+    const replacement = `${chunk.start}${selectedText || 'текст'}${chunk.end}`;
+    
+    content = content.substring(0, start) + replacement + content.substring(end);
+
+    // Возвращаем фокус и выделяем вставленный шаблон / текст
+    setTimeout(() => {
+      if (!contentTextareaEl) return;
+      contentTextareaEl.focus();
+      const newCursorStart = start + chunk.start.length;
+      const newCursorEnd = selectedText ? newCursorStart + selectedText.length : newCursorStart + 5;
+      contentTextareaEl.setSelectionRange(newCursorStart, newCursorEnd);
+    }, 0);
   }
 
   async function handleSubmit(e?: Event) {
@@ -351,14 +410,15 @@
               <label for="content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
               <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
                 <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
-                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
-                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
-                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
-                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1 cursor-pointer">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1 cursor-pointer">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1 cursor-pointer">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1 cursor-pointer">
                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   </button>
                 </div>
                 <textarea
+                  bind:this={contentTextareaEl}
                   id="content"
                   rows="5"
                   bind:value={content}
@@ -542,14 +602,15 @@
               <label for="guide-content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
               <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
                 <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
-                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
-                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
-                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
-                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1 cursor-pointer">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1 cursor-pointer">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1 cursor-pointer">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1 cursor-pointer">
                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   </button>
                 </div>
                 <textarea
+                  bind:this={contentTextareaEl}
                   id="guide-content"
                   rows="5"
                   bind:value={content}
@@ -682,7 +743,7 @@
               <h3 class="text-base font-bold text-white mb-1.5">{post.title}</h3>
             {/if}
 
-            <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{post.content}</p>
+            <p class="text-sm text-slate-300 leading-relaxed">{@html renderPostContent(post.content)}</p>
 
             {#if post.media?.type === 'image' && post.media.url}
               <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />

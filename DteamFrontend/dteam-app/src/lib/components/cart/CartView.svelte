@@ -5,6 +5,7 @@
   import { gamesStore } from '../../stores/gamesStore';
   import { currentUser } from '../../stores/authStore';
   import { formatPrice, formatBasePrice, formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
   import type { Game, CartItem } from '../../types';
   import { 
     ShoppingCart, 
@@ -241,8 +242,9 @@
                 <span>Ваш баланс:</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="font-bold text-white font-mono text-[11px]">
-                  💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                <span class="font-bold text-white font-mono text-[11px] flex items-center gap-1">
+                  <TonIcon class="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
                 </span>
                 <button
                   type="button"

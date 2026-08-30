@@ -6,10 +6,14 @@
   import { friendsStore } from '../../stores/friendsStore';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
+  import { currentUser } from '../../stores/authStore';
+  import { gamesStore } from '../../stores/gamesStore';
   import { userService, type PublicProfile } from '../../services/userService';
   import { communityService, type CommunityPost } from '../../services/communityService';
-  import { formatBytes, formatDate } from '../../utils/formatters';
-  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart } from 'lucide-svelte';
+  import { gamesService } from '../../services/gamesService';
+  import type { Review } from '../../types';
+  import { formatBytes, formatDate, formatPrice } from '../../utils/formatters';
+  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight } from 'lucide-svelte';
 
   interface Props {
     game: Game;
@@ -33,6 +37,48 @@
 
   let friendsWithGame = $state<{ friend: FriendDto; profile: PublicProfile }[]>([]);
   let isLoadingFriends = $state(false);
+
+  let allReviews = $state<Review[]>([]);
+  let isLoadingReviews = $state(false);
+  const myReviews = $derived(
+    $currentUser ? allReviews.filter((r) => r.userId === $currentUser!.id) : []
+  );
+
+  let dlcs = $state<Game[]>([]);
+  let isLoadingDlcs = $state(false);
+
+  async function loadReviews(gameId: string) {
+    isLoadingReviews = true;
+    try {
+      allReviews = await gamesService.getReviews(gameId);
+    } catch (e) {
+      console.warn('[LibraryGameDetails] Не вдалося завантажити рецензії:', e);
+      allReviews = [];
+    } finally {
+      isLoadingReviews = false;
+    }
+  }
+
+  async function loadDlcs(gameId: string) {
+    isLoadingDlcs = true;
+    try {
+      dlcs = await gamesService.getDlcs(gameId);
+    } catch (e) {
+      console.warn('[LibraryGameDetails] Не вдалося завантажити DLC:', e);
+      dlcs = [];
+    } finally {
+      isLoadingDlcs = false;
+    }
+  }
+
+  function formatReviewDate(dateStr: string): string {
+    return formatDate(dateStr);
+  }
+
+  function openDlc(dlc: Game) {
+    gamesStore.selectGame(dlc);
+    uiStore.setTab('game');
+  }
 
   async function loadNews() {
     isLoadingNews = true;
@@ -128,6 +174,13 @@
     loadCommunityFeed();
     loadFriendsWithGame();
   });
+
+  $effect(() => {
+    if (game?.id) {
+      loadReviews(game.id);
+      loadDlcs(game.id);
+    }
+  });
 </script>
 
 <div class="space-y-6 animate-in fade-in duration-300">
@@ -207,16 +260,79 @@
   </nav>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    {#if activeTab === 'store'}
     <div class="lg:col-span-8 space-y-6">
-      <div class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl p-5 shadow-lg flex items-center justify-between">
-        <span class="text-sm font-bold text-white">Моя рецензія</span>
-        <button
-          onclick={() => uiStore.setTab('game')}
-          class="px-4 py-2 rounded-xl bg-transparent border border-cyan-400/60 text-cyan-300 hover:bg-cyan-500/10 text-xs font-bold transition-all cursor-pointer"
-        >
-          Написати рецензію
-        </button>
-      </div>
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-extrabold text-white">Моя рецензія</h2>
+          <button
+            onclick={() => uiStore.setTab('game')}
+            class="px-4 py-2 rounded-xl bg-transparent border border-cyan-400/60 text-cyan-300 hover:bg-cyan-500/10 text-xs font-bold transition-all cursor-pointer"
+          >
+            Написати рецензію
+          </button>
+        </div>
+
+        {#if isLoadingReviews}
+          <div class="flex items-center justify-center py-10 text-slate-400 text-xs gap-2">
+            <Loader2 class="w-4 h-4 animate-spin text-cyan-400" />
+            <span>Завантаження рецензій...</span>
+          </div>
+        {:else if myReviews.length > 0}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {#each myReviews as review}
+              <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4 group hover:border-cyan-400/60 transition-all">
+                <div class="space-y-3">
+
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
+                        {#if review.userAvatarUrl || review.user?.avatarUrl}
+                          <img
+                            src={review.userAvatarUrl || review.user?.avatarUrl || ''}
+                            alt={review.username || review.user?.username || 'User'}
+                            class="w-full h-full object-cover"
+                          />
+                        {:else}
+                          {(review.username || review.user?.username || 'U').charAt(0).toUpperCase()}
+                        {/if}
+                      </div>
+                      <div>
+                        <h4 class="text-sm font-extrabold text-white">
+                          {review.username || review.user?.username || 'Користувач'}
+                        </h4>
+                        <div class="flex items-center gap-0.5 text-rose-500 mt-0.5">
+                          {#each Array(review.rating) as _}
+                            <Star class="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                          {/each}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span class="text-[11px] text-slate-500 font-mono">
+                      {formatReviewDate(review.createdAt)}
+                    </span>
+                  </div>
+
+                  <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {review.content}
+                  </p>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-cyan-950/80 text-xs text-slate-400">
+                  <span class="text-[11px] font-semibold {review.isRecommended ? 'text-emerald-400' : 'text-slate-500'}">
+                    {review.isRecommended ? '✓ Рекомендує гру' : 'Не рекомендує'}
+                  </span>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="text-center py-10 bg-[#061820]/60 rounded-2xl border border-cyan-500/20">
+            <p class="text-xs text-slate-400">Ви ще не залишали рецензію на цю гру.</p>
+          </div>
+        {/if}
+      </section>
 
       <section class="space-y-4">
         <div class="flex items-center justify-between">
@@ -349,6 +465,53 @@
         {/if}
       </section>
     </div>
+    {:else if activeTab === 'dlc'}
+    <div class="lg:col-span-8 space-y-6">
+      <h2 class="text-lg font-extrabold text-white">Доповнення до гри</h2>
+
+      {#if isLoadingDlcs}
+        <div class="flex items-center justify-center py-10 text-slate-400 text-xs gap-2">
+          <Loader2 class="w-4 h-4 animate-spin text-cyan-400" />
+          <span>Завантаження DLC...</span>
+        </div>
+      {:else if dlcs.length > 0}
+        <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-4 sm:p-6 shadow-xl space-y-3">
+          {#each dlcs as dlc}
+            <div
+              role="button"
+              tabindex="0"
+              onclick={() => openDlc(dlc)}
+              onkeydown={(e) => e.key === 'Enter' && openDlc(dlc)}
+              class="group flex items-center justify-between p-3.5 rounded-2xl bg-[#08222d] hover:bg-[#0c3140] border border-cyan-500/15 hover:border-cyan-400/60 transition-all cursor-pointer shadow-md"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                {#if dlc.coverImageUrl || dlc.headerImageUrl}
+                  <img
+                    src={dlc.coverImageUrl || dlc.headerImageUrl}
+                    alt={dlc.title}
+                    class="w-12 h-7 rounded-lg object-cover border border-cyan-500/20 shrink-0 group-hover:scale-105 transition-transform"
+                  />
+                {/if}
+                <span class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
+                  {dlc.title}
+                </span>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                <span class="text-xs font-bold {Number(dlc.priceInNanoTons) === 0 ? 'text-emerald-400' : 'text-cyan-300 font-mono'}">
+                  {formatPrice(dlc.priceInNanoTons, dlc.discountPercentage)}
+                </span>
+                <ChevronRight class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div class="text-center py-10 bg-[#061820]/60 rounded-2xl border border-cyan-500/20">
+          <p class="text-xs text-slate-400">Для цієї гри немає доповнень.</p>
+        </div>
+      {/if}
+    </div>
+    {/if}
 
     <aside class="lg:col-span-4 space-y-4">
       <div class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl p-5 shadow-lg">
