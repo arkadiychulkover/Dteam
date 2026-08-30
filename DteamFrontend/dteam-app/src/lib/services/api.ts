@@ -112,7 +112,7 @@ class ApiClient {
 
   public async request<T>(endpoint: string, options: RequestInit = {}, isRetry: boolean = false): Promise<T> {
     const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
+    
     const headers = new Headers(options.headers);
     if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
@@ -203,4 +203,3 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
-

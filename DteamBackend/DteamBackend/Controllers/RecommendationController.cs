@@ -1,4 +1,4 @@
-using DteamBackend.Data;
+﻿using DteamBackend.Data;
 using DteamBackend.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -76,4 +76,3 @@ namespace DteamBackend.Controllers
         }
     }
 }
-

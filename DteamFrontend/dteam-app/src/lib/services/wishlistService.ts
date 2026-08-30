@@ -30,4 +30,3 @@ export const wishlistService = {
     return await api.delete<{ message: string; count: number }>('/wishlist');
   },
 };
-

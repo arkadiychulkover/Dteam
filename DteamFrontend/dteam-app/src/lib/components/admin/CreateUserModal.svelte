@@ -1,5 +1,5 @@
 <script lang="ts">
-import { adminService, type CreateUserDto } from '../../services/adminService';
+  import { adminService, type CreateUserDto } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
   import { MOCK_AVATARS } from '../../utils/constants';
   import { X, UserPlus, Shield, Wallet, Mail, Lock, User, Sparkles } from 'lucide-svelte';
@@ -255,4 +255,3 @@ import { adminService, type CreateUserDto } from '../../services/adminService';
     </div>
   </div>
 {/if}
-

@@ -13,4 +13,3 @@ namespace DteamBackend.Models.DTO
         public string? Notes { get; set; }
     }
 }
-

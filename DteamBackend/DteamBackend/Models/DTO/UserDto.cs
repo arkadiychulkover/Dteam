@@ -45,4 +45,3 @@ namespace DteamBackend.Models.DTO
         }
     }
 }
-

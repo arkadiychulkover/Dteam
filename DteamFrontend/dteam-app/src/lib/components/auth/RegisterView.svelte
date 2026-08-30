@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore } from '../../stores/uiStore';
+  import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight } from 'lucide-svelte';
 
@@ -56,12 +56,12 @@ import { uiStore } from '../../stores/uiStore';
 
 <div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
   <div class="relative w-full max-w-lg">
-
+    
     <div class="absolute -top-10 -right-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-10 -left-10 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="relative bg-[#09151e]/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80">
-
+      
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 shadow-lg shadow-cyan-500/30 mb-4">
           <Gamepad2 class="w-7 h-7 text-black font-black" />
@@ -81,7 +81,7 @@ import { uiStore } from '../../stores/uiStore';
       {/if}
 
       <form onsubmit={handleSubmit} class="space-y-4">
-
+        
         <div>
           <label for="reg-username" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Логин (Никнейм)
@@ -121,7 +121,7 @@ import { uiStore } from '../../stores/uiStore';
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+          
           <div>
             <label for="reg-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
               Пароль
@@ -215,4 +215,3 @@ import { uiStore } from '../../stores/uiStore';
     </div>
   </div>
 </div>
-

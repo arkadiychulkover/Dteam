@@ -1,5 +1,5 @@
 <script lang="ts">
-import { gamesStore } from '../../stores/gamesStore';
+  import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice, formatBytes } from '../../utils/formatters';
@@ -161,4 +161,3 @@ import { gamesStore } from '../../stores/gamesStore';
     </div>
   </div>
 {/if}
-

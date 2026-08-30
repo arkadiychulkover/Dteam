@@ -20,8 +20,8 @@ namespace DteamBackend.Controllers
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
-            AppDbContext context,
-            TonService tonService,
+            AppDbContext context, 
+            TonService tonService, 
             IConfiguration configuration,
             ILogger<PaymentController> logger)
         {
@@ -33,7 +33,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -181,4 +181,3 @@ namespace DteamBackend.Controllers
         }
     }
 }
-

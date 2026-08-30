@@ -74,13 +74,13 @@ export const communityService = {
   },
 
   createPost: async (
-    gameId: string | null,
-    post: {
-      category: string;
-      title: string;
-      content: string;
-      mediaType?: string;
-      mediaUrl?: string;
+    gameId: string | null, 
+    post: { 
+      category: string; 
+      title: string; 
+      content: string; 
+      mediaType?: string; 
+      mediaUrl?: string; 
       mediaThumbnailUrl?: string;
       file?: File | null;
     }
@@ -118,4 +118,3 @@ export const communityService = {
     return await api.post<any>(`community/comments/${commentId}/reply`, { content });
   }
 };
-

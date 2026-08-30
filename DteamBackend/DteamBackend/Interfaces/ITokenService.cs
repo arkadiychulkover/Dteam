@@ -10,4 +10,3 @@ namespace DteamBackend.Interfaces
         Task<AuthResponseDto> RefreshTokensAsync(string refreshToken);
     }
 }
-

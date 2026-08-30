@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Gamepad2, Heart } from 'lucide-svelte';
+  import { Gamepad2, Heart } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
 </script>
 
@@ -19,21 +19,21 @@ import { Gamepad2, Heart } from 'lucide-svelte';
     </p>
 
     <div class="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-300">
-      <button
+      <button 
         onclick={() => uiStore.addToast({ title: 'Інформація', message: 'Умови використання сервісу Dteam.', type: 'info' })}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
         Умови використання
       </button>
       <span class="text-slate-600">•</span>
-      <button
+      <button 
         onclick={() => uiStore.addToast({ title: 'Інформація', message: 'Політика конфіденційності та захисту даних.', type: 'info' })}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
         Політика конфіденційності
       </button>
       <span class="text-slate-600">•</span>
-      <button
+      <button 
         onclick={() => uiStore.addToast({ title: 'Інформація', message: 'Правила повернення коштів платформи Dteam.', type: 'info' })}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
@@ -42,4 +42,3 @@ import { Gamepad2, Heart } from 'lucide-svelte';
     </div>
   </div>
 </footer>
-

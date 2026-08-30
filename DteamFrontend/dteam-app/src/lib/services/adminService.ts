@@ -73,6 +73,11 @@ export interface UpdateGameDto {
   trailerUrl?: string;
 }
 
+export interface CreditBalanceDto {
+  amountInNanoTons: number;
+  reason?: string;
+}
+
 export interface HealthCheckResponse {
   status: string;
   timestamp: string;
@@ -124,6 +129,10 @@ class AdminService {
     return await api.delete<{ message: string }>(`/admin/users/${id}`);
   }
 
+  public async creditUserBalance(id: string, dto: CreditBalanceDto, _customAdminId?: string): Promise<Duser> {
+    return await api.post<Duser>(`/admin/users/${id}/credit-balance`, dto);
+  }
+
   public async getGames(_customAdminId?: string): Promise<Game[]> {
     return await api.get<Game[]>('/admin/games');
   }
@@ -146,4 +155,3 @@ class AdminService {
 }
 
 export const adminService = new AdminService();
-

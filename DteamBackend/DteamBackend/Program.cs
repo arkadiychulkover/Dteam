@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Microsoft.AspNetCore.Builder;
 
 namespace DteamBackend
 {
@@ -103,6 +104,7 @@ namespace DteamBackend
             });
 
             builder.Services.AddControllers();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -149,6 +151,8 @@ namespace DteamBackend
                 }
             }
 
+            app.UseRouting();
+
             app.UseCors("DteamCorsPolicy");
 
             app.UseSwagger();
@@ -171,11 +175,14 @@ namespace DteamBackend
             }
 
             app.MapControllers();
+
+            // SignalR hubs
             app.MapHub<FriendsHub>("/hubs/friends");
             app.MapHub<FriendsHub>("/hub/friends");
+            app.MapHub<OnlineHub>("/hubs/online");
+            app.MapHub<OnlineHub>("/hub/online");
 
             await app.RunAsync();
         }
     }
 }
-

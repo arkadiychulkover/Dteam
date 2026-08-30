@@ -98,4 +98,3 @@ export const userService = {
     return await api.put('/users/me', patch);
   },
 };
-

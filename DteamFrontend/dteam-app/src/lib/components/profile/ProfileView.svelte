@@ -1,19 +1,19 @@
 <script lang="ts">
-import { authStore, currentUser } from '../../stores/authStore';
+  import { authStore, currentUser } from '../../stores/authStore';
   import { libraryStore } from '../../stores/libraryStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { formatPrice, formatAddress } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import { uiStore } from '../../stores/uiStore';
-  import {
-    User,
-    Wallet,
-    Coins,
-    ShieldCheck,
-    Gamepad2,
-    Sparkles,
-    Users,
-    Copy,
+  import { 
+    User, 
+    Wallet, 
+    Coins, 
+    ShieldCheck, 
+    Gamepad2, 
+    Sparkles, 
+    Users, 
+    Copy, 
     Check,
     Plus
   } from 'lucide-svelte';
@@ -150,4 +150,3 @@ import { authStore, currentUser } from '../../stores/authStore';
     </div>
   {/if}
 </div>
-

@@ -49,4 +49,3 @@ export interface UserGame {
   isFavorite: boolean;
   game?: import('./game').Game;
 }
-

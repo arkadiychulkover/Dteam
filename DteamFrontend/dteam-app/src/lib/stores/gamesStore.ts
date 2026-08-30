@@ -47,14 +47,14 @@ function createGamesStore() {
   return {
     subscribe,
     selectGame: (game: Game | null) => update((s) => ({ ...s, selectedGame: game })),
-
+    
     loadGames: async () => {
       update((s) => ({ ...s, isLoading: true }));
       try {
         const [fetched, genres] = await Promise.all([
           gamesService.getGames(),
           gamesService.getGenres().catch(() => [
-            'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter',
+            'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter', 
             'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing'
           ]),
         ]);
@@ -132,4 +132,3 @@ function createGamesStore() {
 }
 
 export const gamesStore = createGamesStore();
-

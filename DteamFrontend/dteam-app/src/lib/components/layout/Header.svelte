@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore, type MainTab } from '../../stores/uiStore';
+  import { uiStore, type MainTab } from '../../stores/uiStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
@@ -22,9 +22,14 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     Plus,
     Wallet,
     Library,
-    Users
+    Users,
+    Sparkles,
+    Menu,
+    X,
+    Code2
   } from 'lucide-svelte';
-  import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
+  import { formatAddress, formatTon, nanoTonToTon } from '../../utils/formatters';
   import { friendsStore } from '../../stores/friendsStore';
   import { gamesService } from '../../services/gamesService';
   import type { GameRecommendation } from '../../types';
@@ -264,7 +269,7 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
       </nav>
     </div>
 
-    <div bind:this={searchWrapperEl} class="relative flex-1 max-w-md min-w-[200px] mx-1 sm:mx-2">
+    <div bind:this={searchWrapperEl} class="relative w-full max-w-[130px] sm:max-w-[220px] md:max-w-xs lg:max-w-md mx-2 transition-all">
       <form onsubmit={handleSearchSubmit} class="relative w-full">
         <input
           type="text"
@@ -293,7 +298,8 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
       />
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
+    <!-- Змінено класи тут: додано ml-auto та збільшено gap -->
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
       <button
         onclick={() => uiStore.setTab('wishlist')}
         class="relative p-2 rounded-xl border transition-all cursor-pointer group
@@ -333,7 +339,7 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
           class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
           title="Поповнити баланс (The Open Network)"
         >
-          <span class="text-cyan-400 font-bold text-xs group-hover:scale-110 transition-transform">💎</span>
+          <TonIcon class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
           <span class="font-bold text-white font-mono text-xs tracking-tight">
             {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
           </span>
@@ -367,14 +373,15 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
                 <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
                 <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
                   <span class="text-slate-400 text-[10px]">Баланс:</span>
-                  <span class="text-cyan-300 font-bold font-mono text-[11px]">
-                    💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                  <span class="text-cyan-300 font-bold font-mono text-[11px] flex items-center gap-1">
+                    <TonIcon class="w-3 h-3 text-cyan-400" />
+                    <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
                   </span>
                 </div>
               </div>
 
               <button
-                onclick={() => { myProfileStore.viewMyProfile(); isUserDropdownOpen = false; }}
+                onclick={async () => { uiStore.setTab('my-profile'); isUserDropdownOpen = false; }}
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
               >
                 <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
@@ -421,6 +428,12 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
                   <Shield class="w-3.5 h-3.5" /> Панель Адміністратора
                 </button>
               {/if}
+              <button
+                onclick={() => { uiStore.setTab('developer'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-emerald-400 hover:text-emerald-300 cursor-pointer font-bold mt-1"
+              >
+                <Code2 class="w-3.5 h-3.5 text-emerald-400" /> Кабінет розробника
+              </button>
 
               <button
                 onclick={handleLogout}
@@ -460,4 +473,3 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     />
   </div>
 </header>
-

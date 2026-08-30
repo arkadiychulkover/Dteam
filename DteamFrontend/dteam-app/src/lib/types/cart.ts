@@ -22,4 +22,3 @@ export interface CheckoutResult {
   totalSpentInNanoTons: number;
   purchasedGamesCount: number;
 }
-

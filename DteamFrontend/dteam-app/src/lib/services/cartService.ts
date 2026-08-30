@@ -26,4 +26,3 @@ export const cartService = {
     return await api.post<import('../types').CheckoutResult>('/cart/checkout');
   },
 };
-

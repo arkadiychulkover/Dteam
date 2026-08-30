@@ -1,16 +1,16 @@
 <script lang="ts">
-import { onMount } from 'svelte';
-  import {
-    X,
-    Copy,
-    Check,
-    Coins,
-    ArrowRight,
-    CheckCircle2,
-    AlertCircle,
-    Loader2,
-    ExternalLink,
-    ClipboardPaste,
+  import { onMount } from 'svelte';
+  import { 
+    X, 
+    Copy, 
+    Check, 
+    Coins, 
+    ArrowRight, 
+    CheckCircle2, 
+    AlertCircle, 
+    Loader2, 
+    ExternalLink, 
+    ClipboardPaste, 
     Sparkles,
     ShieldCheck,
     Wallet
@@ -19,6 +19,7 @@ import { onMount } from 'svelte';
   import { authStore, currentUser } from '../../stores/authStore';
   import { paymentService } from '../../services/paymentService';
   import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
 
   let depositAddress = $state('Завантаження адреси...');
   let amount = $state<number>(1);
@@ -122,7 +123,7 @@ import { onMount } from 'svelte';
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
   <div class="relative w-full max-w-lg bg-[#09151e]/95 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 overflow-hidden text-slate-200">
-
+    
     <div class="absolute -top-24 -right-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -135,7 +136,7 @@ import { onMount } from 'svelte';
     </button>
 
     {#if successResult}
-
+      
       <div class="text-center py-4 space-y-5 animate-in zoom-in-95 duration-300">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-black shadow-lg shadow-emerald-500/30 mx-auto animate-bounce">
           <CheckCircle2 class="w-9 h-9 stroke-[2.5]" />
@@ -179,7 +180,7 @@ import { onMount } from 'svelte';
       </div>
 
     {:else}
-
+      
       <div class="flex items-center gap-3.5 mb-6">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black shadow-lg shadow-cyan-500/25 shrink-0">
           <Coins class="w-6 h-6" />
@@ -200,8 +201,9 @@ import { onMount } from 'svelte';
             <Wallet class="w-3.5 h-3.5 text-cyan-400" />
             <span>Ваш поточний баланс:</span>
           </div>
-          <span class="font-bold text-white font-mono flex items-center gap-1 text-sm">
-            💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+          <span class="font-bold text-white font-mono flex items-center gap-1.5 text-sm">
+            <TonIcon class="w-4 h-4 text-cyan-400" />
+            <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
           </span>
         </div>
       {/if}
@@ -214,7 +216,7 @@ import { onMount } from 'svelte';
       {/if}
 
       <div class="space-y-5 text-xs">
-
+        
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <span class="font-bold text-slate-300 flex items-center gap-1.5">
@@ -278,8 +280,8 @@ import { onMount } from 'svelte';
                 type="button"
                 onclick={() => handlePreset(p)}
                 class="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer
-                  {amount === p
-                    ? 'bg-cyan-500 text-black font-black shadow-md shadow-cyan-500/20'
+                  {amount === p 
+                    ? 'bg-cyan-500 text-black font-black shadow-md shadow-cyan-500/20' 
                     : 'bg-[#061820] hover:bg-cyan-950/60 text-slate-300 border border-cyan-500/20 hover:border-cyan-400/40'}"
               >
                 +{p} TON
@@ -335,4 +337,3 @@ import { onMount } from 'svelte';
     {/if}
   </div>
 </div>
-

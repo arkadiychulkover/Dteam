@@ -151,4 +151,3 @@ export const wishlistStore = createWishlistStore();
 export const isGameInWishlist = (gameId: string) => {
   return derived(wishlistStore, ($s) => $s.wishlistGameIds.has(gameId));
 };
-

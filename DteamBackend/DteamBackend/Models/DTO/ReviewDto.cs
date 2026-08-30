@@ -31,4 +31,3 @@ namespace DteamBackend.Models.DTO
         public bool IsRecommended { get; set; } = true;
     }
 }
-

@@ -230,7 +230,7 @@ function createCartStore() {
       } catch (err: any) {
         update((s) => ({ ...s, isLoading: false }));
         const errorMessage = err.message || 'Помилка при оформленні замовлення.';
-
+        
         if (errorMessage.toLowerCase().includes('недостатньо коштів') || errorMessage.toLowerCase().includes('balance')) {
           uiStore.addToast({
             title: 'Недостатньо коштів',
@@ -275,4 +275,3 @@ export const cartTotals = derived(cartStore, ($s) => {
     itemsCount: items.length,
   };
 });
-

@@ -24,7 +24,7 @@ namespace DteamBackend.Hubs
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                            ?? Context.User?.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -74,10 +74,10 @@ namespace DteamBackend.Hubs
                 {
                     var friendUserIds = friendIds.Select(id => id.ToString()).ToList();
                     await Clients.Users(friendUserIds).SendAsync("UserOnline", userId.ToString());
-                    await Clients.Users(friendUserIds).SendAsync("UserStatusChanged", new
-                    {
-                        userId = userId.ToString(),
-                        status = "Online"
+                    await Clients.Users(friendUserIds).SendAsync("UserStatusChanged", new 
+                    { 
+                        userId = userId.ToString(), 
+                        status = "Online" 
                     });
                 }
 
@@ -130,10 +130,10 @@ namespace DteamBackend.Hubs
                     {
                         var friendUserIds = friendIds.Select(id => id.ToString()).ToList();
                         await Clients.Users(friendUserIds).SendAsync("UserOffline", userId.ToString());
-                        await Clients.Users(friendUserIds).SendAsync("UserStatusChanged", new
-                        {
-                            userId = userId.ToString(),
-                            status = "Offline"
+                        await Clients.Users(friendUserIds).SendAsync("UserStatusChanged", new 
+                        { 
+                            userId = userId.ToString(), 
+                            status = "Offline" 
                         });
                     }
 
@@ -151,4 +151,3 @@ namespace DteamBackend.Hubs
         }
     }
 }
-

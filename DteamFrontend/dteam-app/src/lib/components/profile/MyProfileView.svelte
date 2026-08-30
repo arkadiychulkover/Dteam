@@ -1,9 +1,8 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { currentUser, authStore } from '../../stores/authStore';
   import { myProfileStore } from '../../stores/myProfileStore';
   import { libraryStore } from '../../stores/libraryStore';
-  import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { friendsStore } from '../../stores/friendsStore';
   import { profileStore } from '../../stores/profileStore';
@@ -11,7 +10,6 @@ import { onMount } from 'svelte';
   import { userService } from '../../services/userService';
   import { mediaService, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
-  import { gamesService } from '../../services/gamesService';
   import { formatDate } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import {
@@ -28,7 +26,6 @@ import { onMount } from 'svelte';
 
   const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
-    { id: 'значки', label: 'Значки', count: () => 0 },
     { id: 'ігри', label: 'Ігри', count: () => $libraryStore.items.length },
     { id: 'бажане', label: 'Бажане', count: () => $wishlistStore.items.length },
     { id: 'обговорення', label: 'Обговорення', count: () => myDiscussionPosts.length },
@@ -38,37 +35,8 @@ import { onMount } from 'svelte';
     { id: 'рецензії', label: 'Рецензії', count: () => $myProfileStore.reviews.length },
   ];
 
-  function getGameForItem(item: (typeof $libraryStore.items)[number]) {
-    return item.game || $gamesStore.games.find((g) => g.id === item.gameId);
-  }
-
-  async function navigateToGame(gameOrItem: any) {
-    if (!gameOrItem) return;
-    const id = gameOrItem.id || gameOrItem.gameId;
-    if (!id) return;
-    const existing = $gamesStore.games.find((g) => g.id === id);
-    if (existing) {
-      gamesStore.selectGame(existing);
-      uiStore.setTab('game');
-      return;
-    }
-    if (gameOrItem.title && gameOrItem.description) {
-      gamesStore.selectGame(gameOrItem);
-      uiStore.setTab('game');
-      return;
-    }
-    try {
-      const fullGame = await gamesService.getGameById(id);
-      gamesStore.selectGame(fullGame);
-      uiStore.setTab('game');
-    } catch {
-      gamesStore.selectGame(gameOrItem);
-      uiStore.setTab('game');
-    }
-  }
-
-  const dlcCount = $derived($libraryStore.items.filter((i) => getGameForItem(i)?.isDlc).length);
-  const gamesCount = $derived($libraryStore.items.filter((i) => !getGameForItem(i)?.isDlc).length);
+  const dlcCount = $derived($libraryStore.items.filter((i) => i.game?.isDlc).length);
+  const gamesCount = $derived($libraryStore.items.filter((i) => !i.game?.isDlc).length);
 
   const myDiscussionPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'forum'));
   const myScreenshotPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'screenshots'));
@@ -80,9 +48,6 @@ import { onMount } from 'svelte';
     libraryStore.loadLibrary();
     wishlistStore.loadWishlist();
     friendsStore.loadFriends();
-    if ($gamesStore.games.length === 0) {
-      gamesStore.loadGames();
-    }
   });
 
   let isCreatingPost = $state(false);
@@ -274,7 +239,7 @@ import { onMount } from 'svelte';
 
 {#if $currentUser}
 <div class="min-h-screen bg-[#05181e] text-slate-200 font-sans pb-12">
-
+  
   <div
     class="w-full h-48 md:h-64 relative bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e] bg-cover bg-center"
     style={$currentUser.bannerUrl ? `background-image: url('${$currentUser.bannerUrl}')` : ''}
@@ -300,7 +265,7 @@ import { onMount } from 'svelte';
   </div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+    
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
         <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
@@ -321,6 +286,7 @@ import { onMount } from 'svelte';
         </div>
       </div>
 
+      
       <div class="pb-2 w-full md:w-auto">
         <button
           onclick={openEditProfile}
@@ -332,11 +298,14 @@ import { onMount } from 'svelte';
       </div>
     </div>
 
+    
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-
+      
       <div class="space-y-6">
 
+        
         {#if activeTab === 'головна'}
+
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <h2 class="text-lg font-bold text-white mb-4">Колекція ігор</h2>
             <div class="grid grid-cols-3 gap-4 mb-4">
@@ -358,21 +327,8 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {#each $libraryStore.items.slice(0, 4) as item}
-                  {@const g = getGameForItem(item)}
-                  {#if g}
-                    <button
-                      type="button"
-                      onclick={() => navigateToGame(g)}
-                      class="relative group rounded-xl overflow-hidden bg-slate-800 border border-cyan-900/40 hover:border-cyan-500/60 transition-all cursor-pointer text-left w-full h-24"
-                    >
-                      {#if g.coverImageUrl || g.headerImageUrl}
-                        <img src={g.coverImageUrl || g.headerImageUrl} alt={g.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      {:else}
-                        <div class="w-full h-full flex items-center justify-center p-2 text-center bg-[#02171d] text-cyan-400 text-xs font-bold group-hover:text-cyan-300 transition-colors">
-                          {g.title}
-                        </div>
-                      {/if}
-                    </button>
+                  {#if item.game?.coverImageUrl}
+                    <img src={item.game.coverImageUrl} alt={item.game.title} class="rounded-xl object-cover w-full h-24" />
                   {/if}
                 {/each}
               </div>
@@ -380,14 +336,7 @@ import { onMount } from 'svelte';
           </div>
         {/if}
 
-        {#if activeTab === 'значки'}
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
-            <div class="text-center py-16 text-slate-500 text-sm">
-              Список значків порожній.
-            </div>
-          </div>
-        {/if}
-
+        
         {#if activeTab === 'ігри'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $libraryStore.items.length === 0}
@@ -395,27 +344,16 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each $libraryStore.items as item}
-                  {@const g = getGameForItem(item)}
-                  {#if g}
-                    <button
-                      type="button"
-                      onclick={() => navigateToGame(g)}
-                      class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
-                    >
-                      {#if g.coverImageUrl || g.headerImageUrl}
-                        <img src={g.coverImageUrl || g.headerImageUrl} alt={g.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
-                      {:else}
-                        <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
-                          {g.title}
-                        </div>
-                      {/if}
-                      <div class="min-w-0 flex-1">
-                        <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{g.title}</h4>
-                        {#if g.isDlc}
+                  {#if item.game}
+                    <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
+                      <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                      <div class="min-w-0">
+                        <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
+                        {#if item.game.isDlc}
                           <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase">DLC</span>
                         {/if}
                       </div>
-                    </button>
+                    </div>
                   {/if}
                 {/each}
               </div>
@@ -423,6 +361,7 @@ import { onMount } from 'svelte';
           </div>
         {/if}
 
+        
         {#if activeTab === 'бажане'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $wishlistStore.items.length === 0}
@@ -430,26 +369,17 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each $wishlistStore.items as item}
-                  <button
-                    type="button"
-                    onclick={() => navigateToGame(item.game)}
-                    class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
-                  >
-                    {#if item.game.coverImageUrl || item.game.headerImageUrl}
-                      <img src={item.game.coverImageUrl || item.game.headerImageUrl} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
-                    {:else}
-                      <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
-                        {item.game.title}
-                      </div>
-                    {/if}
-                    <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{item.game.title}</h4>
-                  </button>
+                  <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
+                    <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                    <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
+                  </div>
                 {/each}
               </div>
             {/if}
           </div>
         {/if}
 
+        
         {#if ['обговорення', 'скріншоти', 'відео', 'гайди', 'рецензії'].includes(activeTab)}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 text-sm text-slate-400">
@@ -586,8 +516,9 @@ import { onMount } from 'svelte';
 
       </div>
 
+      
       <div class="space-y-6">
-
+        
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
           <nav class="space-y-1">
             {#each menuItems as item}
@@ -604,6 +535,7 @@ import { onMount } from 'svelte';
           </nav>
         </div>
 
+        
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
           <div class="flex items-center justify-between px-2 mb-4">
             <span class="font-medium text-white">Друзі</span>
@@ -631,6 +563,7 @@ import { onMount } from 'svelte';
     </div>
   </div>
 </div>
+
 
 {#if isCreatingPost}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) { isCreatingPost = false; resetPostMedia(); } }}>
@@ -663,7 +596,7 @@ import { onMount } from 'svelte';
           {#if postMediaPreviewUrl}
             <div class="relative rounded-xl overflow-hidden border border-cyan-900/60 bg-[#02171d]">
               {#if createPostType === 'videos'}
-
+                
                 <video src={postMediaPreviewUrl} class="w-full max-h-56 object-cover" muted controls></video>
               {:else}
                 <img src={postMediaPreviewUrl} alt="" class="w-full max-h-56 object-cover" />
@@ -706,6 +639,7 @@ import { onMount } from 'svelte';
   </div>
 {/if}
 
+
 {#if isEditingProfile}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) isEditingProfile = false; }}>
     <div class="bg-[#092635] border border-cyan-500/30 rounded-3xl p-6 w-full max-w-lg space-y-4">
@@ -745,4 +679,3 @@ import { onMount } from 'svelte';
   </div>
 {/if}
 {/if}
-

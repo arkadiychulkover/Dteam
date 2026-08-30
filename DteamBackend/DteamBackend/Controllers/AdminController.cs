@@ -4,6 +4,7 @@ using DteamBackend.Models;
 using DteamBackend.Models.DTO;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -226,6 +227,52 @@ namespace DteamBackend.Controllers
             return Ok(MapToUserDto(user));
         }
 
+        [HttpPost("users/{id:guid}/credit-balance")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserDto>> CreditUserBalance(Guid id, [FromBody] CreditBalanceDto dto)
+        {
+            if (dto.AmountInNanoTons == 0)
+            {
+                return BadRequest(new { message = "Сумма начисления не может быть равна нулю" });
+            }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
+            }
+
+            var newBalance = user.BalanceInNanoTons + dto.AmountInNanoTons;
+            if (newBalance < 0)
+            {
+                return BadRequest(new { message = "Недостаточно средств на балансе пользователя для списания такой суммы" });
+            }
+
+            user.BalanceInNanoTons = newBalance;
+            if (dto.AmountInNanoTons > 0)
+            {
+                user.TotalEarningsInNanoTons += dto.AmountInNanoTons;
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            _logger.LogInformation(
+                "Admin {AdminId} {Action} {Amount} nanoTON {Direction} user {UserId} balance. Reason: {Reason}",
+                adminIdClaim,
+                dto.AmountInNanoTons > 0 ? "credited" : "debited",
+                Math.Abs(dto.AmountInNanoTons),
+                dto.AmountInNanoTons > 0 ? "to" : "from",
+                id,
+                dto.Reason ?? "—"
+            );
+
+            return Ok(MapToUserDto(user));
+        }
+
         [HttpDelete("users/{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -303,7 +350,7 @@ namespace DteamBackend.Controllers
                 ShortDescription = dto.ShortDescription,
                 PriceInNanoTons = dto.PriceInNanoTons,
                 DiscountPercentage = dto.DiscountPercentage,
-                ServerArchivePath = dto.ServerArchivePath,
+                ServerArchivePath = dto.ServerArchivePath ?? string.Empty,
                 OwnerId = ownerId,
                 DownloadCount = 0,
                 AverageRating = 0.0,
@@ -407,4 +454,3 @@ namespace DteamBackend.Controllers
         }
     }
 }
-

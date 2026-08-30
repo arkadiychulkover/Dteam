@@ -7,4 +7,3 @@ namespace DteamBackend.Models.Enums
         Blocked = 2
     }
 }
-

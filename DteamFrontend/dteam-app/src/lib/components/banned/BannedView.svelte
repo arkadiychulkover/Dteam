@@ -1,5 +1,5 @@
 <script lang="ts">
-import { authStore, currentUser } from '../../stores/authStore';
+  import { authStore, currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
   import { Ban, ShieldAlert, AlertTriangle, LogOut, RefreshCw, Mail } from 'lucide-svelte';
 
@@ -45,10 +45,10 @@ import { authStore, currentUser } from '../../stores/authStore';
     </h1>
 
     <p class="text-xs sm:text-sm text-rose-200/80 mt-3 leading-relaxed max-w-md mx-auto">
-      Администрация платформы ограничила доступ для пользователя
+      Администрация платформы ограничила доступ для пользователя 
       <strong class="text-white font-mono bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-500/30">
         {$currentUser?.username || 'Gamer'}
-      </strong>
+      </strong> 
       в связи с нарушением правил сообщества или блокировкой учетной записи.
     </p>
 
@@ -89,4 +89,3 @@ import { authStore, currentUser } from '../../stores/authStore';
     </div>
   </div>
 </div>
-

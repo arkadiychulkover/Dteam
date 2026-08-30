@@ -41,4 +41,3 @@ export interface FriendActionResponseDto {
   success: boolean;
   message: string;
 }
-

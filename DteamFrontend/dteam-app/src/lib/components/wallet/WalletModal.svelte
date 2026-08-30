@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore } from '../../stores/uiStore';
+  import { uiStore } from '../../stores/uiStore';
   import { walletStore } from '../../stores/walletStore';
   import { authStore, currentUser } from '../../stores/authStore';
   import { formatPrice, formatAddress } from '../../utils/formatters';
@@ -28,7 +28,7 @@ import { uiStore } from '../../stores/uiStore';
 {#if $uiStore.isWalletModalOpen}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
     <div class="relative w-full max-w-md bg-[#121524] border border-slate-700 rounded-2xl shadow-2xl p-6">
-
+      
       <button
         onclick={close}
         class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
@@ -103,4 +103,3 @@ import { uiStore } from '../../stores/uiStore';
     </div>
   </div>
 {/if}
-

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
@@ -440,4 +440,3 @@ import { onMount } from 'svelte';
     </section>
   {/if}
 </div>
-

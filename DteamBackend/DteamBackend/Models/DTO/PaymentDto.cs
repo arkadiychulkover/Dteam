@@ -29,4 +29,3 @@ namespace DteamBackend.Models.DTO
         public string TxhHash { get; set; } = string.Empty;
     }
 }
-

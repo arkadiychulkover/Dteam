@@ -13,4 +13,3 @@ namespace DteamBackend.Models
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
     }
 }
-

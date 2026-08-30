@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
@@ -8,21 +8,21 @@ import { onMount } from 'svelte';
   import { gamesService } from '../../services/gamesService';
   import { formatPrice, formatBasePrice, formatBytes } from '../../utils/formatters';
   import type { Game, Review } from '../../types';
-  import {
-    Star,
-    ShoppingCart,
-    Heart,
-    Share2,
-    Flag,
-    ChevronLeft,
-    ChevronRight,
-    ChevronDown,
+  import { 
+    Star, 
+    ShoppingCart, 
+    Heart, 
+    Share2, 
+    Flag, 
+    ChevronLeft, 
+    ChevronRight, 
+    ChevronDown, 
     ChevronUp,
-    Monitor,
-    Apple,
-    Layers,
-    MessageSquare,
-    ThumbsUp,
+    Monitor, 
+    Apple, 
+    Layers, 
+    MessageSquare, 
+    ThumbsUp, 
     ArrowLeft,
     Check,
     Plus,
@@ -40,7 +40,7 @@ import { onMount } from 'svelte';
   let selectedMediaIndex = $state(0);
   let isDescriptionExpanded = $state(false);
   let isTagsExpanded = $state(false);
-
+  
   let reviews = $state<Review[]>([]);
   let isLoadingReviews = $state(false);
   let isReviewModalOpen = $state(false);
@@ -98,10 +98,10 @@ import { onMount } from 'svelte';
       });
     }
     if (list.length === 0) {
-      list.push({
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80',
-        thumb: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400'
+      list.push({ 
+        type: 'image', 
+        url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80', 
+        thumb: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400' 
       });
     }
     return list;
@@ -288,7 +288,7 @@ import { onMount } from 'svelte';
     </div>
 
     <div id="section-about" class="space-y-6 pt-2">
-
+      
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 class="text-3xl sm:text-4xl font-black text-white font-display tracking-wide">
           {game.title}
@@ -348,8 +348,8 @@ import { onMount } from 'svelte';
                 <button
                   onclick={() => selectedMediaIndex = idx}
                   class="relative w-24 sm:w-28 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer
-                    {selectedMediaIndex === idx
-                      ? 'border-cyan-400 scale-105 shadow-md shadow-cyan-500/30'
+                    {selectedMediaIndex === idx 
+                      ? 'border-cyan-400 scale-105 shadow-md shadow-cyan-500/30' 
                       : 'border-transparent opacity-60 hover:opacity-100'}"
                 >
                   <img src={item.thumb} alt="Preview {idx}" class="w-full h-full object-cover" />
@@ -374,7 +374,7 @@ import { onMount } from 'svelte';
                 {tag}
               </button>
             {/each}
-
+            
             {#if allTags.length > 6}
               <button
                 onclick={() => isTagsExpanded = !isTagsExpanded}
@@ -692,7 +692,7 @@ import { onMount } from 'svelte';
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+        
         <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl space-y-4">
           <h3 class="text-sm font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
             <Monitor class="w-4 h-4 text-cyan-400" />
@@ -797,15 +797,15 @@ import { onMount } from 'svelte';
           {#each reviews as review}
             <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-4 group hover:border-cyan-400/60 transition-all">
               <div class="space-y-3">
-
+                
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
                       {#if review.userAvatarUrl || review.user?.avatarUrl}
-                        <img
-                          src={review.userAvatarUrl || review.user?.avatarUrl || ''}
-                          alt={review.username || review.user?.username || 'User'}
-                          class="w-full h-full object-cover"
+                        <img 
+                          src={review.userAvatarUrl || review.user?.avatarUrl || ''} 
+                          alt={review.username || review.user?.username || 'User'} 
+                          class="w-full h-full object-cover" 
                         />
                       {:else}
                         {(review.username || review.user?.username || 'U').charAt(0).toUpperCase()}
@@ -921,4 +921,3 @@ import { onMount } from 'svelte';
     </div>
   {/if}
 {/if}
-

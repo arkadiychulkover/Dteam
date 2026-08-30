@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
@@ -16,6 +16,9 @@ import { onMount, onDestroy } from 'svelte';
   import FriendsView from './lib/components/friends/FriendsView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
+  import DeveloperView from './lib/components/developer/DeveloperView.svelte';
+  import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
+  import EditDeveloperGameModal from './lib/components/developer/EditDeveloperGameModal.svelte';
 
   import LoginView from './lib/components/auth/LoginView.svelte';
   import RegisterView from './lib/components/auth/RegisterView.svelte';
@@ -32,6 +35,7 @@ import { onMount, onDestroy } from 'svelte';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
   import { friendsHubService } from './lib/services/friendsHubService';
+  import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
 
   let isBanned = $state(false);
@@ -62,6 +66,9 @@ import { onMount, onDestroy } from 'svelte';
   });
 
   onMount(() => {
+   
+    onlineHubService.startConnection();
+
     checkUserBanStatus();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
@@ -75,6 +82,7 @@ import { onMount, onDestroy } from 'svelte';
 
   onDestroy(() => {
     friendsHubService.stop();
+    onlineHubService.stopConnection();
   });
 </script>
 
@@ -110,6 +118,8 @@ import { onMount, onDestroy } from 'svelte';
       <CartView />
     {:else if $uiStore.activeTab === 'admin'}
       <AdminView />
+    {:else if $uiStore.activeTab === 'developer'}
+      <DeveloperView />
     {:else if $uiStore.activeTab === 'login'}
       <LoginView />
     {:else if $uiStore.activeTab === 'register'}
@@ -125,6 +135,8 @@ import { onMount, onDestroy } from 'svelte';
 
   <LoginModal />
   <ConfirmCodeModal />
+  <PublishGameModal />
+  <EditDeveloperGameModal />
   {#if $uiStore.isDepositModalOpen}
     <DepositModal />
   {/if}
@@ -134,4 +146,3 @@ import { onMount, onDestroy } from 'svelte';
     <Footer />
   {/if}
 </div>
-
