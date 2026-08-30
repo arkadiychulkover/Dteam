@@ -1,7 +1,16 @@
 import type { Duser } from './user';
 
+export interface ReviewParentInfo {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatarUrl?: string | null;
+  content: string;
+}
+
 export interface Review {
   id: string;
+  parentReviewId?: string | null;
   userId: string;
   username?: string;
   userAvatarUrl?: string | null;
@@ -11,6 +20,11 @@ export interface Review {
   content: string;
   isRecommended: boolean;
   playTimeHoursAtReview?: number;
+  likesCount?: number;
+  isLiked?: boolean;
+  repliesCount?: number;
+  replies?: Review[];
+  parentReview?: ReviewParentInfo | null;
   createdAt: string;
   updatedAt?: string | null;
 }

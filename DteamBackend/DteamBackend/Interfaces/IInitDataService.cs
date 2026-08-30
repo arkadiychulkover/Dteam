@@ -5,5 +5,7 @@ namespace DteamBackend.Interfaces
     public interface IInitDataService
     {
         Task InitializeAsync(AppDbContext context);
+        Task EnsureCommunityDataAsync(AppDbContext context);
+        Task EnsureReviewSchemaAsync(AppDbContext context);
     }
 }

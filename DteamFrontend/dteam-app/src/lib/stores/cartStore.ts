@@ -20,6 +20,8 @@ function createCartStore() {
   return {
     subscribe,
 
+    isInCart: (gameId: string) => get({ subscribe }).cartGameIds.has(gameId),
+
     loadCart: async () => {
       const user = get(currentUser);
       if (!user?.id) {

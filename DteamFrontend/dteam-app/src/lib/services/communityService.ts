@@ -3,6 +3,8 @@ import { api } from './api';
 export interface CommunityPost {
   id: string;
   gameId: string;
+  gameTitle?: string;
+  gameBannerUrl?: string;
   author: {
     id: string;
     username: string;
@@ -79,15 +81,18 @@ export const communityService = {
       category: string; 
       title: string; 
       content: string; 
+      gameId?: string;
       mediaType?: string; 
       mediaUrl?: string; 
       mediaThumbnailUrl?: string;
       file?: File | null;
     }
   ): Promise<CommunityPost> => {
-    const url = gameId ? `community/${gameId}/posts` : `community/posts`;
+    const targetGameId = gameId || post.gameId || '';
+    const url = targetGameId ? `community/${targetGameId}/posts` : `community/posts`;
     if (post.file) {
       const formData = new FormData();
+      formData.append('gameId', targetGameId);
       formData.append('category', post.category);
       formData.append('title', post.title);
       formData.append('content', post.content);
@@ -97,7 +102,7 @@ export const communityService = {
       formData.append('file', post.file);
       return await api.post<CommunityPost>(url, formData);
     }
-    return await api.post<CommunityPost>(url, post);
+    return await api.post<CommunityPost>(url, { ...post, gameId: targetGameId });
   },
 
   uploadMedia: async (file: File): Promise<{ url: string; fileName: string; type: 'image' | 'video' }> => {

@@ -4,6 +4,7 @@ using DteamBackend.Models;
 using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Controllers
 {
@@ -21,8 +22,13 @@ namespace DteamBackend.Controllers
 
         public class UpdateProfileRequest
         {
+            [MaxLength(1000, ErrorMessage = "Біографія не може перевищувати 1000 символів.")]
             public string? Bio { get; set; }
+
+            [MaxLength(500, ErrorMessage = "URL аватарки не може перевищувати 500 символів.")]
             public string? AvatarUrl { get; set; }
+
+            [MaxLength(500, ErrorMessage = "URL банера не може перевищувати 500 символів.")]
             public string? BannerUrl { get; set; }
         }
 

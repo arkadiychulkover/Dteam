@@ -8,6 +8,7 @@ export type MainTab =
   | 'friends'
   | 'catalog' 
   | 'game'
+  | 'all-dlcs'
   | 'wishlist' 
   | 'cart'
   | 'admin'

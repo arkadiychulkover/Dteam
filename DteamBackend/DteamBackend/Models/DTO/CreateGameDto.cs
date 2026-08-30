@@ -14,6 +14,7 @@ namespace DteamBackend.Models.DTO
         [MaxLength(500)]
         public string? ShortDescription { get; set; }
 
+        [Range(0, long.MaxValue, ErrorMessage = "Price must be non-negative")]
         public long PriceInNanoTons { get; set; } = 0;
 
         [Range(0, 100)]

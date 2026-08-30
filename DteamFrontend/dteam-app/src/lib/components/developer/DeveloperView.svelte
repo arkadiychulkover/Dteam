@@ -25,17 +25,47 @@
     Calendar,
     ArrowUpRight,
     Sparkles,
-    FileArchive
+    FileArchive,
+    Newspaper
   } from 'lucide-svelte';
 
   import { currentUser } from '../../stores/authStore';
+  import CreateGameNewsModal from './CreateGameNewsModal.svelte';
+  import { developerService } from '../../services/developerService';
+  import type { CommunityPost } from '../../services/communityService';
 
   let searchQuery = $state('');
   let filterStatus = $state<'all' | 'published' | 'draft'>('all');
   let gameToDelete = $state<Game | null>(null);
+  let gameForNews = $state<Game | null>(null);
+  let myNewsList = $state<CommunityPost[]>([]);
+  let isLoadingMyNews = $state(false);
+  let activeDevTab = $state<'games' | 'news'>('games');
 
   // Tooltip hover states for charts
   let hoveredPoint = $state<{ date: string; value: string; type: 'revenue' | 'downloads' } | null>(null);
+
+  async function loadMyNews() {
+    isLoadingMyNews = true;
+    try {
+      myNewsList = await developerService.getMyNews();
+    } catch (e) {
+      console.warn('[DeveloperView] Не вдалося завантажити новини:', e);
+      myNewsList = [];
+    } finally {
+      isLoadingMyNews = false;
+    }
+  }
+
+  async function handleDeleteNews(newsId: string) {
+    try {
+      await developerService.deleteGameNews(newsId);
+      uiStore.addToast({ title: 'Видалено', message: 'Новину успішно видалено.', type: 'info' });
+      await loadMyNews();
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося видалити новину.', type: 'error' });
+    }
+  }
 
   onMount(() => {
     if (!$currentUser?.id) {
@@ -44,6 +74,7 @@
       return;
     }
     developerStore.loadAll();
+    loadMyNews();
   });
 
   const filteredGames = $derived(
@@ -456,223 +487,329 @@
     </div>
   </div>
 
-  <!-- LEVEL 2: MY GAMES — Perfectly balanced 2-column grid -->
+  <!-- LEVEL 2: MY GAMES & NEWS -->
   <div class="space-y-4 pt-2 border-t border-cyan-500/10">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+      <div class="flex items-center gap-4 border-b border-cyan-500/15 pb-1">
+        <button
+          type="button"
+          onclick={() => activeDevTab = 'games'}
+          class="text-lg font-bold tracking-wide flex items-center gap-2 pb-1 border-b-2 transition-all cursor-pointer {activeDevTab === 'games' ? 'text-white border-cyan-400' : 'text-slate-400 border-transparent hover:text-white'}"
+        >
           <span>Мої ігри</span>
           <span class="text-xs font-mono text-slate-400 font-normal">
             ({filteredGames.length})
           </span>
-        </h2>
-        <p class="text-xs text-slate-400">
-          Керування версіями, параметрами та публікацією проектів
-        </p>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => { activeDevTab = 'news'; loadMyNews(); }}
+          class="text-lg font-bold tracking-wide flex items-center gap-2 pb-1 border-b-2 transition-all cursor-pointer {activeDevTab === 'news' ? 'text-white border-cyan-400' : 'text-slate-400 border-transparent hover:text-white'}"
+        >
+          <Newspaper class="w-4 h-4 text-cyan-400" />
+          <span>Новини проектів</span>
+          <span class="text-xs font-mono text-slate-400 font-normal">
+            ({myNewsList.length})
+          </span>
+        </button>
       </div>
 
-      <!-- Search & Filters -->
-      <div class="flex flex-wrap items-center gap-2.5">
-        <div class="relative">
-          <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Пошук гри..."
-            bind:value={searchQuery}
-            class="pl-8 pr-3 py-1.5 rounded-xl bg-[#061923] border border-cyan-500/15 text-white text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none transition-colors w-48 sm:w-56"
-          />
-        </div>
+      {#if activeDevTab === 'games'}
+        <!-- Search & Filters -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="relative">
+            <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Пошук гри..."
+              bind:value={searchQuery}
+              class="pl-8 pr-3 py-1.5 rounded-xl bg-[#061923] border border-cyan-500/15 text-white text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none transition-colors w-48 sm:w-56"
+            />
+          </div>
 
-        <div class="flex items-center rounded-xl bg-[#061923] border border-cyan-500/15 p-0.5 text-xs">
-          <button
-            onclick={() => filterStatus = 'all'}
-            class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'all' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
-          >
-            Всі
-          </button>
-          <button
-            onclick={() => filterStatus = 'published'}
-            class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'published' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
-          >
-            Опубліковані
-          </button>
-          <button
-            onclick={() => filterStatus = 'draft'}
-            class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'draft' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
-          >
-            Чернетки
-          </button>
+          <div class="flex items-center rounded-xl bg-[#061923] border border-cyan-500/15 p-0.5 text-xs">
+            <button
+              onclick={() => filterStatus = 'all'}
+              class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'all' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
+            >
+              Всі
+            </button>
+            <button
+              onclick={() => filterStatus = 'published'}
+              class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'published' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
+            >
+              Опубліковані
+            </button>
+            <button
+              onclick={() => filterStatus = 'draft'}
+              class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer {filterStatus === 'draft' ? 'bg-cyan-500/20 text-[#0df2c9]' : 'text-slate-400 hover:text-white'}"
+            >
+              Чернетки
+            </button>
+          </div>
         </div>
-      </div>
+      {/if}
     </div>
 
-    <!-- Games Cards Grid: 2 equal balanced columns on md and lg -->
-    {#if $developerStore.isLoading}
-      <div class="py-16 text-center space-y-2">
-        <RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mx-auto" />
-        <p class="text-xs text-slate-400">Оновлення каталогу ігор...</p>
-      </div>
-    {:else if filteredGames.length === 0}
-      <div class="py-12 text-center rounded-2xl bg-[#061923]/60 border border-dashed border-cyan-500/15 p-6 space-y-3">
-        <Gamepad2 class="w-10 h-10 text-slate-600 mx-auto" />
-        <h3 class="text-sm font-bold text-white">Ігор не знайдено</h3>
-        <p class="text-xs text-slate-400 max-w-sm mx-auto">
-          {#if searchQuery || filterStatus !== 'all'}
-            За вашими критеріями пошуку проектів не знайдено.
-          {:else}
-            У вас поки немає створених проектів. Опублікуйте вашу першу гру в каталозі Dteam!
+    {#if activeDevTab === 'games'}
+      <!-- Games Cards Grid: 2 equal balanced columns on md and lg -->
+      {#if $developerStore.isLoading}
+        <div class="py-16 text-center space-y-2">
+          <RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mx-auto" />
+          <p class="text-xs text-slate-400">Оновлення каталогу ігор...</p>
+        </div>
+      {:else if filteredGames.length === 0}
+        <div class="py-12 text-center rounded-2xl bg-[#061923]/60 border border-dashed border-cyan-500/15 p-6 space-y-3">
+          <Gamepad2 class="w-10 h-10 text-slate-600 mx-auto" />
+          <h3 class="text-sm font-bold text-white">Ігор не знайдено</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto">
+            {#if searchQuery || filterStatus !== 'all'}
+              За вашими критеріями пошуку проектів не знайдено.
+            {:else}
+              У вас поки немає створених проектів. Опублікуйте вашу першу гру в каталозі Dteam!
+            {/if}
+          </p>
+          {#if !searchQuery && filterStatus === 'all'}
+            <button
+              onclick={() => uiStore.setPublishGameModal(true)}
+              class="px-4 py-2 rounded-xl bg-[#0df2c9] text-black font-extrabold text-xs shadow-md hover:bg-[#21fcd6] transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus class="w-3.5 h-3.5 stroke-[3]" />
+              Створити першу гру
+            </button>
           {/if}
-        </p>
-        {#if !searchQuery && filterStatus === 'all'}
-          <button
-            onclick={() => uiStore.setPublishGameModal(true)}
-            class="px-4 py-2 rounded-xl bg-[#0df2c9] text-black font-extrabold text-xs shadow-md hover:bg-[#21fcd6] transition-all cursor-pointer inline-flex items-center gap-1.5"
-          >
-            <Plus class="w-3.5 h-3.5 stroke-[3]" />
-            Створити першу гру
-          </button>
-        {/if}
-      </div>
-    {:else}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {#each filteredGames as game (game.id)}
-          <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 hover:border-cyan-500/30 transition-all overflow-hidden flex flex-col group shadow-md">
-            <!-- Cover Header -->
-            <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
-              <img
-                src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'}
-                alt={game.title}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-[#061923] via-transparent to-black/40"></div>
+        </div>
+      {:else}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {#each filteredGames as game (game.id)}
+            <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 hover:border-cyan-500/30 transition-all overflow-hidden flex flex-col group shadow-md">
+              <!-- Cover Header -->
+              <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
+                <img
+                  src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'}
+                  alt={game.title}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#061923] via-transparent to-black/40"></div>
 
-              <!-- Status Badge -->
-              <div class="absolute top-2.5 left-2.5 flex items-center gap-2">
-                {#if game.isPublished}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/90 text-black text-[10px] font-black shadow backdrop-blur-sm">
-                    <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
-                    Опубліковано
-                  </span>
-                {:else}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/90 text-black text-[10px] font-black shadow backdrop-blur-sm">
-                    <Clock class="w-2.5 h-2.5" />
-                    Чернетка
-                  </span>
-                {/if}
-                {#if game.discountPercentage > 0}
-                  <span class="px-1.5 py-0.5 rounded-md bg-[#ff4767] text-white text-[10px] font-black shadow">
-                    -{game.discountPercentage}%
-                  </span>
-                {/if}
+                <!-- Status Badge -->
+                <div class="absolute top-2.5 left-2.5 flex items-center gap-2">
+                  {#if game.isPublished}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/90 text-black text-[10px] font-black shadow backdrop-blur-sm">
+                      <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+                      Опубліковано
+                    </span>
+                  {:else}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/90 text-black text-[10px] font-black shadow backdrop-blur-sm">
+                      <Clock class="w-2.5 h-2.5" />
+                      Чернетка
+                    </span>
+                  {/if}
+                  {#if game.discountPercentage > 0}
+                    <span class="px-1.5 py-0.5 rounded-md bg-[#ff4767] text-white text-[10px] font-black shadow">
+                      -{game.discountPercentage}%
+                    </span>
+                  {/if}
+                </div>
+
+                <!-- Version & Release Date Tag -->
+                <div class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] text-slate-300 font-mono flex items-center gap-1.5 border border-white/10 shadow-sm">
+                  <span>v{game.version || '1.0.0'}</span>
+                  <span class="text-slate-600">•</span>
+                  <span>{game.createdAt ? formatDate(game.createdAt) : '01.08.2026'}</span>
+                </div>
               </div>
 
-              <!-- Version & Release Date Tag -->
-              <div class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] text-slate-300 font-mono flex items-center gap-1.5 border border-white/10 shadow-sm">
-                <span>v{game.version || '1.0.0'}</span>
-                <span class="text-slate-600">•</span>
-                <span>{game.createdAt ? formatDate(game.createdAt) : '01.08.2026'}</span>
+              <!-- Card Body -->
+              <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div class="space-y-1.5">
+                  <h4 class="text-base font-bold text-white group-hover:text-[#0df2c9] transition-colors font-display line-clamp-1">
+                    {game.title}
+                  </h4>
+                  <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">
+                    {game.shortDescription || game.description}
+                  </p>
+
+                  <!-- Tags / Genres -->
+                  <div class="flex flex-wrap gap-1.5 pt-1">
+                    {#each (game.genres || []).slice(0, 3) as genre}
+                      <span class="px-2.5 py-0.5 rounded-md bg-[#092e40] text-[10px] text-cyan-300 border border-cyan-500/25 font-semibold">
+                        {genre}
+                      </span>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Price & Downloads Line -->
+                <div class="pt-2.5 border-t border-cyan-500/10 flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-3 text-slate-300 font-mono text-xs">
+                    <span class="flex items-center gap-1" title="Завантажень">
+                      <Download class="w-3.5 h-3.5 text-cyan-400" />
+                      {game.downloadCount.toLocaleString()}
+                    </span>
+                    <span class="flex items-center gap-1 text-amber-400 font-semibold" title="Рейтинг">
+                      <Star class="w-3.5 h-3.5 fill-amber-400" />
+                      {game.averageRating ? game.averageRating.toFixed(1) : '5.0'}
+                    </span>
+                  </div>
+
+                  <!-- Price in TON with TonIcon -->
+                  <div>
+                    {#if game.priceInNanoTons === 0}
+                      <span class="text-xs font-bold text-[#0df2c9]">Free</span>
+                    {:else}
+                      <span class="text-xs font-bold font-mono text-white flex items-center gap-1">
+                        <TonIcon class="w-3.5 h-3.5 text-[#0df2c9] shrink-0" />
+                        <span>{formatTon(nanoTonToTon(game.priceInNanoTons))}</span>
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+
+                <!-- Actions Grid (5 buttons) -->
+                <div class="grid grid-cols-5 gap-1.5 pt-1">
+                  <!-- News -->
+                  <button
+                    onclick={() => gameForNews = game}
+                    class="py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/25 text-[#0df2c9] text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer border border-cyan-500/20"
+                    title="Опублікувати новину для цієї гри"
+                  >
+                    <Newspaper class="w-3.5 h-3.5" />
+                    <span class="hidden sm:inline">Новина</span>
+                  </button>
+
+                  <!-- Edit -->
+                  <button
+                    onclick={() => uiStore.setEditGameModal(true, game)}
+                    class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-cyan-300 text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    title="Редагувати"
+                  >
+                    <Edit3 class="w-3.5 h-3.5" />
+                    <span class="hidden sm:inline">Ред.</span>
+                  </button>
+
+                  <!-- Toggle Publish Status -->
+                  <button
+                    onclick={() => handleTogglePublish(game)}
+                    class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    title={game.isPublished ? 'Приховати в чернетки' : 'Опублікувати у каталозі'}
+                  >
+                    {#if game.isPublished}
+                      <EyeOff class="w-3.5 h-3.5 text-amber-400" />
+                      <span class="hidden sm:inline">Сховати</span>
+                    {:else}
+                      <Eye class="w-3.5 h-3.5 text-emerald-400" />
+                      <span class="hidden sm:inline">Викласти</span>
+                    {/if}
+                  </button>
+
+                  <!-- View in Store -->
+                  <button
+                    onclick={() => handleViewInStore(game)}
+                    class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    title="Переглянути на вітрині"
+                  >
+                    <ExternalLink class="w-3.5 h-3.5" />
+                    <span class="hidden sm:inline">Крамниця</span>
+                  </button>
+
+                  <!-- Delete -->
+                  <button
+                    onclick={() => gameToDelete = game}
+                    class="py-2 rounded-xl bg-[#092837] hover:bg-red-500/20 text-slate-400 hover:text-red-400 text-xs transition-all flex items-center justify-center cursor-pointer"
+                    title="Видалити"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
-
-            <!-- Card Body with boosted contrast -->
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-              <div class="space-y-1.5">
-                <h4 class="text-base font-bold text-white group-hover:text-[#0df2c9] transition-colors font-display line-clamp-1">
-                  {game.title}
-                </h4>
-                <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed font-normal">
-                  {game.shortDescription || game.description}
-                </p>
-
-                <!-- Tags / Genres with boosted readability -->
-                <div class="flex flex-wrap gap-1.5 pt-1">
-                  {#each (game.genres || []).slice(0, 3) as genre}
-                    <span class="px-2.5 py-0.5 rounded-md bg-[#092e40] text-[10px] text-cyan-300 border border-cyan-500/25 font-semibold">
-                      {genre}
-                    </span>
-                  {/each}
+          {/each}
+        </div>
+      {/if}
+    {:else}
+      <!-- News Tab View -->
+      {#if isLoadingMyNews}
+        <div class="py-16 text-center space-y-2">
+          <RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mx-auto" />
+          <p class="text-xs text-slate-400">Завантаження новин...</p>
+        </div>
+      {:else if myNewsList.length === 0}
+        <div class="py-12 text-center rounded-2xl bg-[#061923]/60 border border-dashed border-cyan-500/15 p-6 space-y-3">
+          <Newspaper class="w-10 h-10 text-slate-600 mx-auto" />
+          <h3 class="text-sm font-bold text-white">Новин поки немає</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto">
+            Ви ще не публікували новини для своїх ігор.
+          </p>
+          {#if filteredGames.length > 0}
+            <button
+              onclick={() => gameForNews = filteredGames[0]}
+              class="px-4 py-2 rounded-xl bg-[#0df2c9] text-black font-extrabold text-xs shadow-md hover:bg-[#21fcd6] transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus class="w-3.5 h-3.5 stroke-[3]" />
+              Опублікувати першу новину
+            </button>
+          {/if}
+        </div>
+      {:else}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {#each myNewsList as news (news.id)}
+            <div class="rounded-2xl bg-[#061923] border border-cyan-500/20 p-4 space-y-3 shadow-md flex flex-col justify-between">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-950/60 text-cyan-300 text-[11px] font-bold border border-cyan-800/40">
+                    <Gamepad2 class="w-3 h-3 text-cyan-400" />
+                    {news.gameTitle || 'Гра'}
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-mono">
+                    {new Date(news.createdAt).toLocaleDateString('uk-UA')}
+                  </span>
                 </div>
+
+                <h4 class="text-sm font-bold text-white line-clamp-1">{news.title}</h4>
+                <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed">{news.content}</p>
+
+                {#if news.media?.url}
+                  <div class="rounded-xl overflow-hidden max-h-36 bg-black/40 border border-cyan-900/40">
+                    {#if news.media.type === 'video'}
+                      <video src={news.media.url} class="w-full max-h-36 object-cover" controls></video>
+                    {:else}
+                      <img src={news.media.url} alt="" class="w-full max-h-36 object-cover" />
+                    {/if}
+                  </div>
+                {/if}
               </div>
 
-              <!-- Price & Downloads Line -->
-              <div class="pt-2.5 border-t border-cyan-500/10 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-3 text-slate-300 font-mono text-xs">
-                  <span class="flex items-center gap-1" title="Завантажень">
-                    <Download class="w-3.5 h-3.5 text-cyan-400" />
-                    {game.downloadCount.toLocaleString()}
-                  </span>
-                  <span class="flex items-center gap-1 text-amber-400 font-semibold" title="Рейтинг">
-                    <Star class="w-3.5 h-3.5 fill-amber-400" />
-                    {game.averageRating ? game.averageRating.toFixed(1) : '5.0'}
-                  </span>
-                </div>
-
-                <!-- Price in TON with TonIcon and NO double ticker -->
-                <div>
-                  {#if game.priceInNanoTons === 0}
-                    <span class="text-xs font-bold text-[#0df2c9]">Free</span>
-                  {:else}
-                    <span class="text-xs font-bold font-mono text-white flex items-center gap-1">
-                      <TonIcon class="w-3.5 h-3.5 text-[#0df2c9] shrink-0" />
-                      <span>{formatTon(nanoTonToTon(game.priceInNanoTons))}</span>
-                    </span>
-                  {/if}
-                </div>
-              </div>
-
-              <!-- Actions Grid -->
-              <div class="grid grid-cols-4 gap-2 pt-1">
-                <!-- Edit -->
+              <div class="flex items-center justify-between pt-2 border-t border-cyan-900/40">
+                <span class="text-[10px] text-cyan-400 font-medium">Офіційна новина</span>
                 <button
-                  onclick={() => uiStore.setEditGameModal(true, game)}
-                  class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-cyan-300 text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                  title="Редагувати"
-                >
-                  <Edit3 class="w-3.5 h-3.5" />
-                  <span class="hidden sm:inline">Ред.</span>
-                </button>
-
-                <!-- Toggle Publish Status -->
-                <button
-                  onclick={() => handleTogglePublish(game)}
-                  class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                  title={game.isPublished ? 'Приховати в чернетки' : 'Опублікувати у каталозі'}
-                >
-                  {#if game.isPublished}
-                    <EyeOff class="w-3.5 h-3.5 text-amber-400" />
-                    <span class="hidden sm:inline">Сховати</span>
-                  {:else}
-                    <Eye class="w-3.5 h-3.5 text-emerald-400" />
-                    <span class="hidden sm:inline">Викласти</span>
-                  {/if}
-                </button>
-
-                <!-- View in Store -->
-                <button
-                  onclick={() => handleViewInStore(game)}
-                  class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                  title="Переглянути на вітрині"
-                >
-                  <ExternalLink class="w-3.5 h-3.5" />
-                  <span class="hidden sm:inline">Крамниця</span>
-                </button>
-
-                <!-- Delete -->
-                <button
-                  onclick={() => gameToDelete = game}
-                  class="py-2 rounded-xl bg-[#092837] hover:bg-red-500/20 text-slate-400 hover:text-red-400 text-xs transition-all flex items-center justify-center cursor-pointer"
-                  title="Видалити"
+                  type="button"
+                  onclick={() => handleDeleteNews(news.id)}
+                  class="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Видалити новину"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
+                  <span>Видалити</span>
                 </button>
               </div>
             </div>
-          </div>
-        {/each}
-      </div>
+          {/each}
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
+
+<!-- Modal for Creating Game News -->
+{#if gameForNews}
+  <CreateGameNewsModal
+    game={gameForNews}
+    isOpen={!!gameForNews}
+    onClose={() => gameForNews = null}
+    onCreated={() => loadMyNews()}
+  />
+{/if}
 
 <!-- Confirmation Modal for Delete -->
 {#if gameToDelete}

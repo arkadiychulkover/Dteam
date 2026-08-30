@@ -7,6 +7,7 @@ namespace DteamBackend.Models.DTO
         [Required(ErrorMessage = "GameId is required")]
         public Guid GameId { get; set; }
 
+        [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10")]
         public int? Priority { get; set; }
 
         [MaxLength(500)]

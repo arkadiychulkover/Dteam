@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DteamBackend.Models
 {
@@ -72,6 +74,15 @@ namespace DteamBackend.Models
         public DateTime? UpdatedAt { get; set; }
 
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+        [JsonIgnore]
+        public ICollection<CommunityPost> CommunityPosts { get; set; } = new List<CommunityPost>();
+
+        [NotMapped]
+        public ICollection<GameNews> News => CommunityPosts
+            .Where(p => p.Category == "news")
+            .Select(GameNews.FromCommunityPost)
+            .ToList();
 
         public ICollection<UserGame> Owners { get; set; } = new List<UserGame>();
 

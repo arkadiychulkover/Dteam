@@ -53,15 +53,41 @@ export const gamesService = {
     return await api.get<Game[]>(`/games/${gameId}/dlcs`);
   },
 
-  async addReview(gameId: string, payload: { rating: number; content: string; isRecommended?: boolean }): Promise<Review> {
+  async getReviewDetails(gameId: string, reviewId: string): Promise<Review> {
+    return await api.get<Review>(`/games/${gameId}/reviews/${reviewId}`);
+  },
+
+  async addReview(gameId: string, payload: { rating?: number; content: string; isRecommended?: boolean; parentReviewId?: string }): Promise<Review> {
     return await api.post<Review>(`/games/${gameId}/reviews`, {
-      rating: payload.rating,
+      rating: payload.rating ?? 5,
       content: payload.content,
       isRecommended: payload.isRecommended ?? true,
+      parentReviewId: payload.parentReviewId
     });
+  },
+
+  async addReviewReply(gameId: string, parentReviewId: string, content: string): Promise<Review> {
+    return await api.post<Review>(`/games/${gameId}/reviews`, {
+      content,
+      parentReviewId,
+      rating: 5,
+      isRecommended: true
+    });
+  },
+
+  async toggleReviewLike(gameId: string, reviewId: string): Promise<{ liked: boolean; likesCount: number }> {
+    return await api.post<{ liked: boolean; likesCount: number }>(`/games/${gameId}/reviews/${reviewId}/like`);
   },
 
   async buyGame(gameId: string): Promise<{ success: boolean; txHash?: string }> {
     return await api.post(`/games/${gameId}/buy`);
+  },
+
+  async getRecommendations(query = '', limit = 10): Promise<GameRecommendation[]> {
+    const params = new URLSearchParams();
+    if (query) params.append('query', query);
+    if (limit) params.append('limit', String(limit));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return await api.get<GameRecommendation[]>(`/recommendation${qs}`);
   },
 };

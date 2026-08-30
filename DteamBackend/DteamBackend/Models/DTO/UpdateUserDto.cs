@@ -24,6 +24,7 @@ namespace DteamBackend.Models.DTO
 
         public UserStatus? Status { get; set; }
 
+        [Range(0, long.MaxValue, ErrorMessage = "Balance must be non-negative")]
         public long? BalanceInNanoTons { get; set; }
 
         [MaxLength(500)]

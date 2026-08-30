@@ -13,8 +13,9 @@
   import { formatDate } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import {
-    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus
+    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2
   } from 'lucide-svelte';
+  import SelectGameModal from '../community/SelectGameModal.svelte';
 
   type TabId = 'головна' | 'значки' | 'ігри' | 'бажане' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди' | 'рецензії';
   let activeTab = $state<TabId>('головна');
@@ -57,6 +58,8 @@
   let postMediaUrl = $state('');
   let postMediaThumbnailUrl = $state('');
   let postMediaPreviewUrl = $state('');
+  let selectedPostGame = $state<{ id: string; title: string; bannerUrl?: string } | null>(null);
+  let isSelectGameModalOpen = $state(false);
   let isUploadingMedia = $state(false);
   let selectedPostFile = $state<File | null>(null);
   let isSubmittingPost = $state(false);
@@ -79,10 +82,12 @@
   }
 
   function resetPostMedia() {
+    selectedPostGame = null;
     if (postMediaPreviewUrl) URL.revokeObjectURL(postMediaPreviewUrl);
     postMediaUrl = '';
     postMediaThumbnailUrl = '';
     postMediaPreviewUrl = '';
+    selectedPostFile = null;
     if (postFileInput) postFileInput.value = '';
   }
 
@@ -138,6 +143,11 @@
   }
 
   async function submitPost() {
+    if (!selectedPostGame?.id) {
+      uiStore.addToast({ title: 'Оберіть гру', message: 'Для створення публікації обов’язково оберіть гру.', type: 'warning' });
+      isSelectGameModalOpen = true;
+      return;
+    }
     if (!postTitle.trim() || !postContent.trim()) {
       uiStore.addToast({ title: 'Заповніть поля', message: 'Вкажіть заголовок і текст публікації.', type: 'error' });
       return;
@@ -148,10 +158,11 @@
     }
     isSubmittingPost = true;
     try {
-      await communityService.createPost(null, {
+      await communityService.createPost(selectedPostGame.id, {
         category: createPostType,
         title: postTitle.trim(),
         content: postContent.trim(),
+        gameId: selectedPostGame.id,
         mediaType: createPostType === 'videos' ? 'video' : (postMediaUrl ? 'image' : 'none'),
         mediaUrl: postMediaUrl,
         mediaThumbnailUrl: postMediaThumbnailUrl || undefined,
@@ -417,10 +428,18 @@
                 <div class="space-y-4">
                   {#each myDiscussionPosts as post (post.id)}
                     <div class="bg-[#02171d] rounded-2xl p-5 border border-cyan-900/30">
-                      <span class="text-xs text-slate-500 block mb-2">{formatDate(post.createdAt)}</span>
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="text-xs text-slate-500">{formatDate(post.createdAt)}</span>
+                        {#if (post as any).gameTitle}
+                          <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 flex items-center gap-1">
+                            <Gamepad2 class="w-3 h-3 text-cyan-400" />
+                            {(post as any).gameTitle}
+                          </span>
+                        {/if}
+                      </div>
                       <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
                       <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{post.content}</p>
-                      {#if post.media?.type === 'image' && post.media.url}
+                      {#if post.media?.url && post.media?.type !== 'video'}
                         <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                       {/if}
                       <div class="flex gap-4 text-xs font-medium text-slate-400">
@@ -572,6 +591,44 @@
         <h3 class="text-lg font-black text-white">Створити: {createTypeLabels[createPostType]}</h3>
         <button onclick={() => { isCreatingPost = false; resetPostMedia(); }} class="text-slate-400 hover:text-white cursor-pointer"><X class="w-5 h-5" /></button>
       </div>
+
+      <!-- Game Selector for Profile Post -->
+      <div class="p-3 rounded-2xl bg-[#02171d] border border-cyan-900/60 flex items-center justify-between gap-3 shadow-inner">
+        <div class="flex items-center gap-3 min-w-0">
+          {#if selectedPostGame}
+            <div class="w-11 h-8 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
+              {#if selectedPostGame.bannerUrl}
+                <img src={selectedPostGame.bannerUrl} alt={selectedPostGame.title} class="w-full h-full object-cover" />
+              {:else}
+                <div class="w-full h-full bg-gradient-to-tr from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400">
+                  <Gamepad2 class="w-4 h-4" />
+                </div>
+              {/if}
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Підв'язано до гри</span>
+              <span class="text-xs font-bold text-white truncate block">{selectedPostGame.title}</span>
+            </div>
+          {:else}
+            <div class="w-8 h-8 rounded-lg bg-cyan-950/60 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+              <Gamepad2 class="w-4 h-4" />
+            </div>
+            <div>
+              <span class="text-xs font-bold text-amber-300 block">Гру не обрано *</span>
+              <span class="text-[10px] text-slate-400">Оберіть гру для створення допису</span>
+            </div>
+          {/if}
+        </div>
+
+        <button
+          type="button"
+          onclick={() => isSelectGameModalOpen = true}
+          class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+        >
+          {selectedPostGame ? 'Змінити' : 'Обрати'}
+        </button>
+      </div>
+
       <input
         type="text"
         bind:value={postTitle}
@@ -679,3 +736,10 @@
   </div>
 {/if}
 {/if}
+
+<SelectGameModal
+  isOpen={isSelectGameModalOpen}
+  selectedGameId={selectedPostGame?.id}
+  onSelect={(game) => selectedPostGame = game}
+  onClose={() => isSelectGameModalOpen = false}
+/>

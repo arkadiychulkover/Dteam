@@ -5,6 +5,7 @@
   import StoreView from './lib/components/store/StoreView.svelte';
   import CatalogView from './lib/components/store/CatalogView.svelte';
   import GameDetailsView from './lib/components/store/GameDetailsView.svelte';
+  import AllDlcsView from './lib/components/store/AllDlcsView.svelte';
   import WishlistView from './lib/components/wishlist/WishlistView.svelte';
   import CartView from './lib/components/cart/CartView.svelte';
   import AdminView from './lib/components/admin/AdminView.svelte';
@@ -37,6 +38,7 @@
   import { friendsHubService } from './lib/services/friendsHubService';
   import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
+  import { router } from './lib/services/router';
 
   let isBanned = $state(false);
 
@@ -66,7 +68,7 @@
   });
 
   onMount(() => {
-   
+    router.init();
     onlineHubService.startConnection();
 
     checkUserBanStatus();
@@ -112,6 +114,8 @@
       <CatalogView />
     {:else if $uiStore.activeTab === 'game'}
       <GameDetailsView />
+    {:else if $uiStore.activeTab === 'all-dlcs'}
+      <AllDlcsView />
     {:else if $uiStore.activeTab === 'wishlist'}
       <WishlistView />
     {:else if $uiStore.activeTab === 'cart'}

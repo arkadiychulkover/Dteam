@@ -4,8 +4,9 @@
   import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
-  import { ThumbsUp, MessageSquare, Loader2 } from 'lucide-svelte';
+  import { ThumbsUp, MessageSquare, Loader2, Gamepad2 } from 'lucide-svelte';
   import { onlineHubService } from '../../services/onlineHubService';
+  import SelectGameModal from './SelectGameModal.svelte';
 
   interface Props {
     gameId?: string | null;
@@ -16,6 +17,15 @@
     gameId = null,
     gameName = "Онлайн людей на сайті"
   }: Props = $props();
+
+  let selectedGame = $state<{ id: string; title: string; bannerUrl?: string } | null>(null);
+  let isSelectGameModalOpen = $state(false);
+
+  $effect(() => {
+    if (gameId && (!selectedGame || selectedGame.id !== gameId)) {
+      selectedGame = { id: gameId, title: gameName || 'Обрана гра' };
+    }
+  });
 
   let onlineCount = $state(onlineHubService.getOnlineCount());
 
@@ -28,6 +38,7 @@
   let caption = $state('');
   let mediaUrl = $state('');
   let mediaThumbnailUrl = $state('');
+  let mediaPreviewUrl = $state('');
   let isSubmitting = $state(false);
 
   let isUploadingMedia = $state(false);
@@ -46,6 +57,8 @@
     caption = '';
     mediaUrl = '';
     mediaThumbnailUrl = '';
+    if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+    mediaPreviewUrl = '';
     selectedFile = null;
     isDraggingOver = false;
   }
@@ -91,6 +104,8 @@
       return;
     }
 
+    if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+    mediaPreviewUrl = URL.createObjectURL(file);
     selectedFile = file;
     isUploadingMedia = true;
     try {
@@ -119,6 +134,10 @@
         message: err?.message || 'Не вдалося завантажити файл.',
         type: 'error'
       });
+      if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+      mediaPreviewUrl = '';
+      mediaUrl = '';
+      selectedFile = null;
     } finally {
       isUploadingMedia = false;
     }
@@ -217,26 +236,13 @@
   }
 
   function renderPostContent(raw: string): string {
+    if (!raw) return '';
     let safe = escapeHtml(raw);
-
-    // ![опис](url) -> <img>
-    safe = safe.replace(
-      /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<img src="$2" alt="$1" class="my-2 rounded-lg max-h-80 max-w-full object-contain" />'
-    );
-
-    // **bold**
-    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // *italic* (одиночні зірочки, після того як bold вже "з'їв" подвійні)
-    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // <u>underline</u> вище був заекранований у &lt;u&gt;...&lt;/u&gt; — повертаємо тег
-    safe = safe.replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, '<u>$1</u>');
-
-    // зберігаємо переноси рядків
+    safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    safe = safe.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/g, '<u>$1</u>');
+    safe = safe.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-h-80 w-auto my-2 object-cover border border-cyan-900/60" />');
     safe = safe.replace(/\n/g, '<br />');
-
     return safe;
   }
 
@@ -273,6 +279,16 @@
   async function handleSubmit(e?: Event) {
     if (e) e.preventDefault();
 
+    if (!selectedGame?.id) {
+      uiStore.addToast({
+        title: 'Оберіть гру',
+        message: 'Для публікації допису обов’язково оберіть гру зі списку.',
+        type: 'warning'
+      });
+      isSelectGameModalOpen = true;
+      return;
+    }
+
     if ((activeTab === 'discussion' || activeTab === 'guide') && !title.trim()) {
       uiStore.addToast({
         title: 'Помилка валідації',
@@ -303,6 +319,7 @@
       category: categoryMap[activeTab],
       title: finalTitle,
       content: finalContent,
+      gameId: selectedGame.id,
       mediaType: mediaUrl ? (activeTab === 'video' ? 'video' : 'image') : 'none',
       mediaUrl,
       mediaThumbnailUrl: mediaThumbnailUrl || undefined,
@@ -310,7 +327,7 @@
     };
 
     try {
-      await communityService.createPost(gameId, postPayload);
+      await communityService.createPost(selectedGame.id, postPayload);
       uiStore.addToast({
         title: 'Успіх! 🎉',
         message: 'Пост успішно опубліковано!',
@@ -355,6 +372,45 @@
       
       <div>
         
+        <!-- Game Selection for Community Post -->
+        <div class="mb-6 p-4 rounded-2xl bg-[#02171d]/90 border border-cyan-900/60 flex items-center justify-between gap-4 shadow-inner">
+          <div class="flex items-center gap-3.5 min-w-0">
+            {#if selectedGame}
+              <div class="w-14 h-10 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
+                {#if selectedGame.bannerUrl}
+                  <img src={selectedGame.bannerUrl} alt={selectedGame.title} class="w-full h-full object-cover" />
+                {:else}
+                  <div class="w-full h-full bg-gradient-to-tr from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400">
+                    <Gamepad2 class="w-5 h-5" />
+                  </div>
+                {/if}
+              </div>
+              <div class="min-w-0">
+                <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Підв'язано до гри</span>
+                <h3 class="text-sm sm:text-base font-bold text-white truncate">{selectedGame.title}</h3>
+              </div>
+            {:else}
+              <div class="w-11 h-11 rounded-2xl bg-cyan-950/60 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                <Gamepad2 class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  Оберіть гру для допису <span class="text-rose-400">*</span>
+                </span>
+                <span class="text-[11px] text-slate-400">Публікація обов'язково має належати до певної гри</span>
+              </div>
+            {/if}
+          </div>
+
+          <button
+            type="button"
+            onclick={() => isSelectGameModalOpen = true}
+            class="px-4 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
+          >
+            {selectedGame ? 'Змінити гру' : 'Обрати гру'}
+          </button>
+        </div>
+
         <div class="grid grid-cols-4 gap-2 mb-6">
           <button
             type="button"
@@ -441,9 +497,9 @@
               {#if isUploadingMedia}
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження...</p>
-              {:else if mediaUrl}
-                <img src={mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
-                <p class="text-xs text-cyan-400">Файл успішно завантажено</p>
+              {:else if mediaPreviewUrl || mediaUrl}
+                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
+                <p class="text-xs text-cyan-400">Файл успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
                 <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors shadow-md">
@@ -470,9 +526,9 @@
               {#if isUploadingMedia}
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження...</p>
-              {:else if mediaUrl}
-                <img src={mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
-                <p class="text-xs text-cyan-400">Зображення успішно завантажено</p>
+              {:else if mediaPreviewUrl || mediaUrl}
+                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
+                <p class="text-xs text-cyan-400">Зображення успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
                 <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-md">
@@ -510,9 +566,9 @@
               {#if isUploadingMedia}
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження...</p>
-              {:else if mediaUrl}
-                <video src={mediaUrl} class="max-h-48 rounded-lg object-cover mb-2" controls></video>
-                <p class="text-xs text-cyan-400">Відео успішно завантажено</p>
+              {:else if mediaPreviewUrl || mediaUrl}
+                <video src={mediaPreviewUrl || mediaUrl} class="max-h-48 rounded-lg object-cover mb-2" controls></video>
+                <p class="text-xs text-cyan-400">Відео успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
                 <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-md">
@@ -734,9 +790,24 @@
                   </span>
                 </div>
               </button>
-              <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-md bg-[#0b4e63]/50 text-cyan-300 uppercase tracking-wide">
-                {feedCategoryLabels[post.category as keyof typeof feedCategoryLabels] ?? post.category}
-              </span>
+              <div class="ml-auto flex items-center gap-2">
+                {#if post.gameTitle}
+                  <span class="text-[11px] font-bold px-2.5 py-1 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 flex items-center gap-1.5 shadow-sm">
+                    <Gamepad2 class="w-3 h-3 text-cyan-400" />
+                    {post.gameTitle}
+                  </span>
+                {/if}
+                {#if post.category === 'news'}
+                  <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wide flex items-center gap-1.5 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Офіційна новина
+                  </span>
+                {:else}
+                  <span class="text-[11px] font-bold px-2.5 py-1 rounded-md bg-[#0b4e63]/50 text-cyan-300 uppercase tracking-wide">
+                    {feedCategoryLabels[post.category as keyof typeof feedCategoryLabels] ?? post.category}
+                  </span>
+                {/if}
+              </div>
             </div>
 
             {#if post.title}
@@ -745,10 +816,10 @@
 
             <p class="text-sm text-slate-300 leading-relaxed">{@html renderPostContent(post.content)}</p>
 
-            {#if post.media?.type === 'image' && post.media.url}
-              <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />
-            {:else if post.media?.type === 'video' && post.media.url}
+            {#if post.media?.type === 'video' && post.media.url}
               <video src={post.media.url} class="mt-3 rounded-xl max-h-96 w-full" controls></video>
+            {:else if post.media?.url}
+              <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />
             {/if}
 
             <div class="flex items-center gap-5 mt-4 pt-3 border-t border-cyan-900/40">
@@ -772,3 +843,13 @@
     {/if}
   </div>
 </div>
+
+<SelectGameModal
+  isOpen={isSelectGameModalOpen}
+  selectedGameId={selectedGame?.id}
+  onSelect={(game) => {
+    selectedGame = game;
+    loadPosts();
+  }}
+  onClose={() => isSelectGameModalOpen = false}
+/>

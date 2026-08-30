@@ -253,28 +253,41 @@
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {#each visibleNews as post (post.id)}
-                  <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-400/50 transition-all">
-                    {#if post.media?.type === 'image' && post.media.url}
-                      <img src={post.media.url} alt="" class="w-full h-32 object-cover" />
-                    {:else if post.media?.type === 'video' && post.media.url}
-                      <video src={post.media.url} class="w-full h-32 object-cover" muted></video>
+                  <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-400/50 transition-all flex flex-col justify-between">
+                    {#if post.media?.url}
+                      {#if post.media.type === 'video'}
+                        <video src={post.media.url} class="w-full h-32 object-cover" muted></video>
+                      {:else}
+                        <img src={post.media.url} alt="" class="w-full h-32 object-cover" />
+                      {/if}
+                    {:else if post.gameBannerUrl}
+                      <img src={post.gameBannerUrl} alt="" class="w-full h-32 object-cover opacity-80" />
                     {/if}
 
-                    <div class="p-4 space-y-2">
-                      <button
-                        onclick={() => profileStore.viewProfile(post.author.id)}
-                        class="flex items-center gap-2 group cursor-pointer"
-                      >
-                        <img
-                          src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
-                          alt={post.author.username}
-                          class="w-6 h-6 rounded-full object-cover border border-cyan-500/30"
-                        />
-                        <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
-                      </button>
+                    <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                          <button
+                            onclick={() => profileStore.viewProfile(post.author.id)}
+                            class="flex items-center gap-2 group cursor-pointer"
+                          >
+                            <img
+                              src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                              alt={post.author.username}
+                              class="w-5 h-5 rounded-full object-cover border border-cyan-500/30"
+                            />
+                            <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors truncate max-w-[120px]">{post.author.username}</span>
+                          </button>
+                          {#if post.gameTitle}
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800/40 truncate max-w-[140px]">
+                              {post.gameTitle}
+                            </span>
+                          {/if}
+                        </div>
 
-                      <h3 class="text-sm font-bold text-white line-clamp-1">{post.title}</h3>
-                      <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                        <h3 class="text-sm font-bold text-white line-clamp-1">{post.title}</h3>
+                        <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                      </div>
 
                       <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
                         <span class="flex items-center gap-1"><Heart class="w-3 h-3" />{post.stats.likesCount}</span>

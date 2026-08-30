@@ -3,6 +3,8 @@ using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Text.Json;
 
 namespace DteamBackend.Services
 {
@@ -171,6 +173,177 @@ namespace DteamBackend.Services
             if (_context != null)
             {
                 await InitializeAsync(_context);
+            }
+        }
+
+        private class CommunitySeedJsonStore
+        {
+            public List<CommunityPost> Posts { get; set; } = new();
+            public List<CommunityComment> Comments { get; set; } = new();
+        }
+
+        public async Task EnsureCommunityDataAsync(AppDbContext context)
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""CommunityPosts"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_CommunityPosts"" PRIMARY KEY,
+                        ""GameId"" TEXT NOT NULL,
+                        ""GameTitle"" TEXT NULL,
+                        ""GameBannerUrl"" TEXT NULL,
+                        ""GameGuidId"" TEXT NULL,
+                        ""AuthorId"" TEXT NOT NULL DEFAULT '',
+                        ""AuthorUsername"" TEXT NOT NULL DEFAULT '',
+                        ""AuthorAvatarUrl"" TEXT NOT NULL DEFAULT '',
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""Category"" TEXT NOT NULL DEFAULT 'forum',
+                        ""Title"" TEXT NOT NULL DEFAULT '',
+                        ""Content"" TEXT NOT NULL DEFAULT '',
+                        ""MediaType"" TEXT NOT NULL DEFAULT 'none',
+                        ""MediaUrl"" TEXT NOT NULL DEFAULT '',
+                        ""MediaThumbnailUrl"" TEXT NOT NULL DEFAULT '',
+                        ""LikedByUsers"" TEXT NOT NULL DEFAULT '[]'
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_CommunityPosts_GameId"" ON ""CommunityPosts"" (""GameId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_CommunityPosts_Category"" ON ""CommunityPosts"" (""Category"");
+                    CREATE INDEX IF NOT EXISTS ""IX_CommunityPosts_CreatedAt"" ON ""CommunityPosts"" (""CreatedAt"");
+
+                    CREATE TABLE IF NOT EXISTS ""CommunityComments"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_CommunityComments"" PRIMARY KEY,
+                        ""PostId"" TEXT NOT NULL,
+                        ""ParentCommentId"" TEXT NULL,
+                        ""AuthorId"" TEXT NOT NULL DEFAULT '',
+                        ""AuthorUsername"" TEXT NOT NULL DEFAULT '',
+                        ""AuthorAvatarUrl"" TEXT NOT NULL DEFAULT '',
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""Content"" TEXT NOT NULL DEFAULT '',
+                        ""LikesCount"" INTEGER NOT NULL DEFAULT 0,
+                        ""LikedByUsers"" TEXT NOT NULL DEFAULT '[]'
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_CommunityComments_PostId"" ON ""CommunityComments"" (""PostId"");
+                ");
+
+                if (!await context.CommunityPosts.AnyAsync())
+                {
+                    var searchPaths = new[]
+                    {
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "community_data.json"),
+                        Path.Combine(Directory.GetCurrentDirectory(), "community_data.json")
+                    };
+                    var jsonPath = searchPaths.FirstOrDefault(File.Exists);
+                    if (jsonPath != null)
+                    {
+                        var json = await File.ReadAllTextAsync(jsonPath);
+                        var data = JsonSerializer.Deserialize<CommunitySeedJsonStore>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (data != null)
+                        {
+                            if (data.Posts != null && data.Posts.Count > 0)
+                            {
+                                foreach (var p in data.Posts)
+                                {
+                                    if (Guid.TryParse(p.GameId, out var gId))
+                                    {
+                                        p.GameGuidId = gId;
+                                    }
+                                    if (p.Author == null) p.Author = new AuthorDto();
+                                    if (p.Media == null) p.Media = new PostMedia();
+                                    if (p.LikedByUsers == null) p.LikedByUsers = new List<string>();
+                                }
+                                await context.CommunityPosts.AddRangeAsync(data.Posts);
+                            }
+
+                            if (data.Comments != null && data.Comments.Count > 0)
+                            {
+                                var flattened = new List<CommunityComment>();
+                                foreach (var c in data.Comments)
+                                {
+                                    if (c.Author == null) c.Author = new AuthorDto();
+                                    if (c.LikedByUsers == null) c.LikedByUsers = new List<string>();
+                                    flattened.Add(c);
+
+                                    if (c.Replies != null && c.Replies.Count > 0)
+                                    {
+                                        foreach (var r in c.Replies)
+                                        {
+                                            r.ParentCommentId = c.Id;
+                                            if (r.Author == null) r.Author = new AuthorDto();
+                                            if (r.LikedByUsers == null) r.LikedByUsers = new List<string>();
+                                            flattened.Add(r);
+                                        }
+                                    }
+                                }
+                                await context.CommunityComments.AddRangeAsync(flattened);
+                            }
+
+                            await context.SaveChangesAsync();
+                            _logger?.LogInformation($"[InitData] Migrated {data.Posts?.Count ?? 0} community posts and {data.Comments?.Count ?? 0} comments into database.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring community data in SQLite database.");
+            }
+        }
+
+        public async Task EnsureReviewSchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                // Check existing columns in Reviews table
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "PRAGMA table_info('Reviews');";
+                var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var colName = reader["name"]?.ToString();
+                        if (!string.IsNullOrEmpty(colName))
+                        {
+                            columns.Add(colName);
+                        }
+                    }
+                }
+
+                if (!columns.Contains("ParentReviewId"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Reviews\" ADD COLUMN \"ParentReviewId\" TEXT NULL;");
+                    _logger?.LogInformation("[InitData] Added ParentReviewId column to Reviews table.");
+                }
+
+                if (!columns.Contains("LikesCount"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Reviews\" ADD COLUMN \"LikesCount\" INTEGER NOT NULL DEFAULT 0;");
+                    _logger?.LogInformation("[InitData] Added LikesCount column to Reviews table.");
+                }
+
+                if (!columns.Contains("LikedByUsers"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Reviews\" ADD COLUMN \"LikedByUsers\" TEXT NOT NULL DEFAULT '[]';");
+                    _logger?.LogInformation("[InitData] Added LikedByUsers column to Reviews table.");
+                }
+
+                // Update index on Reviews table to allow multiple comments by same user on game
+                await context.Database.ExecuteSqlRawAsync(@"
+                    DROP INDEX IF EXISTS ""IX_Reviews_UserId_GameId"";
+                    CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Reviews_UserId_GameId"" ON ""Reviews"" (""UserId"", ""GameId"") WHERE ""ParentReviewId"" IS NULL;
+                    CREATE INDEX IF NOT EXISTS ""IX_Reviews_ParentReviewId"" ON ""Reviews"" (""ParentReviewId"");
+                ");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring Reviews schema in SQLite database.");
             }
         }
     }

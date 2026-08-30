@@ -5,6 +5,8 @@ using DteamBackend.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using DteamBackend.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Controllers
 {
@@ -258,11 +260,6 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Title))
-            {
-                return BadRequest(new { message = "Назва гри обов'язкова." });
-            }
-
             if (dto.ParentGameId.HasValue)
             {
                 var parentExists = await _context.Games.AnyAsync(g => g.Id == dto.ParentGameId.Value && g.OwnerId == userId);
@@ -442,6 +439,206 @@ namespace DteamBackend.Controllers
             _logger.LogInformation($"[Developer] Game '{game.Title}' (ID: {id}) deleted by owner {userId}");
 
             return Ok(new { message = $"Гру '{game.Title}' успішно видалено.", gameId = id });
+        }
+
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        private static readonly string[] AllowedVideoExtensions = { ".mp4", ".webm", ".mov", ".m4v" };
+
+        private async Task<string?> SaveNewsFileAsync(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext) && !AllowedVideoExtensions.Contains(ext))
+            {
+                return null;
+            }
+
+            var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "community");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+
+            var filePath = Path.Combine(folder, uniqueFileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/community/{uniqueFileName}";
+        }
+
+        public class CreateGameNewsDto
+        {
+            [Required(ErrorMessage = "Заголовок новини обов'язковий.")]
+            [StringLength(200, MinimumLength = 3, ErrorMessage = "Заголовок має містити від 3 до 200 символів.")]
+            public string Title { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Текст новини обов'язковий.")]
+            [MinLength(5, ErrorMessage = "Текст новини має містити щонайменше 5 символів.")]
+            public string Content { get; set; } = string.Empty;
+
+            [MaxLength(1000)]
+            public string? MediaUrl { get; set; }
+
+            [MaxLength(1000)]
+            public string? MediaThumbnailUrl { get; set; }
+
+            [MaxLength(20)]
+            public string? MediaType { get; set; }
+
+            public IFormFile? File { get; set; }
+        }
+
+        [HttpPost("games/{id:guid}/news")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateGameNews(Guid id, [FromForm] CreateGameNewsDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id);
+            if (game == null)
+            {
+                return NotFound(new { message = $"Гру з ID '{id}' не знайдено." });
+            }
+
+            if (game.OwnerId != userId)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ви можете публікувати новини лише для власних ігор." });
+            }
+
+            var mediaUrl = dto.MediaUrl;
+            var mediaType = dto.MediaType;
+
+            if (dto.File != null && dto.File.Length > 0)
+            {
+                var saved = await SaveNewsFileAsync(dto.File);
+                if (!string.IsNullOrEmpty(saved))
+                {
+                    mediaUrl = saved;
+                    var ext = Path.GetExtension(dto.File.FileName).ToLowerInvariant();
+                    mediaType = AllowedVideoExtensions.Contains(ext) ? "video" : "image";
+                }
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            var post = new CommunityPost
+            {
+                Id = $"news-{Guid.NewGuid():N}",
+                GameId = game.Id.ToString(),
+                GameGuidId = game.Id,
+                GameTitle = game.Title,
+                GameBannerUrl = game.HeaderImageUrl ?? game.CoverImageUrl,
+                Game = game,
+                Author = new AuthorDto
+                {
+                    Id = user?.Id.ToString() ?? userId.ToString(),
+                    Username = user?.Username ?? "Розробник",
+                    AvatarUrl = user?.AvatarUrl ?? ""
+                },
+                CreatedAt = DateTime.UtcNow,
+                Category = "news",
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                Media = new PostMedia
+                {
+                    Type = string.IsNullOrEmpty(mediaUrl) ? "none" : (mediaType ?? "image"),
+                    Url = mediaUrl ?? "",
+                    ThumbnailUrl = dto.MediaThumbnailUrl ?? mediaUrl ?? ""
+                },
+                LikedByUsers = new List<string>()
+            };
+
+            await _context.CommunityPosts.AddAsync(post);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"[Developer] News '{post.Title}' created for game '{game.Title}' by user {userId}");
+
+            return Created($"/api/developer/games/{id}/news", GameNews.FromCommunityPost(post));
+        }
+
+        [HttpGet("games/{id:guid}/news")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetGameNews(Guid id)
+        {
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id);
+            if (game == null)
+            {
+                return NotFound(new { message = $"Гру з ID '{id}' не знайдено." });
+            }
+
+            var posts = await _context.CommunityPosts
+                .Where(p => p.Category == "news" && (p.GameGuidId == id || p.GameId == id.ToString()))
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var newsList = posts.Select(GameNews.FromCommunityPost).ToList();
+            return Ok(newsList);
+        }
+
+        [HttpGet("news")]
+        public async Task<IActionResult> GetMyNews()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var myGameIds = await _context.Games
+                .Where(g => g.OwnerId == userId)
+                .Select(g => g.Id.ToString())
+                .ToListAsync();
+
+            var posts = await _context.CommunityPosts
+                .Where(p => p.Category == "news" &&
+                            (myGameIds.Contains(p.GameId) || p.Author.Id == userId.ToString()))
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var myNews = posts.Select(GameNews.FromCommunityPost).ToList();
+            return Ok(myNews);
+        }
+
+        [HttpDelete("news/{newsId}")]
+        public async Task<IActionResult> DeleteNews(string newsId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var post = await _context.CommunityPosts.FirstOrDefaultAsync(p => p.Id == newsId);
+            if (post == null)
+            {
+                return NotFound(new { message = "Новину не знайдено." });
+            }
+
+            var isAuthor = post.Author.Id.Equals(userId.ToString(), StringComparison.OrdinalIgnoreCase);
+            var isGameOwner = Guid.TryParse(post.GameId, out var gId) &&
+                              await _context.Games.AnyAsync(g => g.Id == gId && g.OwnerId == userId);
+
+            if (!isAuthor && !isGameOwner)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "У вас немає прав на видалення цієї новини." });
+            }
+
+            _context.CommunityPosts.Remove(post);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Новину успішно видалено.", newsId });
         }
     }
 }

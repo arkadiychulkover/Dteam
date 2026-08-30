@@ -23,6 +23,7 @@ namespace DteamBackend.Models.DTO
 
         public bool IsAdmin { get; set; } = false;
 
+        [Range(0, long.MaxValue, ErrorMessage = "Balance must be non-negative")]
         public long BalanceInNanoTons { get; set; } = 0;
 
         public UserStatus Status { get; set; } = UserStatus.Offline;

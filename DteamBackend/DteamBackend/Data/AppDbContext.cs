@@ -1,5 +1,7 @@
 using DteamBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
 
 namespace DteamBackend.Data
 {
@@ -20,6 +22,8 @@ namespace DteamBackend.Data
         public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
         public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
         public DbSet<Tranxaction> Tranxactions => Set<Tranxaction>();
+        public DbSet<CommunityPost> CommunityPosts => Set<CommunityPost>();
+        public DbSet<CommunityComment> CommunityComments => Set<CommunityComment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -140,7 +144,10 @@ namespace DteamBackend.Data
                 entity.HasKey(r => r.Id);
 
                 entity.HasIndex(r => new { r.UserId, r.GameId })
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("\"ParentReviewId\" IS NULL");
+
+                entity.HasIndex(r => r.ParentReviewId);
 
                 entity.HasOne(r => r.User)
                     .WithMany(u => u.Reviews)
@@ -151,6 +158,24 @@ namespace DteamBackend.Data
                     .WithMany(g => g.Reviews)
                     .HasForeignKey(r => r.GameId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.ParentReview)
+                    .WithMany(r => r.Replies)
+                    .HasForeignKey(r => r.ParentReviewId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(r => r.LikedByUsers)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                        v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
+                    );
+
+                entity.Property(r => r.LikedByUsers)
+                    .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                        (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()
+                    ));
             });
 
             modelBuilder.Entity<Tranxaction>(entity =>
@@ -164,6 +189,83 @@ namespace DteamBackend.Data
                     .WithMany()
                     .HasForeignKey(t => t.UserId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<CommunityPost>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.HasIndex(p => p.GameId);
+                entity.HasIndex(p => p.Category);
+                entity.HasIndex(p => p.CreatedAt);
+
+                entity.OwnsOne(p => p.Author, a =>
+                {
+                    a.Property(x => x.Id).HasColumnName("AuthorId");
+                    a.Property(x => x.Username).HasColumnName("AuthorUsername");
+                    a.Property(x => x.AvatarUrl).HasColumnName("AuthorAvatarUrl");
+                });
+
+                entity.OwnsOne(p => p.Media, m =>
+                {
+                    m.Property(x => x.Type).HasColumnName("MediaType");
+                    m.Property(x => x.Url).HasColumnName("MediaUrl");
+                    m.Property(x => x.ThumbnailUrl).HasColumnName("MediaThumbnailUrl");
+                });
+
+                var stringListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
+                    (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                );
+
+                entity.Property(p => p.LikedByUsers)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => string.IsNullOrEmpty(v) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
+                    )
+                    .Metadata.SetValueComparer(stringListComparer);
+
+                entity.HasOne(p => p.Game)
+                    .WithMany(g => g.CommunityPosts)
+                    .HasForeignKey(p => p.GameGuidId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(p => p.Comments)
+                    .WithOne(c => c.Post)
+                    .HasForeignKey(c => c.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<CommunityComment>(entity =>
+            {
+                var stringListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
+                    (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                );
+
+                entity.HasKey(c => c.Id);
+                entity.HasIndex(c => c.PostId);
+                entity.HasIndex(c => c.ParentCommentId);
+
+                entity.OwnsOne(c => c.Author, a =>
+                {
+                    a.Property(x => x.Id).HasColumnName("AuthorId");
+                    a.Property(x => x.Username).HasColumnName("AuthorUsername");
+                    a.Property(x => x.AvatarUrl).HasColumnName("AuthorAvatarUrl");
+                });
+
+                entity.Property(c => c.LikedByUsers)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => string.IsNullOrEmpty(v) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
+                    )
+                    .Metadata.SetValueComparer(stringListComparer);
+
+                entity.HasMany(c => c.Replies)
+                    .WithOne(r => r.ParentComment)
+                    .HasForeignKey(r => r.ParentCommentId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

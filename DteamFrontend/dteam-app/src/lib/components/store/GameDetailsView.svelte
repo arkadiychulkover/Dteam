@@ -30,11 +30,19 @@
     Cpu,
     HardDrive,
     ShieldCheck,
-    Globe
+    Globe,
+    Newspaper,
+    X
   } from 'lucide-svelte';
+  import { communityService, type CommunityPost } from '../../services/communityService';
+  import { router } from '../../services/router';
+  import ReviewCommentsModal from './ReviewCommentsModal.svelte';
 
   const game = $derived($gamesStore.selectedGame || $gamesStore.games[0]);
   const isWishlisted = $derived(game ? $wishlistStore.wishlistGameIds.has(game.id) : false);
+
+  let selectedReviewForComments = $state<Review | null>(null);
+  let isReviewCommentsModalOpen = $state(false);
 
   let activeSubTab = $state<'about' | 'specs' | 'community'>('about');
   let selectedMediaIndex = $state(0);
@@ -50,6 +58,10 @@
 
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
+
+  let gameNews = $state<CommunityPost[]>([]);
+  let isLoadingNews = $state(false);
+  let selectedNewsModal = $state<CommunityPost | null>(null);
 
   async function loadReviews(gameId: string) {
     isLoadingReviews = true;
@@ -75,11 +87,25 @@
     }
   }
 
+  async function loadGameNews(gameId: string) {
+    isLoadingNews = true;
+    try {
+      const res = await communityService.getPosts(gameId, 'news');
+      gameNews = res.posts || [];
+    } catch (e) {
+      console.warn('[GameDetails] Failed to load news:', e);
+      gameNews = [];
+    } finally {
+      isLoadingNews = false;
+    }
+  }
+
   $effect(() => {
     if (game?.id) {
       selectedMediaIndex = 0;
       loadReviews(game.id);
       loadDlcs(game.id);
+      loadGameNews(game.id);
     }
   });
 
@@ -221,11 +247,73 @@
     }
   }
 
-  function openDlc(dlc: Game) {
-    gamesStore.selectGame(dlc);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  function openReviewComments(review: Review) {
+    selectedReviewForComments = review;
+    isReviewCommentsModalOpen = true;
+  }
+
+  async function handleToggleReviewCardLike(review: Review) {
+    if (!$currentUser) {
+      uiStore.addToast({
+        title: 'Потрібна авторизація',
+        message: 'Будь ласка, увійдіть в акаунт, щоб поставити вподобайку.',
+        type: 'warning'
+      });
+      uiStore.setLoginModal(true);
+      return;
     }
+
+    const wasLiked = review.isLiked ?? false;
+    const currentLikes = review.likesCount ?? 0;
+
+    // Optimistic
+    reviews = reviews.map(r => {
+      if (r.id === review.id) {
+        return {
+          ...r,
+          isLiked: !wasLiked,
+          likesCount: wasLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1
+        };
+      }
+      return r;
+    });
+
+    try {
+      const res = await gamesService.toggleReviewLike(game.id, review.id);
+      reviews = reviews.map(r => {
+        if (r.id === review.id) {
+          return {
+            ...r,
+            isLiked: res.liked,
+            likesCount: res.likesCount
+          };
+        }
+        return r;
+      });
+    } catch {
+      // Revert
+      reviews = reviews.map(r => {
+        if (r.id === review.id) {
+          return {
+            ...r,
+            isLiked: wasLiked,
+            likesCount: currentLikes
+          };
+        }
+        return r;
+      });
+    }
+  }
+
+  function handleReviewUpdatedFromModal(updated: Review) {
+    reviews = reviews.map(r => r.id === updated.id ? { ...r, ...updated } : r);
+    if (selectedReviewForComments?.id === updated.id) {
+      selectedReviewForComments = { ...selectedReviewForComments, ...updated };
+    }
+  }
+
+  function openDlc(dlc: Game) {
+    router.navigateToGame(dlc);
   }
 
   function formatReviewDate(dateStr?: string): string {
@@ -628,58 +716,89 @@
         <div class="space-y-4 pt-6">
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-black text-white font-display tracking-wide">
-              Інші DLC ({dlcs.length})
+              Інші DLC
             </h2>
+
+            <button
+              type="button"
+              onclick={() => router.navigateToAllDlcs(game)}
+              class="flex items-center gap-1 text-sm font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer group"
+            >
+              <span>Усі DLC</span>
+              <ChevronRight class="w-4 h-4 text-slate-400 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+            </button>
           </div>
 
-          <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-4 sm:p-6 shadow-xl space-y-3">
+          <div class="space-y-2.5">
             {#each dlcs as dlc}
               <div
                 role="button"
                 tabindex="0"
                 onclick={() => openDlc(dlc)}
                 onkeydown={(e) => e.key === 'Enter' && openDlc(dlc)}
-                class="group flex items-center justify-between p-3.5 rounded-2xl bg-[#08222d] hover:bg-[#0c3140] border border-cyan-500/15 hover:border-cyan-400/60 transition-all cursor-pointer shadow-md"
+                class="group flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#08222d] hover:bg-[#0c3140] border border-cyan-500/20 hover:border-cyan-400/60 transition-all cursor-pointer shadow-md"
               >
-                <div class="flex items-center gap-3 min-w-0">
-                  {#if dlc.coverImageUrl || dlc.headerImageUrl}
-                    <img
-                      src={dlc.coverImageUrl || dlc.headerImageUrl}
-                      alt={dlc.title}
-                      class="w-12 h-7 rounded-lg object-cover border border-cyan-500/20 shrink-0 group-hover:scale-105 transition-transform"
-                    />
-                  {/if}
-                  <span class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
-                    {dlc.title}
-                  </span>
+                <span class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
+                  {dlc.title}
+                </span>
+
+                <span class="text-xs font-bold {Number(dlc.priceInNanoTons) === 0 ? 'text-emerald-400' : 'text-cyan-300 font-mono'}">
+                  {Number(dlc.priceInNanoTons) === 0 ? 'Безкоштовно' : formatPrice(dlc.priceInNanoTons, dlc.discountPercentage)}
+                </span>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Developer News Section -->
+      {#if gameNews.length > 0}
+        <div class="space-y-4 pt-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-black text-white font-display tracking-wide flex items-center gap-2.5">
+              <Newspaper class="w-6 h-6 text-cyan-400" />
+              <span>Офіційні новини та оновлення ({gameNews.length})</span>
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each gameNews as newsItem}
+              <div
+                role="button"
+                tabindex="0"
+                onclick={() => selectedNewsModal = newsItem}
+                onkeydown={(e) => e.key === 'Enter' && (selectedNewsModal = newsItem)}
+                class="group bg-[#061820]/90 border border-cyan-500/20 hover:border-cyan-400/50 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:shadow-cyan-950/40 transition-all cursor-pointer flex flex-col justify-between space-y-3"
+              >
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-800/40">
+                      Офіційний патч-ноут
+                    </span>
+                    <span class="font-mono">{new Date(newsItem.createdAt).toLocaleDateString('uk-UA')}</span>
+                  </div>
+
+                  <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                    {newsItem.title}
+                  </h3>
+
+                  <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">
+                    {newsItem.content}
+                  </p>
                 </div>
-                <div class="flex items-center gap-3 shrink-0">
-                  <span class="text-xs font-bold {Number(dlc.priceInNanoTons) === 0 ? 'text-emerald-400' : 'text-cyan-300 font-mono'}">
-                    {Number(dlc.priceInNanoTons) === 0 ? 'Безкоштовно' : formatPrice(dlc.priceInNanoTons, dlc.discountPercentage)}
-                  </span>
-                  <ChevronRight class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+
+                {#if newsItem.media?.url}
+                  <div class="relative rounded-xl overflow-hidden max-h-36 bg-black/40 border border-cyan-950">
+                    <img src={newsItem.media.url} alt={newsItem.title} class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                {/if}
+
+                <div class="pt-2 border-t border-cyan-950/60 flex items-center justify-between text-xs text-cyan-400 font-semibold">
+                  <span>Читати детальніше</span>
+                  <ChevronRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             {/each}
-
-            <div class="flex items-center justify-end gap-4 pt-4 border-t border-cyan-950/80">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-white font-mono">
-                  {formatPrice(effectiveTotalDlcsNanoTons)}
-                </span>
-                {#if baseTotalDlcsNanoTons > effectiveTotalDlcsNanoTons}
-                  <span class="text-xs text-slate-500 line-through font-mono">
-                    {formatBasePrice(baseTotalDlcsNanoTons)}
-                  </span>
-                {/if}
-              </div>
-              <button
-                onclick={handleAddAllDLC}
-                class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs tracking-wide shadow-md transition-all cursor-pointer"
-              >
-                Додати в кошик усі DLC
-              </button>
-            </div>
           </div>
         </div>
       {/if}
@@ -837,6 +956,28 @@
                 <span class="text-[11px] font-semibold {review.isRecommended ? 'text-emerald-400' : 'text-slate-500'}">
                   {review.isRecommended ? '✓ Рекомендує гру' : 'Не рекомендує'}
                 </span>
+
+                <div class="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onclick={(e) => { e.stopPropagation(); handleToggleReviewCardLike(review); }}
+                    class="flex items-center gap-1.5 text-xs transition-colors cursor-pointer {review.isLiked ? 'text-rose-400' : 'hover:text-rose-300'}"
+                    title="Поставити вподобайку"
+                  >
+                    <Heart class="w-3.5 h-3.5 {review.isLiked ? 'fill-rose-400' : ''}" />
+                    <span>{review.likesCount ?? 0}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onclick={() => openReviewComments(review)}
+                    class="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer bg-cyan-950/40 hover:bg-cyan-900/60 px-2.5 py-1 rounded-xl border border-cyan-500/20"
+                    title="Відкрити коментарі"
+                  >
+                    <MessageSquare class="w-3.5 h-3.5" />
+                    <span>{review.repliesCount ?? review.replies?.length ?? 0}</span>
+                  </button>
+                </div>
               </div>
             </div>
           {/each}
@@ -921,3 +1062,50 @@
     </div>
   {/if}
 {/if}
+
+{#if selectedNewsModal}
+  <div
+    role="presentation"
+    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+    onclick={(e) => { if (e.target === e.currentTarget) selectedNewsModal = null; }}
+  >
+    <div
+      role="dialog"
+      aria-modal="true"
+      class="bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in fade-in"
+    >
+      <div class="flex items-start justify-between border-b border-cyan-900/40 pb-3">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Офіційна новина від розробника</span>
+          <h3 class="text-base font-bold text-white mt-1">{selectedNewsModal.title}</h3>
+          <span class="text-[11px] text-slate-400 font-mono">{new Date(selectedNewsModal.createdAt).toLocaleDateString('uk-UA')}</span>
+        </div>
+        <button
+          onclick={() => selectedNewsModal = null}
+          class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+        >
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1 text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+        {#if selectedNewsModal.media?.url}
+          {#if selectedNewsModal.media.type === 'video'}
+            <video src={selectedNewsModal.media.url} class="w-full rounded-2xl max-h-64 object-cover" controls></video>
+          {:else}
+            <img src={selectedNewsModal.media.url} alt="" class="w-full rounded-2xl max-h-64 object-cover" />
+          {/if}
+        {/if}
+        <p>{selectedNewsModal.content}</p>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<ReviewCommentsModal
+  isOpen={isReviewCommentsModalOpen}
+  gameId={game.id}
+  review={selectedReviewForComments}
+  onClose={() => { isReviewCommentsModalOpen = false; selectedReviewForComments = null; }}
+  onReviewUpdated={handleReviewUpdatedFromModal}
+/>

@@ -84,7 +84,7 @@
     isLoadingNews = true;
     try {
       const res = await communityService.getPosts(game.id, 'news');
-      gameNews = res.posts.slice(0, 1);
+      gameNews = res.posts.slice(0, 3);
     } catch (e) {
       console.warn('[LibraryGameDetails] Не вдалося завантажити новини гри:', e);
       gameNews = [];
@@ -352,11 +352,15 @@
           </div>
         {:else if gameNews.length > 0}
           {#each gameNews as post (post.id)}
-            <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg">
-              {#if post.media?.type === 'image' && post.media.url}
-                <img src={post.media.url} alt="" class="w-full max-h-72 object-cover" />
-              {:else if post.media?.type === 'video' && post.media.url}
-                <video src={post.media.url} class="w-full max-h-72" controls></video>
+            <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg mb-4">
+              {#if post.media?.url}
+                {#if post.media.type === 'video'}
+                  <video src={post.media.url} class="w-full max-h-72" controls></video>
+                {:else}
+                  <img src={post.media.url} alt="" class="w-full max-h-72 object-cover" />
+                {/if}
+              {:else if post.gameBannerUrl}
+                <img src={post.gameBannerUrl} alt="" class="w-full max-h-56 object-cover opacity-80" />
               {/if}
 
               <div class="p-5 space-y-3">

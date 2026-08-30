@@ -13,7 +13,7 @@ namespace DteamBackend.Models
         public Game Game { get; set; } = null!;
 
         [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
-        public int Rating { get; set; }
+        public int Rating { get; set; } = 5;
 
         [Required(ErrorMessage = "Review content cannot be empty")]
         [MaxLength(4000)]
@@ -22,6 +22,13 @@ namespace DteamBackend.Models
         public bool IsRecommended { get; set; } = true;
 
         public double PlayTimeHoursAtReview { get; set; } = 0.0;
+
+        public Guid? ParentReviewId { get; set; }
+        public Review? ParentReview { get; set; }
+        public ICollection<Review> Replies { get; set; } = new List<Review>();
+
+        public int LikesCount { get; set; } = 0;
+        public List<string> LikedByUsers { get; set; } = new();
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

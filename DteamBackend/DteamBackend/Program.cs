@@ -143,6 +143,8 @@ namespace DteamBackend
 
                     var initDataService = services.GetRequiredService<IInitDataService>();
                     await initDataService.InitializeAsync(context);
+                    await initDataService.EnsureCommunityDataAsync(context);
+                    await initDataService.EnsureReviewSchemaAsync(context);
                 }
                 catch (Exception ex)
                 {
