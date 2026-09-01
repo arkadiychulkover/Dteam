@@ -97,3 +97,9 @@ build/
 .vite/
 .turbo/
 .cache/
+
+# Local SQLite & Uploads
+*.db
+*.db-shm
+*.db-wal
+App_Data/

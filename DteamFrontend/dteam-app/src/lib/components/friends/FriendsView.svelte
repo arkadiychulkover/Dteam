@@ -20,6 +20,7 @@
   } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
   import { friendsStore } from '../../stores/friendsStore';
+  import { chatStore } from '../../stores/chatStore';
   import { currentUser } from '../../stores/authStore';
   import { UserStatus } from '../../types';
   import type { FriendDto, FriendRequestDto } from '../../types/friend';
@@ -301,7 +302,19 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onclick={() => {
+                chatStore.selectConversation(friend.id);
+                uiStore.setTab('chat');
+              }}
+              class="p-2 text-cyan-400 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition-all cursor-pointer shadow-sm"
+              title="Написати повідомлення"
+            >
+              <MessageSquare class="w-4 h-4" />
+            </button>
+
             <div class="relative w-7 h-7 flex items-center justify-center select-none" title="Рівень гравця: {friend.level ?? 0}">
               <svg viewBox="0 0 24 24" class="w-full h-full fill-[#041920] stroke-[#0df2c9] stroke-[2]">
                 <polygon points="12,2 22,7.5 22,17.5 12,23 2,17.5 2,7.5" />

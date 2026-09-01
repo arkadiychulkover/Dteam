@@ -26,11 +26,13 @@
     Sparkles,
     Menu,
     X,
-    Code2
+    Code2,
+    MessageSquare
   } from 'lucide-svelte';
   import TonIcon from '../ui/TonIcon.svelte';
   import { formatAddress, formatTon, nanoTonToTon } from '../../utils/formatters';
   import { friendsStore } from '../../stores/friendsStore';
+  import { totalChatUnreadCount } from '../../stores/chatStore';
 
   let isUserDropdownOpen = $state(false);
   let headerSearchQuery = $state('');
@@ -38,6 +40,7 @@
   const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
     { id: 'library', label: 'Бібліотека', icon: Library },
+    { id: 'chat', label: 'Чат', icon: MessageSquare },
     { id: 'community', label: 'Спільнота', icon: Newspaper },
     { id: 'friends', label: 'Друзі', icon: Users },
     { id: 'catalog', label: 'Каталог', icon: Compass },
@@ -113,6 +116,14 @@
             <span>{tab.label}</span>
             {#if tab.id === 'admin'}
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
+            {/if}
+            {#if tab.id === 'chat' && $totalChatUnreadCount > 0}
+              <span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
+                {$totalChatUnreadCount > 99 ? '99+' : $totalChatUnreadCount}
+              </span>
+            {/if}
+            {#if tab.id === 'chat' && $uiStore.activeTab === 'chat'}
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-300 absolute -bottom-1 left-1/2 -translate-x-1/2 shadow-[0_0_8px_#0df2c9]"></span>
             {/if}
           </button>
         {/each}

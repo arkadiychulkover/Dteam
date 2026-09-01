@@ -14,6 +14,7 @@
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
   import FriendsView from './lib/components/friends/FriendsView.svelte';
+  import ChatView from './lib/components/chat/ChatView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
   import DeveloperView from './lib/components/developer/DeveloperView.svelte';
@@ -34,7 +35,9 @@
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
+  import { chatStore } from './lib/stores/chatStore';
   import { friendsHubService } from './lib/services/friendsHubService';
+  import { chatHubService } from './lib/services/chatHubService';
   import { userService } from './lib/services/userService';
 
   let isBanned = $state(false);
@@ -58,9 +61,12 @@
       wishlistStore.loadWishlist();
       cartStore.loadCart();
       friendsStore.loadAll();
+      chatStore.loadConversations();
       friendsHubService.start();
+      chatHubService.start();
     } else {
       friendsHubService.stop();
+      chatHubService.stop();
     }
   });
 
@@ -70,7 +76,9 @@
     cartStore.loadCart();
     if ($currentUser?.id) {
       friendsStore.loadAll();
+      chatStore.loadConversations();
       friendsHubService.start();
+      chatHubService.start();
     }
     const interval = setInterval(checkUserBanStatus, 5000);
     return () => clearInterval(interval);
@@ -78,6 +86,7 @@
 
   onDestroy(() => {
     friendsHubService.stop();
+    chatHubService.stop();
   });
 </script>
 
@@ -99,6 +108,8 @@
       <CommunityView />
     {:else if $uiStore.activeTab === 'friends'}
       <FriendsView />
+    {:else if $uiStore.activeTab === 'chat'}
+      <ChatView />
     {:else if $uiStore.activeTab === 'profile'}
       <PublicProfileView />
     {:else if $uiStore.activeTab === 'my-profile'}

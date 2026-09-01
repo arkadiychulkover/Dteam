@@ -1,4 +1,5 @@
 using System.Text;
+using DteamBackend.Configuration;
 using DteamBackend.Data;
 using DteamBackend.Hubs;
 using DteamBackend.Interfaces;
@@ -31,6 +32,11 @@ namespace DteamBackend
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
             builder.Services.AddScoped<TonService>();
+
+            builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
+            builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();
+            builder.Services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
+            builder.Services.AddScoped<IChatService, ChatService>();
 
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
@@ -140,6 +146,8 @@ namespace DteamBackend
             app.MapControllers();
             app.MapHub<FriendsHub>("/hubs/friends");
             app.MapHub<FriendsHub>("/hub/friends");
+            app.MapHub<ChatHub>("/hubs/chat");
+            app.MapHub<ChatHub>("/hub/chat");
 
             await app.RunAsync();
         }

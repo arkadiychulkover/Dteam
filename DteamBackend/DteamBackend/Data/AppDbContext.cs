@@ -20,6 +20,8 @@ namespace DteamBackend.Data
         public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
         public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
         public DbSet<Tranxaction> Tranxactions => Set<Tranxaction>();
+        public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+        public DbSet<ChatUpload> ChatUploads => Set<ChatUpload>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -164,6 +166,63 @@ namespace DteamBackend.Data
                     .WithMany()
                     .HasForeignKey(t => t.UserId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+
+                entity.HasOne(m => m.Sender)
+                    .WithMany()
+                    .HasForeignKey(m => m.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.Receiver)
+                    .WithMany()
+                    .HasForeignKey(m => m.ReceiverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(m => m.CreatedAt)
+                    .HasConversion(
+                        v => v.ToUnixTimeMilliseconds(),
+                        v => DateTimeOffset.FromUnixTimeMilliseconds(v)
+                    );
+
+                entity.Property(m => m.ReadAt)
+                    .HasConversion(
+                        v => v.HasValue ? v.Value.ToUnixTimeMilliseconds() : (long?)null,
+                        v => v.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(v.Value) : (DateTimeOffset?)null
+                    );
+
+                entity.HasIndex(m => new { m.SenderId, m.ClientMessageId })
+                    .IsUnique();
+
+                entity.HasIndex(m => new { m.SenderId, m.ReceiverId, m.CreatedAt });
+                entity.HasIndex(m => new { m.ReceiverId, m.SenderId, m.CreatedAt });
+                entity.HasIndex(m => new { m.ReceiverId, m.Status, m.CreatedAt });
+            });
+
+            modelBuilder.Entity<ChatUpload>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+
+                entity.Property(u => u.CreatedAt)
+                    .HasConversion(
+                        v => v.ToUnixTimeMilliseconds(),
+                        v => DateTimeOffset.FromUnixTimeMilliseconds(v)
+                    );
+
+                entity.HasOne(u => u.User)
+                    .WithMany()
+                    .HasForeignKey(u => u.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(u => u.Message)
+                    .WithMany()
+                    .HasForeignKey(u => u.MessageId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(u => u.UserId);
             });
         }
     }

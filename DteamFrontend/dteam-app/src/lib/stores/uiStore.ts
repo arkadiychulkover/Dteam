@@ -6,6 +6,7 @@ export type MainTab =
   | 'library'
   | 'community'
   | 'friends'
+  | 'chat'
   | 'catalog' 
   | 'game'
   | 'wishlist' 
