@@ -41,3 +41,8 @@ export interface FriendActionResponseDto {
   success: boolean;
   message: string;
 }
+
+export interface FriendsGameStatusDto {
+  friendsWhoOwn: FriendDto[];
+  friendsWhoWishlist: FriendDto[];
+}

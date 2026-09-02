@@ -39,11 +39,17 @@ namespace DteamBackend.Controllers
             string gameId,
             [FromQuery] string category = "all",
             [FromQuery] string search = "",
-            [FromQuery] string sortBy = "newest")
+            [FromQuery] string sortBy = "newest",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
         {
             var userId = GetCurrentUserId().ToString();
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
             var query = _context.CommunityPosts
                 .Include(p => p.Game)
+                .AsNoTracking()
                 .Where(p => p.GameId.ToLower() == gameId.ToLower());
 
             if (!string.IsNullOrEmpty(category) && !category.Equals("all", StringComparison.OrdinalIgnoreCase))
@@ -57,15 +63,23 @@ namespace DteamBackend.Controllers
                 query = query.Where(p => p.Title.ToLower().Contains(s) || p.Content.ToLower().Contains(s));
             }
 
-            var posts = await query.ToListAsync();
-
+            List<CommunityPost> posts;
             if (sortBy.Equals("popular", StringComparison.OrdinalIgnoreCase) || sortBy.Equals("rating", StringComparison.OrdinalIgnoreCase))
             {
-                posts = posts.OrderByDescending(p => p.LikedByUsers.Count).ToList();
+                var allForSort = await query.ToListAsync();
+                posts = allForSort
+                    .OrderByDescending(p => p.LikedByUsers.Count)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
             }
             else
             {
-                posts = posts.OrderByDescending(p => p.CreatedAt).ToList();
+                posts = await query
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
             }
 
             var postIds = posts.Select(p => p.Id).ToList();

@@ -36,6 +36,8 @@ namespace DteamBackend.Models.DTO
 
         public List<string> Features { get; set; } = new();
 
+        public List<GameLanguageSupport> SupportedLanguages { get; set; } = new();
+
         public List<string> Tags { get; set; } = new();
 
         [MaxLength(50)]

@@ -46,4 +46,12 @@ namespace DteamBackend.Models.DTO
 
         public bool IsRecommended { get; set; } = true;
     }
+
+    public class CreateReviewCommentDto
+    {
+        [Required(ErrorMessage = "Текст коментаря обов'язковий")]
+        [MinLength(1, ErrorMessage = "Текст має містити щонайменше 1 символ")]
+        [MaxLength(4000, ErrorMessage = "Текст не може перевищувати 4000 символів")]
+        public string Content { get; set; } = string.Empty;
+    }
 }

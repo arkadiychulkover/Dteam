@@ -6,6 +6,8 @@ using DteamBackend.Interfaces;
 using DteamBackend.Middlewares;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -66,6 +68,33 @@ namespace DteamBackend
                 });
             });
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddFixedWindowLimiter("AuthLimiter", opt =>
+                {
+                    opt.PermitLimit = 10;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueLimit = 0;
+                });
+
+                options.AddFixedWindowLimiter("PaymentLimiter", opt =>
+                {
+                    opt.PermitLimit = 15;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueLimit = 0;
+                });
+
+                options.AddSlidingWindowLimiter("GeneralLimiter", opt =>
+                {
+                    opt.PermitLimit = 120;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.SegmentsPerWindow = 4;
+                    opt.QueueLimit = 0;
+                });
+            });
+
             var secretKey = builder.Configuration["Jwt:Secret"]
                 ?? "DteamSuperSecretJwtKey2026_dteam_io_security_token_key_spec_32bytes_long";
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "DteamBackend";
@@ -84,8 +113,10 @@ namespace DteamBackend
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = issuer,
+                    ValidateAudience = true,
+                    ValidAudience = audience,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(5)
                 };
@@ -93,10 +124,18 @@ namespace DteamBackend
                 {
                     OnMessageReceived = context =>
                     {
-                        var accessToken = context.Request.Query["access_token"];
+                        var accessToken = context.Request.Query["access_token"].ToString();
+                        if (string.IsNullOrEmpty(accessToken))
+                        {
+                            accessToken = context.Request.Query["token"].ToString();
+                        }
+
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/hub")))
+                            (path.StartsWithSegments("/hubs") || 
+                             path.StartsWithSegments("/hub") || 
+                             path.StartsWithSegments("/api/chat/media") || 
+                             path.StartsWithSegments("/api/chat/uploads")))
                         {
                             context.Token = accessToken;
                         }
@@ -165,6 +204,8 @@ namespace DteamBackend
             app.UseRouting();
 
             app.UseCors("DteamCorsPolicy");
+
+            app.UseRateLimiter();
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>

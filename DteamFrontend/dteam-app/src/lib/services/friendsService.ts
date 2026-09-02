@@ -45,5 +45,9 @@ export const friendsService = {
 
   async getBlocked(): Promise<FriendDto[]> {
     return await api.get<FriendDto[]>('/friends/blocked');
+  },
+
+  async getFriendsGameStatus(gameId: string): Promise<import('../types/friend').FriendsGameStatusDto> {
+    return await api.get<import('../types/friend').FriendsGameStatusDto>(`/friends/game/${gameId}`);
   }
 };

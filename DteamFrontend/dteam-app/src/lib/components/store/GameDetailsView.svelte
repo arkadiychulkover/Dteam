@@ -32,9 +32,16 @@
     ShieldCheck,
     Globe,
     Newspaper,
-    X
+    X,
+    Users,
+    Gamepad2,
+    Cloud,
+    Trophy
   } from 'lucide-svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
+  import { friendsService } from '../../services/friendsService';
+  import { profileStore } from '../../stores/profileStore';
+  import type { FriendsGameStatusDto } from '../../types/friend';
   import { router } from '../../services/router';
   import ReviewCommentsModal from './ReviewCommentsModal.svelte';
 
@@ -62,6 +69,25 @@
   let gameNews = $state<CommunityPost[]>([]);
   let isLoadingNews = $state(false);
   let selectedNewsModal = $state<CommunityPost | null>(null);
+
+  let friendsGameStatus = $state<FriendsGameStatusDto | null>(null);
+  let isLoadingFriendsStatus = $state(false);
+
+  async function loadFriendsGameStatus(gameId: string) {
+    if (!$currentUser) {
+      friendsGameStatus = null;
+      return;
+    }
+    isLoadingFriendsStatus = true;
+    try {
+      friendsGameStatus = await friendsService.getFriendsGameStatus(gameId);
+    } catch (e) {
+      console.warn('[GameDetails] Failed to load friends status:', e);
+      friendsGameStatus = null;
+    } finally {
+      isLoadingFriendsStatus = false;
+    }
+  }
 
   async function loadReviews(gameId: string) {
     isLoadingReviews = true;
@@ -106,6 +132,7 @@
       loadReviews(game.id);
       loadDlcs(game.id);
       loadGameNews(game.id);
+      loadFriendsGameStatus(game.id);
     }
   });
 
@@ -610,6 +637,92 @@
             </div>
           </div>
 
+          <!-- Friends who have / wishlist the game (Figma 1697:19044) -->
+          {#if $currentUser}
+            <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-cyan-950/50 space-y-4">
+              <div class="flex items-center justify-between pb-2 border-b border-cyan-950/80">
+                <div class="flex items-center gap-2">
+                  <Users class="w-4 h-4 text-cyan-400" />
+                  <h3 class="text-sm font-black text-white uppercase tracking-wider">Друзі та ця гра</h3>
+                </div>
+                {#if isLoadingFriendsStatus}
+                  <Loader2 class="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                {/if}
+              </div>
+
+              {#if friendsGameStatus && (friendsGameStatus.friendsWhoOwn.length > 0 || friendsGameStatus.friendsWhoWishlist.length > 0)}
+                {#if friendsGameStatus.friendsWhoOwn.length > 0}
+                  <div class="space-y-2">
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Check class="w-3.5 h-3.5" />
+                      Мають у бібліотеці ({friendsGameStatus.friendsWhoOwn.length})
+                    </span>
+                    <div class="flex flex-wrap gap-2">
+                      {#each friendsGameStatus.friendsWhoOwn as friend}
+                        <button
+                          type="button"
+                          onclick={() => profileStore.viewProfile(friend.id)}
+                          class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#08222d] hover:bg-[#0b303f] border border-emerald-500/25 hover:border-emerald-400/50 transition-all cursor-pointer group"
+                          title="{friend.username} має цю гру"
+                        >
+                          <div class="w-6 h-6 rounded-full overflow-hidden bg-cyan-900 shrink-0">
+                            {#if friend.avatarUrl}
+                              <img src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                            {:else}
+                              <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-cyan-700">
+                                {friend.username.charAt(0).toUpperCase()}
+                              </div>
+                            {/if}
+                          </div>
+                          <span class="text-xs text-slate-200 group-hover:text-emerald-300 font-semibold truncate max-w-[100px]">
+                            {friend.username}
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+
+                {#if friendsGameStatus.friendsWhoWishlist.length > 0}
+                  <div class="space-y-2 pt-2 border-t border-cyan-950/80">
+                    <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                      <Heart class="w-3.5 h-3.5" />
+                      У списку бажаного ({friendsGameStatus.friendsWhoWishlist.length})
+                    </span>
+                    <div class="flex flex-wrap gap-2">
+                      {#each friendsGameStatus.friendsWhoWishlist as friend}
+                        <button
+                          type="button"
+                          onclick={() => profileStore.viewProfile(friend.id)}
+                          class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#08222d] hover:bg-[#0b303f] border border-rose-500/25 hover:border-rose-400/50 transition-all cursor-pointer group"
+                          title="{friend.username} бажає цю гру"
+                        >
+                          <div class="w-6 h-6 rounded-full overflow-hidden bg-rose-950 shrink-0">
+                            {#if friend.avatarUrl}
+                              <img src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                            {:else}
+                              <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-rose-700">
+                                {friend.username.charAt(0).toUpperCase()}
+                              </div>
+                            {/if}
+                          </div>
+                          <span class="text-xs text-slate-200 group-hover:text-rose-300 font-semibold truncate max-w-[100px]">
+                            {friend.username}
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+              {:else if !isLoadingFriendsStatus}
+                <div class="text-center py-3 text-xs text-slate-400 space-y-1">
+                  <p>Жоден із ваших друзів ще не має цієї гри.</p>
+                  <p class="text-cyan-400 font-semibold">Станьте першим серед друзів!</p>
+                </div>
+              {/if}
+            </div>
+          {/if}
+
         </div>
       </div>
 
@@ -864,13 +977,99 @@
               </span>
             </div>
             <div class="flex justify-between py-1 border-b border-cyan-950/60">
-              <span class="text-slate-400">Мови інтерфейсу:</span>
-              <span class="font-medium text-white">Українська, English, Deutsch, Polski</span>
+              <span class="text-slate-400">Мови:</span>
+              <span class="font-medium text-white">Українська, English, Deutsch, Polski та ін.</span>
             </div>
             <div class="flex justify-between py-1">
               <span class="text-slate-400">Платформа дистрибуції:</span>
               <span class="font-bold text-cyan-400 font-mono">Dteam Web3 Gaming</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Languages Support Table (Figma 1587:18608 / 1330:92) -->
+        <div class="md:col-span-2 bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center gap-2 pb-2 border-b border-cyan-950/80">
+            <Globe class="w-5 h-5 text-cyan-400" />
+            <h3 class="text-sm font-extrabold text-white uppercase tracking-wider">Мовна підтримка</h3>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-cyan-950 text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th class="py-2.5 px-3">Мова</th>
+                  <th class="py-2.5 px-3 text-center">Інтерфейс</th>
+                  <th class="py-2.5 px-3 text-center">Озвучення</th>
+                  <th class="py-2.5 px-3 text-center">Субтитри</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-cyan-950/40 text-slate-300">
+                {#if game.supportedLanguages && game.supportedLanguages.length > 0}
+                  {#each game.supportedLanguages as lang}
+                    <tr class="hover:bg-cyan-950/20 transition-colors">
+                      <td class="py-2.5 px-3 font-semibold text-white">{lang.language}</td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.interface}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.fullAudio}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.subtitles}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                {:else}
+                  {#each [
+                    { name: 'Українська', iface: true, audio: false, subs: true },
+                    { name: 'English', iface: true, audio: true, subs: true },
+                    { name: 'Deutsch', iface: true, audio: true, subs: true },
+                    { name: 'Français', iface: true, audio: true, subs: true },
+                    { name: 'Polski', iface: true, audio: true, subs: true },
+                    { name: 'Español', iface: true, audio: true, subs: true },
+                    { name: '日本語', iface: true, audio: true, subs: true }
+                  ] as lang}
+                    <tr class="hover:bg-cyan-950/20 transition-colors">
+                      <td class="py-2.5 px-3 font-semibold text-white">{lang.name}</td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.iface}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.audio}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.subs}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                {/if}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -28,7 +28,7 @@ namespace DteamBackend.Services
             _address = _configuration["Ton:Address"] ?? string.Empty;
         }
 
-        private static string NormalizeAddress(string? address)
+        public static string NormalizeAddress(string? address)
         {
             if (string.IsNullOrWhiteSpace(address)) return string.Empty;
 
@@ -59,7 +59,7 @@ namespace DteamBackend.Services
             return address.ToLowerInvariant();
         }
 
-        public async Task<bool> CheckTranzaction(string txhHash, decimal amount)
+        public async Task<(bool IsValid, string? SenderAddress)> CheckTranzaction(string txhHash, decimal amount)
         {
             _logger.LogInformation($"[TonService] Starting transaction check. Input hash: {txhHash}, Expected amount: {amount}");
 
@@ -68,7 +68,7 @@ namespace DteamBackend.Services
                 if (string.IsNullOrWhiteSpace(txhHash))
                 {
                     _logger.LogWarning("[TonService] Transaction hash is null or empty.");
-                    return false;
+                    return (false, null);
                 }
 
                 string expectedHashHex;
@@ -101,7 +101,7 @@ namespace DteamBackend.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning($"[TonService] TonAPI request failed. Status: {response.StatusCode}");
-                    return false;
+                    return (false, null);
                 }
 
                 var rawBody = await response.Content.ReadAsStringAsync();
@@ -111,7 +111,7 @@ namespace DteamBackend.Services
                     transactions.ValueKind != System.Text.Json.JsonValueKind.Array)
                 {
                     _logger.LogWarning("[TonService] Failed to parse 'transactions' array from TonAPI response.");
-                    return false;
+                    return (false, null);
                 }
 
                 var txCount = transactions.GetArrayLength();
@@ -149,22 +149,25 @@ namespace DteamBackend.Services
                     string? destination = msg.TryGetProperty("destination", out var dst) && dst.TryGetProperty("address", out var addr)
                         ? addr.GetString() : null;
 
+                    string? sender = msg.TryGetProperty("source", out var src) && src.TryGetProperty("address", out var saddr)
+                        ? saddr.GetString() : null;
+
                     decimal txAmount = msg.TryGetProperty("value", out var val) ? val.GetInt64() / 1_000_000_000m : 0;
 
                     var destinationNorm = NormalizeAddress(destination);
 
-                    _logger.LogInformation($"[TonService] Match found for hash {txHash}. Dest: {destination} (norm: {destinationNorm}), Amount: {txAmount}, Expected dest norm: {expectedAddressNorm}");
+                    _logger.LogInformation($"[TonService] Match found for hash {txHash}. Dest: {destination} (norm: {destinationNorm}), Amount: {txAmount}, Sender: {sender}, Expected dest norm: {expectedAddressNorm}");
 
                     if (destinationNorm == expectedAddressNorm && txAmount >= amount)
                     {
                         if (await checkContext.Tranxactions.AnyAsync(t => t.TxhHash == txhHash || t.TxhHash == txHash || t.TxhHash == expectedHashHex))
                         {
                             _logger.LogWarning($"[TonService] Transaction {txHash} already exists in DB! Duplicate payment attempt.");
-                            return false;
+                            return (false, null);
                         }
 
                         _logger.LogInformation($"[TonService] Transaction {txHash} verified successfully!");
-                        return true;
+                        return (true, sender);
                     }
                     else
                     {
@@ -185,6 +188,8 @@ namespace DteamBackend.Services
                     var utime = singleTx.GetProperty("utime").GetInt64();
                     if (utime >= tenMinutesAgo)
                     {
+                        string? fallbackSender = singleTx.TryGetProperty("account", out var acc) && acc.TryGetProperty("address", out var aaddr) ? aaddr.GetString() : null;
+
                         if (singleTx.TryGetProperty("out_msgs", out var outMsgs) && outMsgs.ValueKind == System.Text.Json.JsonValueKind.Array)
                         {
                             foreach (var msg in outMsgs.EnumerateArray())
@@ -203,10 +208,10 @@ namespace DteamBackend.Services
                                         if (await checkContext.Tranxactions.AnyAsync(t => t.TxhHash == txhHash || t.TxhHash == expectedHashHex))
                                         {
                                             _logger.LogWarning($"[TonService] Fallback: Transaction {expectedHashHex} already exists in DB!");
-                                            return false;
+                                            return (false, null);
                                         }
                                         _logger.LogInformation($"[TonService] Fallback: Transaction {expectedHashHex} verified successfully via out_msgs!");
-                                        return true;
+                                        return (true, fallbackSender);
                                     }
                                 }
                             }
@@ -225,10 +230,10 @@ namespace DteamBackend.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"[TonService] Exception occurred while checking transaction {txhHash}.");
-                return false;
+                return (false, null);
             }
 
-            return false;
+            return (false, null);
         }
     }
 }

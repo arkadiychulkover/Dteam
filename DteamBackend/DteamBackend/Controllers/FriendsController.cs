@@ -88,6 +88,76 @@ namespace DteamBackend.Controllers
             return Ok(friends);
         }
 
+        [HttpGet("game/{gameId:guid}")]
+        [ProducesResponseType(typeof(FriendsGameStatusDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<FriendsGameStatusDto>> GetFriendsGameStatus(Guid gameId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var directFriendIds = await _context.UserFriends
+                .AsNoTracking()
+                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted)
+                .Select(f => f.FriendId)
+                .ToListAsync();
+
+            var reverseFriendIds = await _context.UserFriends
+                .AsNoTracking()
+                .Where(f => f.FriendId == currentUserId && f.Status == FriendshipStatus.Accepted)
+                .Select(f => f.UserId)
+                .ToListAsync();
+
+            var allFriendIds = directFriendIds.Concat(reverseFriendIds).Distinct().ToList();
+
+            if (!allFriendIds.Any())
+            {
+                return Ok(new FriendsGameStatusDto());
+            }
+
+            var friendsWhoOwn = await _context.UserGames
+                .AsNoTracking()
+                .Where(ug => ug.GameId == gameId && allFriendIds.Contains(ug.UserId))
+                .Include(ug => ug.User)
+                .Select(ug => new FriendDto
+                {
+                    Id = ug.User.Id,
+                    Username = ug.User.Username,
+                    Email = ug.User.Email,
+                    AvatarUrl = ug.User.AvatarUrl,
+                    Bio = ug.User.Bio,
+                    Status = ug.User.Status,
+                    LastLoginAt = ug.User.LastLoginAt
+                })
+                .ToListAsync();
+
+            var owningUserIds = friendsWhoOwn.Select(f => f.Id).ToHashSet();
+            var friendsWhoWishlist = await _context.UserWishlists
+                .AsNoTracking()
+                .Where(uw => uw.GameId == gameId && allFriendIds.Contains(uw.UserId) && !owningUserIds.Contains(uw.UserId))
+                .Include(uw => uw.User)
+                .Select(uw => new FriendDto
+                {
+                    Id = uw.User.Id,
+                    Username = uw.User.Username,
+                    Email = uw.User.Email,
+                    AvatarUrl = uw.User.AvatarUrl,
+                    Bio = uw.User.Bio,
+                    Status = uw.User.Status,
+                    LastLoginAt = uw.User.LastLoginAt
+                })
+                .ToListAsync();
+
+            return Ok(new FriendsGameStatusDto
+            {
+                FriendsWhoOwn = friendsWhoOwn,
+                FriendsWhoWishlist = friendsWhoWishlist
+            });
+        }
+
         [HttpGet("requests")]
         [ProducesResponseType(typeof(List<FriendRequestDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

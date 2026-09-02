@@ -17,6 +17,12 @@ export function formatTon(tons: number): string {
   return `${tons.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TON`;
 }
 
+export function formatBalance(nanoTon: number | string | bigint | undefined | null): string {
+  if (nanoTon === undefined || nanoTon === null) return '0,00 TON';
+  const tons = nanoTonToTon(nanoTon);
+  return formatTon(tons);
+}
+
 export function getEffectivePrice(nanoTon: number | string | bigint, discountPercentage: number = 0): number {
   const baseTons = nanoTonToTon(nanoTon);
   if (baseTons === 0 || discountPercentage >= 100) return 0;

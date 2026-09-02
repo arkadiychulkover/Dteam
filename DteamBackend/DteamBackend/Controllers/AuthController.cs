@@ -7,11 +7,13 @@ using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace DteamBackend.Controllers
 {
     [ApiController]
+    [EnableRateLimiting("AuthLimiter")]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {

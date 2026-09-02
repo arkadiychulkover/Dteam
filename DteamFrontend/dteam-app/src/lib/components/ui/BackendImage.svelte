@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ImageOff, Loader2 } from 'lucide-svelte';
+  import { api } from '../../services/api';
 
   let {
     src,
@@ -23,11 +24,20 @@
   // Резолв относительного пути бэкенда
   const resolvedSrc = $derived.by(() => {
     if (!src) return null;
-    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('blob:') || src.startsWith('data:')) {
-      return src;
+    let url = src;
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
+      url = url.startsWith('/') ? url : `/${url}`;
     }
-    // Для путей вида /uploads/... или /api/...
-    return src.startsWith('/') ? src : `/${src}`;
+
+    if (url.includes('/api/chat/media') || url.includes('/api/chat/uploads')) {
+      const token = api.getToken();
+      if (token && !url.includes('access_token=') && !url.includes('token=')) {
+        const separator = url.includes('?') ? '&' : '?';
+        url = `${url}${separator}access_token=${encodeURIComponent(token)}`;
+      }
+    }
+
+    return url;
   });
 </script>
 

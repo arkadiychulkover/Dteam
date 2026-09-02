@@ -4,7 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { currentUser } from '../../stores/authStore';
-  import { formatPrice, formatBasePrice, formatTon, nanoTonToTon } from '../../utils/formatters';
+  import { formatPrice, formatBasePrice, formatTon, nanoTonToTon, formatBalance } from '../../utils/formatters';
   import TonIcon from '../ui/TonIcon.svelte';
   import type { Game, CartItem } from '../../types';
   import { 
@@ -52,7 +52,7 @@
     if (currentBalance < requiredTotal) {
       uiStore.addToast({
         title: 'Недостатньо TON на балансі',
-        message: `Для покупки потрібно ${formatPrice(requiredTotal)}, а ваш баланс становить ${formatPrice(currentBalance)}. Будь ласка, поповніть рахунок.`,
+        message: `Для покупки потрібно ${formatPrice(requiredTotal)}, а ваш баланс становить ${formatBalance(currentBalance)}. Будь ласка, поповніть рахунок.`,
         type: 'warning',
       });
       uiStore.setDepositModal(true);

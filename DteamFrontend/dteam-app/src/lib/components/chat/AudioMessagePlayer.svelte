@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { Play, Pause } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
+  import { api } from '../../services/api';
 
   interface Props {
     src: string;
@@ -21,10 +22,20 @@
 
   const resolvedSrc = $derived.by(() => {
     if (!src) return '';
-    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('blob:') || src.startsWith('data:')) {
-      return src;
+    let url = src;
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
+      url = url.startsWith('/') ? url : `/${url}`;
     }
-    return src.startsWith('/') ? src : `/${src}`;
+
+    if (url.includes('/api/chat/media') || url.includes('/api/chat/uploads')) {
+      const token = api.getToken();
+      if (token && !url.includes('access_token=') && !url.includes('token=')) {
+        const separator = url.includes('?') ? '&' : '?';
+        url = `${url}${separator}access_token=${encodeURIComponent(token)}`;
+      }
+    }
+
+    return url;
   });
 
   $effect(() => {

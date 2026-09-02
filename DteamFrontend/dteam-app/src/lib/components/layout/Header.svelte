@@ -139,10 +139,7 @@
     const query = (e.target as HTMLInputElement).value;
     headerSearchQuery = query;
 
-    if (query.trim().length > 0) {
-      isCategoriesModalOpen = false;
-    } else {
-      isCategoriesModalOpen = true;
+    if (query.trim().length === 0) {
       recommendations = [];
       isRecommendationsOpen = false;
       if (debounceTimer) clearTimeout(debounceTimer);
@@ -155,15 +152,11 @@
 
     debounceTimer = setTimeout(() => {
       fetchRecommendations(query);
-    }, 500);
+    }, 400);
   }
 
   function handleSearchFocus() {
-    if (!headerSearchQuery.trim()) {
-      isCategoriesModalOpen = true;
-      isRecommendationsOpen = false;
-    } else {
-      isCategoriesModalOpen = false;
+    if (headerSearchQuery.trim()) {
       if (recommendations.length > 0) {
         isRecommendationsOpen = true;
       } else {
@@ -265,30 +258,53 @@
       </button>
 
       <!-- Desktop Nav -->
-      <nav class="hidden lg:flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner">
+      <nav class="hidden lg:flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative">
         {#each visibleTabs as tab}
           {@const Icon = tab.icon}
-          <button
-            onclick={() => uiStore.setTab(tab.id)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
-              {$uiStore.activeTab === tab.id
-                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
-          >
-            <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
-            <span>{tab.label}</span>
-            {#if tab.id === 'admin'}
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
-            {/if}
-            {#if tab.id === 'chat' && $totalChatUnreadCount > 0}
-              <span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
-                {$totalChatUnreadCount > 99 ? '99+' : $totalChatUnreadCount}
-              </span>
-            {/if}
-            {#if tab.id === 'chat' && $uiStore.activeTab === 'chat'}
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-300 absolute -bottom-1 left-1/2 -translate-x-1/2 shadow-[0_0_8px_#0df2c9]"></span>
-            {/if}
-          </button>
+          {#if tab.id === 'catalog'}
+            <div class="relative" bind:this={categoriesModalEl}>
+              <button
+                onclick={() => { uiStore.setTab('catalog'); isCategoriesModalOpen = !isCategoriesModalOpen; }}
+                onmouseenter={() => isCategoriesModalOpen = true}
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
+                  {$uiStore.activeTab === tab.id
+                    ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
+              >
+                <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : 'text-slate-400'}" />
+                <span>{tab.label}</span>
+                <ChevronDown class="w-3 h-3 text-cyan-400 transition-transform {isCategoriesModalOpen ? 'rotate-180' : ''}" />
+              </button>
+
+              <SearchCategoriesModal
+                isOpen={isCategoriesModalOpen}
+                onSelectFilter={handleSelectCategoryFilter}
+                onClose={() => isCategoriesModalOpen = false}
+              />
+            </div>
+          {:else}
+            <button
+              onclick={() => { uiStore.setTab(tab.id); isCategoriesModalOpen = false; }}
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
+                {$uiStore.activeTab === tab.id
+                  ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
+            >
+              <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
+              <span>{tab.label}</span>
+              {#if tab.id === 'admin'}
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
+              {/if}
+              {#if tab.id === 'chat' && $totalChatUnreadCount > 0}
+                <span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
+                  {$totalChatUnreadCount > 99 ? '99+' : $totalChatUnreadCount}
+                </span>
+              {/if}
+              {#if tab.id === 'chat' && $uiStore.activeTab === 'chat'}
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-300 absolute -bottom-1 left-1/2 -translate-x-1/2 shadow-[0_0_8px_#0df2c9]"></span>
+              {/if}
+            </button>
+          {/if}
         {/each}
       </nav>
     </div>

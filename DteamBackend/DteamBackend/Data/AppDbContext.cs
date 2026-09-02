@@ -127,6 +127,12 @@ namespace DteamBackend.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+            var languageListComparer = new ValueComparer<List<GameLanguageSupport>>(
+                (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()
+            );
+
             modelBuilder.Entity<Game>(entity =>
             {
                 entity.HasKey(g => g.Id);
@@ -140,6 +146,14 @@ namespace DteamBackend.Data
                     .WithMany(g => g.Dlcs)
                     .HasForeignKey(g => g.ParentGameId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(g => g.SupportedLanguages)
+                    .IsRequired(false)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v ?? new List<GameLanguageSupport>(), (JsonSerializerOptions?)null),
+                        v => string.IsNullOrEmpty(v) ? new List<GameLanguageSupport>() : (JsonSerializer.Deserialize<List<GameLanguageSupport>>(v, (JsonSerializerOptions?)null) ?? new List<GameLanguageSupport>())
+                    )
+                    .Metadata.SetValueComparer(languageListComparer);
             });
 
             modelBuilder.Entity<Review>(entity =>

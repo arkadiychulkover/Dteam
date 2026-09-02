@@ -22,6 +22,9 @@
   import DeveloperView from './lib/components/developer/DeveloperView.svelte';
   import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
   import EditDeveloperGameModal from './lib/components/developer/EditDeveloperGameModal.svelte';
+  import TermsOfUseView from './lib/components/legal/TermsOfUseView.svelte';
+  import PrivacyPolicyView from './lib/components/legal/PrivacyPolicyView.svelte';
+  import RefundPolicyView from './lib/components/legal/RefundPolicyView.svelte';
 
   import LoginView from './lib/components/auth/LoginView.svelte';
   import RegisterView from './lib/components/auth/RegisterView.svelte';
@@ -34,6 +37,7 @@
 
   import { uiStore } from './lib/stores/uiStore';
   import { authStore, currentUser } from './lib/stores/authStore';
+  import { gamesStore } from './lib/stores/gamesStore';
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
@@ -79,6 +83,7 @@
     onlineHubService.startConnection();
 
     checkUserBanStatus();
+    gamesStore.loadGames();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
     if ($currentUser?.id) {
@@ -138,6 +143,12 @@
       <AdminView />
     {:else if $uiStore.activeTab === 'developer'}
       <DeveloperView />
+    {:else if $uiStore.activeTab === 'terms'}
+      <TermsOfUseView />
+    {:else if $uiStore.activeTab === 'privacy'}
+      <PrivacyPolicyView />
+    {:else if $uiStore.activeTab === 'refund'}
+      <RefundPolicyView />
     {:else if $uiStore.activeTab === 'login'}
       <LoginView />
     {:else if $uiStore.activeTab === 'register'}

@@ -79,6 +79,7 @@ namespace DteamBackend.Controllers
                 Genres = d.Genres ?? new List<string>(),
                 Platforms = d.Platforms ?? new List<string>(),
                 Features = d.Features ?? new List<string>(),
+                SupportedLanguages = d.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -93,6 +94,7 @@ namespace DteamBackend.Controllers
             Genres = game.Genres ?? new List<string>(),
             Platforms = game.Platforms ?? new List<string>(),
             Features = game.Features ?? new List<string>(),
+            SupportedLanguages = game.SupportedLanguages ?? new List<GameLanguageSupport>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -420,6 +422,7 @@ namespace DteamBackend.Controllers
             if (dto.Genres != null) game.Genres = dto.Genres;
             if (dto.Platforms != null) game.Platforms = dto.Platforms;
             if (dto.Features != null) game.Features = dto.Features;
+            if (dto.SupportedLanguages != null) game.SupportedLanguages = dto.SupportedLanguages;
             if (dto.Tags != null) game.Tags = dto.Tags;
             if (!string.IsNullOrWhiteSpace(dto.Version)) game.Version = dto.Version;
             if (dto.SizeInBytes.HasValue) game.SizeInBytes = dto.SizeInBytes.Value;

@@ -5,9 +5,10 @@
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import FeaturedCarousel from './FeaturedCarousel.svelte';
-  import { ChevronRight, ChevronLeft, Gift } from 'lucide-svelte';
+  import { ChevronRight, ChevronLeft, Gift, Loader2, RefreshCw } from 'lucide-svelte';
 
   const allGames = $derived($gamesStore.games);
+  const isLoading = $derived($gamesStore.isLoading);
 
   let specialOffersIndex = $state(0);
   const discountedGames = $derived(allGames.filter(g => (g.discountPercentage || 0) > 0));
@@ -47,12 +48,31 @@
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-12 animate-in fade-in">
-  <FeaturedCarousel />
+  {#if isLoading && allGames.length === 0}
+    <div class="flex flex-col items-center justify-center py-24 space-y-4">
+      <Loader2 class="w-10 h-10 text-cyan-400 animate-spin" />
+      <p class="text-sm font-bold text-slate-300">Завантаження крамниці Dteam...</p>
+    </div>
+  {:else if allGames.length === 0}
+    <div class="flex flex-col items-center justify-center py-20 bg-[#061820]/60 rounded-3xl border border-cyan-500/20 text-center p-8 space-y-4 shadow-xl">
+      <Gift class="w-12 h-12 text-cyan-500/40" />
+      <h3 class="text-lg font-black text-white">Ігор поки що немає або сервер недоступний</h3>
+      <p class="text-xs text-slate-400 max-w-md">Перевірте з'єднання з бэкендом або натисніть кнопку нижче для повторного завантаження.</p>
+      <button
+        onclick={() => gamesStore.loadGames()}
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-black text-xs shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-emerald-400 transition-all cursor-pointer"
+      >
+        <RefreshCw class="w-4 h-4" />
+        <span>Оновити крамницю</span>
+      </button>
+    </div>
+  {:else}
+    <FeaturedCarousel />
 
-  {#if specialOffersList.length > 0}
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
-        <button
+    {#if specialOffersList.length > 0}
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <button
           onclick={() => goToCatalog({ isDiscounted: true })}
           class="group flex items-center gap-2 text-lg sm:text-xl font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
         >
@@ -439,4 +459,5 @@
       </div>
     </section>
   {/if}
+{/if}
 </div>

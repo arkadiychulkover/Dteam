@@ -580,28 +580,23 @@ namespace DteamBackend.Services
                 return null;
             }
 
-            // Authorization & soft-delete validation
-            if (currentUserId != Guid.Empty)
+            // Authorization & soft-delete validation: only authenticated participants can access media
+            if (currentUserId == Guid.Empty)
             {
-                if (message.SenderId == currentUserId)
-                {
-                    if (message.IsDeletedForSender) return null;
-                }
-                else if (message.ReceiverId == currentUserId)
-                {
-                    if (message.IsDeletedForReceiver) return null;
-                }
-                else
-                {
-                    return null; // Not a participant
-                }
+                return null;
+            }
+
+            if (message.SenderId == currentUserId)
+            {
+                if (message.IsDeletedForSender) return null;
+            }
+            else if (message.ReceiverId == currentUserId)
+            {
+                if (message.IsDeletedForReceiver) return null;
             }
             else
             {
-                if (message.IsDeletedForSender && message.IsDeletedForReceiver)
-                {
-                    return null;
-                }
+                return null; // Not a participant
             }
 
             var fileResult = await _fileStorage.GetFileStreamAsync(message.StorageKey, cancellationToken);
@@ -623,6 +618,11 @@ namespace DteamBackend.Services
 
         public async Task<(Stream Stream, string ContentType, string FileName)?> GetUploadPreviewAsync(Guid currentUserId, Guid uploadId, CancellationToken cancellationToken = default)
         {
+            if (currentUserId == Guid.Empty)
+            {
+                return null;
+            }
+
             var upload = await _context.ChatUploads
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == uploadId, cancellationToken);
@@ -632,7 +632,7 @@ namespace DteamBackend.Services
                 return null;
             }
 
-            if (currentUserId != Guid.Empty && upload.UserId != currentUserId)
+            if (upload.UserId != currentUserId)
             {
                 return null;
             }

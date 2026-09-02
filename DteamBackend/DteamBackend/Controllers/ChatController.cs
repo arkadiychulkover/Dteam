@@ -149,10 +149,13 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("media/{messageId:guid}/content")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetMediaContent(Guid messageId, CancellationToken cancellationToken)
         {
             var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Потрібна авторизація для доступу до медіафайлів." });
+            }
 
             var contentResult = await _chatService.GetMediaContentAsync(currentUserId, messageId, cancellationToken);
             if (!contentResult.HasValue)
@@ -167,10 +170,13 @@ namespace DteamBackend.Controllers
         }
 
         [HttpGet("uploads/{uploadId:guid}/preview")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetUploadPreview(Guid uploadId, CancellationToken cancellationToken)
         {
             var currentUserId = GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Потрібна авторизація для доступу до файлу." });
+            }
 
             var previewResult = await _chatService.GetUploadPreviewAsync(currentUserId, uploadId, cancellationToken);
             if (!previewResult.HasValue)

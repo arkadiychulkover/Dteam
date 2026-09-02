@@ -55,6 +55,7 @@ namespace DteamBackend.Controllers
                 Genres = d.Genres ?? new List<string>(),
                 Platforms = d.Platforms ?? new List<string>(),
                 Features = d.Features ?? new List<string>(),
+                SupportedLanguages = d.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -69,6 +70,7 @@ namespace DteamBackend.Controllers
             Genres = game.Genres ?? new List<string>(),
             Platforms = game.Platforms ?? new List<string>(),
             Features = game.Features ?? new List<string>(),
+            SupportedLanguages = game.SupportedLanguages ?? new List<GameLanguageSupport>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -543,6 +545,27 @@ namespace DteamBackend.Controllers
         }
 
         [Authorize]
+        [HttpPost("{id:guid}/reviews/{reviewId:guid}/comments")]
+        [ProducesResponseType(typeof(ReviewDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ReviewDto>> PostReviewComment(Guid id, Guid reviewId, [FromBody] CreateReviewCommentDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Content))
+            {
+                return BadRequest(new { message = "Текст коментаря обов'язковий." });
+            }
+
+            return await PostReview(id, new CreateReviewDto
+            {
+                ParentReviewId = reviewId,
+                Content = dto.Content,
+                Rating = 5,
+                IsRecommended = true
+            });
+        }
+
+        [Authorize]
         [HttpPost("{id:guid}/reviews/{reviewId:guid}/like")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -624,12 +647,12 @@ namespace DteamBackend.Controllers
                 return BadRequest(new { message = "Размер файла превышает 20 МБ." });
             }
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
             if (!allowedExtensions.Contains(extension))
             {
-                return BadRequest(new { message = "Недопустимый формат файла. Разрешены форматы: .jpg, .jpeg, .png, .webp, .gif, .svg" });
+                return BadRequest(new { message = "Недопустимый формат файла. Разрешены форматы: .jpg, .jpeg, .png, .webp, .gif" });
             }
 
             var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");

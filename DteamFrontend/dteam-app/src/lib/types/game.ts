@@ -29,6 +29,13 @@ export interface Review {
   updatedAt?: string | null;
 }
 
+export interface GameLanguageSupport {
+  language: string;
+  interface: boolean;
+  fullAudio: boolean;
+  subtitles: boolean;
+}
+
 export interface Game {
   id: string;
   title: string;
@@ -51,6 +58,7 @@ export interface Game {
   genres?: string[];
   platforms?: string[];
   features?: string[];
+  supportedLanguages?: GameLanguageSupport[];
   tags?: string[];
   version: string;
   sizeInBytes: number;

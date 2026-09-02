@@ -2,7 +2,7 @@
   import { authStore, currentUser } from '../../stores/authStore';
   import { libraryStore } from '../../stores/libraryStore';
   import { gamesStore } from '../../stores/gamesStore';
-  import { formatPrice, formatAddress } from '../../utils/formatters';
+  import { formatPrice, formatBalance, formatAddress } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import { uiStore } from '../../stores/uiStore';
   import { 
@@ -112,7 +112,7 @@
             </button>
           </div>
           <span class="text-lg font-black text-cyan-400 font-mono block mt-1">
-            {formatPrice($currentUser.balanceInNanoTons)}
+            {formatBalance($currentUser.balanceInNanoTons)}
           </span>
         </div>
 
@@ -121,7 +121,7 @@
             <Sparkles class="w-3.5 h-3.5 text-amber-400" /> Developer Earnings
           </span>
           <span class="text-lg font-black text-amber-300 font-mono block mt-0.5">
-            {formatPrice($currentUser.totalEarningsInNanoTons)}
+            {formatBalance($currentUser.totalEarningsInNanoTons)}
           </span>
         </div>
       </div>

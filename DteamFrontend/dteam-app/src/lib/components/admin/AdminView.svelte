@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { adminService, activeAdminIdStore } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
-  import { formatPrice } from '../../utils/formatters';
+  import { formatPrice, formatBalance } from '../../utils/formatters';
   import type { Duser, Game } from '../../types';
   import CreateUserModal from './CreateUserModal.svelte';
   import EditUserModal from './EditUserModal.svelte';
@@ -605,7 +605,7 @@
                 <td class="py-3.5 px-4 text-slate-300 font-mono">{user.email}</td>
 
                 <td class="py-3.5 px-4 font-mono font-bold text-cyan-300">
-                  {formatPrice(user.balanceInNanoTons)}
+                  {formatBalance(user.balanceInNanoTons)}
                 </td>
 
                 <td class="py-3.5 px-4">

@@ -24,6 +24,7 @@ namespace DteamBackend.Models.DTO
         public List<string> Genres { get; set; } = new();
         public List<string> Platforms { get; set; } = new();
         public List<string> Features { get; set; } = new();
+        public List<GameLanguageSupport> SupportedLanguages { get; set; } = new();
         public List<string> Tags { get; set; } = new();
         public string Version { get; set; } = "1.0.0";
         public long SizeInBytes { get; set; }

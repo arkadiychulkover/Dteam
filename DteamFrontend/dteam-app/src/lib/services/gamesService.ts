@@ -75,6 +75,10 @@ export const gamesService = {
     });
   },
 
+  async addReviewComment(gameId: string, reviewId: string, content: string): Promise<Review> {
+    return await api.post<Review>(`/games/${gameId}/reviews/${reviewId}/comments`, { content });
+  },
+
   async toggleReviewLike(gameId: string, reviewId: string): Promise<{ liked: boolean; likesCount: number }> {
     return await api.post<{ liked: boolean; likesCount: number }>(`/games/${gameId}/reviews/${reviewId}/like`);
   },

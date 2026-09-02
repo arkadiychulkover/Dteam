@@ -70,7 +70,17 @@ namespace DteamBackend.Services
                 ParentGameId = null,
                 Genres = new List<string> { "Action", "RPG", "Cyberpunk", "Open World" },
                 Platforms = new List<string> { "Windows", "MacOS" },
-                Features = new List<string> { "SinglePlayer", "CloudSaves", "Achievements" },
+                Features = new List<string> { "SinglePlayer", "SteamAchievements", "FullControllerSupport", "SteamCloud", "SteamTradingCards" },
+                SupportedLanguages = new List<GameLanguageSupport>
+                {
+                    new() { Language = "Українська", Interface = true, FullAudio = false, Subtitles = true },
+                    new() { Language = "English", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Deutsch", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Français", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Polski", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Español", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "日本語", Interface = true, FullAudio = true, Subtitles = true }
+                },
                 Tags = new List<string> { "шутер", "екшн", "кіберпанк", "відкритий світ", "майбутнє", "рольова гра" },
                 Version = "2.1.0",
                 SizeInBytes = 70L * 1024 * 1024 * 1024,
@@ -638,7 +648,19 @@ namespace DteamBackend.Services
                     CREATE INDEX IF NOT EXISTS ""IX_UserActivities_UserId_CreatedAt"" ON ""UserActivities"" (""UserId"", ""CreatedAt"");
                 ");
 
-                _logger?.LogInformation("[InitData] UserActivities schema successfully ensured.");
+                try
+                {
+                    await context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Games"" ADD COLUMN ""SupportedLanguages"" TEXT NULL;");
+                }
+                catch { /* Column already exists or database created fresh */ }
+
+                try
+                {
+                    await context.Database.ExecuteSqlRawAsync(@"UPDATE ""Games"" SET ""SupportedLanguages"" = '[]' WHERE ""SupportedLanguages"" IS NULL;");
+                }
+                catch { }
+
+                _logger?.LogInformation("[InitData] UserActivities and Games schema successfully ensured.");
 
                 if (!await context.UserActivities.AnyAsync())
                 {

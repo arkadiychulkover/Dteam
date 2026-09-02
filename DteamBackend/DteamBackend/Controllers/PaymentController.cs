@@ -8,12 +8,14 @@ using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace DteamBackend.Controllers
 {
     [Authorize]
     [ApiController]
+    [EnableRateLimiting("PaymentLimiter")]
     [Route("api/[controller]")]
     public class PaymentController : ControllerBase
     {
@@ -100,7 +102,7 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            var isValid = await _tonService.CheckTranzaction(cleanHash, dto.Amount);
+            var (isValid, senderAddress) = await _tonService.CheckTranzaction(cleanHash, dto.Amount);
             if (!isValid)
             {
                 _logger.LogWarning($"[PaymentController] Transaction {cleanHash} validation failed via TonService");
@@ -112,6 +114,31 @@ namespace DteamBackend.Controllers
                     Amount = dto.Amount,
                     TxhHash = cleanHash
                 });
+            }
+
+            if (!string.IsNullOrWhiteSpace(senderAddress))
+            {
+                var senderNorm = TonService.NormalizeAddress(senderAddress);
+                if (!string.IsNullOrWhiteSpace(user.WalletAddress))
+                {
+                    var userWalletNorm = TonService.NormalizeAddress(user.WalletAddress);
+                    if (senderNorm != userWalletNorm)
+                    {
+                        _logger.LogWarning($"[PaymentController] Sender wallet mismatch for User {userId}. Expected: {userWalletNorm}, Actual: {senderNorm}");
+                        return BadRequest(new PaymentVerificationResultDto
+                        {
+                            Success = false,
+                            Message = "Транзакція надійшла з іншого гаманця. Поповнення балансу дозволено виключно з вашого прив'язаного гаманця TON.",
+                            NewBalanceInNanoTons = user.BalanceInNanoTons,
+                            Amount = dto.Amount,
+                            TxhHash = cleanHash
+                        });
+                    }
+                }
+                else
+                {
+                    user.WalletAddress = senderAddress;
+                }
             }
 
             var raceCheck = await _context.Tranxactions

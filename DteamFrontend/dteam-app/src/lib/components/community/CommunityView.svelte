@@ -241,7 +241,13 @@
     safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
     safe = safe.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/g, '<u>$1</u>');
-    safe = safe.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="rounded-xl max-h-80 w-auto my-2 object-cover border border-cyan-900/60" />');
+    safe = safe.replace(/!\[(.*?)\]\((.*?)\)/g, (_match, alt, url) => {
+      const trimmed = (url || '').trim();
+      if (trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/uploads/')) {
+        return `<img src="${trimmed}" alt="${alt}" class="rounded-xl max-h-80 w-auto my-2 object-cover border border-cyan-900/60" loading="lazy" decoding="async" />`;
+      }
+      return '';
+    });
     safe = safe.replace(/\n/g, '<br />');
     return safe;
   }

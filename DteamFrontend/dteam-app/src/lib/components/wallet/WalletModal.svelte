@@ -2,7 +2,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { walletStore } from '../../stores/walletStore';
   import { authStore, currentUser } from '../../stores/authStore';
-  import { formatPrice, formatAddress } from '../../utils/formatters';
+  import { formatBalance, formatAddress } from '../../utils/formatters';
   import { X, Wallet, ArrowDownToLine, ArrowUpFromLine, CheckCircle2, Coins } from 'lucide-svelte';
 
   let depositAmount = $state('5.0');
@@ -58,7 +58,7 @@
         <div class="flex items-center justify-between border-t border-slate-800 pt-3">
           <span class="text-xs text-slate-400 font-medium">Available in Dteam:</span>
           <span class="text-base font-black text-cyan-300 font-mono">
-            {formatPrice($currentUser?.balanceInNanoTons ?? 0)}
+            {formatBalance($currentUser?.balanceInNanoTons ?? 0)}
           </span>
         </div>
       </div>
