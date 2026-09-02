@@ -15,6 +15,7 @@
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
   import FriendsView from './lib/components/friends/FriendsView.svelte';
+  import ChatView from './lib/components/chat/ChatView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
   import DeveloperView from './lib/components/developer/DeveloperView.svelte';
@@ -35,7 +36,9 @@
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
+  import { chatStore } from './lib/stores/chatStore';
   import { friendsHubService } from './lib/services/friendsHubService';
+  import { chatHubService } from './lib/services/chatHubService';
   import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
   import { router } from './lib/services/router';
@@ -62,8 +65,11 @@
       cartStore.loadCart();
       friendsStore.loadAll();
       friendsHubService.start();
+      chatStore.loadConversations();
+      chatHubService.start();
     } else {
       friendsHubService.stop();
+      chatHubService.stop();
     }
   });
 
@@ -77,6 +83,8 @@
     if ($currentUser?.id) {
       friendsStore.loadAll();
       friendsHubService.start();
+      chatStore.loadConversations();
+      chatHubService.start();
     }
     const interval = setInterval(checkUserBanStatus, 5000);
     return () => clearInterval(interval);
@@ -84,6 +92,7 @@
 
   onDestroy(() => {
     friendsHubService.stop();
+    chatHubService.stop();
     onlineHubService.stopConnection();
   });
 </script>
@@ -102,6 +111,8 @@
       <StoreView />
     {:else if $uiStore.activeTab === 'library'}
       <LibraryView />
+    {:else if $uiStore.activeTab === 'chat'}
+      <ChatView />
     {:else if $uiStore.activeTab === 'community'}
       <CommunityView />
     {:else if $uiStore.activeTab === 'friends'}

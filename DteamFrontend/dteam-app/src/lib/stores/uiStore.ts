@@ -4,6 +4,7 @@ import type { Game } from '../types';
 export type MainTab = 
   | 'store' 
   | 'library'
+  | 'chat'
   | 'community'
   | 'friends'
   | 'catalog' 

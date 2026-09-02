@@ -7,5 +7,6 @@ namespace DteamBackend.Interfaces
         Task InitializeAsync(AppDbContext context);
         Task EnsureCommunityDataAsync(AppDbContext context);
         Task EnsureReviewSchemaAsync(AppDbContext context);
+        Task EnsureChatSchemaAsync(AppDbContext context);
     }
 }

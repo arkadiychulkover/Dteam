@@ -22,6 +22,8 @@ function getPathForState(tab: MainTab, game?: Game | null, userId?: string | nul
       return '/catalog';
     case 'library':
       return '/library';
+    case 'chat':
+      return '/chat';
     case 'community':
       return '/community';
     case 'friends':
@@ -88,6 +90,8 @@ function parseLocation(): RouteState {
       return { tab: 'catalog' };
     case 'library':
       return { tab: 'library' };
+    case 'chat':
+      return { tab: 'chat' };
     case 'community':
       return { tab: 'community', gameId: second || queryGameId };
     case 'friends':
