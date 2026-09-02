@@ -13,17 +13,17 @@
   import { formatDate } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import {
-    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2
+    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity
   } from 'lucide-svelte';
   import SelectGameModal from '../community/SelectGameModal.svelte';
+  import ActivityCard from '../activity/ActivityCard.svelte';
+  import { activityStore } from '../../stores/activityStore';
 
   type TabId = 'головна' | 'значки' | 'ігри' | 'бажане' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди' | 'рецензії';
   let activeTab = $state<TabId>('головна');
   let showCreateDropdown = $state(false);
 
-  const uniqueFriends = $derived(
-    Array.from(new Map($friendsStore.friends.map((f) => [f.friend?.id || (f as any).id, f])).values())
-  );
+  const uniqueFriends = $derived($friendsStore.friends);
 
   const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
@@ -43,12 +43,18 @@
   const myScreenshotPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'screenshots'));
   const myVideoPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'videos'));
   const myGuidePosts = $derived($myProfileStore.posts.filter((p) => p.category === 'guides'));
+  const myActivities = $derived(
+    $currentUser ? ($activityStore.userActivities[$currentUser.id.toLowerCase()] || []) : []
+  );
 
   onMount(() => {
     myProfileStore.reload();
     libraryStore.loadLibrary();
     wishlistStore.loadWishlist();
     friendsStore.loadFriends();
+    if ($currentUser) {
+      activityStore.loadUserActivities($currentUser.id);
+    }
   });
 
   let isCreatingPost = $state(false);
@@ -345,6 +351,26 @@
               </div>
             {/if}
           </div>
+
+          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <Activity class="w-4 h-4 text-cyan-400" />
+                <h2 class="text-lg font-bold text-white">Нещодавня активність</h2>
+              </div>
+              <span class="text-xs text-slate-400 font-mono">{myActivities.length} подій</span>
+            </div>
+
+            {#if myActivities.length === 0}
+              <p class="text-sm text-slate-500 text-center py-6">У вас поки немає збережених активностей.</p>
+            {:else}
+              <div class="space-y-3">
+                {#each myActivities as act (act.id)}
+                  <ActivityCard activity={act} />
+                {/each}
+              </div>
+            {/if}
+          </div>
         {/if}
 
         
@@ -564,14 +590,20 @@
             <p class="text-xs text-slate-500 px-2 py-2">Список друзів порожній.</p>
           {:else}
             <div class="space-y-2">
-              {#each uniqueFriends as f}
+              {#each uniqueFriends as f (f.id)}
                 <button
-                  onclick={() => profileStore.viewProfile(f.friend?.id || (f as any).id)}
+                  onclick={() => profileStore.viewProfile(f.id)}
                   class="w-full flex items-center justify-between px-2 cursor-pointer hover:bg-cyan-900/20 p-2 rounded-xl transition-colors text-left"
                 >
                   <div class="flex items-center gap-3">
-                    <img src={f.friend?.avatarUrl || (f as any).avatarUrl || undefined} alt={f.friend?.username || (f as any).username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
-                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.friend?.username || (f as any).username}</span>
+                    {#if f.avatarUrl}
+                      <img src={f.avatarUrl} alt={f.username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
+                    {:else}
+                      <div class="w-8 h-8 rounded-full bg-cyan-950/80 text-cyan-300 font-bold flex items-center justify-center text-xs border border-cyan-500/30">
+                        {f.username.charAt(0).toUpperCase()}
+                      </div>
+                    {/if}
+                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.username}</span>
                   </div>
                 </button>
               {/each}

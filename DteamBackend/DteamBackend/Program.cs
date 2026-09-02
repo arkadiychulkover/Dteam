@@ -33,6 +33,7 @@ namespace DteamBackend
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<TonService>();
 
             builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
@@ -152,6 +153,7 @@ namespace DteamBackend
                     await initDataService.EnsureCommunityDataAsync(context);
                     await initDataService.EnsureReviewSchemaAsync(context);
                     await initDataService.EnsureChatSchemaAsync(context);
+                    await initDataService.EnsureActivitySchemaAsync(context);
                 }
                 catch (Exception ex)
                 {

@@ -9,13 +9,15 @@ import { onMount } from 'svelte';
   import { UserStatus } from '../../types';
   import {
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
-    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft
+    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity
   } from 'lucide-svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { gamesService } from '../../services/gamesService';
+  import ActivityCard from '../activity/ActivityCard.svelte';
+  import { activityStore } from '../../stores/activityStore';
 
-  type TabId = 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
-  let activeTab = $state<TabId>('обговорення');
+  type TabId = 'активність' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
+  let activeTab = $state<TabId>('активність');
 
   const profile = $derived($profileStore.profile);
   const friends = $derived($profileStore.friends);
@@ -24,8 +26,18 @@ import { onMount } from 'svelte';
   );
   const isLoading = $derived($profileStore.isLoading);
   const error = $derived($profileStore.error);
+  const userActivities = $derived(
+    profile ? ($activityStore.userActivities[profile.id.toLowerCase()] || []) : []
+  );
+
+  $effect(() => {
+    if (profile?.id) {
+      activityStore.loadUserActivities(profile.id);
+    }
+  });
 
   const menuItems: { id: TabId; label: string; count: (() => number | null) }[] = [
+    { id: 'активність', label: 'Активність', count: () => userActivities.length || null },
     { id: 'ігри', label: 'Ігри', count: () => profile?.gamesCount ?? null },
     { id: 'друзі', label: 'Друзі', count: () => uniqueFriends.length },
     { id: 'обговорення', label: 'Обговорення', count: () => null },
@@ -209,7 +221,20 @@ import { onMount } from 'svelte';
 
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
 
-          {#if activeTab === 'ігри'}
+          {#if activeTab === 'активність'}
+            {#if userActivities.length === 0}
+              <div class="text-center py-16 text-slate-500 text-sm">
+                У користувача поки немає записів активності.
+              </div>
+            {:else}
+              <div class="space-y-3">
+                {#each userActivities as act (act.id)}
+                  <ActivityCard activity={act} />
+                {/each}
+              </div>
+            {/if}
+
+          {:else if activeTab === 'ігри'}
             {#if profile.libraryGames.length === 0 && profile.publishedGames.length === 0}
               <div class="text-center py-16 text-slate-500 text-sm">
                 У користувача поки немає ігор.

@@ -18,6 +18,7 @@
   import ChatView from './lib/components/chat/ChatView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
+  import WalletView from './lib/components/wallet/WalletView.svelte';
   import DeveloperView from './lib/components/developer/DeveloperView.svelte';
   import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
   import EditDeveloperGameModal from './lib/components/developer/EditDeveloperGameModal.svelte';
@@ -121,6 +122,8 @@
       <PublicProfileView />
     {:else if $uiStore.activeTab === 'my-profile'}
       <MyProfileView />
+    {:else if $uiStore.activeTab === 'wallet'}
+      <WalletView />
     {:else if $uiStore.activeTab === 'catalog'}
       <CatalogView />
     {:else if $uiStore.activeTab === 'game'}

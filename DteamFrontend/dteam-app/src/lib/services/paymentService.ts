@@ -3,7 +3,8 @@ import type {
   DepositAddressResponse, 
   VerifyTransactionRequest, 
   PaymentVerificationResult, 
-  TransactionHistoryItem 
+  TransactionHistoryItem,
+  UnifiedTransactionItem
 } from '../types/payment';
 
 export const paymentService = {
@@ -27,5 +28,9 @@ export const paymentService = {
 
   async getTransactionHistory(): Promise<TransactionHistoryItem[]> {
     return await api.get<TransactionHistoryItem[]>('/payment/history');
+  },
+
+  async getTransactions(): Promise<UnifiedTransactionItem[]> {
+    return await api.get<UnifiedTransactionItem[]>('/payment/transactions');
   }
 };

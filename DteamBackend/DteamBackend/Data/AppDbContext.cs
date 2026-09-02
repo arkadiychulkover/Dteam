@@ -26,6 +26,7 @@ namespace DteamBackend.Data
         public DbSet<CommunityComment> CommunityComments => Set<CommunityComment>();
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<ChatUpload> ChatUploads => Set<ChatUpload>();
+        public DbSet<UserActivity> UserActivities => Set<UserActivity>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -325,6 +326,20 @@ namespace DteamBackend.Data
                     .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(u => u.UserId);
+            });
+
+            modelBuilder.Entity<UserActivity>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+
+                entity.HasOne(a => a.User)
+                    .WithMany(u => u.Activities)
+                    .HasForeignKey(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(a => a.UserId);
+                entity.HasIndex(a => a.CreatedAt);
+                entity.HasIndex(a => new { a.UserId, a.CreatedAt });
             });
         }
     }

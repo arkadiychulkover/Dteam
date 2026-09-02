@@ -3,7 +3,7 @@
   import { uiStore } from '../../stores/uiStore';
 </script>
 
-<footer class="mt-24 border-t border-[#0b2834] bg-[#030d12] py-10 px-4 lg:px-8 relative z-20 shadow-2xl">
+<footer class="mt-20 border-t border-[#0b2834] bg-[#030d12] pt-8 pb-20 lg:pb-10 px-4 lg:px-8 relative z-20 shadow-2xl">
   <div class="max-w-7xl mx-auto flex flex-col items-center justify-between gap-6 text-center">
     <div class="flex items-center gap-2.5">
       <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/25">

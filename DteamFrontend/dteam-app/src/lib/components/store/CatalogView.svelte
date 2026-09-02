@@ -41,6 +41,7 @@ import { onMount } from 'svelte';
   let catalogRecommendations = $state<GameRecommendation[]>([]);
   let isCatalogLoadingRecs = $state(false);
   let isCatalogRecsOpen = $state(false);
+  let isMobileFiltersOpen = $state(false);
 
   const genres = [
     'All Games', 'Action', 'RPG', 'Strategy', 'Adventure',
@@ -237,17 +238,30 @@ import { onMount } from 'svelte';
   </div>
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-cyan-950/80">
-    <div class="flex items-center gap-2 text-xs">
-      <span class="text-slate-400 font-medium">Сортування:</span>
-      <select
-        value={$gamesStore.filters.sortBy}
-        onchange={(e) => applyFilter({ sortBy: (e.target as HTMLSelectElement).value })}
-        class="bg-[#061820] text-cyan-300 font-bold border border-cyan-500/30 hover:border-cyan-400 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Mobile Filter Toggle Button -->
+      <button
+        type="button"
+        onclick={() => isMobileFiltersOpen = !isMobileFiltersOpen}
+        class="lg:hidden px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm
+          {isMobileFiltersOpen ? 'bg-cyan-500 text-black border-cyan-400' : ''}"
       >
-        {#each sortOptions as opt}
-          <option value={opt.id}>{opt.label}</option>
-        {/each}
-      </select>
+        <SlidersHorizontal class="w-3.5 h-3.5" />
+        <span>{isMobileFiltersOpen ? 'Сховати фільтри' : 'Фільтри'}</span>
+      </button>
+
+      <div class="flex items-center gap-2 text-xs">
+        <span class="text-slate-400 font-medium">Сортування:</span>
+        <select
+          value={$gamesStore.filters.sortBy}
+          onchange={(e) => applyFilter({ sortBy: (e.target as HTMLSelectElement).value })}
+          class="bg-[#061820] text-cyan-300 font-bold border border-cyan-500/30 hover:border-cyan-400 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+        >
+          {#each sortOptions as opt}
+            <option value={opt.id}>{opt.label}</option>
+          {/each}
+        </select>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
@@ -271,8 +285,8 @@ import { onMount } from 'svelte';
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-    <aside class="lg:col-span-3 space-y-4">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+    <aside class="lg:col-span-3 space-y-4 {isMobileFiltersOpen ? 'block' : 'hidden lg:block'}">
       <div class="p-4 rounded-2xl bg-[#061820]/90 border border-cyan-500/20 shadow-lg space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-extrabold text-white tracking-wide flex items-center gap-2">

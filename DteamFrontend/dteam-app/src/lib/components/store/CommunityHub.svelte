@@ -801,7 +801,7 @@
           <div class="flex items-center justify-between">
             <button
               type="button"
-              onclick={() => profileStore.viewProfile(selectedPost.author.id)}
+              onclick={() => selectedPost && profileStore.viewProfile(selectedPost.author.id)}
               class="flex items-center gap-3 cursor-pointer text-left"
             >
               <div

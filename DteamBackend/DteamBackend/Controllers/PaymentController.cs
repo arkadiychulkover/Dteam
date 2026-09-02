@@ -1,7 +1,10 @@
 using System.Security.Claims;
+using System.Text.Json;
 using DteamBackend.Data;
+using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,17 +19,20 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly TonService _tonService;
+        private readonly IActivityService _activityService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
             AppDbContext context, 
             TonService tonService, 
+            IActivityService activityService,
             IConfiguration configuration,
             ILogger<PaymentController> logger)
         {
             _context = context;
             _tonService = tonService;
+            _activityService = activityService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -140,6 +146,20 @@ namespace DteamBackend.Controllers
 
             await _context.SaveChangesAsync();
 
+            try
+            {
+                await _activityService.LogActivityAsync(
+                    userId: user.Id,
+                    type: UserActivityType.BalanceDeposited,
+                    title: $"Поповнив(ла) баланс на {dto.Amount} TON",
+                    description: $"Успішне зарахування коштів у мережі TON (TX: {cleanHash.Substring(0, Math.Min(12, cleanHash.Length))}...)",
+                    details: JsonSerializer.Serialize(new { amount = dto.Amount, txhHash = cleanHash, newBalance = user.BalanceInNanoTons }),
+                    relatedEntityId: transactionRecord.Id,
+                    imageUrl: null
+                );
+            }
+            catch { /* Best effort logging */ }
+
             _logger.LogInformation($"[PaymentController] User {user.Id} ({user.Username}) deposited {dto.Amount} TON ({nanoTonsToAdd} nanoTONs). New balance: {user.BalanceInNanoTons} nanoTONs.");
 
             return Ok(new PaymentVerificationResultDto
@@ -152,10 +172,11 @@ namespace DteamBackend.Controllers
             });
         }
 
+        [HttpGet("transactions")]
         [HttpGet("history")]
-        [ProducesResponseType(typeof(List<TranxactionDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<UnifiedTransactionDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<List<TranxactionDto>>> GetUserTransactions()
+        public async Task<ActionResult<List<UnifiedTransactionDto>>> GetUserTransactions()
         {
             var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
@@ -163,21 +184,66 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var transactions = await _context.Tranxactions
+            // 1. Fetch on-chain TON deposits
+            var deposits = await _context.Tranxactions
                 .AsNoTracking()
                 .Where(t => t.UserId == userId)
-                .OrderByDescending(t => t.CreatedAt)
-                .Select(t => new TranxactionDto
+                .Select(t => new UnifiedTransactionDto
                 {
                     Id = t.Id,
-                    TxhHash = t.TxhHash,
-                    Amount = t.Amount,
-                    UserId = t.UserId,
-                    CreatedAt = t.CreatedAt
+                    Type = "deposit",
+                    Title = "Поповнення балансу (TON)",
+                    AmountTon = t.Amount,
+                    AmountNanoTon = (long)Math.Round(t.Amount * 1_000_000_000m),
+                    TxHash = t.TxhHash,
+                    Status = "completed",
+                    CreatedAt = t.CreatedAt,
+                    GameCoverUrl = null,
+                    GameId = null
                 })
                 .ToListAsync();
 
-            return Ok(transactions);
+            // 2. Fetch game purchases
+            var purchases = await _context.UserGames
+                .AsNoTracking()
+                .Include(ug => ug.Game)
+                .Where(ug => ug.UserId == userId)
+                .ToListAsync();
+
+            var purchaseDtos = purchases.Select(ug =>
+            {
+                var game = ug.Game;
+                long effectivePrice = game.PriceInNanoTons;
+                if (game.DiscountPercentage > 0)
+                {
+                    effectivePrice = (long)Math.Round((double)game.PriceInNanoTons * (100.0 - game.DiscountPercentage) / 100.0);
+                }
+                if (effectivePrice < 0) effectivePrice = 0;
+
+                decimal priceInTon = (decimal)effectivePrice / 1_000_000_000m;
+
+                return new UnifiedTransactionDto
+                {
+                    Id = Guid.NewGuid(),
+                    Type = "purchase",
+                    Title = $"Покупка: {game.Title}",
+                    AmountTon = -priceInTon,
+                    AmountNanoTon = -effectivePrice,
+                    TxHash = null,
+                    Status = "completed",
+                    CreatedAt = ug.PurchasedAt,
+                    GameCoverUrl = game.CoverImageUrl,
+                    GameId = game.Id
+                };
+            }).ToList();
+
+            // 3. Merge & sort chronologically descending
+            var allTransactions = deposits
+                .Concat(purchaseDtos)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToList();
+
+            return Ok(allTransactions);
         }
     }
 }

@@ -16,6 +16,7 @@ export type MainTab =
   | 'developer'
   | 'profile'
   | 'my-profile'
+  | 'wallet'
   | 'login'
   | 'register'
   | 'forgot-password'

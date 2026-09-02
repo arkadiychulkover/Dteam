@@ -1,7 +1,10 @@
 using System.Security.Claims;
+using System.Text.Json;
 using DteamBackend.Data;
+using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +17,12 @@ namespace DteamBackend.Controllers
     public class CartController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IActivityService _activityService;
 
-        public CartController(AppDbContext context)
+        public CartController(AppDbContext context, IActivityService activityService)
         {
             _context = context;
+            _activityService = activityService;
         }
 
         private Guid GetCurrentUserId()
@@ -347,6 +352,20 @@ namespace DteamBackend.Controllers
                     }
 
                     addedCount++;
+
+                    try
+                    {
+                        await _activityService.LogActivityAsync(
+                            userId: user.Id,
+                            type: UserActivityType.GamePurchased,
+                            title: $"Придбав(ла) гру {game.Title}",
+                            description: game.ShortDescription ?? game.Description,
+                            details: JsonSerializer.Serialize(new { gameId = game.Id, gameTitle = game.Title, price = effectivePrice }),
+                            relatedEntityId: game.Id,
+                            imageUrl: game.CoverImageUrl ?? game.HeaderImageUrl
+                        );
+                    }
+                    catch { /* Best effort logging */ }
                 }
             }
 

@@ -13,11 +13,14 @@
     UserMinus, 
     Ban, 
     Users,
+    User,
+    Activity,
     MessageSquare,
     Loader2,
     Copy,
     Fingerprint
   } from 'lucide-svelte';
+  import { profileStore } from '../../stores/profileStore';
   import { uiStore } from '../../stores/uiStore';
   import { friendsStore } from '../../stores/friendsStore';
   import { chatStore } from '../../stores/chatStore';
@@ -25,10 +28,12 @@
   import { UserStatus } from '../../types';
   import type { FriendDto, FriendRequestDto } from '../../types/friend';
   import AddFriendModal from './AddFriendModal.svelte';
+  import FriendsActivityFeed from '../activity/FriendsActivityFeed.svelte';
+  import { activityStore } from '../../stores/activityStore';
 
   let isIdCopied = $state(false);
 
-  type ActiveFriendTab = 'all' | 'online' | 'blocked' | 'requests';
+  type ActiveFriendTab = 'all' | 'online' | 'activity' | 'blocked' | 'requests';
 
   let activeTab = $state<ActiveFriendTab>('all');
   let searchQuery = $state('');
@@ -202,6 +207,23 @@
     </button>
 
     <button
+      onclick={() => activeTab = 'activity'}
+      class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
+        {activeTab === 'activity' 
+          ? 'text-white border-b-2 border-[#0df2c9]' 
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
+    >
+      <Activity class="w-3.5 h-3.5 {activeTab === 'activity' ? 'text-[#0df2c9]' : 'text-slate-400'}" />
+      <span>Активність</span>
+      {#if $activityStore.friendsActivities.length > 0}
+        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black
+          {activeTab === 'activity' ? 'bg-[#0a3542] text-[#0df2c9]' : 'bg-[#061d24] text-slate-400'}">
+          {$activityStore.friendsActivities.length}
+        </span>
+      {/if}
+    </button>
+
+    <button
       onclick={() => activeTab = 'blocked'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
         {activeTab === 'blocked' 
@@ -240,51 +262,58 @@
             class="w-4 h-4 rounded-md border-cyan-500/30 bg-[#062029] text-cyan-400 focus:ring-0 focus:outline-none accent-[#0df2c9]"
           />
           <span class="flex items-center gap-1 hover:text-cyan-300 transition-colors">
-            Пошук за грою
-            <ChevronDown class="w-3.5 h-3.5 text-slate-500" />
+            Шукати лише тих, хто грає
+            <ChevronDown class="w-3.5 h-3.5 text-cyan-400" />
           </span>
         </label>
       </div>
-    {/if}
 
-    <div class="relative">
-      <input
-        type="text"
-        bind:value={searchQuery}
-        placeholder="Пошук за нікнеймом"
-        class="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-[#062029] border border-cyan-500/20 focus:border-[#0df2c9] focus:shadow-[0_0_12px_rgba(13,242,201,0.2)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all"
-      />
-      {#if searchQuery}
-        <button
-          onclick={() => searchQuery = ''}
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
-        >
-          <X class="w-3.5 h-3.5" />
-        </button>
-      {/if}
-    </div>
+      <div class="relative">
+        <input
+          type="text"
+          placeholder="Пошук за нікнеймом{searchByGame ? ' або назвою гри' : ''}..."
+          bind:value={searchQuery}
+          class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs sm:text-sm text-white focus:outline-none focus:border-[#0df2c9] transition-colors"
+        />
+        <Search class="w-4 h-4 text-cyan-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        {#if searchQuery}
+          <button
+            type="button"
+            onclick={() => searchQuery = ''}
+            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   {#if isLoading}
-    <div class="py-16 text-center text-slate-400 flex flex-col items-center gap-3">
-      <Loader2 class="w-6 h-6 animate-spin text-[#0df2c9]" />
-      <span class="text-xs">Завантаження друзів...</span>
+    <div class="p-12 text-center">
+      <Loader2 class="w-8 h-8 mx-auto text-cyan-400 animate-spin" />
     </div>
 
   {:else if activeTab === 'all' || activeTab === 'online'}
     <div class="space-y-2.5">
       {#each filteredFriends as friend (friend.id)}
         <div class="relative flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 hover:border-cyan-500/35 transition-all group">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="relative w-11 h-11 rounded-full shrink-0 select-none">
+          
+          <button
+            type="button"
+            onclick={() => profileStore.viewProfile(friend.id)}
+            class="flex items-center gap-3 min-w-0 text-left cursor-pointer group/user flex-1"
+            title="Переглянути профіль {friend.username}"
+          >
+            <div class="relative w-11 h-11 rounded-full shrink-0 select-none group-hover/user:scale-105 transition-transform">
               {#if friend.avatarUrl}
                 <img
                   src={friend.avatarUrl}
                   alt={friend.username}
-                  class="w-full h-full rounded-full object-cover border border-cyan-500/30"
+                  class="w-full h-full rounded-full object-cover border border-cyan-500/30 group-hover/user:border-cyan-400"
                 />
               {:else}
-                <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white font-black text-sm">
+                <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white font-black text-sm group-hover/user:border group-hover/user:border-cyan-400">
                   {friend.username.charAt(0).toUpperCase()}
                 </div>
               {/if}
@@ -293,14 +322,14 @@
             </div>
 
             <div class="min-w-0">
-              <span class="block text-sm font-bold text-white truncate max-w-[200px] sm:max-w-[280px]">
+              <span class="block text-sm font-bold text-white group-hover/user:text-cyan-300 transition-colors truncate max-w-[200px] sm:max-w-[280px]">
                 {friend.username}
               </span>
               <span class="block text-[10px] text-slate-400 truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
                 {getStatusLabel(friend.status, friend.currentGame)}
               </span>
             </div>
-          </div>
+          </button>
 
           <div class="flex items-center gap-2 shrink-0">
             <button
@@ -337,6 +366,13 @@
               {#if activeMenuFriendId === friend.id}
                 <div class="absolute right-0 mt-2 w-48 bg-[#091f28] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-30 animate-in fade-in zoom-in-95">
                   <button
+                    onclick={() => { profileStore.viewProfile(friend.id); activeMenuFriendId = null; }}
+                    class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 font-semibold cursor-pointer mb-0.5"
+                  >
+                    <User class="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Переглянути профіль</span>
+                  </button>
+                  <button
                     onclick={() => friendsStore.blockUser(friend)}
                     class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-amber-500/10 text-amber-300 font-semibold cursor-pointer"
                   >
@@ -367,6 +403,9 @@
         </div>
       {/each}
     </div>
+
+  {:else if activeTab === 'activity'}
+    <FriendsActivityFeed />
 
   {:else if activeTab === 'blocked'}
     <div class="space-y-2.5">

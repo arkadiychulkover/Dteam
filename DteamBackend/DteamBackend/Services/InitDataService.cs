@@ -614,5 +614,91 @@ namespace DteamBackend.Services
                 _logger?.LogError(ex, "[InitData] Error ensuring Chat schema in SQLite database.");
             }
         }
+
+        public async Task EnsureActivitySchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""UserActivities"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_UserActivities"" PRIMARY KEY,
+                        ""UserId"" TEXT NOT NULL,
+                        ""Type"" INTEGER NOT NULL,
+                        ""Title"" TEXT NOT NULL,
+                        ""Description"" TEXT NULL,
+                        ""Details"" TEXT NULL,
+                        ""RelatedEntityId"" TEXT NULL,
+                        ""ImageUrl"" TEXT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_UserActivities_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                    );
+
+                    CREATE INDEX IF NOT EXISTS ""IX_UserActivities_UserId"" ON ""UserActivities"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserActivities_CreatedAt"" ON ""UserActivities"" (""CreatedAt"");
+                    CREATE INDEX IF NOT EXISTS ""IX_UserActivities_UserId_CreatedAt"" ON ""UserActivities"" (""UserId"", ""CreatedAt"");
+                ");
+
+                _logger?.LogInformation("[InitData] UserActivities schema successfully ensured.");
+
+                if (!await context.UserActivities.AnyAsync())
+                {
+                    var user = await context.Users.FirstOrDefaultAsync();
+                    var game = await context.Games.FirstOrDefaultAsync();
+
+                    if (user != null)
+                    {
+                        var sampleActivities = new List<UserActivity>();
+
+                        if (game != null)
+                        {
+                            sampleActivities.Add(new UserActivity
+                            {
+                                Id = Guid.NewGuid(),
+                                UserId = user.Id,
+                                Type = UserActivityType.GamePurchased,
+                                Title = $"Придбав(ла) гру {game.Title}",
+                                Description = game.ShortDescription ?? game.Description,
+                                Details = JsonSerializer.Serialize(new { gameId = game.Id, gameTitle = game.Title, price = game.PriceInNanoTons }),
+                                RelatedEntityId = game.Id,
+                                ImageUrl = game.CoverImageUrl ?? game.HeaderImageUrl,
+                                CreatedAt = DateTime.UtcNow.AddMinutes(-25)
+                            });
+
+                            sampleActivities.Add(new UserActivity
+                            {
+                                Id = Guid.NewGuid(),
+                                UserId = user.Id,
+                                Type = UserActivityType.GamePublished,
+                                Title = $"Опубліковано нову гру {game.Title}",
+                                Description = game.ShortDescription,
+                                Details = JsonSerializer.Serialize(new { gameId = game.Id, gameTitle = game.Title }),
+                                RelatedEntityId = game.Id,
+                                ImageUrl = game.CoverImageUrl ?? game.HeaderImageUrl,
+                                CreatedAt = DateTime.UtcNow.AddHours(-3)
+                            });
+                        }
+
+                        sampleActivities.Add(new UserActivity
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            Type = UserActivityType.BalanceDeposited,
+                            Title = "Поповнив(ла) баланс на 10 TON",
+                            Description = "Успішне зарахування коштів у мережі TON (TX: 3a9f1b2c4d5e...)",
+                            Details = JsonSerializer.Serialize(new { amount = 10m, txhHash = "3a9f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a" }),
+                            CreatedAt = DateTime.UtcNow.AddDays(-1)
+                        });
+
+                        await context.UserActivities.AddRangeAsync(sampleActivities);
+                        await context.SaveChangesAsync();
+                        _logger?.LogInformation($"[InitData] Seeded {sampleActivities.Count} sample activities.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring UserActivities schema in SQLite database.");
+            }
+        }
     }
 }

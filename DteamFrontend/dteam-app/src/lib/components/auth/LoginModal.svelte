@@ -53,7 +53,7 @@
     role="presentation"
     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
   >
-    <div class="relative w-full max-w-md bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
+    <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
       
       <button
         onclick={closeModal}

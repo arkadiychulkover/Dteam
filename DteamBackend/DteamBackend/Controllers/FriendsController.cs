@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using System.Text.Json;
 using DteamBackend.Data;
+using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
 using DteamBackend.Models.Enums;
@@ -15,10 +17,12 @@ namespace DteamBackend.Controllers
     public class FriendsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IActivityService _activityService;
 
-        public FriendsController(AppDbContext context)
+        public FriendsController(AppDbContext context, IActivityService activityService)
         {
             _context = context;
+            _activityService = activityService;
         }
 
         private Guid GetCurrentUserId()
@@ -304,6 +308,32 @@ namespace DteamBackend.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                // Log for current user (Receiver)
+                await _activityService.LogActivityAsync(
+                    userId: request.ReceiverId,
+                    type: UserActivityType.FriendAdded,
+                    title: $"Подружився(лася) з {request.Sender.Username}",
+                    description: null,
+                    details: JsonSerializer.Serialize(new { friendId = request.SenderId, friendUsername = request.Sender.Username }),
+                    relatedEntityId: request.SenderId,
+                    imageUrl: request.Sender.AvatarUrl
+                );
+
+                // Log for sender
+                await _activityService.LogActivityAsync(
+                    userId: request.SenderId,
+                    type: UserActivityType.FriendAdded,
+                    title: $"Подружився(лася) з {request.Receiver.Username}",
+                    description: null,
+                    details: JsonSerializer.Serialize(new { friendId = request.ReceiverId, friendUsername = request.Receiver.Username }),
+                    relatedEntityId: request.ReceiverId,
+                    imageUrl: request.Receiver.AvatarUrl
+                );
+            }
+            catch { /* Best effort logging */ }
 
             return Ok(new FriendActionResponseDto
             {

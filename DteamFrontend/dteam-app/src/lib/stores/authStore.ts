@@ -98,6 +98,17 @@ function createAuthStore() {
         return { ...s, user: updated };
       });
     },
+    fetchProfile: async () => {
+      try {
+        const freshUser = await authService.getProfile();
+        saveStoredUser(freshUser);
+        update((s) => ({ ...s, user: freshUser }));
+        return freshUser;
+      } catch (e) {
+        console.warn('[authStore] Failed to fetch fresh profile:', e);
+        return null;
+      }
+    },
     register: async (email: string, username: string, password: string, walletAddress?: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {

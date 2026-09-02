@@ -164,7 +164,7 @@
   });
 
   function handleViewInStore(game: Game) {
-    gamesStore.selectGame(game.id);
+    gamesStore.selectGame(game);
     uiStore.setTab('game');
   }
 
@@ -222,7 +222,7 @@
 
   <!-- LEVEL 2: OVERVIEW — One unified analytics surface (No card soup!) -->
   <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 overflow-hidden shadow-lg">
-    <div class="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-cyan-500/10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-cyan-500/10">
       <!-- Col 1: Revenue -->
       <div class="p-5 flex flex-col justify-between space-y-2">
         <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
@@ -606,7 +606,7 @@
                       Чернетка
                     </span>
                   {/if}
-                  {#if game.discountPercentage > 0}
+                  {#if (game.discountPercentage || 0) > 0}
                     <span class="px-1.5 py-0.5 rounded-md bg-[#ff4767] text-white text-[10px] font-black shadow">
                       -{game.discountPercentage}%
                     </span>
