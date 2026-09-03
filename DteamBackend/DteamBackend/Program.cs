@@ -37,6 +37,9 @@ namespace DteamBackend
             builder.Services.AddScoped<IInitDataService, InitDataService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<TonService>();
+            builder.Services.Configure<EthereumOptions>(builder.Configuration.GetSection(EthereumOptions.SectionName));
+            builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IHardhatTokenService, HardhatTokenService>();
 
             builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
             builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();

@@ -11,6 +11,10 @@ contract DteamPoints is ERC20, Ownable {
         _mint(to, amount);
     }
 
+    function burn(address from, uint256 amount) external onlyOwner {
+        _burn(from, amount);
+    }
+
     function _update(
         address from,
         address to,

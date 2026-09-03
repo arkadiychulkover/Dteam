@@ -1,4 +1,4 @@
-﻿using DteamBackend.Models;
+using DteamBackend.Models;
 using DteamBackend.Models.DTO.Auth;
 
 namespace DteamBackend.Interfaces
