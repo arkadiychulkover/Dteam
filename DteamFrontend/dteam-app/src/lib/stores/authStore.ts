@@ -109,10 +109,10 @@ function createAuthStore() {
         return null;
       }
     },
-    register: async (email: string, username: string, password: string, walletAddress?: string) => {
+    register: async (email: string, username: string, password: string, hardhatAddress?: string, walletAddress?: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const res = await authService.register({ email, username, password, walletAddress });
+        const res = await authService.register({ email, username, password, hardhatAddress, walletAddress });
         api.setTokens(res.accessToken, res.refreshToken);
         saveStoredUser(res.user);
         set({ user: res.user, token: res.accessToken, resetEmail: null, resetToken: null, isLoading: false, error: null });

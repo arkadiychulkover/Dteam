@@ -25,6 +25,9 @@ namespace DteamBackend.Models
         [MaxLength(100)]
         public string? WalletAddress { get; set; }
 
+        [MaxLength(100)]
+        public string? HardhatAddress { get; set; }
+
         public string? PasswordResetToken { get; set; }
 
         public DateTime? PasswordResetTokenExpiresAt { get; set; }

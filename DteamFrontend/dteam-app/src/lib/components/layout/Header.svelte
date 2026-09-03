@@ -44,7 +44,9 @@
   let headerSearchQuery = $state('');
   let searchWrapperEl = $state<HTMLElement | null>(null);
   let categoriesModalEl = $state<HTMLElement | null>(null);
+  let catalogBtnEl = $state<HTMLElement | null>(null);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let closeCatalogTimer: ReturnType<typeof setTimeout> | null = null;
   let recommendations = $state<GameRecommendation[]>([]);
   let isLoadingRecommendations = $state(false);
   let isRecommendationsOpen = $state(false);
@@ -73,11 +75,57 @@
   function handleSearchSubmit(e?: SubmitEvent) {
     if (e) e.preventDefault();
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     if (headerSearchQuery.trim()) {
       gamesStore.setFilters({ search: headerSearchQuery.trim() });
       uiStore.setTab('catalog');
+    }
+  }
+
+  function handleCatalogMouseEnter() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+    isCategoriesModalOpen = true;
+  }
+
+  function handleCatalogMouseLeave() {
+    if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
+    closeCatalogTimer = setTimeout(() => {
+      isCategoriesModalOpen = false;
+    }, 250);
+  }
+
+  function handleModalMouseEnter() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+  }
+
+  function handleModalMouseLeave() {
+    if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
+    closeCatalogTimer = setTimeout(() => {
+      isCategoriesModalOpen = false;
+    }, 250);
+  }
+
+  function handleCatalogClick() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+    if ($uiStore.activeTab !== 'catalog') {
+      uiStore.setTab('catalog');
+      isCategoriesModalOpen = false;
+    } else {
+      isCategoriesModalOpen = !isCategoriesModalOpen;
     }
   }
 
@@ -166,6 +214,10 @@
   }
 
   function handleSelectCategoryFilter(filter: Partial<CatalogFilterState>) {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     gamesStore.resetFilters();
     gamesStore.setFilters(filter);
     gamesStore.loadCatalogGames();
@@ -182,6 +234,10 @@
 
   async function handleSelectRecommendation(rec: GameRecommendation) {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     headerSearchQuery = rec.title;
@@ -203,9 +259,18 @@
 
   function handleClickOutside(e: MouseEvent) {
     const target = e.target as Node;
-    if (searchWrapperEl && !searchWrapperEl.contains(target) && (!categoriesModalEl || !categoriesModalEl.contains(target))) {
+    if (searchWrapperEl && !searchWrapperEl.contains(target)) {
       isRecommendationsOpen = false;
+    }
+    if (
+      categoriesModalEl && !categoriesModalEl.contains(target) &&
+      (!catalogBtnEl || !catalogBtnEl.contains(target))
+    ) {
       isCategoriesModalOpen = false;
+      if (closeCatalogTimer) {
+        clearTimeout(closeCatalogTimer);
+        closeCatalogTimer = null;
+      }
     }
   }
 
@@ -213,6 +278,10 @@
     if (e.key === 'Escape') {
       isRecommendationsOpen = false;
       isCategoriesModalOpen = false;
+      if (closeCatalogTimer) {
+        clearTimeout(closeCatalogTimer);
+        closeCatalogTimer = null;
+      }
     }
   }
 
@@ -221,6 +290,10 @@
     headerSearchQuery = '';
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     uiStore.setTab('store');
   }
 </script>
@@ -262,10 +335,11 @@
         {#each visibleTabs as tab}
           {@const Icon = tab.icon}
           {#if tab.id === 'catalog'}
-            <div class="relative" bind:this={categoriesModalEl}>
+            <div class="relative" bind:this={catalogBtnEl}>
               <button
-                onclick={() => { uiStore.setTab('catalog'); isCategoriesModalOpen = !isCategoriesModalOpen; }}
-                onmouseenter={() => isCategoriesModalOpen = true}
+                onclick={handleCatalogClick}
+                onmouseenter={handleCatalogMouseEnter}
+                onmouseleave={handleCatalogMouseLeave}
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
                   {$uiStore.activeTab === tab.id
                     ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
@@ -275,12 +349,6 @@
                 <span>{tab.label}</span>
                 <ChevronDown class="w-3 h-3 text-cyan-400 transition-transform {isCategoriesModalOpen ? 'rotate-180' : ''}" />
               </button>
-
-              <SearchCategoriesModal
-                isOpen={isCategoriesModalOpen}
-                onSelectFilter={handleSelectCategoryFilter}
-                onClose={() => isCategoriesModalOpen = false}
-              />
             </div>
           {:else}
             <button
@@ -534,11 +602,23 @@
     </div>
   </div>
 
-  <div bind:this={categoriesModalEl}>
+  <div
+    bind:this={categoriesModalEl}
+    role="region"
+    aria-label="Категорії каталогу"
+    onmouseenter={handleModalMouseEnter}
+    onmouseleave={handleModalMouseLeave}
+  >
     <SearchCategoriesModal
       isOpen={isCategoriesModalOpen}
       onSelectFilter={handleSelectCategoryFilter}
-      onClose={() => isCategoriesModalOpen = false}
+      onClose={() => {
+        isCategoriesModalOpen = false;
+        if (closeCatalogTimer) {
+          clearTimeout(closeCatalogTimer);
+          closeCatalogTimer = null;
+        }
+      }}
     />
   </div>
 </header>

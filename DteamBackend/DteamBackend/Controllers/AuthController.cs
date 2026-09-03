@@ -73,6 +73,7 @@ namespace DteamBackend.Controllers
                 PasswordHash = hash,
                 PasswordSalt = salt,
                 WalletAddress = string.IsNullOrWhiteSpace(dto.WalletAddress) ? null : dto.WalletAddress.Trim(),
+                HardhatAddress = string.IsNullOrWhiteSpace(dto.HardhatAddress) ? null : dto.HardhatAddress.Trim(),
                 CreatedAt = DateTime.UtcNow,
                 LastLoginAt = DateTime.UtcNow,
                 Status = UserStatus.Online,

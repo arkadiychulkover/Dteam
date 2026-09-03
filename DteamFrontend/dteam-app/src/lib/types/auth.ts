@@ -10,6 +10,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   walletAddress?: string;
+  hardhatAddress?: string;
 }
 
 export interface AuthResponse {

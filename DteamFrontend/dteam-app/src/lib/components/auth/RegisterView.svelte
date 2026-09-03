@@ -1,22 +1,94 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
-  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight } from 'lucide-svelte';
+  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight, Wallet, Check } from 'lucide-svelte';
 
   let username = $state('');
   let email = $state('');
   let password = $state('');
   let confirmPassword = $state('');
+  let hardhatAddress = $state('');
+  let isConnectingWallet = $state(false);
   let acceptTerms = $state(false);
   let showPassword = $state(false);
   let isSubmitting = $state(false);
   let errorMessage = $state('');
+
+  function handleAccountsChanged(accounts: string[]) {
+    if (accounts && accounts.length > 0) {
+      hardhatAddress = accounts[0];
+      errorMessage = '';
+    } else {
+      hardhatAddress = '';
+    }
+  }
+
+  onMount(() => {
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      const eth = (window as any).ethereum;
+
+      // Check if accounts are already connected in MetaMask
+      eth.request({ method: 'eth_accounts' })
+        .then((accounts: string[]) => {
+          if (accounts && accounts.length > 0) {
+            hardhatAddress = accounts[0];
+          }
+        })
+        .catch(() => {});
+
+      // Listen for account change events directly from MetaMask
+      eth.on('accountsChanged', handleAccountsChanged);
+
+      return () => {
+        if (eth.removeListener) {
+          eth.removeListener('accountsChanged', handleAccountsChanged);
+        }
+      };
+    }
+  });
+
+  async function connectMetaMask() {
+    errorMessage = '';
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      errorMessage = 'MetaMask не обнаружен! Пожалуйста, установите расширение MetaMask для браузера.';
+      return;
+    }
+
+    try {
+      isConnectingWallet = true;
+      const accounts = await (window as any).ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+      if (accounts && accounts.length > 0) {
+        hardhatAddress = accounts[0];
+      }
+    } catch (err: any) {
+      if (err.code === 4001) {
+        errorMessage = 'Подключение MetaMask было отклонено пользователем.';
+      } else {
+        errorMessage = err.message || 'Не удалось подключиться к MetaMask.';
+      }
+    } finally {
+      isConnectingWallet = false;
+    }
+  }
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
       errorMessage = 'Заполните все обязательные поля';
+      return;
+    }
+
+    if (!hardhatAddress.trim()) {
+      errorMessage = 'Пожалуйста, подключите кошелек MetaMask (Hardhat-адрес обязателен для регистрации)';
+      return;
+    }
+
+    if (!/^0x[a-fA-F0-9]{40}$/.test(hardhatAddress.trim())) {
+      errorMessage = 'Некорректный формат Ethereum/Hardhat адреса кошелька';
       return;
     }
 
@@ -39,7 +111,7 @@
     isSubmitting = true;
 
     try {
-      await authStore.register(email, username, password);
+      await authStore.register(email.trim(), username.trim(), password, hardhatAddress.trim());
       uiStore.addToast({
         title: 'Регистрация успешна',
         message: `Добро пожаловать в DTEAM, ${username}!`,
@@ -118,6 +190,56 @@
               class="w-full pl-10 pr-4 py-2.5 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
+        </div>
+
+        <!-- Web3 MetaMask Wallet Connection -->
+        <div class="p-3.5 rounded-2xl bg-[#061820]/90 border border-cyan-500/30 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <Wallet class="w-3.5 h-3.5 text-cyan-400" />
+              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hardhat / Web3 Кошелек</span>
+              <span class="text-rose-400 text-xs font-bold">*</span>
+            </div>
+            {#if hardhatAddress}
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <Check class="w-3 h-3" /> Подключен
+              </span>
+            {/if}
+          </div>
+
+          {#if hardhatAddress}
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#030d12] border border-cyan-500/20">
+              <div class="min-w-0 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xs font-black text-white shrink-0 shadow-md">
+                  🦊
+                </div>
+                <div class="min-w-0">
+                  <p class="font-mono text-xs text-cyan-300 font-bold truncate">{hardhatAddress}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center text-[10px] font-medium text-slate-400 shrink-0 bg-slate-800/40 px-2 py-1 rounded-lg border border-slate-700/40">
+                Авто-синхронизация
+              </span>
+            </div>
+          {:else}
+            <button
+              type="button"
+              onclick={connectMetaMask}
+              disabled={isConnectingWallet}
+              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {#if isConnectingWallet}
+                <div class="w-3.5 h-3.5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin"></div>
+                <span>Подключение к MetaMask...</span>
+              {:else}
+                <span class="text-base">🦊</span>
+                <span>Подключить кошелек MetaMask</span>
+              {/if}
+            </button>
+            <p class="text-[10px] text-slate-400 leading-tight">
+              Адрес кошелька будет привязан к вашему аккаунту для начисления и использования токенов DteamPoints.
+            </p>
+          {/if}
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

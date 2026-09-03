@@ -20,5 +20,8 @@ namespace DteamBackend.Models.DTO.Auth
 
         [MaxLength(100)]
         public string? WalletAddress { get; set; }
+
+        [MaxLength(100)]
+        public string? HardhatAddress { get; set; }
     }
 }

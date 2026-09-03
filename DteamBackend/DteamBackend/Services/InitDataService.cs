@@ -3,6 +3,7 @@ using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Text.Json;
 
@@ -12,15 +13,17 @@ namespace DteamBackend.Services
     {
         private readonly AppDbContext? _context;
         private readonly ILogger<InitDataService>? _logger;
+        private readonly IConfiguration? _configuration;
 
         public InitDataService()
         {
         }
 
-        public InitDataService(AppDbContext context, ILogger<InitDataService> logger)
+        public InitDataService(AppDbContext context, ILogger<InitDataService> logger, IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task InitializeAsync(AppDbContext context)
@@ -32,6 +35,8 @@ namespace DteamBackend.Services
 
             PasswordHasher.CreatePasswordHash("admin123321", out string passwordHash, out string passwordSalt);
 
+            var adminEthAddress = _configuration?["Ethereum:PublicKey"] ?? "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+
             var adminUser = new Duser
             {
                 Id = Guid.NewGuid(),
@@ -40,6 +45,7 @@ namespace DteamBackend.Services
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
                 WalletAddress = "EQB_v1zX3L1f2M9zX_SampleAdminTonWalletAddress_777",
+                HardhatAddress = adminEthAddress,
                 BalanceInNanoTons = 100_000_000_000,
                 TotalEarningsInNanoTons = 0,
                 CreatedAt = DateTime.UtcNow,
@@ -189,9 +195,23 @@ namespace DteamBackend.Services
                 ("lunarmage@dteam.io", "LunarMage", "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&auto=format&fit=crop&q=80", UserStatus.Offline)
             };
 
-            var friendUsers = new List<Duser>();
-            foreach (var item in demoUsersData)
+            // Hardhat accounts #1 to #8 for demo friends
+            var hardhatDemoAccounts = new[]
             {
+                "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+                "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+                "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+                "0x9965507D1a55bcC2695C58ba16FB37d819B0A4df",
+                "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+                "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+                "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+            };
+
+            var friendUsers = new List<Duser>();
+            for (int i = 0; i < demoUsersData.Length; i++)
+            {
+                var item = demoUsersData[i];
                 var user = await context.Users.FirstOrDefaultAsync(u => u.Email == item.email || u.Username == item.username);
                 if (user == null)
                 {
@@ -203,6 +223,7 @@ namespace DteamBackend.Services
                         PasswordHash = passwordHash,
                         PasswordSalt = passwordSalt,
                         WalletAddress = $"EQB_{item.username.ToLowerInvariant()}_wallet_addr",
+                        HardhatAddress = i < hardhatDemoAccounts.Length ? hardhatDemoAccounts[i] : null,
                         BalanceInNanoTons = 10_000_000_000,
                         CreatedAt = DateTime.UtcNow.AddDays(-30),
                         Status = item.status,

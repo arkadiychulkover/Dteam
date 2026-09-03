@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CatalogFilterState } from '../../stores/gamesStore';
-  import { Sparkles, Gamepad2, Users, Monitor, Flame, Tag, ChevronRight } from 'lucide-svelte';
+  import { Sparkles, Gamepad2, Users, Monitor, Flame, Tag, ChevronRight, X } from 'lucide-svelte';
 
   interface Props {
     isOpen: boolean;
@@ -52,7 +52,7 @@
     { label: 'Linux', filter: { platform: 'Linux' } },
   ];
 
-  const specialCategory = [
+  const specialCategory: { label: string; filter: Partial<CatalogFilterState> }[] = [
     { label: 'Знижки та акції', filter: { isDiscounted: true } },
     { label: 'Безкоштовно', filter: { priceFilter: 'free' } },
     { label: 'До 1 TON', filter: { priceFilter: 'under1' } },
@@ -63,8 +63,18 @@
 
 {#if isOpen}
   <div
-    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[calc(100vw-2rem)] max-w-5xl bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 z-50 animate-in fade-in zoom-in-95 duration-150 text-left cursor-default select-none"
+    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[calc(100vw-2rem)] max-w-5xl bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 z-50 animate-in fade-in zoom-in-95 duration-150 text-left cursor-default select-none before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 relative"
   >
+    {#if onClose}
+      <button
+        type="button"
+        onclick={onClose}
+        class="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer"
+        title="Закрити"
+      >
+        <X class="w-4 h-4" />
+      </button>
+    {/if}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-7">
       <div class="space-y-3">
         <div class="flex items-center gap-1.5 pb-2 border-b border-cyan-500/20 text-white font-black text-sm tracking-wide">

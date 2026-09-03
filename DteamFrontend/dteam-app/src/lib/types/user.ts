@@ -16,6 +16,7 @@ export interface Duser {
   email: string;
   username: string;
   walletAddress?: string | null;
+  hardhatAddress?: string | null;
   balanceInNanoTons: number | string;
   totalEarningsInNanoTons: number | string;
   createdAt: string;

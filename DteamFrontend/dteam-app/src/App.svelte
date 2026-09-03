@@ -58,8 +58,12 @@
       if (res.isBanned && $currentUser) {
         authStore.setUser({ ...$currentUser, isBanned: true });
       }
-    } catch (e) {
-      console.warn('[App] Could not check ban status:', e);
+    } catch (e: any) {
+      if (e?.message?.includes('не найден') || e?.status === 404) {
+        authStore.logout();
+      } else {
+        console.warn('[App] Could not check ban status:', e);
+      }
     }
   }
 

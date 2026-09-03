@@ -8,6 +8,7 @@ namespace DteamBackend.Models.DTO
         public string Email { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string? WalletAddress { get; set; }
+        public string? HardhatAddress { get; set; }
         public long BalanceInNanoTons { get; set; }
         public long TotalEarningsInNanoTons { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -29,6 +30,7 @@ namespace DteamBackend.Models.DTO
                 Email = user.Email,
                 Username = user.Username,
                 WalletAddress = user.WalletAddress,
+                HardhatAddress = user.HardhatAddress,
                 BalanceInNanoTons = user.BalanceInNanoTons,
                 TotalEarningsInNanoTons = user.TotalEarningsInNanoTons,
                 CreatedAt = user.CreatedAt,
