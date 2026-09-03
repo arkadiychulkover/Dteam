@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@lucide/svelte": "^1.33.0",
-    "@microsoft/signalr": "^10.0.11"
+    "@microsoft/signalr": "^10.0.11",
+    "ethers": "^6.17.0"
   }
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { currentUser, authStore } from '../../stores/authStore';
   import { myProfileStore } from '../../stores/myProfileStore';
   import { libraryStore } from '../../stores/libraryStore';
@@ -9,11 +9,14 @@
   import { communityService } from '../../services/communityService';
   import { userService } from '../../services/userService';
   import { mediaService, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
+  import { tokenService, type VerifyWalletResponse } from '../../services/tokenService';
+  import { getBalanceDirectFromBlockchain } from '../../services/blockchainService';
   import { uiStore } from '../../stores/uiStore';
   import { formatDate } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import {
-    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity
+    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
+    Wallet, Coins, Award, CheckCircle2, AlertTriangle, RefreshCw, ExternalLink, ShieldCheck, ShieldAlert
   } from 'lucide-svelte';
   import SelectGameModal from '../community/SelectGameModal.svelte';
   import ActivityCard from '../activity/ActivityCard.svelte';
@@ -25,8 +28,90 @@
 
   const uniqueFriends = $derived($friendsStore.friends);
 
-  const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
+  // Web3 / Hardhat Token & Badges State
+  let metaMaskAccount = $state<string | null>(null);
+  let isCheckingWallet = $state(false);
+  let walletVerification = $state<VerifyWalletResponse | null>(null);
+  let tokenBalance = $state<number | null>(null);
+  let isLoadingBalance = $state(false);
+  let metaMaskNotDetected = $state(false);
+
+  async function checkMetaMaskAndSync() {
+    if (typeof window === 'undefined') return;
+
+    const eth = (window as any).ethereum;
+    if (!eth) {
+      metaMaskNotDetected = true;
+      metaMaskAccount = null;
+      walletVerification = null;
+      tokenBalance = null;
+      return;
+    }
+
+    metaMaskNotDetected = false;
+
+    try {
+      isCheckingWallet = true;
+      const accounts = await eth.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        metaMaskAccount = accounts[0];
+
+        if ($currentUser) {
+          const verification = await tokenService.verifyWallet(accounts[0], $currentUser.id);
+          walletVerification = verification;
+
+          if (verification.isMatch) {
+            isLoadingBalance = true;
+            try {
+              tokenBalance = await getBalanceDirectFromBlockchain(accounts[0]);
+            } catch (err) {
+              console.warn('[Profile] Failed to fetch token balance direct from blockchain:', err);
+              tokenBalance = null;
+            } finally {
+              isLoadingBalance = false;
+            }
+          } else {
+            tokenBalance = null;
+          }
+        }
+      } else {
+        metaMaskAccount = null;
+        walletVerification = null;
+        tokenBalance = null;
+      }
+    } catch (err) {
+      console.warn('[Profile] Error checking MetaMask accounts:', err);
+    } finally {
+      isCheckingWallet = false;
+    }
+  }
+
+  async function connectMetaMask() {
+    if (typeof window === 'undefined') return;
+    const eth = (window as any).ethereum;
+    if (!eth) {
+      metaMaskNotDetected = true;
+      return;
+    }
+
+    try {
+      isCheckingWallet = true;
+      await eth.request({ method: 'eth_requestAccounts' });
+      await checkMetaMaskAndSync();
+    } catch (err: any) {
+      uiStore.addToast({
+        title: 'MetaMask',
+        message: err?.message || 'Не вдалося підключити MetaMask',
+        type: 'error'
+      });
+    } finally {
+      isCheckingWallet = false;
+    }
+  }
+
+  const menuItems: { id: TabId; label: string; count: () => number | string | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
+    { id: 'значки', label: 'Значки', count: () => (tokenBalance !== null ? `${tokenBalance} DTP` : null) },
     { id: 'ігри', label: 'Ігри', count: () => $libraryStore.items.length },
     { id: 'бажане', label: 'Бажане', count: () => $wishlistStore.items.length },
     { id: 'обговорення', label: 'Обговорення', count: () => myDiscussionPosts.length },
@@ -47,6 +132,16 @@
     $currentUser ? ($activityStore.userActivities[$currentUser.id.toLowerCase()] || []) : []
   );
 
+  function handleAccountsChanged() {
+    checkMetaMaskAndSync();
+  }
+
+  $effect(() => {
+    if (activeTab === 'значки') {
+      checkMetaMaskAndSync();
+    }
+  });
+
   onMount(() => {
     myProfileStore.reload();
     libraryStore.loadLibrary();
@@ -54,6 +149,24 @@
     friendsStore.loadFriends();
     if ($currentUser) {
       activityStore.loadUserActivities($currentUser.id);
+    }
+
+    checkMetaMaskAndSync();
+
+    if (typeof window !== 'undefined') {
+      const eth = (window as any).ethereum;
+      if (eth && eth.on) {
+        eth.on('accountsChanged', handleAccountsChanged);
+      }
+    }
+  });
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      const eth = (window as any).ethereum;
+      if (eth && eth.removeListener) {
+        eth.removeListener('accountsChanged', handleAccountsChanged);
+      }
     }
   });
 
@@ -370,6 +483,191 @@
                 {/each}
               </div>
             {/if}
+          </div>
+        {/if}
+
+        <!-- TAB: БАЛИ / ПОИНТИ (DTEAM POINTS) -->
+        {#if activeTab === 'значки'}
+          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-6">
+            
+            <!-- Заголовок та кнопка оновлення -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-yellow-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-500/10">
+                  <Coins class="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 class="text-xl font-black text-white flex items-center gap-2">
+                    Бали лояльності (Dteam Points)
+                  </h2>
+                  <p class="text-xs text-slate-400">
+                    Баланс токенів DTP програми лояльності безпосередньо зі смарт-контракту в блокчейні
+                  </p>
+                </div>
+              </div>
+
+              {#if walletVerification?.isMatch}
+                <button
+                  onclick={checkMetaMaskAndSync}
+                  disabled={isCheckingWallet || isLoadingBalance}
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
+                >
+                  <RefreshCw class="w-3.5 h-3.5 {isCheckingWallet || isLoadingBalance ? 'animate-spin' : ''}" />
+                  Оновити баланс
+                </button>
+              {/if}
+            </div>
+
+            <!-- ГОЛОВНА КАРТКА ПОИНТІВ -->
+            <div class="p-8 rounded-3xl bg-gradient-to-br from-[#021c24] via-[#032630] to-[#043340] border-2 border-cyan-500/30 shadow-2xl relative overflow-hidden">
+              <div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+              <div class="relative z-10 flex flex-col items-center text-center space-y-3">
+                <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30">
+                  Баланс поинтів (DTP)
+                </span>
+
+                <div class="py-2">
+                  {#if isCheckingWallet || isLoadingBalance}
+                    <div class="flex items-center justify-center gap-3 text-cyan-400 py-4">
+                      <Loader2 class="w-8 h-8 animate-spin" />
+                      <span class="text-base font-semibold">Отримання балансу з блокчейну...</span>
+                    </div>
+                  {:else if walletVerification?.isMatch}
+                    <div class="text-5xl sm:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500">
+                      {tokenBalance !== null ? tokenBalance.toLocaleString() : '0'}
+                      <span class="text-2xl sm:text-3xl font-bold text-amber-400 ml-1">DTP</span>
+                    </div>
+                  {:else}
+                    <div class="text-4xl sm:text-5xl font-black text-slate-500">
+                      — <span class="text-xl font-bold text-slate-600">DTP</span>
+                    </div>
+                  {/if}
+                </div>
+
+                <p class="text-xs text-slate-400 max-w-md">
+                  Токени DteamPoints нараховуються за активність на платформі і прив'язані до вашого блокчейн-кошелька.
+                </p>
+              </div>
+            </div>
+
+            <!-- СТАТУСИ ТА ПЛАШКА НЕВІДПОВІДНОСТІ -->
+            {#if metaMaskNotDetected}
+              <div class="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <AlertTriangle class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div class="space-y-1">
+                  <h4 class="text-sm font-bold text-amber-300">MetaMask не виявлено</h4>
+                  <p class="text-xs text-slate-300 leading-relaxed">
+                    Для перевірки відповідності адреси та отримання токенів DTP встановіть розширення MetaMask у браузері.
+                  </p>
+                  <a
+                    href="https://metamask.io/download/"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 underline font-medium pt-1"
+                  >
+                    Встановити MetaMask <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            {:else if !metaMaskAccount}
+              <div class="p-5 rounded-2xl bg-[#02171d] border border-cyan-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                    <Wallet class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-bold text-white">MetaMask не підключено</h4>
+                    <p class="text-xs text-slate-400">Підключіть MetaMask для перевірки відповідності адреси та балансу поинтів</p>
+                  </div>
+                </div>
+                <button
+                  onclick={connectMetaMask}
+                  disabled={isCheckingWallet}
+                  class="bg-[#21e6c1] hover:bg-[#1cd1af] text-[#03232c] px-5 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-500/10 disabled:opacity-60"
+                >
+                  {#if isCheckingWallet}
+                    <Loader2 class="w-3.5 h-3.5 animate-spin" /> Перевірка...
+                  {:else}
+                    <Wallet class="w-3.5 h-3.5" /> Підключити MetaMask
+                  {/if}
+                </button>
+              </div>
+            {:else if walletVerification && !walletVerification.isMatch}
+              <!-- ПЛАШКА: ПЕРЕКЛЮЧИТЕ НА НУЖНЫЙ АККАУНТ METAMASK ДЛЯ ПОЛУЧЕНИЯ ТОКЕНОВ -->
+              <div class="p-6 rounded-2xl bg-gradient-to-r from-rose-950/80 via-[#200e16] to-amber-950/70 border-2 border-rose-500 shadow-xl shadow-rose-950/50 space-y-4 animate-in fade-in duration-200">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 mt-0.5">
+                    <ShieldAlert class="w-6 h-6 text-rose-400" />
+                  </div>
+                  <div class="space-y-1">
+                    <h4 class="text-base font-black text-rose-300">
+                      Переключіть на потрібний акаунт MetaMask для отримання токенів
+                    </h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                      Поточний акаунт у вашому MetaMask не збігається з адресою, прив'язаною до вашого акаунта DTEAM.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div class="p-3.5 rounded-xl bg-black/50 border border-cyan-900/60">
+                    <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider block mb-1">
+                      Зареєстровано в профілі DTEAM:
+                    </span>
+                    <span class="text-xs font-mono text-cyan-200 break-all select-all font-semibold">
+                      {$currentUser.hardhatAddress || 'Не прив\'язано'}
+                    </span>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl bg-black/50 border border-rose-800/70">
+                    <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider block mb-1">
+                      Активний акаунт у MetaMask:
+                    </span>
+                    <span class="text-xs font-mono text-rose-200 break-all select-all font-semibold">
+                      {metaMaskAccount}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-slate-400">
+                  <span class="flex items-center gap-2 text-amber-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    Відкрийте MetaMask та оберіть потрібний акаунт — сторінка оновиться автоматично
+                  </span>
+                  <button
+                    onclick={checkMetaMaskAndSync}
+                    class="text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
+                  >
+                    Перевірити знову
+                  </button>
+                </div>
+              </div>
+            {:else if walletVerification && walletVerification.isMatch}
+              <!-- КОШЕЛЕК ВЕРИФІКОВАНО -->
+              <div class="p-5 rounded-2xl bg-[#02171d] border border-cyan-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                    <ShieldCheck class="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">Кошелек верифіковано</h4>
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">✓ Збігається</span>
+                    </div>
+                    <p class="text-xs font-mono text-cyan-300 break-all select-all mt-0.5">
+                      {metaMaskAccount}
+                    </p>
+                  </div>
+                </div>
+                <div class="text-right shrink-0 text-xs text-slate-400">
+                  <span class="block text-[11px] font-mono text-slate-500">Мережа: Hardhat (31337)</span>
+                  <span class="block text-[11px] font-mono text-slate-500">Контракт: DteamPoints (DTP)</span>
+                </div>
+              </div>
+            {/if}
+
           </div>
         {/if}
 
