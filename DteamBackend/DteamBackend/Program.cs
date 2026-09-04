@@ -186,6 +186,8 @@ namespace DteamBackend
             app.MapControllers();
             app.MapHub<FriendsHub>("/hubs/friends");
             app.MapHub<FriendsHub>("/hub/friends");
+            app.MapHub<OnlineHub>("/hubs/online");
+            app.MapHub<OnlineHub>("/hub/online");
 
             await app.RunAsync();
         }

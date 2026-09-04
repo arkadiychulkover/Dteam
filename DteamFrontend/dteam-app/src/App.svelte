@@ -32,6 +32,7 @@ import { onMount, onDestroy } from 'svelte';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
   import { friendsHubService } from './lib/services/friendsHubService';
+  import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
 
   let isBanned = $state(false);
@@ -65,6 +66,7 @@ import { onMount, onDestroy } from 'svelte';
     checkUserBanStatus();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
+    onlineHubService.startConnection();
     if ($currentUser?.id) {
       friendsStore.loadAll();
       friendsHubService.start();
@@ -75,6 +77,7 @@ import { onMount, onDestroy } from 'svelte';
 
   onDestroy(() => {
     friendsHubService.stop();
+    onlineHubService.stopConnection();
   });
 </script>
 
@@ -134,4 +137,3 @@ import { onMount, onDestroy } from 'svelte';
     <Footer />
   {/if}
 </div>
-

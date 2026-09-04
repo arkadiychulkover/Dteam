@@ -14,7 +14,6 @@ namespace DteamBackend.Hubs
 
             OnlineUsers.TryAdd(connectionId, userId);
 
-            // Отправляем количество уникальных подключенных пользователей
             await Clients.All.SendAsync("UpdateOnlineCount", GetUniqueOnlineCount());
 
             await base.OnConnectedAsync();

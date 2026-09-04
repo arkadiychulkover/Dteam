@@ -203,10 +203,6 @@
     onDestroy(unsubscribeOnline);
   });
 
-  // Экранируем HTML, затем превращаем розмітку тулбара (**bold**, *italic*,
-  // <u>underline</u>, ![alt](url)) у реальні теги. Раніше пост рендерився
-  // як звичайний текст, тому вся розмітка показувалась "як є" — буквально
-  // зі зірочками й тегами. Тепер вона реально застосовується.
   function escapeHtml(text: string): string {
     return text
       .replace(/&/g, '&amp;')

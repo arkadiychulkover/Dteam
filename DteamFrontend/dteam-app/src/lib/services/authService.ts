@@ -1,16 +1,23 @@
 import { api } from './api';
 import type { Duser, LoginRequest, RegisterRequest, AuthResponse } from '../types';
+import { onlineHubService } from './onlineHubService';
 
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/login', payload);
     api.setTokens(res.accessToken, res.refreshToken);
+    
+    await onlineHubService.restartConnection();
+    
     return res;
   },
 
   async register(payload: RegisterRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/register', payload);
     api.setTokens(res.accessToken, res.refreshToken);
+    
+    await onlineHubService.restartConnection();
+    
     return res;
   },
 
@@ -20,6 +27,8 @@ export const authService = {
     } catch {
     } finally {
       api.setTokens(null, null);
+      
+      await onlineHubService.restartConnection();
     }
   },
 
@@ -39,4 +48,3 @@ export const authService = {
     return await api.post<{ message: string }>('/auth/reset-password', { token, newPassword });
   },
 };
-

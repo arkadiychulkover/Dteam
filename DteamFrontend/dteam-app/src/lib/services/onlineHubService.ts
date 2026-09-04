@@ -8,7 +8,6 @@ class OnlineHubService {
   private currentCount: number = 0;
 
   constructor() {
-    // ⚠️ Использование относительного пути активирует Vite Proxy
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl('/hubs/online', {
         accessTokenFactory: () => localStorage.getItem('dteam_token') || '',
@@ -36,10 +35,6 @@ class OnlineHubService {
       }
     }
   }
-
-  // Переподключение потрібне, коли токен змінюється (логін/логаут):
-  // SignalR читає accessTokenFactory лише під час встановлення нового з'єднання,
-  // тому просто "startConnection" на вже відкритому сокеті нічого не змінить.
   async restartConnection(): Promise<void> {
     if (!this.connection) return;
     try {
