@@ -71,7 +71,34 @@ class ApiClient {
     this.setRefreshToken(refreshToken);
   }
 
-  private async refreshAccessToken(): Promise<string | null> {
+  private tokenRefreshListeners: Set<(token: string) => void> = new Set();
+
+  public onTokenRefreshed(callback: (token: string) => void): () => void {
+    this.tokenRefreshListeners.add(callback);
+    return () => this.tokenRefreshListeners.delete(callback);
+  }
+
+  public async getValidToken(): Promise<string | null> {
+    const currentToken = this.getToken();
+    if (!currentToken) return null;
+
+    try {
+      const parts = currentToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const exp = payload.exp * 1000;
+        if (Date.now() > exp - 30000) {
+          const refreshed = await this.refreshAccessToken();
+          if (refreshed) return refreshed;
+        }
+      }
+    } catch {
+    }
+
+    return currentToken;
+  }
+
+  public async refreshAccessToken(): Promise<string | null> {
     const currentRefreshToken = this.getRefreshToken();
     if (!currentRefreshToken) {
       return null;
@@ -96,6 +123,9 @@ class ApiClient {
           const newAccessToken: string | null = data?.accessToken ?? null;
           const newRefreshToken: string | null = data?.refreshToken ?? null;
           this.setTokens(newAccessToken, newRefreshToken);
+          if (newAccessToken) {
+            this.tokenRefreshListeners.forEach(cb => cb(newAccessToken));
+          }
           return newAccessToken;
         } catch (e) {
           console.warn('[API] Failed to refresh access token:', e);

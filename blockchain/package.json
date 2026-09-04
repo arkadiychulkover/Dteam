@@ -8,6 +8,7 @@
     "node": "hardhat node",
     "deploy": "hardhat run scripts/deploy.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:nft": "hardhat run scripts/nftDeploy.js --network localhost",
     "console:local": "hardhat console --network localhost",
     "clean": "hardhat clean"
   },

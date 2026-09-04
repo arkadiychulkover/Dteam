@@ -57,10 +57,10 @@ namespace DteamBackend.Hubs
                         return connections;
                     });
 
-                var friendIds = await _context.UserFriends
+                var friendIds = await _context.Users
                     .AsNoTracking()
-                    .Where(f => f.UserId == userId && f.Status == FriendshipStatus.Accepted)
-                    .Select(f => f.FriendId)
+                    .Where(u => u.Id == userId)
+                    .SelectMany(u => u.Friends.Select(f => f.Id))
                     .ToListAsync();
 
                 var onlineFriendIds = friendIds
@@ -120,10 +120,10 @@ namespace DteamBackend.Hubs
 
                 if (becameOffline)
                 {
-                    var friendIds = await _context.UserFriends
+                    var friendIds = await _context.Users
                         .AsNoTracking()
-                        .Where(f => f.UserId == userId && f.Status == FriendshipStatus.Accepted)
-                        .Select(f => f.FriendId)
+                        .Where(u => u.Id == userId)
+                        .SelectMany(u => u.Friends.Select(f => f.Id))
                         .ToListAsync();
 
                     if (friendIds.Count > 0)

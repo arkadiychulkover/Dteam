@@ -7,7 +7,9 @@ using DteamBackend.Models.DTO;
 using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using DteamBackend.Hubs;
 
 namespace DteamBackend.Controllers
 {
@@ -18,11 +20,16 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IActivityService _activityService;
+        private readonly IHubContext<FriendsHub> _friendsHub;
 
-        public FriendsController(AppDbContext context, IActivityService activityService)
+        public FriendsController(
+            AppDbContext context, 
+            IActivityService activityService, 
+            IHubContext<FriendsHub> friendsHub)
         {
             _context = context;
             _activityService = activityService;
+            _friendsHub = friendsHub;
         }
 
         private Guid GetCurrentUserId()
@@ -45,45 +52,22 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var directFriends = await _context.UserFriends
+            var friends = await _context.Users
                 .AsNoTracking()
-                .Include(f => f.Friend)
-                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted && f.Friend != null)
+                .Where(u => u.Id == currentUserId)
+                .SelectMany(u => u.Friends)
                 .Select(f => new FriendDto
                 {
-                    Id = f.Friend.Id,
-                    Username = f.Friend.Username,
-                    Email = f.Friend.Email,
-                    AvatarUrl = f.Friend.AvatarUrl,
-                    Bio = f.Friend.Bio,
-                    Status = f.Friend.Status,
-                    LastLoginAt = f.Friend.LastLoginAt,
+                    Id = f.Id,
+                    Username = f.Username,
+                    Email = f.Email,
+                    AvatarUrl = f.AvatarUrl,
+                    Bio = f.Bio,
+                    Status = f.Status,
+                    LastLoginAt = f.LastLoginAt,
                     FriendsSince = f.CreatedAt
                 })
                 .ToListAsync();
-
-            var reverseFriends = await _context.UserFriends
-                .AsNoTracking()
-                .Include(f => f.User)
-                .Where(f => f.FriendId == currentUserId && f.Status == FriendshipStatus.Accepted && f.User != null)
-                .Select(f => new FriendDto
-                {
-                    Id = f.User.Id,
-                    Username = f.User.Username,
-                    Email = f.User.Email,
-                    AvatarUrl = f.User.AvatarUrl,
-                    Bio = f.User.Bio,
-                    Status = f.User.Status,
-                    LastLoginAt = f.User.LastLoginAt,
-                    FriendsSince = f.CreatedAt
-                })
-                .ToListAsync();
-
-            var friends = directFriends
-                .Concat(reverseFriends)
-                .GroupBy(f => f.Id)
-                .Select(g => g.First())
-                .ToList();
 
             return Ok(friends);
         }
@@ -99,19 +83,11 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var directFriendIds = await _context.UserFriends
+            var allFriendIds = await _context.Users
                 .AsNoTracking()
-                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted)
-                .Select(f => f.FriendId)
+                .Where(u => u.Id == currentUserId)
+                .SelectMany(u => u.Friends.Select(f => f.Id))
                 .ToListAsync();
-
-            var reverseFriendIds = await _context.UserFriends
-                .AsNoTracking()
-                .Where(f => f.FriendId == currentUserId && f.Status == FriendshipStatus.Accepted)
-                .Select(f => f.UserId)
-                .ToListAsync();
-
-            var allFriendIds = directFriendIds.Concat(reverseFriendIds).Distinct().ToList();
 
             if (!allFriendIds.Any())
             {
@@ -255,19 +231,17 @@ namespace DteamBackend.Controllers
             }
 
             var alreadyFriends = await _context.UserFriends
-                .AnyAsync(f => (
-                    (f.UserId == currentUserId && f.FriendId == receiver.Id) ||
-                    (f.UserId == receiver.Id && f.FriendId == currentUserId)
-                ) && f.Status == FriendshipStatus.Accepted);
+                .AnyAsync(f => (f.UserId == currentUserId && f.FriendId == receiver.Id) ||
+                               (f.UserId == receiver.Id && f.FriendId == currentUserId));
 
             if (alreadyFriends)
             {
                 return BadRequest(new { message = $"Ви вже є друзями з користувачем '{receiver.Username}'." });
             }
 
-            var isBlocked = await _context.UserFriends
-                .AnyAsync(f => (f.UserId == currentUserId && f.FriendId == receiver.Id && f.Status == FriendshipStatus.Blocked) ||
-                               (f.UserId == receiver.Id && f.FriendId == currentUserId && f.Status == FriendshipStatus.Blocked));
+            var isBlocked = await _context.UserBlocks
+                .AnyAsync(b => (b.UserId == currentUserId && b.BlockedUserId == receiver.Id) ||
+                               (b.UserId == receiver.Id && b.BlockedUserId == currentUserId));
 
             if (isBlocked)
             {
@@ -302,6 +276,20 @@ namespace DteamBackend.Controllers
 
             _context.FriendRequests.Add(newRequest);
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _friendsHub.Clients.User(receiver.Id.ToString())
+                    .SendAsync("FriendRequestReceived", new
+                    {
+                        requestId = newRequest.Id,
+                        senderId = currentUserId,
+                        senderUsername = sender.Username,
+                        senderAvatarUrl = sender.AvatarUrl,
+                        createdAt = newRequest.CreatedAt
+                    });
+            }
+            catch { /* Best effort real-time notification */ }
 
             return Ok(new FriendActionResponseDto
             {
@@ -341,43 +329,43 @@ namespace DteamBackend.Controllers
             request.Status = FriendRequestStatus.Accepted;
             request.RespondedAt = DateTime.UtcNow;
 
-            var existingDirect = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == request.ReceiverId && f.FriendId == request.SenderId);
-
-            if (existingDirect == null)
+            if (!await _context.UserFriends.AnyAsync(f => f.UserId == request.ReceiverId && f.FriendId == request.SenderId))
             {
                 _context.UserFriends.Add(new UserFriend
                 {
                     UserId = request.ReceiverId,
                     FriendId = request.SenderId,
-                    Status = FriendshipStatus.Accepted,
                     CreatedAt = DateTime.UtcNow
                 });
             }
-            else
-            {
-                existingDirect.Status = FriendshipStatus.Accepted;
-            }
 
-            var existingReverse = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == request.SenderId && f.FriendId == request.ReceiverId);
-
-            if (existingReverse == null)
+            if (!await _context.UserFriends.AnyAsync(f => f.UserId == request.SenderId && f.FriendId == request.ReceiverId))
             {
                 _context.UserFriends.Add(new UserFriend
                 {
                     UserId = request.SenderId,
                     FriendId = request.ReceiverId,
-                    Status = FriendshipStatus.Accepted,
                     CreatedAt = DateTime.UtcNow
                 });
             }
-            else
-            {
-                existingReverse.Status = FriendshipStatus.Accepted;
-            }
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                // Notify both users (sender and receiver) via SignalR FriendsHub
+                var notifyUserIds = new[] { request.SenderId.ToString(), request.ReceiverId.ToString() };
+                await _friendsHub.Clients.Users(notifyUserIds)
+                    .SendAsync("FriendRequestAccepted", new
+                    {
+                        requestId = request.Id,
+                        senderId = request.SenderId,
+                        senderUsername = request.Sender.Username,
+                        receiverId = request.ReceiverId,
+                        receiverUsername = request.Receiver.Username
+                    });
+            }
+            catch { /* Best effort real-time notification */ }
 
             try
             {
@@ -555,27 +543,27 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            var reverseFriendship = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == targetUserId && f.FriendId == currentUserId);
-            if (reverseFriendship != null)
+            // Remove friendships in both directions if existed
+            var friendships = await _context.UserFriends
+                .Where(f => (f.UserId == currentUserId && f.FriendId == targetUserId) ||
+                            (f.UserId == targetUserId && f.FriendId == currentUserId))
+                .ToListAsync();
+
+            if (friendships.Any())
             {
-                _context.UserFriends.Remove(reverseFriendship);
+                _context.UserFriends.RemoveRange(friendships);
             }
 
-            var existingRecord = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == currentUserId && f.FriendId == targetUserId);
+            // Add block record if not already blocked
+            var isBlocked = await _context.UserBlocks
+                .AnyAsync(b => b.UserId == currentUserId && b.BlockedUserId == targetUserId);
 
-            if (existingRecord != null)
+            if (!isBlocked)
             {
-                existingRecord.Status = FriendshipStatus.Blocked;
-            }
-            else
-            {
-                _context.UserFriends.Add(new UserFriend
+                _context.UserBlocks.Add(new UserBlock
                 {
                     UserId = currentUserId,
-                    FriendId = targetUserId,
-                    Status = FriendshipStatus.Blocked,
+                    BlockedUserId = targetUserId,
                     CreatedAt = DateTime.UtcNow
                 });
             }
@@ -607,48 +595,19 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            var myRecord = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == currentUserId && f.FriendId == targetUserId);
+            var block = await _context.UserBlocks
+                .FirstOrDefaultAsync(b => b.UserId == currentUserId && b.BlockedUserId == targetUserId);
 
-            if (myRecord != null)
+            if (block != null)
             {
-                myRecord.Status = FriendshipStatus.Accepted;
+                _context.UserBlocks.Remove(block);
+                await _context.SaveChangesAsync();
             }
-            else
-            {
-                _context.UserFriends.Add(new UserFriend
-                {
-                    UserId = currentUserId,
-                    FriendId = targetUserId,
-                    Status = FriendshipStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-
-            var reverseRecord = await _context.UserFriends
-                .FirstOrDefaultAsync(f => f.UserId == targetUserId && f.FriendId == currentUserId);
-
-            if (reverseRecord != null)
-            {
-                reverseRecord.Status = FriendshipStatus.Accepted;
-            }
-            else
-            {
-                _context.UserFriends.Add(new UserFriend
-                {
-                    UserId = targetUserId,
-                    FriendId = currentUserId,
-                    Status = FriendshipStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-
-            await _context.SaveChangesAsync();
 
             return Ok(new FriendActionResponseDto
             {
                 Success = true,
-                Message = $"Користувача '{targetUser.Username}' успішно розблоковано та додано назад у друзі."
+                Message = $"Користувача '{targetUser.Username}' успішно розблоковано."
             });
         }
 
@@ -663,19 +622,20 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var blocked = await _context.UserFriends
-                .Include(f => f.Friend)
-                .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Blocked)
-                .Select(f => new FriendDto
+            var blocked = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == currentUserId)
+                .SelectMany(u => u.BlockedUsers)
+                .Select(b => new FriendDto
                 {
-                    Id = f.Friend.Id,
-                    Username = f.Friend.Username,
-                    Email = f.Friend.Email,
-                    AvatarUrl = f.Friend.AvatarUrl,
-                    Bio = f.Friend.Bio,
-                    Status = f.Friend.Status,
-                    LastLoginAt = f.Friend.LastLoginAt,
-                    FriendsSince = f.CreatedAt
+                    Id = b.Id,
+                    Username = b.Username,
+                    Email = b.Email,
+                    AvatarUrl = b.AvatarUrl,
+                    Bio = b.Bio,
+                    Status = b.Status,
+                    LastLoginAt = b.LastLoginAt,
+                    FriendsSince = b.CreatedAt
                 })
                 .ToListAsync();
 

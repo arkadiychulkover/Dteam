@@ -5,6 +5,7 @@ using DteamBackend.Hubs;
 using DteamBackend.Interfaces;
 using DteamBackend.Middlewares;
 using DteamBackend.Services;
+using DteamBackend.BackgroundServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -40,6 +41,9 @@ namespace DteamBackend
             builder.Services.Configure<EthereumOptions>(builder.Configuration.GetSection(EthereumOptions.SectionName));
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IHardhatTokenService, HardhatTokenService>();
+            builder.Services.AddScoped<INftService, NftService>();
+            builder.Services.AddHostedService<NftTransferListenerService>();
+            builder.Services.AddHostedService<OnlineTimeRewardService>();
 
             builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
             builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();
@@ -196,6 +200,10 @@ namespace DteamBackend
                     await initDataService.EnsureReviewSchemaAsync(context);
                     await initDataService.EnsureChatSchemaAsync(context);
                     await initDataService.EnsureActivitySchemaAsync(context);
+                    await initDataService.EnsureUserOnlineTrackingSchemaAsync(context);
+
+                    var nftService = services.GetRequiredService<INftService>();
+                    await nftService.EnsureNftCollectionInitializedAsync();
                 }
                 catch (Exception ex)
                 {

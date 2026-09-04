@@ -190,11 +190,10 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Користувача з ID '{userId}' не знайдено." });
             }
 
-            var friendsCount = await _context.UserFriends
-                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted)
-                .Select(uf => uf.FriendId)
-                .Distinct()
-                .CountAsync();
+            var friendsCount = await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Friends.Count)
+                .FirstOrDefaultAsync();
 
             var publishedGames = await _context.Games
                 .AsNoTracking()
@@ -240,18 +239,27 @@ namespace DteamBackend.Controllers
             bool isIncomingRequest = false;
             if (viewerId.HasValue && viewerId.Value != userId)
             {
-                var friendship = await _context.UserFriends
-                    .FirstOrDefaultAsync(uf =>
-                        (uf.UserId == viewerId.Value && uf.FriendId == userId) ||
-                        (uf.UserId == userId && uf.FriendId == viewerId.Value));
+                var areFriends = await _context.UserFriends
+                    .AnyAsync(uf => (uf.UserId == viewerId.Value && uf.FriendId == userId) ||
+                                   (uf.UserId == userId && uf.FriendId == viewerId.Value));
 
-                if (friendship != null)
+                if (areFriends)
                 {
-                    friendshipStatus = friendship.Status == FriendshipStatus.Accepted
-                        ? "friends"
-                        : "pending";
-                    isIncomingRequest = friendship.Status == FriendshipStatus.Pending
-                                     && friendship.UserId == userId;
+                    friendshipStatus = "friends";
+                }
+                else
+                {
+                    var pendingReq = await _context.FriendRequests
+                        .FirstOrDefaultAsync(fr =>
+                            ((fr.SenderId == viewerId.Value && fr.ReceiverId == userId) ||
+                             (fr.SenderId == userId && fr.ReceiverId == viewerId.Value)) &&
+                            fr.Status == FriendRequestStatus.Pending);
+
+                    if (pendingReq != null)
+                    {
+                        friendshipStatus = "pending";
+                        isIncomingRequest = pendingReq.ReceiverId == viewerId.Value;
+                    }
                 }
             }
 
@@ -280,18 +288,17 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPublicFriends(Guid userId)
         {
-            var friends = await _context.UserFriends
-                .Include(uf => uf.Friend)
+            var friends = await _context.Users
                 .AsNoTracking()
-                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted && uf.Friend != null)
-                .Select(uf => new
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Friends)
+                .Select(f => new
                 {
-                    id = uf.Friend.Id,
-                    username = uf.Friend.Username,
-                    avatarUrl = uf.Friend.AvatarUrl,
-                    status = (int)uf.Friend.Status
+                    id = f.Id,
+                    username = f.Username,
+                    avatarUrl = f.AvatarUrl,
+                    status = (int)f.Status
                 })
-                .Distinct()
                 .ToListAsync();
 
             return Ok(friends);

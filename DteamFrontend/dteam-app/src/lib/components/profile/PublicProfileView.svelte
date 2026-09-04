@@ -9,15 +9,20 @@ import { onMount } from 'svelte';
   import { UserStatus } from '../../types';
   import {
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
-    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity
+    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity, Award, RefreshCw
   } from 'lucide-svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { gamesService } from '../../services/gamesService';
   import ActivityCard from '../activity/ActivityCard.svelte';
   import { activityStore } from '../../stores/activityStore';
+  import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
+  import { getUserGiftsByUserId, type NftGift } from '../../services/nftService';
+  import BadgeCard from './BadgeCard.svelte';
+  import BadgeDetailModal from './BadgeDetailModal.svelte';
 
-  type TabId = 'активність' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
+  type TabId = 'активність' | 'значки' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
   let activeTab = $state<TabId>('активність');
+  let activeVideoPost = $state<CommunityPost | null>(null);
 
   const profile = $derived($profileStore.profile);
   const friends = $derived($profileStore.friends);
@@ -30,14 +35,33 @@ import { onMount } from 'svelte';
     profile ? ($activityStore.userActivities[profile.id.toLowerCase()] || []) : []
   );
 
+  let userGifts = $state<NftGift[]>([]);
+  let isLoadingGifts = $state(false);
+  let selectedGiftForModal = $state<NftGift | null>(null);
+  let isGiftModalOpen = $state(false);
+
+  async function loadUserGifts() {
+    if (!profile?.id) return;
+    isLoadingGifts = true;
+    try {
+      userGifts = await getUserGiftsByUserId(profile.id);
+    } catch (err) {
+      console.warn('[PublicProfileView] Error loading user gifts:', err);
+    } finally {
+      isLoadingGifts = false;
+    }
+  }
+
   $effect(() => {
     if (profile?.id) {
       activityStore.loadUserActivities(profile.id);
+      loadUserGifts();
     }
   });
 
   const menuItems: { id: TabId; label: string; count: (() => number | null) }[] = [
     { id: 'активність', label: 'Активність', count: () => userActivities.length || null },
+    { id: 'значки', label: 'Значки', count: () => userGifts.length || null },
     { id: 'ігри', label: 'Ігри', count: () => profile?.gamesCount ?? null },
     { id: 'друзі', label: 'Друзі', count: () => uniqueFriends.length },
     { id: 'обговорення', label: 'Обговорення', count: () => null },
@@ -234,6 +258,66 @@ import { onMount } from 'svelte';
               </div>
             {/if}
 
+          {:else if activeTab === 'значки'}
+            <div class="space-y-6">
+              <div class="flex items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+                    <Award class="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-black text-white flex items-center gap-2">
+                      Значки {profile.username}
+                      <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/60">
+                        {userGifts.length} значків
+                      </span>
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                      Колекція значків та нагород користувача
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onclick={loadUserGifts}
+                  disabled={isLoadingGifts}
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
+                >
+                  <RefreshCw class="w-3.5 h-3.5 {isLoadingGifts ? 'animate-spin' : ''}" />
+                  Оновити
+                </button>
+              </div>
+
+              {#if isLoadingGifts}
+                <div class="flex flex-col items-center justify-center py-16 gap-3 text-cyan-400">
+                  <Loader2 class="w-8 h-8 animate-spin" />
+                  <span class="text-sm font-semibold">Завантаження значків користувача...</span>
+                </div>
+              {:else if userGifts.length === 0}
+                <div class="text-center py-14 p-6 rounded-2xl bg-[#02171d] border border-cyan-900/30 space-y-3">
+                  <div class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 mx-auto flex items-center justify-center">
+                    <Award class="w-7 h-7" />
+                  </div>
+                  <h3 class="text-base font-bold text-white">У користувача ще немає значків</h3>
+                  <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Користувач {profile.username} поки не отримав значків.
+                  </p>
+                </div>
+              {:else}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {#each userGifts as gift (gift.id || gift.tokenId)}
+                    <BadgeCard
+                      {gift}
+                      onclick={(g) => {
+                        selectedGiftForModal = g;
+                        isGiftModalOpen = true;
+                      }}
+                    />
+                  {/each}
+                </div>
+              {/if}
+            </div>
+
           {:else if activeTab === 'ігри'}
             {#if profile.libraryGames.length === 0 && profile.publishedGames.length === 0}
               <div class="text-center py-16 text-slate-500 text-sm">
@@ -383,16 +467,33 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {#each videoPosts as post (post.id)}
-                  <div class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800">
+                  <button
+                    type="button"
+                    onclick={() => (activeVideoPost = post)}
+                    class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  >
                     {#if post.media?.thumbnailUrl || post.media?.url}
                       <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     {/if}
-                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-5 h-5 text-black ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
+                      <div class="self-end">
+                        <span class="text-[10px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded backdrop-blur-sm">
+                          HD
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-center my-auto">
+                        <div class="w-12 h-12 bg-cyan-400/90 text-black group-hover:bg-cyan-300 group-hover:scale-110 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all">
+                          <svg class="w-6 h-6 ml-0.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                      </div>
+                      <div class="truncate">
+                        <p class="text-xs font-bold text-white truncate drop-shadow-md">{post.title || 'Відео'}</p>
+                        {#if post.gameTitle}
+                          <p class="text-[10px] text-cyan-300/80 truncate">{post.gameTitle}</p>
+                        {/if}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
             {/if}
@@ -491,4 +592,21 @@ import { onMount } from 'svelte';
     </div>
   {/if}
 </div>
+
+<VideoPlayerModal
+  isOpen={!!activeVideoPost}
+  videoUrl={activeVideoPost?.media?.url || ''}
+  title={activeVideoPost?.title || 'Відео'}
+  gameTitle={activeVideoPost?.gameTitle || ''}
+  authorUsername={profile?.username || ''}
+  authorAvatarUrl={profile?.avatarUrl || ''}
+  createdAt={activeVideoPost?.createdAt || ''}
+  onClose={() => (activeVideoPost = null)}
+/>
+
+<BadgeDetailModal
+  gift={selectedGiftForModal}
+  isOpen={isGiftModalOpen}
+  onClose={() => (isGiftModalOpen = false)}
+/>
 

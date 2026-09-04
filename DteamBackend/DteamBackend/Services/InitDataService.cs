@@ -246,7 +246,6 @@ namespace DteamBackend.Services
                     {
                         UserId = adminUser.Id,
                         FriendId = friend.Id,
-                        Status = FriendshipStatus.Accepted,
                         CreatedAt = DateTime.UtcNow.AddDays(-10)
                     });
                 }
@@ -258,7 +257,6 @@ namespace DteamBackend.Services
                     {
                         UserId = friend.Id,
                         FriendId = adminUser.Id,
-                        Status = FriendshipStatus.Accepted,
                         CreatedAt = DateTime.UtcNow.AddDays(-10)
                     });
                 }
@@ -495,6 +493,28 @@ namespace DteamBackend.Services
                                     if (p.Media == null) p.Media = new PostMedia();
                                     if (p.LikedByUsers == null) p.LikedByUsers = new List<string>();
                                 }
+
+                                // Обнуляем GameGuidId для постов, чьи игры не существуют в БД
+                                var referencedGameIds = data.Posts
+                                    .Where(p => p.GameGuidId.HasValue)
+                                    .Select(p => p.GameGuidId!.Value)
+                                    .Distinct()
+                                    .ToList();
+
+                                var existingGameIds = await context.Games
+                                    .Where(g => referencedGameIds.Contains(g.Id))
+                                    .Select(g => g.Id)
+                                    .ToListAsync();
+
+                                var existingSet = new HashSet<Guid>(existingGameIds);
+                                foreach (var p in data.Posts)
+                                {
+                                    if (p.GameGuidId.HasValue && !existingSet.Contains(p.GameGuidId.Value))
+                                    {
+                                        p.GameGuidId = null;
+                                    }
+                                }
+
                                 await context.CommunityPosts.AddRangeAsync(data.Posts);
                             }
 
@@ -741,6 +761,59 @@ namespace DteamBackend.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[InitData] Error ensuring UserActivities schema in SQLite database.");
+            }
+        }
+
+        public async Task EnsureUserOnlineTrackingSchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "PRAGMA table_info('Users');";
+                var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var colName = reader["name"]?.ToString();
+                        if (!string.IsNullOrEmpty(colName))
+                        {
+                            columns.Add(colName);
+                        }
+                    }
+                }
+
+                if (!columns.Contains("LastConnectedAt"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"LastConnectedAt\" TEXT NULL;");
+                    _logger?.LogInformation("[InitData] Added LastConnectedAt column to Users table.");
+                }
+
+                if (!columns.Contains("LastDisconnectedAt"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"LastDisconnectedAt\" TEXT NULL;");
+                    _logger?.LogInformation("[InitData] Added LastDisconnectedAt column to Users table.");
+                }
+
+                if (!columns.Contains("TotalTimeSpentSeconds"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"TotalTimeSpentSeconds\" INTEGER NOT NULL DEFAULT 0;");
+                    _logger?.LogInformation("[InitData] Added TotalTimeSpentSeconds column to Users table.");
+                }
+
+                if (!columns.Contains("TimeRewardNftsMintedCount"))
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"TimeRewardNftsMintedCount\" INTEGER NOT NULL DEFAULT 0;");
+                    _logger?.LogInformation("[InitData] Added TimeRewardNftsMintedCount column to Users table.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring user online tracking schema in SQLite database.");
             }
         }
     }

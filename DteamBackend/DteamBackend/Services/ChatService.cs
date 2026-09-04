@@ -187,10 +187,10 @@ namespace DteamBackend.Services
             try
             {
                 // Get all accepted friend IDs
-                var friendIds = await _context.UserFriends
+                var friendIds = await _context.Users
                     .AsNoTracking()
-                    .Where(uf => uf.UserId == currentUserId && uf.Status == FriendshipStatus.Accepted)
-                    .Select(uf => uf.FriendId)
+                    .Where(u => u.Id == currentUserId)
+                    .SelectMany(u => u.Friends.Select(f => f.Id))
                     .ToListAsync(cancellationToken);
 
                 // Also find users with whom we have existing messages
@@ -269,7 +269,6 @@ namespace DteamBackend.Services
                                 {
                                     UserId = currentUserId,
                                     FriendId = du.Id,
-                                    Status = FriendshipStatus.Accepted,
                                     CreatedAt = DateTime.UtcNow
                                 });
                             }
@@ -279,7 +278,6 @@ namespace DteamBackend.Services
                                 {
                                     UserId = du.Id,
                                     FriendId = currentUserId,
-                                    Status = FriendshipStatus.Accepted,
                                     CreatedAt = DateTime.UtcNow
                                 });
                             }

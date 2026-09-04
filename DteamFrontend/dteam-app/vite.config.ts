@@ -51,6 +51,11 @@ export default defineConfig({
         target: 'http://localhost:5117',
         changeOrigin: true,
         secure: false,
+      },
+      '/nft': {
+        target: 'http://localhost:5117',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

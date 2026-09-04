@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { authStore } from '../stores/authStore';
 import { friendsStore } from '../stores/friendsStore';
+import { uiStore } from '../stores/uiStore';
 import { get } from 'svelte/store';
 
 class FriendsHubService {
@@ -56,6 +57,23 @@ class FriendsHubService {
           } else {
             friendsStore.setUserOffline(data.userId);
           }
+        });
+
+        // 1. Подія надсилання заявки у друзі (отримувач підтягує заявки)
+        this.connection.on('FriendRequestReceived', (data?: { senderUsername?: string }) => {
+          friendsStore.loadRequests();
+          if (data?.senderUsername) {
+            uiStore.addToast({
+              title: 'Нова заявка у друзі',
+              message: `${data.senderUsername} надіслав(ла) вам запит у друзі!`,
+              type: 'info'
+            });
+          }
+        });
+
+        // 2. Подія прийняття заявки (обидві сторони оновлюють друзів та заявки)
+        this.connection.on('FriendRequestAccepted', () => {
+          friendsStore.loadAll();
         });
 
         this.connection.onreconnected(() => {

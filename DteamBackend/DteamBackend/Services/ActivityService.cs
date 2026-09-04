@@ -58,9 +58,10 @@ namespace DteamBackend.Services
         public async Task<List<UserActivityDto>> GetFriendsActivitiesAsync(Guid userId, int limit = 50, int offset = 0)
         {
             // 1. Get all friends of the user
-            var friendIds = await _context.UserFriends
-                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted)
-                .Select(uf => uf.FriendId)
+            var friendIds = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Friends.Select(f => f.Id))
                 .ToListAsync();
 
             // Include current user's activities as well so they see their own timeline too

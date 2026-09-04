@@ -18,6 +18,7 @@ namespace DteamBackend.Data
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<UserGame> UserGames => Set<UserGame>();
         public DbSet<UserFriend> UserFriends => Set<UserFriend>();
+        public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
         public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
         public DbSet<UserWishlist> UserWishlists => Set<UserWishlist>();
         public DbSet<UserCartItem> UserCartItems => Set<UserCartItem>();
@@ -27,6 +28,8 @@ namespace DteamBackend.Data
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<ChatUpload> ChatUploads => Set<ChatUpload>();
         public DbSet<UserActivity> UserActivities => Set<UserActivity>();
+        public DbSet<NftItem> NftItems => Set<NftItem>();
+        public DbSet<NftTransfer> NftTransfers => Set<NftTransfer>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,6 +51,28 @@ namespace DteamBackend.Data
                     .WithMany(u => u.FamilyMembers)
                     .HasForeignKey(u => u.FamilyOwnerId)
                     .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasMany(u => u.Friends)
+                    .WithMany()
+                    .UsingEntity<UserFriend>(
+                        j => j.HasOne(uf => uf.Friend).WithMany().HasForeignKey(uf => uf.FriendId).OnDelete(DeleteBehavior.Cascade),
+                        j => j.HasOne(uf => uf.User).WithMany(u => u.Friendships).HasForeignKey(uf => uf.UserId).OnDelete(DeleteBehavior.Cascade),
+                        j =>
+                        {
+                            j.HasKey(uf => new { uf.UserId, uf.FriendId });
+                            j.ToTable("UserFriends");
+                        });
+
+                entity.HasMany(u => u.BlockedUsers)
+                    .WithMany()
+                    .UsingEntity<UserBlock>(
+                        j => j.HasOne(ub => ub.BlockedUser).WithMany().HasForeignKey(ub => ub.BlockedUserId).OnDelete(DeleteBehavior.Cascade),
+                        j => j.HasOne(ub => ub.User).WithMany().HasForeignKey(ub => ub.UserId).OnDelete(DeleteBehavior.Cascade),
+                        j =>
+                        {
+                            j.HasKey(ub => new { ub.UserId, ub.BlockedUserId });
+                            j.ToTable("UserBlocks");
+                        });
             });
 
             modelBuilder.Entity<UserGame>(entity =>
@@ -62,21 +87,6 @@ namespace DteamBackend.Data
                 entity.HasOne(ug => ug.Game)
                     .WithMany(g => g.Owners)
                     .HasForeignKey(ug => ug.GameId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            modelBuilder.Entity<UserFriend>(entity =>
-            {
-                entity.HasKey(uf => new { uf.UserId, uf.FriendId });
-
-                entity.HasOne(uf => uf.User)
-                    .WithMany(u => u.Friendships)
-                    .HasForeignKey(uf => uf.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(uf => uf.Friend)
-                    .WithMany()
-                    .HasForeignKey(uf => uf.FriendId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -245,7 +255,8 @@ namespace DteamBackend.Data
                 entity.HasOne(p => p.Game)
                     .WithMany(g => g.CommunityPosts)
                     .HasForeignKey(p => p.GameGuidId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasMany(p => p.Comments)
                     .WithOne(c => c.Post)
@@ -354,6 +365,51 @@ namespace DteamBackend.Data
                 entity.HasIndex(a => a.UserId);
                 entity.HasIndex(a => a.CreatedAt);
                 entity.HasIndex(a => new { a.UserId, a.CreatedAt });
+            });
+
+            modelBuilder.Entity<NftItem>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+                entity.HasIndex(n => n.TokenId);
+                entity.HasIndex(n => n.Rarity);
+                entity.HasIndex(n => n.IsMinted);
+                entity.HasIndex(n => n.UserId);
+                entity.HasIndex(n => new { n.BackgroundIndex, n.PatternIndex, n.ModelIndex }).IsUnique();
+
+                entity.HasOne(n => n.User)
+                    .WithMany(u => u.Gifts)
+                    .HasForeignKey(n => n.UserId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<NftTransfer>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.HasIndex(t => t.NftItemId);
+                entity.HasIndex(t => t.TokenId);
+                entity.HasIndex(t => t.FromAddress);
+                entity.HasIndex(t => t.ToAddress);
+                entity.HasIndex(t => t.FromUserId);
+                entity.HasIndex(t => t.ToUserId);
+                entity.HasIndex(t => t.TransferredAt);
+
+                entity.HasOne(t => t.NftItem)
+                    .WithMany()
+                    .HasForeignKey(t => t.NftItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(t => t.FromUser)
+                    .WithMany()
+                    .HasForeignKey(t => t.FromUserId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(t => t.ToUser)
+                    .WithMany()
+                    .HasForeignKey(t => t.ToUserId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

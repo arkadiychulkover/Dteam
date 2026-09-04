@@ -42,6 +42,14 @@ namespace DteamBackend.Models
 
         public DateTime? LastLoginAt { get; set; }
 
+        public DateTime? LastConnectedAt { get; set; }
+
+        public DateTime? LastDisconnectedAt { get; set; }
+
+        public long TotalTimeSpentSeconds { get; set; } = 0;
+
+        public int TimeRewardNftsMintedCount { get; set; } = 0;
+
         public bool IsInFamily { get; set; } = false;
 
         public Guid? FamilyOwnerId { get; set; }
@@ -64,6 +72,10 @@ namespace DteamBackend.Models
 
         public string? BannerUrl { get; set; }
 
+        public ICollection<Duser> Friends { get; set; } = new List<Duser>();
+
+        public ICollection<Duser> BlockedUsers { get; set; } = new List<Duser>();
+
         public ICollection<UserFriend> Friendships { get; set; } = new List<UserFriend>();
 
         public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
@@ -81,5 +93,7 @@ namespace DteamBackend.Models
         public ICollection<UserCartItem> CartItems { get; set; } = new List<UserCartItem>();
 
         public ICollection<UserActivity> Activities { get; set; } = new List<UserActivity>();
+
+        public ICollection<NftItem> Gifts { get; set; } = new List<NftItem>();
     }
 }

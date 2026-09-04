@@ -31,6 +31,7 @@
     Bell,
     MoreHorizontal,
   } from "lucide-svelte";
+  import VideoPlayerModal from "../ui/VideoPlayerModal.svelte";
 
   const categoryLabels = {
     all: "Усі розділи",
@@ -42,6 +43,7 @@
   };
 
   let { gameId } = $props<{ gameId: string }>();
+  let activeModalVideoPost = $state<CommunityPost | null>(null);
 
   let posts = $state<CommunityPost[]>([]);
   let otherPosts = $derived(
@@ -620,19 +622,31 @@
                     </div>
                   {:else if post.media.type === "video" && post.media.url}
                     <div
-                      class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20"
+                      role="button"
+                      tabindex="0"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        activeModalVideoPost = post;
+                      }}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.stopPropagation();
+                          activeModalVideoPost = post;
+                        }
+                      }}
+                      class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 group/vid cursor-pointer hover:border-cyan-400/60 transition-all"
                     >
                       <img
                         src={post.media.thumbnailUrl ||
                           "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"}
                         alt={post.title}
-                        class="w-full h-full object-cover opacity-70"
+                        class="w-full h-full object-cover opacity-70 group-hover/vid:opacity-85 group-hover/vid:scale-105 transition-all duration-300"
                       />
                       <div
-                        class="absolute inset-0 flex items-center justify-center"
+                        class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/vid:bg-black/10 transition-colors"
                       >
                         <div
-                          class="w-14 h-14 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black flex items-center justify-center shadow-lg shadow-cyan-400/40 transition-all"
+                          class="w-14 h-14 rounded-full bg-cyan-400 group-hover/vid:bg-cyan-300 text-black flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.5)] group-hover/vid:scale-110 transition-all"
                         >
                           <Play class="w-6 h-6 fill-black text-black ml-1" />
                         </div>
@@ -1407,3 +1421,14 @@
     </div>
   </div>
 {/if}
+
+<VideoPlayerModal
+  isOpen={!!activeModalVideoPost}
+  videoUrl={activeModalVideoPost?.media?.url || ''}
+  title={activeModalVideoPost?.title || 'Відео'}
+  gameTitle={activeModalVideoPost?.gameTitle || gameTitle || ''}
+  authorUsername={activeModalVideoPost?.author?.username || ''}
+  authorAvatarUrl={activeModalVideoPost?.author?.avatarUrl || ''}
+  createdAt={activeModalVideoPost?.createdAt || ''}
+  onClose={() => (activeModalVideoPost = null)}
+/>

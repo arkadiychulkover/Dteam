@@ -21,10 +21,16 @@
   import SelectGameModal from '../community/SelectGameModal.svelte';
   import ActivityCard from '../activity/ActivityCard.svelte';
   import { activityStore } from '../../stores/activityStore';
+  import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
+  import { getUserNftsFromContract, type NftGift } from '../../services/nftService';
+  import { onlineHubService } from '../../services/onlineHubService';
+  import BadgeCard from './BadgeCard.svelte';
+  import BadgeDetailModal from './BadgeDetailModal.svelte';
 
   type TabId = 'головна' | 'значки' | 'ігри' | 'бажане' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди' | 'рецензії';
   let activeTab = $state<TabId>('головна');
   let showCreateDropdown = $state(false);
+  let activeVideoPost = $state<any | null>(null);
 
   const uniqueFriends = $derived($friendsStore.friends);
 
@@ -35,6 +41,28 @@
   let tokenBalance = $state<number | null>(null);
   let isLoadingBalance = $state(false);
   let metaMaskNotDetected = $state(false);
+
+  // NFT Badges / Gifts State
+  let myNfts = $state<NftGift[]>([]);
+  let isLoadingNfts = $state(false);
+  let selectedBadgeForModal = $state<NftGift | null>(null);
+  let isBadgeModalOpen = $state(false);
+
+  async function loadMyNfts() {
+    const address = metaMaskAccount || $currentUser?.hardhatAddress || $currentUser?.walletAddress;
+    if (!address) {
+      myNfts = [];
+      return;
+    }
+    isLoadingNfts = true;
+    try {
+      myNfts = await getUserNftsFromContract(address);
+    } catch (err) {
+      console.warn('[MyProfileView] Failed to fetch NFTs from contract:', err);
+    } finally {
+      isLoadingNfts = false;
+    }
+  }
 
   async function checkMetaMaskAndSync() {
     if (typeof window === 'undefined') return;
@@ -111,7 +139,7 @@
 
   const menuItems: { id: TabId; label: string; count: () => number | string | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
-    { id: 'значки', label: 'Значки', count: () => (tokenBalance !== null ? `${tokenBalance} DTP` : null) },
+    { id: 'значки', label: 'Значки', count: () => (myNfts.length > 0 ? myNfts.length : null) },
     { id: 'ігри', label: 'Ігри', count: () => $libraryStore.items.length },
     { id: 'бажане', label: 'Бажане', count: () => $wishlistStore.items.length },
     { id: 'обговорення', label: 'Обговорення', count: () => myDiscussionPosts.length },
@@ -134,24 +162,33 @@
 
   function handleAccountsChanged() {
     checkMetaMaskAndSync();
+    loadMyNfts();
   }
 
   $effect(() => {
     if (activeTab === 'значки') {
       checkMetaMaskAndSync();
+      loadMyNfts();
     }
   });
+
+  let unsubReward: (() => void) | null = null;
 
   onMount(() => {
     myProfileStore.reload();
     libraryStore.loadLibrary();
     wishlistStore.loadWishlist();
+    loadMyNfts();
     friendsStore.loadFriends();
     if ($currentUser) {
       activityStore.loadUserActivities($currentUser.id);
     }
 
     checkMetaMaskAndSync();
+
+    unsubReward = onlineHubService.onRewardMinted(() => {
+      loadMyNfts();
+    });
 
     if (typeof window !== 'undefined') {
       const eth = (window as any).ethereum;
@@ -162,6 +199,7 @@
   });
 
   onDestroy(() => {
+    unsubReward?.();
     if (typeof window !== 'undefined') {
       const eth = (window as any).ethereum;
       if (eth && eth.removeListener) {
@@ -486,185 +524,114 @@
           </div>
         {/if}
 
-        <!-- TAB: БАЛИ / ПОИНТИ (DTEAM POINTS) -->
+        <!-- TAB: ЗНАЧКИ ТА ПОДАРУНКИ (NFT ЗІ СМАРТ-КОНТРАКТУ) -->
         {#if activeTab === 'значки'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-6">
             
             <!-- Заголовок та кнопка оновлення -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
               <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-yellow-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-500/10">
-                  <Coins class="w-6 h-6" />
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+                  <Award class="w-6 h-6" />
                 </div>
                 <div>
                   <h2 class="text-xl font-black text-white flex items-center gap-2">
-                    Бали лояльності (Dteam Points)
+                    Значки та нагороди
+                    <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/60">
+                      {myNfts.length} значків
+                    </span>
                   </h2>
                   <p class="text-xs text-slate-400">
-                    Баланс токенів DTP програми лояльності безпосередньо зі смарт-контракту в блокчейні
+                    Отримані значки безпосередньо зі смарт-контракту в блокчейні (DNFT)
                   </p>
                 </div>
               </div>
 
-              {#if walletVerification?.isMatch}
-                <button
-                  onclick={checkMetaMaskAndSync}
-                  disabled={isCheckingWallet || isLoadingBalance}
-                  class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
-                >
-                  <RefreshCw class="w-3.5 h-3.5 {isCheckingWallet || isLoadingBalance ? 'animate-spin' : ''}" />
-                  Оновити баланс
-                </button>
-              {/if}
+              <button
+                onclick={loadMyNfts}
+                disabled={isLoadingNfts}
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
+              >
+                <RefreshCw class="w-3.5 h-3.5 {isLoadingNfts ? 'animate-spin' : ''}" />
+                Оновити значки
+              </button>
             </div>
 
-            <!-- ГОЛОВНА КАРТКА ПОИНТІВ -->
-            <div class="p-8 rounded-3xl bg-gradient-to-br from-[#021c24] via-[#032630] to-[#043340] border-2 border-cyan-500/30 shadow-2xl relative overflow-hidden">
-              <div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-              <div class="relative z-10 flex flex-col items-center text-center space-y-3">
-                <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30">
-                  Баланс поинтів (DTP)
-                </span>
-
-                <div class="py-2">
-                  {#if isCheckingWallet || isLoadingBalance}
-                    <div class="flex items-center justify-center gap-3 text-cyan-400 py-4">
-                      <Loader2 class="w-8 h-8 animate-spin" />
-                      <span class="text-base font-semibold">Отримання балансу з блокчейну...</span>
-                    </div>
-                  {:else if walletVerification?.isMatch}
-                    <div class="text-5xl sm:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500">
-                      {tokenBalance !== null ? tokenBalance.toLocaleString() : '0'}
-                      <span class="text-2xl sm:text-3xl font-bold text-amber-400 ml-1">DTP</span>
-                    </div>
-                  {:else}
-                    <div class="text-4xl sm:text-5xl font-black text-slate-500">
-                      — <span class="text-xl font-bold text-slate-600">DTP</span>
-                    </div>
-                  {/if}
-                </div>
-
-                <p class="text-xs text-slate-400 max-w-md">
-                  Токени DteamPoints нараховуються за активність на платформі і прив'язані до вашого блокчейн-кошелька.
-                </p>
-              </div>
-            </div>
-
-            <!-- СТАТУСИ ТА ПЛАШКА НЕВІДПОВІДНОСТІ -->
-            {#if metaMaskNotDetected}
-              <div class="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                <AlertTriangle class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div class="space-y-1">
-                  <h4 class="text-sm font-bold text-amber-300">MetaMask не виявлено</h4>
-                  <p class="text-xs text-slate-300 leading-relaxed">
-                    Для перевірки відповідності адреси та отримання токенів DTP встановіть розширення MetaMask у браузері.
-                  </p>
-                  <a
-                    href="https://metamask.io/download/"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 underline font-medium pt-1"
-                  >
-                    Встановити MetaMask <ExternalLink class="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-            {:else if !metaMaskAccount}
-              <div class="p-5 rounded-2xl bg-[#02171d] border border-cyan-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- DTP БАЛАНС ТОКЕНІВ -->
+            {#if walletVerification?.isMatch || metaMaskAccount}
+              <div class="p-4 rounded-xl bg-gradient-to-r from-cyan-950/60 to-[#02171d] border border-cyan-500/30 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-                    <Wallet class="w-5 h-5" />
+                  <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+                    <Coins class="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h4 class="text-sm font-bold text-white">MetaMask не підключено</h4>
-                    <p class="text-xs text-slate-400">Підключіть MetaMask для перевірки відповідності адреси та балансу поинтів</p>
+                    <span class="text-xs text-slate-400 block">Баланс DTP токенів</span>
+                    {#if isLoadingBalance}
+                      <span class="text-sm text-cyan-300 font-mono animate-pulse">Завантаження...</span>
+                    {:else if tokenBalance !== null}
+                      <span class="text-lg font-black text-white">{tokenBalance.toLocaleString('uk-UA')} <span class="text-xs text-cyan-400 font-bold">DTP</span></span>
+                    {:else}
+                      <span class="text-sm text-slate-500 font-mono">—</span>
+                    {/if}
                   </div>
                 </div>
-                <button
-                  onclick={connectMetaMask}
-                  disabled={isCheckingWallet}
-                  class="bg-[#21e6c1] hover:bg-[#1cd1af] text-[#03232c] px-5 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-500/10 disabled:opacity-60"
-                >
-                  {#if isCheckingWallet}
-                    <Loader2 class="w-3.5 h-3.5 animate-spin" /> Перевірка...
-                  {:else}
-                    <Wallet class="w-3.5 h-3.5" /> Підключити MetaMask
-                  {/if}
+                {#if walletVerification?.isMatch}
+                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                    <ShieldCheck class="w-3.5 h-3.5" />
+                    <span class="font-bold">Підтверджено</span>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+
+            <!-- СТАТУС ПЕРЕВІРКИ КОШЕЛЬКА (ЯКЩО ВІДРІЗНЯЄТЬСЯ) -->
+            {#if metaMaskNotDetected}
+              <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+                <div class="flex items-center gap-2">
+                  <AlertTriangle class="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>MetaMask не виявлено. Для перегляду значків зі смарт-контракту підключіть MetaMask.</span>
+                </div>
+                <button onclick={connectMetaMask} class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-amber-200 font-bold transition-all cursor-pointer">
+                  Підключити MetaMask
                 </button>
               </div>
             {:else if walletVerification && !walletVerification.isMatch}
-              <!-- ПЛАШКА: ПЕРЕКЛЮЧИТЕ НА НУЖНЫЙ АККАУНТ METAMASK ДЛЯ ПОЛУЧЕНИЯ ТОКЕНОВ -->
-              <div class="p-6 rounded-2xl bg-gradient-to-r from-rose-950/80 via-[#200e16] to-amber-950/70 border-2 border-rose-500 shadow-xl shadow-rose-950/50 space-y-4 animate-in fade-in duration-200">
-                <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 mt-0.5">
-                    <ShieldAlert class="w-6 h-6 text-rose-400" />
-                  </div>
-                  <div class="space-y-1">
-                    <h4 class="text-base font-black text-rose-300">
-                      Переключіть на потрібний акаунт MetaMask для отримання токенів
-                    </h4>
-                    <p class="text-xs text-slate-300 leading-relaxed">
-                      Поточний акаунт у вашому MetaMask не збігається з адресою, прив'язаною до вашого акаунта DTEAM.
-                    </p>
-                  </div>
+              <div class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between text-xs text-rose-300">
+                <div class="flex items-center gap-2">
+                  <ShieldAlert class="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>Активний акаунт MetaMask відрізняється від прив'язаної адреси профілю.</span>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div class="p-3.5 rounded-xl bg-black/50 border border-cyan-900/60">
-                    <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider block mb-1">
-                      Зареєстровано в профілі DTEAM:
-                    </span>
-                    <span class="text-xs font-mono text-cyan-200 break-all select-all font-semibold">
-                      {$currentUser.hardhatAddress || 'Не прив\'язано'}
-                    </span>
-                  </div>
-
-                  <div class="p-3.5 rounded-xl bg-black/50 border border-rose-800/70">
-                    <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider block mb-1">
-                      Активний акаунт у MetaMask:
-                    </span>
-                    <span class="text-xs font-mono text-rose-200 break-all select-all font-semibold">
-                      {metaMaskAccount}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-slate-400">
-                  <span class="flex items-center gap-2 text-amber-300 font-medium">
-                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                    Відкрийте MetaMask та оберіть потрібний акаунт — сторінка оновиться автоматично
-                  </span>
-                  <button
-                    onclick={checkMetaMaskAndSync}
-                    class="text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
-                  >
-                    Перевірити знову
-                  </button>
-                </div>
+                <button onclick={checkMetaMaskAndSync} class="underline font-bold text-cyan-300">Оновити</button>
               </div>
-            {:else if walletVerification && walletVerification.isMatch}
-              <!-- КОШЕЛЕК ВЕРИФІКОВАНО -->
-              <div class="p-5 rounded-2xl bg-[#02171d] border border-cyan-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-                    <ShieldCheck class="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h4 class="text-sm font-bold text-white">Кошелек верифіковано</h4>
-                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">✓ Збігається</span>
-                    </div>
-                    <p class="text-xs font-mono text-cyan-300 break-all select-all mt-0.5">
-                      {metaMaskAccount}
-                    </p>
-                  </div>
+            {/if}
+
+            <!-- СПИСОК ЗНАЧКІВ (ВІДОБРАЖЕННЯ ЗГІДНО З РЕФЕРЕНСОМ, БЕЗ БАЛІВ, З НОМЕРОМ #111) -->
+            {#if isLoadingNfts}
+              <div class="flex flex-col items-center justify-center py-16 gap-3 text-cyan-400">
+                <Loader2 class="w-8 h-8 animate-spin" />
+                <span class="text-sm font-semibold">Отримання посилань зі смарт-контракту та завантаження значків...</span>
+              </div>
+            {:else if myNfts.length === 0}
+              <div class="text-center py-14 p-6 rounded-2xl bg-[#02171d] border border-cyan-900/30 space-y-3">
+                <div class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 mx-auto flex items-center justify-center">
+                  <Award class="w-7 h-7" />
                 </div>
-                <div class="text-right shrink-0 text-xs text-slate-400">
-                  <span class="block text-[11px] font-mono text-slate-500">Мережа: Hardhat (31337)</span>
-                  <span class="block text-[11px] font-mono text-slate-500">Контракт: DteamPoints (DTP)</span>
-                </div>
+                <h3 class="text-base font-bold text-white">У вас поки немає значків</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Проводьте час на платформі (кожні 10 годин активності нараховується новий значок на вашу адресу) або отримуйте подарунки від друзів!
+                </p>
+              </div>
+            {:else}
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {#each myNfts as nft (nft.id || nft.tokenId)}
+                  <BadgeCard
+                    gift={nft}
+                    onclick={(g) => {
+                      selectedBadgeForModal = g;
+                      isBadgeModalOpen = true;
+                    }}
+                  />
+                {/each}
               </div>
             {/if}
 
@@ -798,16 +765,33 @@
               {:else}
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {#each myVideoPosts as post (post.id)}
-                    <div class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800">
+                    <button
+                      type="button"
+                      onclick={() => (activeVideoPost = post)}
+                      class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    >
                       {#if post.media?.thumbnailUrl || post.media?.url}
                         <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       {/if}
-                      <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
-                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                          <svg class="w-5 h-5 text-black ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
+                        <div class="self-end">
+                          <span class="text-[10px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded backdrop-blur-sm">
+                            HD
+                          </span>
+                        </div>
+                        <div class="flex items-center justify-center my-auto">
+                          <div class="w-12 h-12 bg-cyan-400/90 text-black group-hover:bg-cyan-300 group-hover:scale-110 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all">
+                            <svg class="w-6 h-6 ml-0.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          </div>
+                        </div>
+                        <div class="truncate">
+                          <p class="text-xs font-bold text-white truncate drop-shadow-md">{post.title || 'Відео'}</p>
+                          {#if post.gameTitle}
+                            <p class="text-[10px] text-cyan-300/80 truncate">{post.gameTitle}</p>
+                          {/if}
                         </div>
                       </div>
-                    </div>
+                    </button>
                   {/each}
                 </div>
               {/if}
@@ -1072,4 +1056,21 @@
   selectedGameId={selectedPostGame?.id}
   onSelect={(game) => selectedPostGame = game}
   onClose={() => isSelectGameModalOpen = false}
+/>
+
+<VideoPlayerModal
+  isOpen={!!activeVideoPost}
+  videoUrl={activeVideoPost?.media?.url || ''}
+  title={activeVideoPost?.title || 'Відео'}
+  gameTitle={activeVideoPost?.gameTitle || ''}
+  authorUsername={$currentUser?.username || ''}
+  authorAvatarUrl={$currentUser?.avatarUrl || ''}
+  createdAt={activeVideoPost?.createdAt || ''}
+  onClose={() => (activeVideoPost = null)}
+/>
+
+<BadgeDetailModal
+  gift={selectedBadgeForModal}
+  isOpen={isBadgeModalOpen}
+  onClose={() => (isBadgeModalOpen = false)}
 />
