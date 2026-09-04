@@ -28,3 +28,4 @@ namespace DteamBackend.Models
         public DateTime? UpdatedAt { get; set; }
     }
 }
+

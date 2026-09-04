@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { uiStore } from '../../stores/uiStore';
+import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { ShieldCheck, ArrowLeft, RefreshCw, CheckCircle, Key } from 'lucide-svelte';
   import { onMount, onDestroy } from 'svelte';
@@ -172,3 +172,4 @@
     </div>
   </div>
 </div>
+

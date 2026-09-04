@@ -66,9 +66,9 @@ namespace DteamBackend.Services
                 ReviewsCount = 4,
                 IsDlc = false,
                 ParentGameId = null,
-                Genres = new List<string> { "Action", "RPG", "Cyberpunk", "Open World" },
-                Platforms = new List<string> { "Windows", "MacOS" },
-                Features = new List<string> { "SinglePlayer", "CloudSaves", "Achievements" },
+                Genres = new List<GameGenre> { GameGenre.Action, GameGenre.RPG, GameGenre.Cyberpunk },
+                Platforms = new List<GamePlatform> { GamePlatform.Windows, GamePlatform.MacOS },
+                Features = new List<GameFeature> { GameFeature.SinglePlayer, GameFeature.CloudSaves, GameFeature.Achievements },
                 Tags = new List<string> { "шутер", "екшн", "кіберпанк", "відкритий світ", "майбутнє", "рольова гра" },
                 Version = "2.1.0",
                 SizeInBytes = 70L * 1024 * 1024 * 1024,
@@ -99,8 +99,9 @@ namespace DteamBackend.Services
                 ReviewsCount = 1,
                 IsDlc = true,
                 ParentGameId = mainGameId,
-                Genres = new List<string> { "DLC" },
-                Platforms = new List<string> { "Windows" },
+                Genres = new List<GameGenre> { GameGenre.DLC },
+                Platforms = new List<GamePlatform> { GamePlatform.Windows },
+                Features = new List<GameFeature>(),
                 IsPublished = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -120,8 +121,9 @@ namespace DteamBackend.Services
                 ReviewsCount = 1,
                 IsDlc = true,
                 ParentGameId = mainGameId,
-                Genres = new List<string> { "DLC", "Modding" },
-                Platforms = new List<string> { "Windows" },
+                Genres = new List<GameGenre> { GameGenre.DLC, GameGenre.Modding },
+                Platforms = new List<GamePlatform> { GamePlatform.Windows },
+                Features = new List<GameFeature>(),
                 IsPublished = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -141,8 +143,9 @@ namespace DteamBackend.Services
                 ReviewsCount = 2,
                 IsDlc = true,
                 ParentGameId = mainGameId,
-                Genres = new List<string> { "Action", "RPG", "DLC" },
-                Platforms = new List<string> { "Windows", "MacOS" },
+                Genres = new List<GameGenre> { GameGenre.Action, GameGenre.RPG },
+                Platforms = new List<GamePlatform> { GamePlatform.Windows, GamePlatform.MacOS },
+                Features = new List<GameFeature>(),
                 IsPublished = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -175,3 +178,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

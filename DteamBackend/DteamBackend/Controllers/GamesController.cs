@@ -52,9 +52,9 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres ?? new List<string>(),
-                Platforms = d.Platforms ?? new List<string>(),
-                Features = d.Features ?? new List<string>(),
+                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -66,9 +66,9 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres ?? new List<string>(),
-            Platforms = game.Platforms ?? new List<string>(),
-            Features = game.Features ?? new List<string>(),
+            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -111,13 +111,13 @@ namespace DteamBackend.Controllers
                     (g.ShortDescription != null && g.ShortDescription.ToLower().Contains(s)) ||
                     g.Description.ToLower().Contains(s) ||
                     g.Tags.Any(t => t.ToLower().Contains(s)) ||
-                    g.Genres.Any(gen => gen.ToLower().Contains(s)));
+                    g.Genres.Any(gen => gen.ToString().ToLower().Contains(s)));
             }
 
             if (!string.IsNullOrWhiteSpace(genre) && genre != "All Games" && genre != "Все")
             {
                 var gLower = genre.Trim().ToLower();
-                query = query.Where(g => g.Genres.Any(gen => gen.ToLower() == gLower) || g.Tags.Any(t => t.ToLower() == gLower));
+                query = query.Where(g => g.Genres.Any(gen => gen.ToString().ToLower() == gLower) || g.Tags.Any(t => t.ToLower() == gLower));
             }
 
             if (isDlc.HasValue)
@@ -147,13 +147,13 @@ namespace DteamBackend.Controllers
             if (!string.IsNullOrWhiteSpace(platform))
             {
                 var pLower = platform.Trim().ToLower();
-                query = query.Where(g => g.Platforms.Any(p => p.ToLower() == pLower));
+                query = query.Where(g => g.Platforms.Any(p => p.ToString().ToLower() == pLower));
             }
 
             if (!string.IsNullOrWhiteSpace(feature))
             {
                 var fLower = feature.Trim().ToLower();
-                query = query.Where(g => g.Features.Any(f => f.ToLower() == fLower));
+                query = query.Where(g => g.Features.Any(f => f.ToString().ToLower() == fLower));
             }
 
             if (!string.IsNullOrWhiteSpace(tag))
@@ -176,26 +176,6 @@ namespace DteamBackend.Controllers
             var games = await query.ToListAsync();
 
             return Ok(games.Select(MapToGameDto));
-        }
-
-        [HttpGet("{id:guid}")]
-        [ProducesResponseType(typeof(GameDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<GameDto>> GetGameById(Guid id)
-        {
-            var game = await _context.Games
-                .Include(g => g.Owner)
-                .Include(g => g.ParentGame)
-                .Include(g => g.Dlcs)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Id == id && g.IsPublished);
-
-            if (game == null)
-            {
-                return NotFound(new { message = $"Игра с ID '{id}' не найдена" });
-            }
-
-            return Ok(MapToGameDto(game));
         }
 
         [HttpGet("{id:guid}/reviews")]

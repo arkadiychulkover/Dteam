@@ -2,9 +2,11 @@ using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DteamBackend.Controllers
 {
@@ -62,9 +64,9 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres ?? new List<string>(),
-                Platforms = d.Platforms ?? new List<string>(),
-                Features = d.Features ?? new List<string>(),
+                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -76,9 +78,9 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres ?? new List<string>(),
-            Platforms = game.Platforms ?? new List<string>(),
-            Features = game.Features ?? new List<string>(),
+            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -294,9 +296,9 @@ namespace DteamBackend.Controllers
                 ReviewsCount = 0,
                 IsDlc = dto.IsDlc,
                 ParentGameId = dto.ParentGameId,
-                Genres = dto.Genres ?? new List<string>(),
-                Platforms = dto.Platforms ?? new List<string> { "Windows" },
-                Features = dto.Features ?? new List<string>(),
+                Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, true)).ToList() ?? new List<GameGenre>(),
+                Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, true)).ToList() ?? new List<GamePlatform> { GamePlatform.Windows },
+                Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, true)).ToList() ?? new List<GameFeature>(),
                 Tags = dto.Tags ?? new List<string>(),
                 Version = string.IsNullOrWhiteSpace(dto.Version) ? "1.0.0" : dto.Version.Trim(),
                 SizeInBytes = dto.SizeInBytes,
@@ -307,6 +309,7 @@ namespace DteamBackend.Controllers
                 TrailerUrl = dto.TrailerUrl,
                 CreatedAt = DateTime.UtcNow
             };
+
 
             await _context.Games.AddAsync(game);
             await _context.SaveChangesAsync();
@@ -355,9 +358,9 @@ namespace DteamBackend.Controllers
             if (dto.PriceInNanoTons.HasValue) game.PriceInNanoTons = Math.Max(0, dto.PriceInNanoTons.Value);
             if (dto.DiscountPercentage.HasValue) game.DiscountPercentage = Math.Clamp(dto.DiscountPercentage.Value, 0, 100);
             if (dto.ServerArchivePath != null) game.ServerArchivePath = dto.ServerArchivePath.Trim();
-            if (dto.Genres != null) game.Genres = dto.Genres;
-            if (dto.Platforms != null) game.Platforms = dto.Platforms;
-            if (dto.Features != null) game.Features = dto.Features;
+            if (dto.Genres != null) game.Genres = dto.Genres.Select(g => Enum.Parse<GameGenre>(g, true)).ToList();
+            if (dto.Platforms != null) game.Platforms = dto.Platforms.Select(p => Enum.Parse<GamePlatform>(p, true)).ToList();
+            if (dto.Features != null) game.Features = dto.Features.Select(f => Enum.Parse<GameFeature>(f, true)).ToList();
             if (dto.Tags != null) game.Tags = dto.Tags;
             if (!string.IsNullOrWhiteSpace(dto.Version)) game.Version = dto.Version.Trim();
             if (dto.SizeInBytes.HasValue) game.SizeInBytes = dto.SizeInBytes.Value;
@@ -429,7 +432,6 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Гру з ID '{id}' не знайдено або у вас немає прав на її видалення." });
             }
 
-            // Remove associated cart items and wishlists
             var cartItems = await _context.UserCartItems.Where(c => c.GameId == id).ToListAsync();
             if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
 

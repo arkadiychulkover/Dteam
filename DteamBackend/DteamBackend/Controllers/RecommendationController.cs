@@ -1,4 +1,4 @@
-﻿using DteamBackend.Data;
+using DteamBackend.Data;
 using DteamBackend.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,6 @@ namespace DteamBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Route("api/recommendations")]
     [AllowAnonymous]
     public class RecommendationController : ControllerBase
     {
@@ -56,7 +55,8 @@ namespace DteamBackend.Controllers
                     g.Title.ToLower().Contains(prefix) ||
                     (g.ShortDescription != null && g.ShortDescription.ToLower().Contains(prefix)) ||
                     g.Tags.Any(t => t.ToLower().Contains(prefix)) ||
-                    g.Genres.Any(gen => gen.ToLower().Contains(prefix))
+
+                    g.Genres.Any(gen => gen.ToString().ToLower().Contains(prefix))
                 ))
                 .OrderByDescending(g => g.Title.ToLower().StartsWith(prefix))
                 .ThenBy(g => g.Title)
@@ -76,3 +76,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

@@ -1,23 +1,24 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+import { onMount } from 'svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
   import { ThumbsUp, MessageSquare, Loader2 } from 'lucide-svelte';
-  import { onlineHubService } from '../../services/onlineHubService';
 
   interface Props {
     gameId?: string | null;
     gameName?: string;
+    subscribersCount?: number;
+    onlineCount?: number;
   }
 
   let {
     gameId = null,
-    gameName = "Онлайн людей на сайті"
+    gameName = '',
+    subscribersCount = 0,
+    onlineCount = 0
   }: Props = $props();
-
-  let onlineCount = $state(onlineHubService.getOnlineCount());
 
   type TabType = 'discussion' | 'screenshot' | 'video' | 'guide';
   let activeTab = $state<TabType>('discussion');
@@ -34,9 +35,6 @@
   let isDraggingOver = $state(false);
   let fileInputEl: HTMLInputElement | undefined = $state();
   let selectedFile = $state<File | null>(null);
-
-  // Ссылки на поля ввода текста для модификатора
-  let contentTextareaEl: HTMLTextAreaElement | undefined = $state();
 
   function setTab(tab: TabType) {
     activeTab = tab;
@@ -195,54 +193,9 @@
 
   onMount(() => {
     loadPosts();
-
-    const unsubscribeOnline = onlineHubService.onOnlineCountChanged((count) => {
-      onlineCount = count;
-    });
-
-    onDestroy(unsubscribeOnline);
   });
 
-  // Экранируем HTML, затем превращаем розмітку тулбара (**bold**, *italic*,
-  // <u>underline</u>, ![alt](url)) у реальні теги. Раніше пост рендерився
-  // як звичайний текст, тому вся розмітка показувалась "як є" — буквально
-  // зі зірочками й тегами. Тепер вона реально застосовується.
-  function escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function renderPostContent(raw: string): string {
-    let safe = escapeHtml(raw);
-
-    // ![опис](url) -> <img>
-    safe = safe.replace(
-      /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<img src="$2" alt="$1" class="my-2 rounded-lg max-h-80 max-w-full object-contain" />'
-    );
-
-    // **bold**
-    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // *italic* (одиночні зірочки, після того як bold вже "з'їв" подвійні)
-    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // <u>underline</u> вище був заекранований у &lt;u&gt;...&lt;/u&gt; — повертаємо тег
-    safe = safe.replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, '<u>$1</u>');
-
-    // зберігаємо переноси рядків
-    safe = safe.replace(/\n/g, '<br />');
-
-    return safe;
-  }
-
   function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
-    if (!contentTextareaEl) return;
-
     const formats = {
       bold: { start: '**', end: '**' },
       italic: { start: '*', end: '*' },
@@ -250,24 +203,7 @@
       image: { start: '![опис](', end: ')' }
     };
     const chunk = formats[format];
-
-    const start = contentTextareaEl.selectionStart;
-    const end = contentTextareaEl.selectionEnd;
-    const selectedText = content.substring(start, end);
-    
-    // Если текст выделен — оборачиваем его, если нет — подставляем слово "текст"
-    const replacement = `${chunk.start}${selectedText || 'текст'}${chunk.end}`;
-    
-    content = content.substring(0, start) + replacement + content.substring(end);
-
-    // Возвращаем фокус и выделяем вставленный шаблон / текст
-    setTimeout(() => {
-      if (!contentTextareaEl) return;
-      contentTextareaEl.focus();
-      const newCursorStart = start + chunk.start.length;
-      const newCursorEnd = selectedText ? newCursorStart + selectedText.length : newCursorStart + 5;
-      contentTextareaEl.setSelectionRange(newCursorStart, newCursorEnd);
-    }, 0);
+    content += `${chunk.start}текст${chunk.end}`;
   }
 
   async function handleSubmit(e?: Event) {
@@ -291,12 +227,12 @@
       guide: 'guides'
     };
 
-    const finalTitle = activeTab === 'screenshot' || activeTab === 'video' 
-      ? (caption || `${activeTab.toUpperCase()} post`) 
+    const finalTitle = activeTab === 'screenshot' || activeTab === 'video'
+      ? (caption || `${activeTab.toUpperCase()} post`)
       : title;
 
-    const finalContent = activeTab === 'guide' 
-      ? `${description}\n\n${content}` 
+    const finalContent = activeTab === 'guide'
+      ? `${description}\n\n${content}`
       : (content || caption || 'Без опису');
 
     const postPayload = {
@@ -316,7 +252,7 @@
         message: 'Пост успішно опубліковано!',
         type: 'success'
       });
-      
+
       setTab('discussion');
       loadPosts();
     } catch (error: any) {
@@ -334,7 +270,6 @@
   function handleCancel() {
     setTab('discussion');
   }
-
 </script>
 
 <input
@@ -346,15 +281,15 @@
 />
 
 <div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
-  
+
   <h1 class="text-3xl font-black mb-6 tracking-wide text-white font-display">Створення публікації</h1>
 
   <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
     <div class="lg:col-span-3 bg-[#03232c] border border-cyan-900/60 rounded-2xl p-6 shadow-2xl flex flex-col justify-between min-h-[600px]">
-      
+
       <div>
-        
+
         <div class="grid grid-cols-4 gap-2 mb-6">
           <button
             type="button"
@@ -363,7 +298,7 @@
           >
             Обговорення
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('screenshot')}
@@ -371,7 +306,7 @@
           >
             Скріншот
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('video')}
@@ -379,7 +314,7 @@
           >
             Відео
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('guide')}
@@ -410,15 +345,14 @@
               <label for="content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
               <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
                 <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
-                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1 cursor-pointer">B</button>
-                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1 cursor-pointer">I</button>
-                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1 cursor-pointer">U</button>
-                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1 cursor-pointer">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   </button>
                 </div>
                 <textarea
-                  bind:this={contentTextareaEl}
                   id="content"
                   rows="5"
                   bind:value={content}
@@ -456,7 +390,7 @@
 
         {#if activeTab === 'screenshot'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -496,7 +430,7 @@
 
         {#if activeTab === 'video'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -537,7 +471,7 @@
         {#if activeTab === 'guide'}
           <div class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-              
+
               <div>
                 <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
                 <button
@@ -602,15 +536,14 @@
               <label for="guide-content" class="block text-xs text-slate-400 mb-1.5 font-bold">Текст</label>
               <div class="bg-[#02171d] border border-cyan-900/60 rounded-xl overflow-hidden focus-within:border-cyan-500 transition-colors">
                 <div class="flex items-center gap-3 px-4 py-2.5 border-b border-cyan-900/40 text-slate-300">
-                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1 cursor-pointer">B</button>
-                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1 cursor-pointer">I</button>
-                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1 cursor-pointer">U</button>
-                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1 cursor-pointer">
+                  <button type="button" onclick={() => applyFormatting('bold')} class="font-bold hover:text-white px-1">B</button>
+                  <button type="button" onclick={() => applyFormatting('italic')} class="italic hover:text-white px-1">I</button>
+                  <button type="button" onclick={() => applyFormatting('underline')} class="underline hover:text-white px-1">U</button>
+                  <button type="button" onclick={() => applyFormatting('image')} aria-label="Вставити зображення" title="Вставити зображення" class="hover:text-white px-1">
                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   </button>
                 </div>
                 <textarea
-                  bind:this={contentTextareaEl}
                   id="guide-content"
                   rows="5"
                   bind:value={content}
@@ -631,7 +564,7 @@
         >
           Відхилити
         </button>
-        
+
         <button
           type="button"
           onclick={() => handleSubmit()}
@@ -645,13 +578,11 @@
     </div>
 
     <div class="space-y-4">
-      <div class="text-right">
-        <div class="text-sm font-bold text-slate-200">{gameName}</div>
-        <div class="text-xs text-slate-400 mt-0.5 flex items-center justify-end gap-1.5">
-          <span class="font-bold text-slate-300">{onlineCount}</span> онлайн
-          <span class="inline-block w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
+      {#if gameId && gameName}
+        <div class="text-right">
+          <div class="text-sm font-bold text-slate-200">{gameName}</div>
         </div>
-      </div>
+      {/if}
 
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Сортувати за розділом</h2>
@@ -673,7 +604,7 @@
 
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Правила спільноти</h2>
-        
+
         <ol class="space-y-4 text-xs text-slate-300 leading-relaxed">
           <li class="pb-3 border-b border-cyan-900/40">
             <span class="font-bold text-slate-200">1.</span> Публікуйте тільки оригінальний контент.
@@ -743,7 +674,7 @@
               <h3 class="text-base font-bold text-white mb-1.5">{post.title}</h3>
             {/if}
 
-            <p class="text-sm text-slate-300 leading-relaxed">{@html renderPostContent(post.content)}</p>
+            <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{post.content}</p>
 
             {#if post.media?.type === 'image' && post.media.url}
               <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />
@@ -772,3 +703,4 @@
     {/if}
   </div>
 </div>
+

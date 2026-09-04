@@ -22,3 +22,4 @@ namespace DteamBackend.Models
         public DateTime? RespondedAt { get; set; }
     }
 }
+

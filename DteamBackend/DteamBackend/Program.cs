@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using Microsoft.AspNetCore.Builder;
 
 namespace DteamBackend
 {
@@ -39,6 +38,7 @@ namespace DteamBackend
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
             builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+            builder.Services.AddTransient<RecommendationService>();
 
             builder.Services.AddCors(options =>
             {
@@ -104,7 +104,6 @@ namespace DteamBackend
             });
 
             builder.Services.AddControllers();
-
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -139,7 +138,19 @@ namespace DteamBackend
                 try
                 {
                     var context = services.GetRequiredService<AppDbContext>();
-                    await context.Database.EnsureCreatedAsync();
+                    await context.Database.MigrateAsync();
+
+                    var gamesNeedingVector = await context.Games.ToListAsync();
+                    var changed = false;
+                    foreach (var game in gamesNeedingVector)
+                    {
+                        if (game.TasteVector.All(v => Math.Abs(v) < 1e-6f))
+                        {
+                            game.RecalculateTasteVector();
+                            changed = true;
+                        }
+                    }
+                    if (changed) await context.SaveChangesAsync();
 
                     var initDataService = services.GetRequiredService<IInitDataService>();
                     await initDataService.InitializeAsync(context);
@@ -150,8 +161,6 @@ namespace DteamBackend
                     logger.LogError(ex, "Ошибка при инициализации начальных данных в базе данных.");
                 }
             }
-
-            app.UseRouting();
 
             app.UseCors("DteamCorsPolicy");
 
@@ -175,14 +184,11 @@ namespace DteamBackend
             }
 
             app.MapControllers();
-
-            // SignalR hubs
             app.MapHub<FriendsHub>("/hubs/friends");
             app.MapHub<FriendsHub>("/hub/friends");
-            app.MapHub<OnlineHub>("/hubs/online");
-            app.MapHub<OnlineHub>("/hub/online");
 
             await app.RunAsync();
         }
     }
 }
+

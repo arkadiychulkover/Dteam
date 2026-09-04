@@ -1,9 +1,9 @@
 import { api } from './api';
-import type { 
-  DepositAddressResponse, 
-  VerifyTransactionRequest, 
-  PaymentVerificationResult, 
-  TransactionHistoryItem 
+import type {
+  DepositAddressResponse,
+  VerifyTransactionRequest,
+  PaymentVerificationResult,
+  TransactionHistoryItem
 } from '../types/payment';
 
 export const paymentService = {
@@ -29,3 +29,4 @@ export const paymentService = {
     return await api.get<TransactionHistoryItem[]>('/payment/history');
   }
 };
+

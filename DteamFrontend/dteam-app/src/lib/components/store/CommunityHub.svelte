@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { communityService, type CommunityPost, type CommunityComment } from '../../services/communityService';
   import { currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
   import { gamesStore } from '../../stores/gamesStore';
-  import { 
-    Users, Search, Filter, MessageSquare, ThumbsUp, Share2, 
+  import {
+    Users, Search, Filter, MessageSquare, ThumbsUp, Share2,
     Play, Plus, ArrowLeft, X, Send, CornerDownRight, Loader2,
     BookOpen, Newspaper, Image, Film, MessageCircle, Bell, MoreHorizontal
   } from 'lucide-svelte';
@@ -24,7 +24,7 @@
 
   let posts = $state<CommunityPost[]>([]);
   let otherPosts = $derived(posts.filter(p => p.id !== selectedPostId).slice(0, 5));
-  
+
   let gameTitle = $state('');
   let subscribersCount = $state(0);
   let onlineCount = $state(0);
@@ -35,7 +35,7 @@
   let searchPlaceholder = $derived(
     activeCategory === 'all' ? 'Пошук: Усі розділи' : `Пошук: ${categoryLabels[activeCategory]}`
   );
-  
+
   let isLoading = $state(false);
   let isCreateModalOpen = $state(false);
 
@@ -122,7 +122,7 @@
 
     try {
       const res = await communityService.toggleLikePost(postId);
-      
+
       posts = posts.map(p => p.id === postId ? { ...p, stats: { ...p.stats, likesCount: res.likesCount, isLiked: res.liked } } : p);
       if (isDetail && selectedPost && selectedPost.id === postId) {
         selectedPost = { ...selectedPost, stats: { ...selectedPost.stats, likesCount: res.likesCount, isLiked: res.liked } };
@@ -301,7 +301,6 @@
   });
 </script>
 
-
 <div class="p-5 sm:p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
   <div class="space-y-1">
     <span class="text-[10px] uppercase font-black tracking-widest text-cyan-400">Спільнота гри</span>
@@ -317,8 +316,7 @@
       </span>
     </div>
   </div>
-  
-  
+
   <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
     <button
       onclick={() => {
@@ -334,11 +332,11 @@
       <Plus class="w-4 h-4" />
       <span>Створити пост</span>
     </button>
-    
+
     <button class="p-2.5 rounded-xl bg-[#041219] hover:bg-slate-900 border border-cyan-500/20 text-slate-300 hover:text-white transition-colors cursor-pointer" title="Сповіщення">
       <Bell class="w-4 h-4" />
     </button>
-    
+
     <button class="p-2.5 rounded-xl bg-[#041219] hover:bg-slate-900 border border-cyan-500/20 text-slate-300 hover:text-white transition-colors cursor-pointer" title="Більше">
       <MoreHorizontal class="w-4 h-4" />
     </button>
@@ -346,13 +344,11 @@
 </div>
 
 {#if !selectedPostId}
-  
+
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-    
-    
+
     <div class="lg:col-span-8 space-y-6">
 
-      
       {#if isLoading}
         <div class="flex items-center justify-center py-24">
           <Loader2 class="w-10 h-10 text-cyan-400 animate-spin" />
@@ -361,14 +357,14 @@
         <div class="space-y-4">
           {#each posts as post (post.id)}
             {@const Icon = getCategoryIcon(post.category)}
-            <div 
+            <div
               role="button"
               tabindex="0"
               onclick={() => handleSelectPost(post.id)}
               onkeydown={(e) => e.key === 'Enter' && handleSelectPost(post.id)}
               class="p-5 rounded-3xl bg-[#092635] border border-cyan-500/20 hover:border-cyan-500/50 shadow-lg transition-all text-left cursor-pointer group space-y-4"
             >
-              
+
               <div class="flex items-center justify-between">
                 <button
                   type="button"
@@ -396,9 +392,8 @@
                 </span>
               </div>
 
-              
               {#if post.category === 'guides'}
-                
+
                 <div class="flex flex-col sm:flex-row gap-4 items-stretch">
                   {#if post.media.url}
                     <div class="w-full sm:w-44 h-24 rounded-2xl overflow-hidden shrink-0 border border-cyan-500/25">
@@ -415,7 +410,7 @@
                   </div>
                 </div>
               {:else if post.category === 'news'}
-                
+
                 <div class="space-y-3">
                   {#if post.media.url}
                     <div class="w-full aspect-[21/9] rounded-2xl overflow-hidden border border-cyan-500/20 shadow-inner">
@@ -430,7 +425,7 @@
                   </p>
                 </div>
               {:else}
-                
+
                 <div class="space-y-3">
                   {#if post.title}
                     <h3 class="text-base font-black text-white group-hover:text-cyan-400 transition-colors">
@@ -441,17 +436,16 @@
                     {post.content}
                   </p>
 
-                  
                   {#if post.media.type === 'image' && post.media.url}
                     <div class="w-full max-h-96 rounded-2xl overflow-hidden border border-cyan-500/20">
                       <img src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
                     </div>
                   {:else if post.media.type === 'video' && post.media.url}
                     <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20">
-                      <img 
-                        src={post.media.thumbnailUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800'} 
-                        alt={post.title} 
-                        class="w-full h-full object-cover opacity-70" 
+                      <img
+                        src={post.media.thumbnailUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800'}
+                        alt={post.title}
+                        class="w-full h-full object-cover opacity-70"
                       />
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="w-14 h-14 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black flex items-center justify-center shadow-lg shadow-cyan-400/40 transition-all">
@@ -463,7 +457,6 @@
                 </div>
               {/if}
 
-              
               <div class="flex items-center justify-between pt-3 border-t border-cyan-950/60 text-[11px] font-semibold text-slate-400">
                 <div class="flex items-center gap-4">
                   <button
@@ -505,11 +498,9 @@
       {/if}
     </div>
 
-    
     <div class="lg:col-span-4 sticky top-36 space-y-4">
       <div class="bg-[#092635] border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5">
-        
-        
+
         <div class="space-y-2">
           <label for="search-community" class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Пошук у розділі
@@ -527,7 +518,6 @@
           </div>
         </div>
 
-        
         <div class="space-y-2">
           <label for="sort-community" class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Сортування
@@ -547,7 +537,6 @@
           </div>
         </div>
 
-        
         <div class="space-y-2">
           <span class="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
             Категорії
@@ -557,8 +546,8 @@
               <button
                 onclick={() => { activeCategory = key as any; loadPosts(); }}
                 class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer
-                  {activeCategory === key 
-                    ? 'bg-[#088395] text-white shadow-lg font-black' 
+                  {activeCategory === key
+                    ? 'bg-[#088395] text-white shadow-lg font-black'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900/60'}"
               >
                 <span>{label}</span>
@@ -571,13 +560,11 @@
     </div>
   </div>
 {:else}
-  
+
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-    
-    
+
     <div class="lg:col-span-8 space-y-6">
-      
-      
+
       <button
         onclick={handleBackToList}
         class="inline-flex items-center gap-2 text-xs font-extrabold text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
@@ -592,10 +579,9 @@
         </div>
       {:else}
         {@const Icon = getCategoryIcon(selectedPost.category)}
-        
+
         <div class="p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl space-y-5">
-          
-          
+
           <div class="flex items-center justify-between">
             <button
               type="button"
@@ -621,21 +607,19 @@
             </span>
           </div>
 
-          
           <div class="space-y-4">
             {#if selectedPost.title}
               <h1 class="text-xl sm:text-2xl font-black text-white leading-snug">{selectedPost.title}</h1>
             {/if}
             <p class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{selectedPost.content}</p>
 
-            
             {#if selectedPost.media.type === 'image' && selectedPost.media.url}
               <div class="w-full rounded-2xl overflow-hidden border border-cyan-500/20">
                 <img src={selectedPost.media.url} alt={selectedPost.title} class="w-full h-auto max-h-[500px] object-cover" />
               </div>
             {:else if selectedPost.media.type === 'video' && selectedPost.media.url}
               <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/25">
-                
+
                 {#if selectedPost.media.url.includes('youtube.com') || selectedPost.media.url.includes('youtu.be')}
                   {@const ytId = selectedPost.media.url.split('v=')[1]?.split('&')[0] || selectedPost.media.url.split('/').pop()}
                   <iframe
@@ -654,7 +638,6 @@
             {/if}
           </div>
 
-          
           <div class="flex items-center justify-between pt-4 border-t border-cyan-950/60 text-xs font-semibold text-slate-400">
             <div class="flex items-center gap-4">
               <button
@@ -684,11 +667,10 @@
           </div>
         </div>
 
-        
         <div class="p-6 rounded-3xl bg-[#092635] border border-cyan-500/25 shadow-xl space-y-6">
           <div class="flex items-center justify-between">
             <h3 class="text-base font-black text-white uppercase tracking-wider font-display">Обговорення</h3>
-            
+
             <div class="flex items-center gap-2 text-xs">
               <span class="text-slate-400">Сортування:</span>
               <select
@@ -701,7 +683,6 @@
             </div>
           </div>
 
-          
           <div class="flex gap-3">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden">
               {#if $currentUser?.avatarUrl}
@@ -745,7 +726,6 @@
             </div>
           </div>
 
-          
           <div class="space-y-4 pt-2 border-t border-cyan-950/60">
             {#each sortedComments as c (c.id)}
               <div class="space-y-3">
@@ -775,7 +755,6 @@
                     </div>
                     <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{c.content}</p>
 
-                    
                     <div class="flex items-center gap-4 pt-1.5 text-[10px] font-bold text-slate-400">
                       <button
                         type="button"
@@ -788,7 +767,6 @@
                   </div>
                 </div>
 
-                
                 {#if c.replies && c.replies.length > 0}
                   <div class="pl-8 space-y-3 border-l border-cyan-500/20 ml-4">
                     {#each c.replies as reply (reply.id)}
@@ -822,7 +800,6 @@
                   </div>
                 {/if}
 
-                
                 {#if activeReplyCommentId === c.id && $currentUser}
                   <div class="pl-8 ml-4 flex gap-3">
                     <textarea
@@ -858,7 +835,6 @@
       {/if}
     </div>
 
-    
     <div class="lg:col-span-4 sticky top-36 space-y-4">
       <div class="bg-[#092635] border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
         <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider">
@@ -899,7 +875,6 @@
   </div>
 {/if}
 
-
 {#if isCreateModalOpen}
   <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
     <div class="relative w-full max-w-lg bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 space-y-5">
@@ -914,8 +889,7 @@
       </div>
 
       <form onsubmit={handleCreatePostSubmit} class="space-y-4">
-        
-        
+
         <div class="space-y-1.5">
           <label for="new-post-game" class="block text-xs font-bold text-slate-300">Оберіть гру</label>
           <select
@@ -931,7 +905,6 @@
           </select>
         </div>
 
-        
         <div class="space-y-1.5">
           <label for="new-post-cat" class="block text-xs font-bold text-slate-300">Категорія публікації</label>
           <select
@@ -946,7 +919,6 @@
           </select>
         </div>
 
-        
         {#if newPostCategory !== 'screenshots'}
           <div class="space-y-1.5">
             <label for="new-post-title" class="block text-xs font-bold text-slate-300">Заголовок</label>
@@ -960,7 +932,6 @@
           </div>
         {/if}
 
-        
         <div class="space-y-1.5">
           <label for="new-post-desc" class="block text-xs font-bold text-slate-300">Опис / Вміст</label>
           <textarea
@@ -972,10 +943,9 @@
           ></textarea>
         </div>
 
-        
         <div class="space-y-2 p-3.5 rounded-2xl bg-[#041219]/60 border border-cyan-500/10">
           <span class="block text-xs font-bold text-slate-300 mb-1.5">Медіафайли</span>
-          
+
           <div class="flex gap-3 text-[11px] font-bold text-slate-400">
             <label class="flex items-center gap-1 cursor-pointer">
               <input type="radio" name="media-type" value="none" bind:group={newPostMediaType} />
@@ -1041,7 +1011,6 @@
           {/if}
         </div>
 
-        
         <div class="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -1067,3 +1036,4 @@
     </div>
   </div>
 {/if}
+

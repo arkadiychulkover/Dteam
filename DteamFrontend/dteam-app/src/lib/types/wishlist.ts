@@ -19,3 +19,4 @@ export interface UpdateWishlistItemPayload {
   priority?: number;
   notes?: string;
 }
+

@@ -5,6 +5,7 @@ using DteamBackend.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DteamBackend.Controllers
 {
@@ -45,9 +46,9 @@ namespace DteamBackend.Controllers
             IsDlc = game.IsDlc,
             ParentGameId = game.ParentGameId,
             ParentGameTitle = game.ParentGame?.Title,
-            Genres = game.Genres ?? new List<string>(),
-            Platforms = game.Platforms ?? new List<string>(),
-            Features = game.Features ?? new List<string>(),
+            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -377,3 +378,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

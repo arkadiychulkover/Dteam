@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { uiStore } from '../../stores/uiStore';
+import { uiStore } from '../../stores/uiStore';
   import { X, CheckCircle, Info, AlertTriangle, AlertCircle } from 'lucide-svelte';
 
   const icons = {
@@ -34,3 +34,4 @@
     </div>
   {/each}
 </div>
+

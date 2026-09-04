@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import FeaturedCarousel from './FeaturedCarousel.svelte';
   import { ChevronRight, ChevronLeft, Gift } from 'lucide-svelte';
+  import { recommendationService } from '../../services/recommendationService';
 
   const allGames = $derived($gamesStore.games);
 
@@ -14,8 +15,10 @@
   const specialOffersList = $derived(discountedGames.length > 0 ? discountedGames : allGames);
   const visibleSpecialOffers = $derived(specialOffersList.slice(specialOffersIndex, specialOffersIndex + 3));
 
+  let recommendedGames = $state<Game[]>([]);
   let recommendedIndex = $state(0);
-  const visibleRecommended = $derived(allGames.slice(recommendedIndex, recommendedIndex + 4));
+  let recommendedLoading = $state(true);
+  const visibleRecommended = $derived(recommendedGames.slice(recommendedIndex, recommendedIndex + 4));
 
   let budgetIndex = $state(0);
   const budgetGames = $derived(allGames.filter(g => getEffectivePrice(g.priceInNanoTons, g.discountPercentage) <= 1.0));
@@ -33,6 +36,7 @@
   }
 
   function openGame(game: Game) {
+    recommendationService.track(game.id, 'ViewGame');
     gamesStore.selectGame(game);
     uiStore.setTab('game');
   }
@@ -41,8 +45,20 @@
     return formatBasePrice(game.priceInNanoTons);
   }
 
+  async function loadRecommended() {
+    try {
+      recommendedGames = await recommendationService.getRecommended(24, 0);
+    } catch (e) {
+      console.error('Не вдалося завантажити рекомендації', e);
+      recommendedGames = [];
+    } finally {
+      recommendedLoading = false;
+    }
+  }
+
   onMount(() => {
     gamesStore.loadGames();
+    loadRecommended();
   });
 </script>
 
@@ -128,7 +144,11 @@
     </section>
   {/if}
 
-  {#if allGames.length > 0}
+  {#if recommendedLoading}
+  <div class="animate-pulse flex gap-4">
+    <div class="h-48 bg-slate-800 rounded-2xl w-full"></div>
+  </div>
+  {:else if recommendedGames.length > 0}
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <button
@@ -141,7 +161,7 @@
       </div>
 
       <div class="relative">
-        {#if allGames.length > 4}
+        {#if recommendedGames.length > 4}
           <button
             onclick={() => recommendedIndex = Math.max(0, recommendedIndex - 1)}
             disabled={recommendedIndex === 0}
@@ -151,8 +171,8 @@
             <ChevronLeft class="w-4 h-4" />
           </button>
           <button
-            onclick={() => recommendedIndex = Math.min(allGames.length - 4, recommendedIndex + 1)}
-            disabled={recommendedIndex >= allGames.length - 4}
+            onclick={() => recommendedIndex = Math.min(recommendedGames.length - 4, recommendedIndex + 1)}
+            disabled={recommendedIndex >= recommendedGames.length - 4}
             class="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 hover:bg-cyan-500 hover:text-black text-white border border-white/20 items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
             aria-label="Next recommended"
           >
@@ -181,7 +201,7 @@
                 <h3 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
                   {game.title}
                 </h3>
-
+                
                 <div class="flex items-center gap-2">
                   {#if (game.discountPercentage || 0) > 0}
                     <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
@@ -440,3 +460,4 @@
     </section>
   {/if}
 </div>
+

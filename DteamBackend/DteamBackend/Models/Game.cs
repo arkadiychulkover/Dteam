@@ -1,4 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text.Json;
+using DteamBackend.Models.Enums;
 
 namespace DteamBackend.Models
 {
@@ -41,11 +45,11 @@ namespace DteamBackend.Models
 
         public ICollection<Game> Dlcs { get; set; } = new List<Game>();
 
-        public List<string> Genres { get; set; } = new();
+        public List<GameGenre> Genres { get; set; } = new();
 
-        public List<string> Platforms { get; set; } = new() { "Windows" };
+        public List<GamePlatform> Platforms { get; set; } = new() { GamePlatform.Windows };
 
-        public List<string> Features { get; set; } = new();
+        public List<GameFeature> Features { get; set; } = new();
 
         public List<string> Tags { get; set; } = new();
 
@@ -78,5 +82,21 @@ namespace DteamBackend.Models
         public ICollection<UserWishlist> WishlistedBy { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> InCartsOf { get; set; } = new List<UserCartItem>();
+        public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Empty());
+
+        [NotMapped]
+        public float[] TasteVector
+        {
+            get => JsonSerializer.Deserialize<float[]>(TasteVectorJson) ?? TasteCategories.Empty();
+            set => TasteVectorJson = JsonSerializer.Serialize(value);
+        }
+
+        public void RecalculateTasteVector()
+        {
+            TasteVector = TasteCategories.BuildGameVector(
+                Genres.Select(g => g.ToString()).ToList(),
+                Tags,
+                Features.Select(f => f.ToString()).ToList());
+        }
     }
 }

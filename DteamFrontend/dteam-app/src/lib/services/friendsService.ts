@@ -1,9 +1,9 @@
 import { api } from './api';
-import type { 
-  FriendDto, 
-  FriendRequestDto, 
-  SendFriendRequestDto, 
-  FriendActionResponseDto 
+import type {
+  FriendDto,
+  FriendRequestDto,
+  SendFriendRequestDto,
+  FriendActionResponseDto
 } from '../types/friend';
 
 export const friendsService = {
@@ -47,3 +47,4 @@ export const friendsService = {
     return await api.get<FriendDto[]>('/friends/blocked');
   }
 };
+

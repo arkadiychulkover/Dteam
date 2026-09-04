@@ -94,3 +94,4 @@ const SAMPLE_HIGHLIGHTS: CommunityHighlight[] = [
 
 export const mockNews = SAMPLE_NEWS;
 export const mockCommunityHighlights = SAMPLE_HIGHLIGHTS;
+

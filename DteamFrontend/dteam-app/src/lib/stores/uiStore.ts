@@ -1,17 +1,15 @@
 import { writable } from 'svelte/store';
-import type { Game } from '../types';
 
-export type MainTab = 
-  | 'store' 
+export type MainTab =
+  | 'store'
   | 'library'
   | 'community'
   | 'friends'
-  | 'catalog' 
+  | 'catalog'
   | 'game'
-  | 'wishlist' 
+  | 'wishlist'
   | 'cart'
   | 'admin'
-  | 'developer'
   | 'profile'
   | 'my-profile'
   | 'login'
@@ -36,8 +34,6 @@ function createUiStore() {
     isFriendsSidebarOpen: boolean;
     isWalletModalOpen: boolean;
     isPublishGameModalOpen: boolean;
-    isEditGameModalOpen: boolean;
-    editingGame: Game | null;
     toasts: ToastMessage[];
   }>({
     activeTab: 'store',
@@ -47,8 +43,6 @@ function createUiStore() {
     isFriendsSidebarOpen: false,
     isWalletModalOpen: false,
     isPublishGameModalOpen: false,
-    isEditGameModalOpen: false,
-    editingGame: null,
     toasts: [],
   });
 
@@ -61,8 +55,6 @@ function createUiStore() {
     toggleFriendsSidebar: () => update((s) => ({ ...s, isFriendsSidebarOpen: !s.isFriendsSidebarOpen })),
     setWalletModal: (isOpen: boolean) => update((s) => ({ ...s, isWalletModalOpen: isOpen })),
     setPublishGameModal: (isOpen: boolean) => update((s) => ({ ...s, isPublishGameModalOpen: isOpen })),
-    setEditGameModal: (isOpen: boolean, game: Game | null = null) =>
-      update((s) => ({ ...s, isEditGameModalOpen: isOpen, editingGame: game })),
     addToast: (toast: Omit<ToastMessage, 'id'>) => {
       const id = Math.random().toString(36).substring(2, 9);
       update((s) => ({
@@ -86,3 +78,4 @@ function createUiStore() {
 }
 
 export const uiStore = createUiStore();
+

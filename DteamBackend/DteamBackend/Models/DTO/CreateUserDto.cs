@@ -34,3 +34,4 @@ namespace DteamBackend.Models.DTO
         public string? Bio { get; set; }
     }
 }
+

@@ -45,8 +45,6 @@ namespace DteamBackend.Controllers
                 .AsNoTracking()
                 .Include(f => f.Friend)
                 .Where(f => f.UserId == currentUserId && f.Status == FriendshipStatus.Accepted && f.Friend != null)
-                .GroupBy(f => f.FriendId)
-                .Select(g => g.First())
                 .Select(f => new FriendDto
                 {
                     Id = f.Friend.Id,
@@ -585,3 +583,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

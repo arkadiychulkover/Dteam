@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Game, Review, GameFilterParams, GameRecommendation  } from '../types';
+import type { Game, Review, GameFilterParams, GameRecommendation } from '../types';
 
 export interface UploadImageResponse {
   url: string;
@@ -35,6 +35,11 @@ export const gamesService = {
     return await api.get<Game>(`/games/${id}`);
   },
 
+  async getRecommendations(query: string, limit: number = 8): Promise<GameRecommendation[]> {
+    if (!query || !query.trim()) return [];
+    return await api.get<GameRecommendation[]>(`/recommendations?query=${encodeURIComponent(query.trim())}&limit=${limit}`);
+  },
+
   async getGenres(): Promise<string[]> {
     return await api.get<string[]>('/games/genres');
   },
@@ -65,3 +70,4 @@ export const gamesService = {
     return await api.post(`/games/${gameId}/buy`);
   },
 };
+

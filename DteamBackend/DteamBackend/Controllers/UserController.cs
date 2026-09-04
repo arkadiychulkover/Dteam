@@ -369,9 +369,9 @@ namespace DteamBackend.Controllers
             reviewsCount = game.ReviewsCount,
             isDlc = game.IsDlc,
             parentGameId = game.ParentGameId,
-            genres = game.Genres ?? new List<string>(),
-            platforms = game.Platforms ?? new List<string>(),
-            features = game.Features ?? new List<string>(),
+            genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+            platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+            features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
             tags = game.Tags ?? new List<string>(),
             version = game.Version,
             sizeInBytes = game.SizeInBytes,
@@ -385,3 +385,4 @@ namespace DteamBackend.Controllers
         };
     }
 }
+

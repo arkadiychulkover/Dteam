@@ -1,12 +1,12 @@
-using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace DteamBackend.Controllers
 {
@@ -76,9 +76,9 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres ?? new List<string>(),
-                Platforms = d.Platforms ?? new List<string>(),
-                Features = d.Features ?? new List<string>(),
+                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -90,9 +90,9 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres ?? new List<string>(),
-            Platforms = game.Platforms ?? new List<string>(),
-            Features = game.Features ?? new List<string>(),
+            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
+            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
+            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -227,52 +227,6 @@ namespace DteamBackend.Controllers
             return Ok(MapToUserDto(user));
         }
 
-        [HttpPost("users/{id:guid}/credit-balance")]
-        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<UserDto>> CreditUserBalance(Guid id, [FromBody] CreditBalanceDto dto)
-        {
-            if (dto.AmountInNanoTons == 0)
-            {
-                return BadRequest(new { message = "Сумма начисления не может быть равна нулю" });
-            }
-
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
-            }
-
-            var newBalance = user.BalanceInNanoTons + dto.AmountInNanoTons;
-            if (newBalance < 0)
-            {
-                return BadRequest(new { message = "Недостаточно средств на балансе пользователя для списания такой суммы" });
-            }
-
-            user.BalanceInNanoTons = newBalance;
-            if (dto.AmountInNanoTons > 0)
-            {
-                user.TotalEarningsInNanoTons += dto.AmountInNanoTons;
-            }
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
-            _logger.LogInformation(
-                "Admin {AdminId} {Action} {Amount} nanoTON {Direction} user {UserId} balance. Reason: {Reason}",
-                adminIdClaim,
-                dto.AmountInNanoTons > 0 ? "credited" : "debited",
-                Math.Abs(dto.AmountInNanoTons),
-                dto.AmountInNanoTons > 0 ? "to" : "from",
-                id,
-                dto.Reason ?? "—"
-            );
-
-            return Ok(MapToUserDto(user));
-        }
-
         [HttpDelete("users/{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -350,16 +304,16 @@ namespace DteamBackend.Controllers
                 ShortDescription = dto.ShortDescription,
                 PriceInNanoTons = dto.PriceInNanoTons,
                 DiscountPercentage = dto.DiscountPercentage,
-                ServerArchivePath = dto.ServerArchivePath ?? string.Empty,
+                ServerArchivePath = dto.ServerArchivePath,
                 OwnerId = ownerId,
                 DownloadCount = 0,
                 AverageRating = 0.0,
                 ReviewsCount = 0,
                 IsDlc = dto.IsDlc,
                 ParentGameId = dto.ParentGameId,
-                Genres = dto.Genres ?? new List<string>(),
-                Platforms = dto.Platforms ?? new List<string> { "Windows" },
-                Features = dto.Features ?? new List<string>(),
+                Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, ignoreCase: true)).ToList() ?? new List<GameGenre>(),
+                Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, ignoreCase: true)).ToList() ?? new List<GamePlatform>(),
+                Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, ignoreCase: true)).ToList() ?? new List<GameFeature>(),
                 Tags = dto.Tags ?? new List<string>(),
                 Version = string.IsNullOrWhiteSpace(dto.Version) ? "1.0.0" : dto.Version,
                 SizeInBytes = dto.SizeInBytes,
@@ -417,9 +371,9 @@ namespace DteamBackend.Controllers
             }
             if (dto.IsDlc.HasValue) game.IsDlc = dto.IsDlc.Value;
             if (dto.ParentGameId.HasValue) game.ParentGameId = dto.ParentGameId.Value == Guid.Empty ? null : dto.ParentGameId.Value;
-            if (dto.Genres != null) game.Genres = dto.Genres;
-            if (dto.Platforms != null) game.Platforms = dto.Platforms;
-            if (dto.Features != null) game.Features = dto.Features;
+            if (dto.Genres != null) game.Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, ignoreCase: true)).ToList() ?? new List<GameGenre>();
+            if (dto.Platforms != null) game.Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, ignoreCase: true)).ToList() ?? new List<GamePlatform>();
+            if (dto.Features != null) game.Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, ignoreCase: true)).ToList() ?? new List<GameFeature>();
             if (dto.Tags != null) game.Tags = dto.Tags;
             if (!string.IsNullOrWhiteSpace(dto.Version)) game.Version = dto.Version;
             if (dto.SizeInBytes.HasValue) game.SizeInBytes = dto.SizeInBytes.Value;
@@ -454,3 +408,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

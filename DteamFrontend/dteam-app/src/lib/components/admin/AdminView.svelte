@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+import { onMount, onDestroy } from 'svelte';
   import { adminService, activeAdminIdStore } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
@@ -9,7 +9,6 @@
   import CreateGameModal from './CreateGameModal.svelte';
   import EditGameModal from './EditGameModal.svelte';
   import AdminGuidModal from './AdminGuidModal.svelte';
-  import CreditBalanceModal from './CreditBalanceModal.svelte';
   import {
     Gamepad2,
     Users,
@@ -31,7 +30,6 @@
     Activity,
     AlertTriangle,
     Layers,
-    Wallet,
   } from 'lucide-svelte';
 
   let activeSubTab = $state<'games' | 'users'>('games');
@@ -52,7 +50,6 @@
   let isEditGameOpen = $state(false);
   let isGuidModalOpen = $state(false);
   let isDeleteConfirmOpen = $state(false);
-  let isCreditBalanceOpen = $state(false);
 
   let selectedUser = $state<Duser | null>(null);
   let selectedGame = $state<Game | null>(null);
@@ -165,11 +162,6 @@
   function openEditGame(game: Game) {
     selectedGame = game;
     isEditGameOpen = true;
-  }
-
-  function openCreditBalance(user: Duser) {
-    selectedUser = user;
-    isCreditBalanceOpen = true;
   }
 
   function confirmDelete(type: 'user' | 'game', id: string, name: string) {
@@ -636,14 +628,6 @@
                 <td class="py-3.5 px-4 text-right">
                   <div class="flex items-center justify-end gap-1.5">
                     <button
-                      onclick={() => openCreditBalance(user)}
-                      class="p-1.5 rounded-lg bg-slate-900 hover:bg-emerald-600 hover:text-white border border-slate-800 hover:border-emerald-500/40 text-emerald-400 transition-colors cursor-pointer"
-                      title="Нарахувати/списати кошти"
-                    >
-                      <Wallet class="w-3.5 h-3.5" />
-                    </button>
-
-                    <button
                       onclick={() => toggleUserBan(user)}
                       class="p-1.5 rounded-lg border transition-colors cursor-pointer
                         {user.isBanned
@@ -716,13 +700,6 @@
   onGuidChanged={loadData}
 />
 
-<CreditBalanceModal
-  user={selectedUser}
-  isOpen={isCreditBalanceOpen}
-  onClose={() => isCreditBalanceOpen = false}
-  onBalanceChanged={loadData}
-/>
-
 {#if isDeleteConfirmOpen && itemToDelete}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
     <div class="relative w-full max-w-md bg-[#061820] border border-rose-500/40 rounded-2xl shadow-2xl p-6">
@@ -751,3 +728,4 @@
     </div>
   </div>
 {/if}
+

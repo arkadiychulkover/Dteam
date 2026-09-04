@@ -1,20 +1,19 @@
 <script lang="ts">
-  import { cartStore, cartTotals } from '../../stores/cartStore';
+import { cartStore, cartTotals } from '../../stores/cartStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { uiStore } from '../../stores/uiStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { currentUser } from '../../stores/authStore';
   import { formatPrice, formatBasePrice, formatTon, nanoTonToTon } from '../../utils/formatters';
-  import TonIcon from '../ui/TonIcon.svelte';
   import type { Game, CartItem } from '../../types';
-  import { 
-    ShoppingCart, 
-    Trash2, 
-    X, 
-    ArrowRight, 
-    ArrowLeft, 
-    Heart, 
-    Sparkles, 
+  import {
+    ShoppingCart,
+    Trash2,
+    X,
+    ArrowRight,
+    ArrowLeft,
+    Heart,
+    Sparkles,
     ShieldCheck,
     CreditCard,
     CheckCircle2,
@@ -71,11 +70,11 @@
 </script>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-  
+
   <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
     <div>
       <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
-        <button 
+        <button
           onclick={() => uiStore.setTab('store')}
           class="hover:text-cyan-400 transition-colors cursor-pointer"
         >
@@ -106,7 +105,7 @@
   </div>
 
   {#if items.length === 0}
-    
+
     <div class="p-12 sm:p-16 rounded-3xl bg-[#061820]/70 border border-cyan-500/20 text-center max-w-xl mx-auto shadow-2xl backdrop-blur-xl">
       <div class="w-20 h-20 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 text-cyan-400 shadow-lg shadow-cyan-500/10">
         <ShoppingCart class="w-10 h-10" />
@@ -136,7 +135,7 @@
     </div>
 
   {:else}
-    
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
       <div class="lg:col-span-8 space-y-4">
@@ -242,9 +241,8 @@
                 <span>Ваш баланс:</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="font-bold text-white font-mono text-[11px] flex items-center gap-1">
-                  <TonIcon class="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                  <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
+                <span class="font-bold text-white font-mono text-[11px]">
+                  💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
                 </span>
                 <button
                   type="button"
@@ -258,7 +256,7 @@
           {/if}
 
           <div class="space-y-3 text-sm">
-            
+
             <div class="flex items-center justify-between text-slate-300">
               <span>Ви заощадите</span>
               <span class="font-bold text-cyan-300 font-mono">
@@ -322,3 +320,4 @@
     </div>
   {/if}
 </div>
+

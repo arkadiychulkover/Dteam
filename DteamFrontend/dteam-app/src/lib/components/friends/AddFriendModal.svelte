@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, UserPlus, Loader2, Send, Copy, Check, Fingerprint } from 'lucide-svelte';
+import { X, UserPlus, Loader2, Send, Copy, Check, Fingerprint } from 'lucide-svelte';
   import { friendsStore } from '../../stores/friendsStore';
   import { currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
@@ -126,3 +126,4 @@
     </div>
   </div>
 {/if}
+
