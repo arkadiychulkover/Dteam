@@ -15,7 +15,9 @@ namespace DteamBackend.Models.Enums
         Racing,
         Cyberpunk,
         SciFi,
-        Fantasy
+        Fantasy,
+        Modding,
+        DLC
     }
 
     public enum GamePlatform

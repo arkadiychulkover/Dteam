@@ -816,5 +816,82 @@ namespace DteamBackend.Services
                 _logger?.LogError(ex, "[InitData] Error ensuring user online tracking schema in SQLite database.");
             }
         }
+
+        public async Task EnsureTasteVectorSchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                // Check Users table
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA table_info('Users');";
+                    var userCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var colName = reader["name"]?.ToString();
+                            if (!string.IsNullOrEmpty(colName)) userCols.Add(colName);
+                        }
+                    }
+
+                    if (!userCols.Contains("TasteVectorJson"))
+                    {
+                        var defaultBase = JsonSerializer.Serialize(TasteCategories.Baseline()).Replace("'", "''");
+                        var sql = "ALTER TABLE \"Users\" ADD COLUMN \"TasteVectorJson\" TEXT NOT NULL DEFAULT '" + defaultBase + "';";
+                        await context.Database.ExecuteSqlRawAsync(sql);
+                        _logger?.LogInformation("[InitData] Added TasteVectorJson column to Users table.");
+                    }
+                }
+
+                // Check Games table
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA table_info('Games');";
+                    var gameCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var colName = reader["name"]?.ToString();
+                            if (!string.IsNullOrEmpty(colName)) gameCols.Add(colName);
+                        }
+                    }
+
+                    if (!gameCols.Contains("TasteVectorJson"))
+                    {
+                        var defaultEmpty = JsonSerializer.Serialize(TasteCategories.Empty()).Replace("'", "''");
+                        var sql = "ALTER TABLE \"Games\" ADD COLUMN \"TasteVectorJson\" TEXT NOT NULL DEFAULT '" + defaultEmpty + "';";
+                        await context.Database.ExecuteSqlRawAsync(sql);
+                        _logger?.LogInformation("[InitData] Added TasteVectorJson column to Games table.");
+                    }
+                }
+
+                // Recalculate taste vectors for games that have zero or uninitialized vectors
+                var games = await context.Games.ToListAsync();
+                var changed = false;
+                foreach (var game in games)
+                {
+                    if (game.TasteVector == null || game.TasteVector.Length != TasteCategories.Length || game.TasteVector.All(v => Math.Abs(v) < 1e-6f))
+                    {
+                        game.RecalculateTasteVector();
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    await context.SaveChangesAsync();
+                    _logger?.LogInformation("[InitData] Recalculated taste vectors for games in database.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring TasteVector schema in SQLite database.");
+            }
+        }
     }
 }

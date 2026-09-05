@@ -36,7 +36,7 @@ namespace DteamBackend.Models
         public int ModelIndex { get; set; }
 
         [MaxLength(100)]
-        public string ContractAddress { get; set; } = "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575";
+        public string ContractAddress { get; set; } = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
 
         [MaxLength(100)]
         public string? OwnerAddress { get; set; }

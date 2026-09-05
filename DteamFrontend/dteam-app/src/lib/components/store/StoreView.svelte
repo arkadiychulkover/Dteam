@@ -5,7 +5,9 @@
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import FeaturedCarousel from './FeaturedCarousel.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { ChevronRight, ChevronLeft, Gift, Loader2, RefreshCw } from 'lucide-svelte';
+  import { recommendationService } from '../../services/recommendationService';
 
   const allGames = $derived($gamesStore.games);
   const isLoading = $derived($gamesStore.isLoading);
@@ -15,8 +17,12 @@
   const specialOffersList = $derived(discountedGames.length > 0 ? discountedGames : allGames);
   const visibleSpecialOffers = $derived(specialOffersList.slice(specialOffersIndex, specialOffersIndex + 3));
 
+  let recommendedGames = $state<Game[]>([]);
   let recommendedIndex = $state(0);
-  const visibleRecommended = $derived(allGames.slice(recommendedIndex, recommendedIndex + 4));
+  let recommendedLoading = $state(true);
+  const visibleRecommended = $derived(
+    (recommendedGames.length > 0 ? recommendedGames : allGames).slice(recommendedIndex, recommendedIndex + 4)
+  );
 
   let budgetIndex = $state(0);
   const budgetGames = $derived(allGames.filter(g => getEffectivePrice(g.priceInNanoTons, g.discountPercentage) <= 1.0));
@@ -34,6 +40,7 @@
   }
 
   function openGame(game: Game) {
+    recommendationService.track(game.id, 'ViewGame');
     gamesStore.selectGame(game);
     uiStore.setTab('game');
   }
@@ -42,8 +49,20 @@
     return formatBasePrice(game.priceInNanoTons);
   }
 
+  async function loadRecommended() {
+    try {
+      recommendedGames = await recommendationService.getRecommended(24, 0);
+    } catch (e) {
+      console.warn('Не вдалося завантажити рекомендації:', e);
+      recommendedGames = [];
+    } finally {
+      recommendedLoading = false;
+    }
+  }
+
   onMount(() => {
     gamesStore.loadGames();
+    loadRecommended();
   });
 </script>
 
@@ -148,7 +167,8 @@
     </section>
   {/if}
 
-  {#if allGames.length > 0}
+  {#if recommendedGames.length > 0 || allGames.length > 0}
+    {@const listForRecommended = recommendedGames.length > 0 ? recommendedGames : allGames}
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <button
@@ -161,7 +181,7 @@
       </div>
 
       <div class="relative">
-        {#if allGames.length > 4}
+        {#if listForRecommended.length > 4}
           <button
             onclick={() => recommendedIndex = Math.max(0, recommendedIndex - 1)}
             disabled={recommendedIndex === 0}
@@ -171,8 +191,8 @@
             <ChevronLeft class="w-4 h-4" />
           </button>
           <button
-            onclick={() => recommendedIndex = Math.min(allGames.length - 4, recommendedIndex + 1)}
-            disabled={recommendedIndex >= allGames.length - 4}
+            onclick={() => recommendedIndex = Math.min(listForRecommended.length - 4, recommendedIndex + 1)}
+            disabled={recommendedIndex >= listForRecommended.length - 4}
             class="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 hover:bg-cyan-500 hover:text-black text-white border border-white/20 items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
             aria-label="Next recommended"
           >
@@ -190,7 +210,7 @@
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-                <img
+                <BackendImage
                   src={game.coverImageUrl || game.headerImageUrl}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

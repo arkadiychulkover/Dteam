@@ -55,6 +55,7 @@ namespace DteamBackend
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
             builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+            builder.Services.AddTransient<RecommendationService>();
 
             builder.Services.AddCors(options =>
             {
@@ -201,6 +202,7 @@ namespace DteamBackend
                     await initDataService.EnsureChatSchemaAsync(context);
                     await initDataService.EnsureActivitySchemaAsync(context);
                     await initDataService.EnsureUserOnlineTrackingSchemaAsync(context);
+                    await initDataService.EnsureTasteVectorSchemaAsync(context);
 
                     var nftService = services.GetRequiredService<INftService>();
                     await nftService.EnsureNftCollectionInitializedAsync();

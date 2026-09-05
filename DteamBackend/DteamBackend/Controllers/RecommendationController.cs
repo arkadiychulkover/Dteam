@@ -9,7 +9,6 @@ namespace DteamBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Route("api/recommendations")]
     [AllowAnonymous]
     public class RecommendationController : ControllerBase
     {

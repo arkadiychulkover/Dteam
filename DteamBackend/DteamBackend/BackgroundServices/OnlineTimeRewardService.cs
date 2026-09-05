@@ -77,20 +77,16 @@ namespace DteamBackend.BackgroundServices
 
                 if (pendingMints > 0)
                 {
-                    if (pendingMints > 2)
-                    {
-                        user.TimeRewardNftsMintedCount = eligibleRewardCount - 1;
-                        pendingMints = 1;
-                    }
+                    int mintsToProcess = Math.Min(pendingMints, 1);
 
                     var recipientAddress = user.HardhatAddress ?? user.WalletAddress;
                     if (!string.IsNullOrWhiteSpace(recipientAddress))
                     {
                         _logger.LogInformation(
                             "[OnlineTimeRewardService] User {Username} reached {TotalSec}s online. Minting {Count} reward NFT(s)...",
-                            user.Username, user.TotalTimeSpentSeconds, pendingMints);
+                            user.Username, user.TotalTimeSpentSeconds, mintsToProcess);
 
-                        for (int i = 0; i < pendingMints; i++)
+                        for (int i = 0; i < mintsToProcess; i++)
                         {
                             try
                             {

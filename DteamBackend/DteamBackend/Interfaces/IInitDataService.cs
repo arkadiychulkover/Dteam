@@ -10,5 +10,6 @@ namespace DteamBackend.Interfaces
         Task EnsureChatSchemaAsync(AppDbContext context);
         Task EnsureActivitySchemaAsync(AppDbContext context);
         Task EnsureUserOnlineTrackingSchemaAsync(AppDbContext context);
+        Task EnsureTasteVectorSchemaAsync(AppDbContext context);
     }
 }

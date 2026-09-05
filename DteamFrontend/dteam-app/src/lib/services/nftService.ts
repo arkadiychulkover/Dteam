@@ -1,8 +1,9 @@
-import { BrowserProvider, Contract } from 'ethers';
+import { BrowserProvider, Contract, JsonRpcProvider } from 'ethers';
 import { DTEAM_NFT_ABI } from '../contracts/DteamNFTAbi';
 import { api } from './api';
 
-export const DTEAM_NFT_CONTRACT_ADDRESS = '0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575';
+export const DTEAM_NFT_CONTRACT_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
+export const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
 
 export enum NftRarity {
   Common = 0,
@@ -15,6 +16,7 @@ export enum NftRarity {
 export interface NftGift {
   id: string;
   tokenId?: number | null;
+  onChainTokenId?: number | null;
   name: string;
   description?: string | null;
   giftMessage?: string | null;
@@ -48,75 +50,83 @@ export function getRarityInfo(rarity: NftRarity | number) {
       return {
         label: 'Легендарний',
         color: 'text-amber-400',
-        borderColor: 'border-amber-400/50 hover:border-amber-300',
-        cardBg: 'from-amber-950/40 via-yellow-950/20 to-[#02171d]',
-        badgeBg: 'bg-amber-400/15 border-amber-400/40 text-amber-300',
-        glow: 'hover:shadow-[0_0_25px_rgba(251,191,36,0.25)]'
+        badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
+        glowColor: 'shadow-amber-500/20'
       };
     case 3:
     case NftRarity.Epic:
       return {
         label: 'Епічний',
         color: 'text-purple-400',
-        borderColor: 'border-purple-500/50 hover:border-purple-300',
-        cardBg: 'from-purple-950/40 via-fuchsia-950/20 to-[#02171d]',
-        badgeBg: 'bg-purple-400/15 border-purple-400/40 text-purple-300',
-        glow: 'hover:shadow-[0_0_25px_rgba(192,132,252,0.25)]'
+        badgeBg: 'bg-purple-500/20 border-purple-500/40 text-purple-300',
+        glowColor: 'shadow-purple-500/20'
       };
     case 2:
     case NftRarity.Rare:
       return {
         label: 'Рідкісний',
-        color: 'text-cyan-400',
-        borderColor: 'border-cyan-500/50 hover:border-cyan-300',
-        cardBg: 'from-cyan-950/40 via-sky-950/20 to-[#02171d]',
-        badgeBg: 'bg-cyan-400/15 border-cyan-400/40 text-cyan-300',
-        glow: 'hover:shadow-[0_0_25px_rgba(34,211,238,0.25)]'
+        color: 'text-blue-400',
+        badgeBg: 'bg-blue-500/20 border-blue-500/40 text-blue-300',
+        glowColor: 'shadow-blue-500/20'
       };
     case 1:
     case NftRarity.Uncommon:
       return {
         label: 'Незвичайний',
         color: 'text-emerald-400',
-        borderColor: 'border-emerald-500/50 hover:border-emerald-300',
-        cardBg: 'from-emerald-950/40 via-teal-950/20 to-[#02171d]',
-        badgeBg: 'bg-emerald-400/15 border-emerald-400/40 text-emerald-300',
-        glow: 'hover:shadow-[0_0_25px_rgba(52,211,153,0.25)]'
+        badgeBg: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+        glowColor: 'shadow-emerald-500/20'
       };
+    case 0:
+    case NftRarity.Common:
     default:
       return {
         label: 'Звичайний',
         color: 'text-slate-400',
-        borderColor: 'border-slate-700/60 hover:border-slate-500',
-        cardBg: 'from-slate-900/60 via-slate-900/30 to-[#02171d]',
-        badgeBg: 'bg-slate-800/80 border-slate-700 text-slate-400',
-        glow: 'hover:shadow-[0_0_15px_rgba(148,163,184,0.15)]'
+        badgeBg: 'bg-slate-500/20 border-slate-500/40 text-slate-300',
+        glowColor: 'shadow-slate-500/10'
       };
   }
 }
 
 /**
- * Отримання списку значків/подарунків користувача напряму зі смарт-контракту:
+ * Отримання списку значків (NFT) поточного користувача зі смарт-контракту в блокчейні (DNFT):
  * 1. Зчитує токени, які належать даній адресі через події Transfer та перевірку ownerOf
  * 2. Викликає contract.tokenURI(tokenId) для отримання посилання на подарунок
  * 3. Завантажує дані подарунка з бекенда за цим посиланням
  */
-export async function getUserNftsFromContract(walletAddress: string): Promise<NftGift[]> {
-  if (!walletAddress) return [];
-
-  // Завжди використовуємо MetaMask
-  if (typeof window === 'undefined' || !(window as any).ethereum) {
-    console.warn('[NFT Service] MetaMask не знайдено в браузері.');
+export async function getUserNftsFromContract(walletAddress: string, userId?: string): Promise<NftGift[]> {
+  if (!walletAddress) {
+    if (userId) {
+      return await getUserGiftsByUserId(userId);
+    }
     return [];
   }
 
-  const provider = new BrowserProvider((window as any).ethereum);
-  const contract = new Contract(DTEAM_NFT_CONTRACT_ADDRESS, DTEAM_NFT_ABI as any, provider);
+  let provider: any = null;
 
+  // 1. Спроба через MetaMask якщо він підключений до Hardhat (31337)
+  if (typeof window !== 'undefined' && (window as any).ethereum) {
+    try {
+      const browserProvider = new BrowserProvider((window as any).ethereum);
+      const network = await browserProvider.getNetwork();
+      if (Number(network.chainId) === 31337) {
+        provider = browserProvider;
+      }
+    } catch {
+      provider = null;
+    }
+  }
+
+  // 2. Фоллбек на прямий Hardhat JSON-RPC
+  if (!provider) {
+    provider = new JsonRpcProvider(HARDHAT_RPC_URL);
+  }
+
+  const contract = new Contract(DTEAM_NFT_CONTRACT_ADDRESS, DTEAM_NFT_ABI as any, provider);
   const targetAddr = walletAddress.toLowerCase();
   const ownedTokenIds: number[] = [];
 
-  // Отримуємо події Transfer де recipient = targetAddr виключно через MetaMask
   try {
     const filter = contract.filters.Transfer(null, walletAddress);
     const events = await contract.queryFilter(filter, 0, 'latest');
@@ -129,7 +139,6 @@ export async function getUserNftsFromContract(walletAddress: string): Promise<Nf
       }
     }
 
-    // Перевіряємо поточного власника (ownerOf)
     for (const id of candidateIds) {
       try {
         const currentOwner = await contract.ownerOf(id);
@@ -141,10 +150,14 @@ export async function getUserNftsFromContract(walletAddress: string): Promise<Nf
       }
     }
   } catch (err) {
-    console.error('[NFT Service] Error querying Transfer events via MetaMask:', err);
+    console.warn('[NFT Service] Error querying Transfer events on chain, trying fallback to backend:', err);
   }
 
-  // Для кожного токена отримуємо tokenURI зі смарт-контракту та завантажуємо ведомости з бекенду
+  // Якщо через блокчейн нічого не знайшли, але передано userId, фоллбечимось на бекенд
+  if (ownedTokenIds.length === 0 && userId) {
+    return await getUserGiftsByUserId(userId);
+  }
+
   const gifts: NftGift[] = [];
   for (const tokenId of ownedTokenIds) {
     try {

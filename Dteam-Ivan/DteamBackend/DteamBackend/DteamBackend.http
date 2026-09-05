@@ -1,0 +1,6 @@
+@DteamBackend_HostAddress = http://localhost:5117
+
+GET {{DteamBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace DteamBackend.Models
@@ -91,5 +92,22 @@ namespace DteamBackend.Models
         public ICollection<UserWishlist> WishlistedBy { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> InCartsOf { get; set; } = new List<UserCartItem>();
+
+        public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Empty());
+
+        [NotMapped]
+        public float[] TasteVector
+        {
+            get => JsonSerializer.Deserialize<float[]>(TasteVectorJson) ?? TasteCategories.Empty();
+            set => TasteVectorJson = JsonSerializer.Serialize(value);
+        }
+
+        public void RecalculateTasteVector()
+        {
+            TasteVector = TasteCategories.BuildGameVector(
+                Genres,
+                Tags,
+                Features);
+        }
     }
 }

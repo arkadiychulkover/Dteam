@@ -202,20 +202,16 @@ namespace DteamBackend.Hubs
 
                             if (pendingMints > 0)
                             {
-                                if (pendingMints > 2)
-                                {
-                                    user.TimeRewardNftsMintedCount = eligibleRewardCount - 1;
-                                    pendingMints = 1;
-                                }
+                                int mintsToProcess = Math.Min(pendingMints, 1);
 
                                 var recipientAddress = user.HardhatAddress ?? user.WalletAddress;
                                 if (!string.IsNullOrWhiteSpace(recipientAddress))
                                 {
                                     _logger.LogInformation(
                                         "[OnlineHub] Користувач {Username} набрав достатньо часу ({TotalSec} сек). Мінтуємо {Count} NFT на адресу {Address}...",
-                                        user.Username, user.TotalTimeSpentSeconds, pendingMints, recipientAddress);
+                                        user.Username, user.TotalTimeSpentSeconds, mintsToProcess, recipientAddress);
 
-                                    for (int i = 0; i < pendingMints; i++)
+                                    for (int i = 0; i < mintsToProcess; i++)
                                     {
                                         try
                                         {

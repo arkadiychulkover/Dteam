@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 using DteamBackend.Models.Enums;
 
 namespace DteamBackend.Models
@@ -95,5 +97,14 @@ namespace DteamBackend.Models
         public ICollection<UserActivity> Activities { get; set; } = new List<UserActivity>();
 
         public ICollection<NftItem> Gifts { get; set; } = new List<NftItem>();
+
+        public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Baseline());
+
+        [NotMapped]
+        public float[] TasteVector
+        {
+            get => JsonSerializer.Deserialize<float[]>(TasteVectorJson) ?? TasteCategories.Empty();
+            set => TasteVectorJson = JsonSerializer.Serialize(value);
+        }
     }
 }

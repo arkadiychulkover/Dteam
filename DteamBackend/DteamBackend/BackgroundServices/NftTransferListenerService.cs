@@ -34,7 +34,7 @@ namespace DteamBackend.Services
         private BigInteger _lastProcessedBlock = 0;
         private string? _contractAbi;
 
-        public const string DefaultContractAddress = "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575";
+        public const string DefaultContractAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
         public const string ZeroAddress = "0x0000000000000000000000000000000000000000";
 
         public NftTransferListenerService(

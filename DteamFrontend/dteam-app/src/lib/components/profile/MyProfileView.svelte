@@ -56,7 +56,7 @@
     }
     isLoadingNfts = true;
     try {
-      myNfts = await getUserNftsFromContract(address);
+      myNfts = await getUserNftsFromContract(address, $currentUser?.id);
     } catch (err) {
       console.warn('[MyProfileView] Failed to fetch NFTs from contract:', err);
     } finally {
