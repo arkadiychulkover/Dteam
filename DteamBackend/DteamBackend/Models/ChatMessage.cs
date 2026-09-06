@@ -48,3 +48,4 @@ namespace DteamBackend.Models
         public bool IsDeletedForReceiver { get; set; } = false;
     }
 }
+

@@ -14,10 +14,11 @@
   function handleBack() {
     chatStore.setRightSidebarTab('profile');
   }
+
 </script>
 
 <div class="h-full flex flex-col">
-  <!-- Header -->
+
   <div class="p-4 border-b border-cyan-500/20 flex items-center gap-3">
     <button
       onclick={handleBack}
@@ -31,7 +32,6 @@
     </h3>
   </div>
 
-  <!-- Content List -->
   <div class="flex-1 overflow-y-auto p-4 space-y-6">
     {#if !photosByMonth || photosByMonth.length === 0}
       <div class="h-48 flex flex-col items-center justify-center text-slate-500 text-xs">
@@ -41,7 +41,7 @@
     {:else}
       {#each photosByMonth as group}
         <div class="space-y-3">
-          <!-- Month Separator -->
+
           <div class="flex items-center gap-3">
             <div class="h-px flex-1 bg-cyan-500/20"></div>
             <span class="text-xs font-semibold text-slate-400 tracking-wider">
@@ -50,7 +50,6 @@
             <div class="h-px flex-1 bg-cyan-500/20"></div>
           </div>
 
-          <!-- 3-column Grid -->
           <div class="grid grid-cols-3 gap-2">
             {#each group.items as item}
               <button
@@ -73,7 +72,6 @@
   </div>
 </div>
 
-<!-- Image Lightbox Modal -->
 {#if selectedImage}
   <div class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <button
@@ -92,3 +90,4 @@
     </div>
   </div>
 {/if}
+

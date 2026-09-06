@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { 
-    Bell, 
-    Image as ImageIcon, 
-    FileText, 
-    Mic, 
-    UserMinus, 
-    RotateCcw, 
-    Ban, 
-    AlertTriangle 
+  import {
+    Bell,
+    Image as ImageIcon,
+    FileText,
+    Mic,
+    UserMinus,
+    RotateCcw,
+    Ban,
+    AlertTriangle
   } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
   import { friendsStore } from '../../stores/friendsStore';
@@ -85,6 +85,7 @@
       type: 'error'
     });
   }
+
 </script>
 
 <aside class="w-80 h-full bg-[#061820]/95 border-l border-cyan-500/20 flex flex-col shrink-0 overflow-hidden relative backdrop-blur-xl">
@@ -99,9 +100,9 @@
   {:else if $chatStore.rightSidebarTab === 'voice'}
     <ChatVoiceGallery voiceByMonth={mediaSummary?.voiceByMonth} />
   {:else}
-    <!-- Main Profile View -->
+
     <div class="flex-1 overflow-y-auto p-5 space-y-6">
-      <!-- Profile Card with Big Avatar -->
+
       <div class="flex flex-col items-center text-center">
         <div class="relative w-40 h-40 rounded-3xl overflow-hidden p-1 bg-gradient-to-b from-cyan-400/40 via-teal-500/20 to-transparent border border-cyan-400/40 shadow-[0_0_25px_rgba(0,242,254,0.15)] group">
           {#if conversation.friendAvatarUrl}
@@ -125,14 +126,12 @@
         </span>
       </div>
 
-      <!-- Settings / Notifications Toggle -->
       <div class="p-3 rounded-2xl bg-[#09222c]/80 border border-cyan-500/20 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3 text-xs font-semibold text-slate-200">
           <Bell class="w-4 h-4 text-cyan-400" />
           <span>Сповіщення</span>
         </div>
 
-        <!-- Custom Switch -->
         <button
           type="button"
           onclick={handleToggleNotifications}
@@ -147,9 +146,8 @@
         </button>
       </div>
 
-      <!-- Media Categories with Badges -->
       <div class="space-y-2">
-        <!-- Photos -->
+
         <button
           type="button"
           onclick={() => chatStore.setRightSidebarTab('photos')}
@@ -164,7 +162,6 @@
           </span>
         </button>
 
-        <!-- Files -->
         <button
           type="button"
           onclick={() => chatStore.setRightSidebarTab('files')}
@@ -179,7 +176,6 @@
           </span>
         </button>
 
-        <!-- Voice Messages -->
         <button
           type="button"
           onclick={() => chatStore.setRightSidebarTab('voice')}
@@ -195,9 +191,8 @@
         </button>
       </div>
 
-      <!-- Action Buttons -->
       <div class="space-y-1 pt-2 border-t border-cyan-500/20">
-        <!-- Remove Friend -->
+
         <button
           type="button"
           onclick={handleRemoveFriend}
@@ -207,7 +202,6 @@
           <span>Видалити з друзів</span>
         </button>
 
-        <!-- Clear History -->
         <button
           type="button"
           onclick={handleClearHistory}
@@ -217,7 +211,6 @@
           <span>Очистити історію</span>
         </button>
 
-        <!-- Block -->
         <button
           type="button"
           onclick={handleBlock}
@@ -227,7 +220,6 @@
           <span>Заблокувати</span>
         </button>
 
-        <!-- Report -->
         <button
           type="button"
           onclick={handleReport}
@@ -240,3 +232,4 @@
     </div>
   {/if}
 </aside>
+

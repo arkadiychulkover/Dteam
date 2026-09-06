@@ -45,6 +45,7 @@
     isOpen = false;
     usernameOrId = '';
   }
+
 </script>
 
 {#if isOpen}
@@ -126,3 +127,4 @@
     </div>
   </div>
 {/if}
+

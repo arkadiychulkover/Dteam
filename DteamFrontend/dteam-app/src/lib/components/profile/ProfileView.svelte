@@ -5,15 +5,15 @@
   import { formatPrice, formatBalance, formatAddress } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import { uiStore } from '../../stores/uiStore';
-  import { 
-    User, 
-    Wallet, 
-    Coins, 
-    ShieldCheck, 
-    Gamepad2, 
-    Sparkles, 
-    Users, 
-    Copy, 
+  import {
+    User,
+    Wallet,
+    Coins,
+    ShieldCheck,
+    Gamepad2,
+    Sparkles,
+    Users,
+    Copy,
     Check,
     Plus
   } from 'lucide-svelte';
@@ -27,6 +27,7 @@
       setTimeout(() => copied = false, 2000);
     }
   }
+
 </script>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
@@ -150,3 +151,4 @@
     </div>
   {/if}
 </div>
+

@@ -19,7 +19,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -30,7 +30,7 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(typeof(List<UserActivityDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<List<UserActivityDto>>> GetFriendsActivities(
-            [FromQuery] int limit = 50, 
+            [FromQuery] int limit = 50,
             [FromQuery] int offset = 0)
         {
             var userId = GetCurrentUserId();
@@ -46,8 +46,8 @@ namespace DteamBackend.Controllers
         [HttpGet("user/{userId:guid}")]
         [ProducesResponseType(typeof(List<UserActivityDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<UserActivityDto>>> GetUserActivities(
-            Guid userId, 
-            [FromQuery] int limit = 50, 
+            Guid userId,
+            [FromQuery] int limit = 50,
             [FromQuery] int offset = 0)
         {
             var activities = await _activityService.GetUserActivitiesAsync(userId, limit, offset);
@@ -58,7 +58,7 @@ namespace DteamBackend.Controllers
         [HttpGet("feed")]
         [ProducesResponseType(typeof(List<UserActivityDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<UserActivityDto>>> GetGlobalFeed(
-            [FromQuery] int limit = 50, 
+            [FromQuery] int limit = 50,
             [FromQuery] int offset = 0)
         {
             var activities = await _activityService.GetGlobalFeedAsync(limit, offset);
@@ -66,3 +66,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

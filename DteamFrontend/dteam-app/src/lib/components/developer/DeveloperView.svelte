@@ -42,7 +42,6 @@
   let isLoadingMyNews = $state(false);
   let activeDevTab = $state<'games' | 'news'>('games');
 
-  // Tooltip hover states for charts
   let hoveredPoint = $state<{ date: string; value: string; type: 'revenue' | 'downloads' } | null>(null);
 
   async function loadMyNews() {
@@ -94,7 +93,6 @@
     })
   );
 
-  // Daily points for charts
   const dailyPoints = $derived($developerStore.stats?.dailyDynamics || []);
   const maxDownloadsInChart = $derived(
     Math.max(2, ...dailyPoints.map((p) => p.downloads))
@@ -103,8 +101,6 @@
     Math.max(1, ...dailyPoints.map((p) => Number(p.earningsInTon) || 0))
   );
 
-  // Calculated smooth cubic Bezier spline for Revenue Area Chart (width: 520, height: 110)
-  // Base at y=90, top grid line at y=20 (height = 70). Max value maps to y=20.
   const revenueChartData = $derived.by(() => {
     if (dailyPoints.length === 0) return { pathD: '', areaD: '', points: [] };
     const w = 470;
@@ -143,12 +139,11 @@
       let cp2x = pNext.x - (pAfter.x - pCurr.x) * tension;
       let cp2y = pNext.y - (pAfter.y - pCurr.y) * tension;
 
-      // Keep baseline flat when both adjacent points are 0
       if (pCurr.y === baseY && pNext.y === baseY) {
         cp1y = baseY;
         cp2y = baseY;
       } else {
-        // Clamp control points gracefully
+
         cp1y = Math.min(baseY, Math.max(16, cp1y));
         cp2y = Math.min(baseY, Math.max(16, cp2y));
       }
@@ -186,10 +181,11 @@
       gameToDelete = null;
     }
   }
+
 </script>
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
-  <!-- LEVEL 1: Clean Page Header with Primary CTA -->
+
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
     <div>
       <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
@@ -200,7 +196,6 @@
       </p>
     </div>
 
-    <!-- Primary Action: + New Game (Elevated, primary focus) -->
     <div class="flex items-center gap-3">
       <button
         onclick={() => developerStore.loadAll()}
@@ -220,10 +215,9 @@
     </div>
   </div>
 
-  <!-- LEVEL 2: OVERVIEW — One unified analytics surface (No card soup!) -->
   <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 overflow-hidden shadow-lg">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-cyan-500/10">
-      <!-- Col 1: Revenue -->
+
       <div class="p-5 flex flex-col justify-between space-y-2">
         <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           Зароблено TON
@@ -238,7 +232,6 @@
         </div>
       </div>
 
-      <!-- Col 2: Downloads -->
       <div class="p-5 flex flex-col justify-between space-y-2">
         <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           Завантажень
@@ -251,7 +244,6 @@
         </div>
       </div>
 
-      <!-- Col 3: Games Count -->
       <div class="p-5 flex flex-col justify-between space-y-2">
         <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           Проектів
@@ -264,7 +256,6 @@
         </div>
       </div>
 
-      <!-- Col 4: Developer Share -->
       <div class="p-5 flex flex-col justify-between space-y-2">
         <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           Ваша частка
@@ -279,7 +270,6 @@
     </div>
   </div>
 
-  <!-- LEVEL 2: ANALYTICS — Smooth, bold, organic metrics -->
   <div class="space-y-3">
     <div class="flex items-center justify-between">
       <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -291,9 +281,8 @@
       </div>
     </div>
 
-    <!-- Side-by-Side Charts (Desktop 7:5 ratio) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Chart 1: Revenue Area Chart (7 cols) -->
+
       <div class="lg:col-span-7 rounded-2xl bg-[#061923] border border-cyan-500/15 p-5 shadow-lg relative flex flex-col justify-between overflow-hidden">
         <div class="flex items-center justify-between mb-2 h-7">
           <div>
@@ -301,7 +290,6 @@
             <span class="text-[10px] text-slate-500">щоденні надходження</span>
           </div>
 
-          <!-- Dynamic Header Value (zero layout shift) -->
           {#if hoveredPoint && hoveredPoint.type === 'revenue'}
             <span class="text-xs font-mono text-cyan-300 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/25 animate-in fade-in duration-150">
               <span class="text-slate-400">{hoveredPoint.date}:</span>
@@ -316,7 +304,6 @@
           {/if}
         </div>
 
-        <!-- SVG Area Chart with smooth bezier spline & thick glowing stroke -->
         <div class="w-full relative pt-2">
           <svg viewBox="0 0 520 110" class="w-full h-32 overflow-visible">
             <defs>
@@ -330,22 +317,18 @@
               </filter>
             </defs>
 
-            <!-- Horizontal Baseline Grid: top=20, middle=55, bottom=90 -->
             <line x1="35" y1="20" x2="505" y2="20" stroke="#16435c" stroke-dasharray="4 4" stroke-width="1" />
             <line x1="35" y1="55" x2="505" y2="55" stroke="#16435c" stroke-dasharray="4 4" stroke-width="1" />
             <line x1="35" y1="90" x2="505" y2="90" stroke="#16435c" stroke-width="1" />
 
-            <!-- Y Axis values: top=20, middle=55, bottom=90 -->
             <text x="8" y="24" fill="#94a3b8" font-size="10" font-family="monospace">{maxEarningsInChart.toFixed(1)}</text>
             <text x="8" y="59" fill="#94a3b8" font-size="10" font-family="monospace">{(maxEarningsInChart / 2).toFixed(1)}</text>
             <text x="16" y="94" fill="#94a3b8" font-size="10" font-family="monospace">0</text>
 
-            <!-- Smooth Area Fill -->
             {#if revenueChartData.areaD}
               <path d={revenueChartData.areaD} fill="url(#revenueAreaGrad)" />
             {/if}
 
-            <!-- Thick, Smooth Neon Spline Line -->
             {#if revenueChartData.pathD}
               <path
                 d={revenueChartData.pathD}
@@ -358,17 +341,15 @@
               />
             {/if}
 
-            <!-- Data point glowing nodes & hover hit-areas -->
             {#each revenueChartData.points as pt, i}
               {@const earn = Number(pt.pt.earningsInTon) || 0}
               {#if earn > 0}
-                <!-- Outer glowing halo -->
+
                 <circle cx={pt.x} cy={pt.y} r="7" fill="#0df2c9" fill-opacity="0.25" />
-                <!-- Core solid dot -->
+
                 <circle cx={pt.x} cy={pt.y} r="4" fill="#0df2c9" stroke="#061923" stroke-width="2" />
               {/if}
 
-              <!-- Interactive hover column -->
               <rect
                 role="presentation"
                 x={pt.x - 7}
@@ -381,7 +362,6 @@
                 onmouseleave={() => hoveredPoint = null}
               />
 
-              <!-- Date labels on axis with precise alignment (start, middle, end) -->
               {#if i === 0}
                 <text x={pt.x} y="106" fill="#94a3b8" font-size="10" font-family="monospace" text-anchor="start" font-weight="500">
                   {pt.pt.date}
@@ -400,7 +380,6 @@
         </div>
       </div>
 
-      <!-- Chart 2: Downloads Bar Chart with chunky, solid pill bars -->
       <div class="lg:col-span-5 rounded-2xl bg-[#061923] border border-cyan-500/15 p-5 shadow-lg relative flex flex-col justify-between overflow-hidden">
         <div class="flex items-center justify-between mb-2 h-7">
           <div>
@@ -408,7 +387,6 @@
             <span class="text-[10px] text-slate-500">динаміка інсталяцій</span>
           </div>
 
-          <!-- Dynamic Header Value (zero layout shift) -->
           {#if hoveredPoint && hoveredPoint.type === 'downloads'}
             <span class="text-xs font-mono text-cyan-300 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/25 animate-in fade-in duration-150">
               <span class="text-slate-400">{hoveredPoint.date}:</span>
@@ -423,7 +401,6 @@
           {/if}
         </div>
 
-        <!-- SVG Bar Chart with thick, chunky pill bars -->
         <div class="w-full relative pt-2">
           <svg viewBox="0 0 340 110" class="w-full h-32 overflow-visible">
             <defs>
@@ -436,17 +413,14 @@
               </filter>
             </defs>
 
-            <!-- Horizontal Baseline Grid: top=20, middle=55, bottom=90 -->
             <line x1="25" y1="20" x2="325" y2="20" stroke="#16435c" stroke-dasharray="4 4" stroke-width="1" />
             <line x1="25" y1="55" x2="325" y2="55" stroke="#16435c" stroke-dasharray="4 4" stroke-width="1" />
             <line x1="25" y1="90" x2="325" y2="90" stroke="#16435c" stroke-width="1" />
 
-            <!-- Y Axis values with clean contrast -->
             <text x="8" y="24" fill="#94a3b8" font-size="10" font-family="monospace">{maxDownloadsInChart}</text>
             <text x="8" y="59" fill="#94a3b8" font-size="10" font-family="monospace">{Math.round(maxDownloadsInChart / 2)}</text>
             <text x="8" y="94" fill="#94a3b8" font-size="10" font-family="monospace">0</text>
 
-            <!-- Chunky Bars (width 8.5px, rx 3px) -->
             {#each dailyPoints as pt, i}
               {@const barH = pt.downloads > 0 ? Math.max(16, (pt.downloads / maxDownloadsInChart) * 70) : 5}
               {@const barX = 25 + i * 10}
@@ -466,7 +440,6 @@
                 onmouseleave={() => hoveredPoint = null}
               />
 
-              <!-- Date labels on axis (start, middle, end) -->
               {#if i === 0}
                 <text x={barX} y="106" fill="#94a3b8" font-size="10" font-family="monospace" text-anchor="start" font-weight="500">
                   {pt.date}
@@ -487,7 +460,6 @@
     </div>
   </div>
 
-  <!-- LEVEL 2: MY GAMES & NEWS -->
   <div class="space-y-4 pt-2 border-t border-cyan-500/10">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="flex items-center gap-4 border-b border-cyan-500/15 pb-1">
@@ -516,7 +488,7 @@
       </div>
 
       {#if activeDevTab === 'games'}
-        <!-- Search & Filters -->
+
         <div class="flex flex-wrap items-center gap-2.5">
           <div class="relative">
             <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -553,7 +525,7 @@
     </div>
 
     {#if activeDevTab === 'games'}
-      <!-- Games Cards Grid: 2 equal balanced columns on md and lg -->
+
       {#if $developerStore.isLoading}
         <div class="py-16 text-center space-y-2">
           <RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mx-auto" />
@@ -584,7 +556,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           {#each filteredGames as game (game.id)}
             <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 hover:border-cyan-500/30 transition-all overflow-hidden flex flex-col group shadow-md">
-              <!-- Cover Header -->
+
               <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
                 <img
                   src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'}
@@ -593,7 +565,6 @@
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-[#061923] via-transparent to-black/40"></div>
 
-                <!-- Status Badge -->
                 <div class="absolute top-2.5 left-2.5 flex items-center gap-2">
                   {#if game.isPublished}
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/90 text-black text-[10px] font-black shadow backdrop-blur-sm">
@@ -613,7 +584,6 @@
                   {/if}
                 </div>
 
-                <!-- Version & Release Date Tag -->
                 <div class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] text-slate-300 font-mono flex items-center gap-1.5 border border-white/10 shadow-sm">
                   <span>v{game.version || '1.0.0'}</span>
                   <span class="text-slate-600">•</span>
@@ -621,7 +591,6 @@
                 </div>
               </div>
 
-              <!-- Card Body -->
               <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                 <div class="space-y-1.5">
                   <h4 class="text-base font-bold text-white group-hover:text-[#0df2c9] transition-colors font-display line-clamp-1">
@@ -631,7 +600,6 @@
                     {game.shortDescription || game.description}
                   </p>
 
-                  <!-- Tags / Genres -->
                   <div class="flex flex-wrap gap-1.5 pt-1">
                     {#each (game.genres || []).slice(0, 3) as genre}
                       <span class="px-2.5 py-0.5 rounded-md bg-[#092e40] text-[10px] text-cyan-300 border border-cyan-500/25 font-semibold">
@@ -641,7 +609,6 @@
                   </div>
                 </div>
 
-                <!-- Price & Downloads Line -->
                 <div class="pt-2.5 border-t border-cyan-500/10 flex items-center justify-between text-xs">
                   <div class="flex items-center gap-3 text-slate-300 font-mono text-xs">
                     <span class="flex items-center gap-1" title="Завантажень">
@@ -654,7 +621,6 @@
                     </span>
                   </div>
 
-                  <!-- Price in TON with TonIcon -->
                   <div>
                     {#if game.priceInNanoTons === 0}
                       <span class="text-xs font-bold text-[#0df2c9]">Free</span>
@@ -667,9 +633,8 @@
                   </div>
                 </div>
 
-                <!-- Actions Grid (5 buttons) -->
                 <div class="grid grid-cols-5 gap-1.5 pt-1">
-                  <!-- News -->
+
                   <button
                     onclick={() => gameForNews = game}
                     class="py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/25 text-[#0df2c9] text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer border border-cyan-500/20"
@@ -679,7 +644,6 @@
                     <span class="hidden sm:inline">Новина</span>
                   </button>
 
-                  <!-- Edit -->
                   <button
                     onclick={() => uiStore.setEditGameModal(true, game)}
                     class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-cyan-300 text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
@@ -689,7 +653,6 @@
                     <span class="hidden sm:inline">Ред.</span>
                   </button>
 
-                  <!-- Toggle Publish Status -->
                   <button
                     onclick={() => handleTogglePublish(game)}
                     class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
@@ -704,7 +667,6 @@
                     {/if}
                   </button>
 
-                  <!-- View in Store -->
                   <button
                     onclick={() => handleViewInStore(game)}
                     class="py-2 rounded-xl bg-[#092837] hover:bg-cyan-500/15 text-slate-300 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
@@ -714,7 +676,6 @@
                     <span class="hidden sm:inline">Крамниця</span>
                   </button>
 
-                  <!-- Delete -->
                   <button
                     onclick={() => gameToDelete = game}
                     class="py-2 rounded-xl bg-[#092837] hover:bg-red-500/20 text-slate-400 hover:text-red-400 text-xs transition-all flex items-center justify-center cursor-pointer"
@@ -729,7 +690,7 @@
         </div>
       {/if}
     {:else}
-      <!-- News Tab View -->
+
       {#if isLoadingMyNews}
         <div class="py-16 text-center space-y-2">
           <RefreshCw class="w-6 h-6 animate-spin text-cyan-400 mx-auto" />
@@ -801,7 +762,6 @@
   </div>
 </div>
 
-<!-- Modal for Creating Game News -->
 {#if gameForNews}
   <CreateGameNewsModal
     game={gameForNews}
@@ -811,7 +771,6 @@
   />
 {/if}
 
-<!-- Confirmation Modal for Delete -->
 {#if gameToDelete}
   <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#061923] border border-red-500/30 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 animate-in fade-in zoom-in-95">
@@ -839,3 +798,4 @@
     </div>
   </div>
 {/if}
+

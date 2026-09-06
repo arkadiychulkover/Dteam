@@ -27,10 +27,11 @@
       return '';
     }
   }
+
 </script>
 
 <div class="h-full flex flex-col">
-  <!-- Header -->
+
   <div class="p-4 border-b border-cyan-500/20 flex items-center gap-3">
     <button
       onclick={handleBack}
@@ -44,7 +45,6 @@
     </h3>
   </div>
 
-  <!-- Content List -->
   <div class="flex-1 overflow-y-auto p-4 space-y-6">
     {#if !voiceByMonth || voiceByMonth.length === 0}
       <div class="h-48 flex flex-col items-center justify-center text-slate-500 text-xs">
@@ -54,7 +54,7 @@
     {:else}
       {#each voiceByMonth as group}
         <div class="space-y-3">
-          <!-- Month Separator -->
+
           <div class="flex items-center gap-3">
             <div class="h-px flex-1 bg-cyan-500/20"></div>
             <span class="text-xs font-semibold text-slate-400 tracking-wider">
@@ -63,11 +63,10 @@
             <div class="h-px flex-1 bg-cyan-500/20"></div>
           </div>
 
-          <!-- Voice Items List -->
           <div class="space-y-2">
             {#each group.items as item}
               <div class="p-3 rounded-2xl bg-[#0b242e]/80 border border-cyan-500/20 space-y-2 shadow-sm">
-                <!-- Header inside item: Sender + Date -->
+
                 <div class="flex items-center justify-between text-xs">
                   <span class="font-bold text-white tracking-wide truncate max-w-[140px]">
                     {item.senderUsername}
@@ -77,7 +76,6 @@
                   </span>
                 </div>
 
-                <!-- Custom Audio Player -->
                 <AudioMessagePlayer
                   src={item.mediaUrl}
                   messageId={item.messageId}
@@ -91,3 +89,4 @@
     {/if}
   </div>
 </div>
+

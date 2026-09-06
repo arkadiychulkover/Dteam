@@ -37,3 +37,4 @@ export interface UnifiedTransactionItem {
   gameCoverUrl?: string | null;
   gameId?: string | null;
 }
+

@@ -105,6 +105,7 @@
     chatHubService.stop();
     onlineHubService.stopConnection();
   });
+
 </script>
 
 <div class="min-h-screen flex flex-col text-slate-100 font-sans selection:bg-cyan-400 selection:text-black relative">

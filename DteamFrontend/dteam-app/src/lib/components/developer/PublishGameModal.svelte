@@ -25,14 +25,12 @@
   let archivePath = $state('');
   let isPublished = $state(true);
 
-  // Media
   let coverImageUrl = $state('');
   let headerImageUrl = $state('');
   let screenshotUrls = $state<string[]>([]);
   let isUploadingCover = $state(false);
   let isUploadingScreenshot = $state(false);
 
-  // Genres & Platforms
   const availableGenres = [
     'Action',
     'RPG',
@@ -183,7 +181,7 @@
 
       close();
     } catch {
-      // Handled in store
+
     }
   }
 
@@ -206,13 +204,14 @@
     archivePath = '/storage/games/white-punk-v1.zip';
     archiveFileName = 'white-punk-v1.zip';
   }
+
 </script>
 
 {#if $uiStore.isPublishGameModalOpen}
-  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-[#051c27] border border-cyan-500/30 rounded-3xl w-full max-w-2xl max-h-[500px] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95">
-      <!-- Modal Header -->
-      <div class="p-6 bg-[#072432] border-b border-cyan-500/20 flex items-center justify-between shrink-0">
+  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#051c27] border border-cyan-500/30 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95">
+
+      <div class="p-4 sm:p-6 bg-[#072432] border-b border-cyan-500/20 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0df2c9] to-cyan-600 text-black flex items-center justify-center font-black shadow-lg shadow-cyan-500/20">
             <Gamepad2 class="w-5 h-5" />
@@ -241,9 +240,8 @@
         </div>
       </div>
 
-      <!-- Form Body -->
-      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="p-6 space-y-5 text-xs overflow-y-auto grow">
-        <!-- Title & Version -->
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="p-4 sm:p-6 space-y-5 text-xs overflow-y-auto grow">
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-2">
             <label for="newGameTitle" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -272,7 +270,6 @@
           </div>
         </div>
 
-        <!-- Short Description -->
         <div>
           <label for="newGameShortDesc" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Короткий опис (для списків та карток)
@@ -286,7 +283,6 @@
           />
         </div>
 
-        <!-- Full Description -->
         <div>
           <label for="newGameDesc" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Повний опис гри <span class="text-cyan-400">*</span>
@@ -301,7 +297,6 @@
           ></textarea>
         </div>
 
-        <!-- Price & Discount -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label for="newGamePrice" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -334,7 +329,6 @@
           </div>
         </div>
 
-        <!-- Cover Image Upload -->
         <div>
           <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Обкладинка гри (Cover)
@@ -360,7 +354,6 @@
           </div>
         </div>
 
-        <!-- Screenshots Gallery -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <span class="font-bold text-slate-300 uppercase tracking-wider">
@@ -394,7 +387,6 @@
           {/if}
         </div>
 
-        <!-- Genres Selection -->
         <div>
           <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Жанри
@@ -412,7 +404,6 @@
           </div>
         </div>
 
-        <!-- Platforms & Tags -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -445,7 +436,6 @@
           </div>
         </div>
 
-        <!-- Server Archive File -->
         <div>
           <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Файл білду гри (.zip / .tar.gz)
@@ -460,7 +450,6 @@
           </label>
         </div>
 
-        <!-- Publish toggle -->
         <div class="space-y-2 p-3.5 rounded-xl bg-[#072535] border border-cyan-500/20">
           <div class="flex items-center justify-between">
             <div>
@@ -485,12 +474,11 @@
           {/if}
         </div>
 
-        <!-- Submit Button -->
-        <div class="flex items-center justify-end gap-3 pt-2">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onclick={close}
-            class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+            class="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer text-center"
           >
             Скасувати
           </button>
@@ -498,7 +486,7 @@
           <button
             type="submit"
             disabled={$developerStore.isSaving}
-            class="px-6 py-3 rounded-xl bg-gradient-to-r from-[#0df2c9] via-cyan-500 to-blue-600 hover:from-[#25fed7] hover:to-blue-500 text-black font-extrabold text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-[#0df2c9] via-cyan-500 to-blue-600 hover:from-[#25fed7] hover:to-blue-500 text-black font-extrabold text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {#if $developerStore.isSaving}
               <Loader2 class="w-4 h-4 animate-spin" />

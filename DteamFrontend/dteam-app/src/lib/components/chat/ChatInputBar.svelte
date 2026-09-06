@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { 
-    Paperclip, 
-    Type, 
-    Mic, 
-    Send, 
-    X, 
-    Loader2, 
-    FileText, 
+  import {
+    Paperclip,
+    Type,
+    Mic,
+    Send,
+    X,
+    Loader2,
+    FileText,
     Square,
     Check
   } from 'lucide-svelte';
@@ -26,19 +26,16 @@
   let textInput = $state('');
   let fileInputElement = $state<HTMLInputElement | null>(null);
 
-  // Attachment state
   let selectedFile = $state<File | null>(null);
   let filePreviewUrl = $state<string | null>(null);
   let isUploading = $state(false);
 
-  // Voice recording state
   let isRecording = $state(false);
   let mediaRecorder: MediaRecorder | null = null;
   let audioChunks: Blob[] = [];
   let recordingSeconds = $state(0);
   let recordingTimerInterval: any = null;
 
-  // Typing debounce timer
   let typingTimeout: any = null;
   let isCurrentlyTyping = false;
 
@@ -92,7 +89,6 @@
     }
   }
 
-  // Paste image from clipboard
   function handlePaste(e: ClipboardEvent) {
     if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
@@ -108,7 +104,6 @@
 
     const content = textInput.trim();
 
-    // Case 1: Sending file/image attachment
     if (selectedFile) {
       isUploading = true;
       try {
@@ -138,7 +133,6 @@
       return;
     }
 
-    // Case 2: Plain text message
     if (!content) return;
 
     const textToSend = content;
@@ -153,14 +147,12 @@
     onMessageSent?.();
   }
 
-  // Voice recording logic
   async function startRecording() {
     if (isRecording) return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Determine supported MIME type
       let mimeType = 'audio/webm;codecs=opus';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         if (MediaRecorder.isTypeSupported('audio/webm')) {
@@ -189,7 +181,7 @@
 
       recordingTimerInterval = setInterval(() => {
         recordingSeconds += 1;
-        if (recordingSeconds >= 300) { // 5 min limit
+        if (recordingSeconds >= 300) {
           stopAndSendRecording();
         }
       }, 1000);
@@ -276,10 +268,11 @@
       URL.revokeObjectURL(filePreviewUrl);
     }
   });
+
 </script>
 
 <div class="p-3 sm:p-4 bg-[#061820]/90 border-t border-cyan-500/20 backdrop-blur-xl relative">
-  <!-- Attachment Preview Bar (if file selected) -->
+
   {#if selectedFile}
     <div class="mb-2 p-2.5 rounded-2xl bg-[#09222c] border border-cyan-500/30 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2">
       <div class="flex items-center gap-3 min-w-0">
@@ -306,9 +299,8 @@
     </div>
   {/if}
 
-  <!-- Main Input Bar / Voice Recorder Container -->
   {#if isRecording}
-    <!-- Recording State Bar -->
+
     <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-full bg-[#0d252f] border border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]">
       <div class="flex items-center gap-3">
         <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
@@ -318,7 +310,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <!-- Cancel button -->
+
         <button
           type="button"
           onclick={cancelRecording}
@@ -328,7 +320,6 @@
           <X class="w-4 h-4" />
         </button>
 
-        <!-- Send voice button -->
         <button
           type="button"
           onclick={stopAndSendRecording}
@@ -340,9 +331,9 @@
       </div>
     </div>
   {:else}
-    <!-- Normal Text / Attachment Input Bar -->
+
     <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#081e27] border border-cyan-500/30 focus-within:border-cyan-400 focus-within:shadow-[0_0_15px_rgba(13,242,201,0.25)] transition-all">
-      <!-- Hidden File Input -->
+
       <input
         type="file"
         bind:this={fileInputElement}
@@ -350,7 +341,6 @@
         class="hidden"
       />
 
-      <!-- Format Button (T) -->
       <button
         type="button"
         class="p-2 rounded-full text-slate-400 hover:text-cyan-300 hover:bg-slate-800/40 transition-colors cursor-pointer shrink-0"
@@ -359,7 +349,6 @@
         <Type class="w-4 h-4" />
       </button>
 
-      <!-- Attach Button (Clip) -->
       <button
         type="button"
         onclick={() => fileInputElement?.click()}
@@ -369,7 +358,6 @@
         <Paperclip class="w-4 h-4" />
       </button>
 
-      <!-- Text Input Field -->
       <input
         type="text"
         placeholder={selectedFile ? 'Додайте підпис до файлу...' : 'Ваше повідомлення...'}
@@ -380,7 +368,6 @@
         class="flex-1 bg-transparent border-none text-xs text-white placeholder-slate-400/80 focus:outline-none px-2 py-2"
       />
 
-      <!-- Send or Mic Button -->
       {#if isUploading}
         <div class="p-2 text-cyan-400 animate-spin shrink-0">
           <Loader2 class="w-4 h-4" />
@@ -407,3 +394,4 @@
     </div>
   {/if}
 </div>
+

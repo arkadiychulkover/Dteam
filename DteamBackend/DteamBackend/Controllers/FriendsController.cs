@@ -23,8 +23,8 @@ namespace DteamBackend.Controllers
         private readonly IHubContext<FriendsHub> _friendsHub;
 
         public FriendsController(
-            AppDbContext context, 
-            IActivityService activityService, 
+            AppDbContext context,
+            IActivityService activityService,
             IHubContext<FriendsHub> friendsHub)
         {
             _context = context;
@@ -289,7 +289,7 @@ namespace DteamBackend.Controllers
                         createdAt = newRequest.CreatedAt
                     });
             }
-            catch { /* Best effort real-time notification */ }
+            catch {  }
 
             return Ok(new FriendActionResponseDto
             {
@@ -353,7 +353,7 @@ namespace DteamBackend.Controllers
 
             try
             {
-                // Notify both users (sender and receiver) via SignalR FriendsHub
+
                 var notifyUserIds = new[] { request.SenderId.ToString(), request.ReceiverId.ToString() };
                 await _friendsHub.Clients.Users(notifyUserIds)
                     .SendAsync("FriendRequestAccepted", new
@@ -365,11 +365,11 @@ namespace DteamBackend.Controllers
                         receiverUsername = request.Receiver.Username
                     });
             }
-            catch { /* Best effort real-time notification */ }
+            catch {  }
 
             try
             {
-                // Log for current user (Receiver)
+
                 await _activityService.LogActivityAsync(
                     userId: request.ReceiverId,
                     type: UserActivityType.FriendAdded,
@@ -380,7 +380,6 @@ namespace DteamBackend.Controllers
                     imageUrl: request.Sender.AvatarUrl
                 );
 
-                // Log for sender
                 await _activityService.LogActivityAsync(
                     userId: request.SenderId,
                     type: UserActivityType.FriendAdded,
@@ -391,7 +390,7 @@ namespace DteamBackend.Controllers
                     imageUrl: request.Receiver.AvatarUrl
                 );
             }
-            catch { /* Best effort logging */ }
+            catch {  }
 
             return Ok(new FriendActionResponseDto
             {
@@ -543,7 +542,6 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            // Remove friendships in both directions if existed
             var friendships = await _context.UserFriends
                 .Where(f => (f.UserId == currentUserId && f.FriendId == targetUserId) ||
                             (f.UserId == targetUserId && f.FriendId == currentUserId))
@@ -554,7 +552,6 @@ namespace DteamBackend.Controllers
                 _context.UserFriends.RemoveRange(friendships);
             }
 
-            // Add block record if not already blocked
             var isBlocked = await _context.UserBlocks
                 .AnyAsync(b => b.UserId == currentUserId && b.BlockedUserId == targetUserId);
 

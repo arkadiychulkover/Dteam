@@ -95,4 +95,3 @@ export interface GameRecommendation {
   coverImageUrl?: string | null;
 }
 
-

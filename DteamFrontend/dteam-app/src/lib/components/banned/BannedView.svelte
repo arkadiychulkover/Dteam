@@ -22,6 +22,7 @@
     await authStore.logout();
     window.location.reload();
   }
+
 </script>
 
 <div class="min-h-[85vh] flex items-center justify-center p-4">
@@ -45,10 +46,10 @@
     </h1>
 
     <p class="text-xs sm:text-sm text-rose-200/80 mt-3 leading-relaxed max-w-md mx-auto">
-      Администрация платформы ограничила доступ для пользователя 
+      Администрация платформы ограничила доступ для пользователя
       <strong class="text-white font-mono bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-500/30">
         {$currentUser?.username || 'Gamer'}
-      </strong> 
+      </strong>
       в связи с нарушением правил сообщества или блокировкой учетной записи.
     </p>
 
@@ -89,3 +90,4 @@
     </div>
   </div>
 </div>
+

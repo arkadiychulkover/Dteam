@@ -75,6 +75,7 @@
   onMount(() => {
     return () => clearTimeout(debounceTimeout);
   });
+
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -92,8 +93,7 @@
       aria-labelledby="select-game-modal-title"
       tabindex="-1"
     >
-      
-      <!-- Header -->
+
       <div class="p-5 sm:p-6 border-b border-cyan-500/15 flex items-center justify-between bg-[#04151c]/70 shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-400">
@@ -119,7 +119,6 @@
         </button>
       </div>
 
-      <!-- Search Input Bar -->
       <div class="p-4 sm:p-6 border-b border-cyan-500/10 bg-[#061b23]/40 shrink-0">
         <div class="relative">
           <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
@@ -146,7 +145,6 @@
         </div>
       </div>
 
-      <!-- Games List / Grid -->
       <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-2.5">
         {#if isLoading}
           <div class="py-16 flex flex-col items-center justify-center gap-3 text-cyan-400">
@@ -183,7 +181,7 @@
                     ? 'bg-cyan-950/60 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/50'
                     : 'bg-[#04161e] border-cyan-900/40 hover:border-cyan-400/60 hover:bg-[#072430]'}"
               >
-                <!-- Game Banner -->
+
                 <div class="w-16 h-12 sm:w-20 sm:h-14 rounded-xl overflow-hidden shrink-0 bg-slate-900 border border-cyan-900/60 relative">
                   {#if banner}
                     <img
@@ -198,7 +196,6 @@
                   {/if}
                 </div>
 
-                <!-- Info -->
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
                     <span class="block text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
@@ -220,7 +217,6 @@
         {/if}
       </div>
 
-      <!-- Footer -->
       <div class="p-4 bg-[#04151c]/60 border-t border-cyan-500/15 flex items-center justify-between text-xs text-slate-400 shrink-0">
         <span>Знайдено: <strong class="text-white">{recommendations.length}</strong> ігор</span>
         <button
@@ -235,3 +231,4 @@
     </div>
   </div>
 {/if}
+

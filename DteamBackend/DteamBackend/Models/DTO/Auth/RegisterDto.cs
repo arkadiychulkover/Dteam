@@ -25,3 +25,4 @@ namespace DteamBackend.Models.DTO.Auth
         public string? HardhatAddress { get; set; }
     }
 }
+

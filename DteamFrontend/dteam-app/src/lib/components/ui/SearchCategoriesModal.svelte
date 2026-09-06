@@ -59,11 +59,12 @@
     { label: 'До 3 TON', filter: { priceFilter: 'under3' } },
     { label: 'До 6 TON', filter: { priceFilter: 'under6' } },
   ];
+
 </script>
 
 {#if isOpen}
   <div
-    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[calc(100vw-2rem)] max-w-5xl bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 z-50 animate-in fade-in zoom-in-95 duration-150 text-left cursor-default select-none before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 relative"
+    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[calc(100vw-2rem)] max-w-5xl max-h-[85vh] overflow-y-auto bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 z-50 animate-in fade-in zoom-in-95 duration-150 text-left cursor-default select-none before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 relative"
   >
     {#if onClose}
       <button
@@ -198,3 +199,4 @@
     </div>
   </div>
 {/if}
+

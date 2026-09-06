@@ -10,13 +10,14 @@
   import { userService } from '../../services/userService';
   import { mediaService, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { tokenService, type VerifyWalletResponse } from '../../services/tokenService';
-  import { getBalanceDirectFromBlockchain } from '../../services/blockchainService';
+  import { getBalanceDirectFromBlockchain, DTEAM_POINTS_CONTRACT_ADDRESS } from '../../services/blockchainService';
   import { uiStore } from '../../stores/uiStore';
   import { formatDate } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import {
     Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
-    Wallet, Coins, Award, CheckCircle2, AlertTriangle, RefreshCw, ExternalLink, ShieldCheck, ShieldAlert
+    Wallet, Coins, Award, CheckCircle2, AlertTriangle, RefreshCw, ExternalLink, ShieldCheck, ShieldAlert,
+    Copy, Check
   } from 'lucide-svelte';
   import SelectGameModal from '../community/SelectGameModal.svelte';
   import ActivityCard from '../activity/ActivityCard.svelte';
@@ -26,6 +27,9 @@
   import { onlineHubService } from '../../services/onlineHubService';
   import BadgeCard from './BadgeCard.svelte';
   import BadgeDetailModal from './BadgeDetailModal.svelte';
+  import { calculateProfileLevel } from '../../utils/levelUtils';
+  import ProfileLevelHexagon from './ProfileLevelHexagon.svelte';
+  import ProfileLevelCard from './ProfileLevelCard.svelte';
 
   type TabId = 'головна' | 'значки' | 'ігри' | 'бажане' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди' | 'рецензії';
   let activeTab = $state<TabId>('головна');
@@ -34,15 +38,27 @@
 
   const uniqueFriends = $derived($friendsStore.friends);
 
-  // Web3 / Hardhat Token & Badges State
   let metaMaskAccount = $state<string | null>(null);
   let isCheckingWallet = $state(false);
   let walletVerification = $state<VerifyWalletResponse | null>(null);
   let tokenBalance = $state<number | null>(null);
   let isLoadingBalance = $state(false);
   let metaMaskNotDetected = $state(false);
+  let copiedPointsAddress = $state(false);
 
-  // NFT Badges / Gifts State
+  const levelInfo = $derived(calculateProfileLevel(tokenBalance));
+
+  async function copyPointsContractAddress() {
+    try {
+      await navigator.clipboard.writeText(DTEAM_POINTS_CONTRACT_ADDRESS);
+      copiedPointsAddress = true;
+      setTimeout(() => {
+        copiedPointsAddress = false;
+      }, 2000);
+    } catch (err) {
+      console.warn('Failed to copy points contract address:', err);
+    }
+  }
   let myNfts = $state<NftGift[]>([]);
   let isLoadingNfts = $state(false);
   let selectedBadgeForModal = $state<NftGift | null>(null);
@@ -72,7 +88,7 @@
       metaMaskNotDetected = true;
       metaMaskAccount = null;
       walletVerification = null;
-      tokenBalance = null;
+      await fetchFallbackTokenBalance();
       return;
     }
 
@@ -99,18 +115,40 @@
               isLoadingBalance = false;
             }
           } else {
-            tokenBalance = null;
+            await fetchFallbackTokenBalance();
           }
         }
       } else {
         metaMaskAccount = null;
         walletVerification = null;
-        tokenBalance = null;
+        await fetchFallbackTokenBalance();
       }
     } catch (err) {
       console.warn('[Profile] Error checking MetaMask accounts:', err);
+      await fetchFallbackTokenBalance();
     } finally {
       isCheckingWallet = false;
+    }
+  }
+
+  async function fetchFallbackTokenBalance() {
+    const fallbackAddr = $currentUser?.hardhatAddress || $currentUser?.walletAddress;
+    if (fallbackAddr) {
+      isLoadingBalance = true;
+      try {
+        try {
+          tokenBalance = await getBalanceDirectFromBlockchain(fallbackAddr);
+        } catch {
+          tokenBalance = await tokenService.getBalance(fallbackAddr);
+        }
+      } catch (err) {
+        console.warn('[Profile] Failed to fetch fallback token balance:', err);
+        tokenBalance = 0;
+      } finally {
+        isLoadingBalance = false;
+      }
+    } else {
+      tokenBalance = 0;
     }
   }
 
@@ -185,6 +223,9 @@
     }
 
     checkMetaMaskAndSync();
+    if (tokenBalance === null) {
+      fetchFallbackTokenBalance();
+    }
 
     unsubReward = onlineHubService.onRewardMinted(() => {
       loadMyNfts();
@@ -403,11 +444,12 @@
       default: return { text: 'офлайн', color: 'text-slate-500' };
     }
   }
+
 </script>
 
 {#if $currentUser}
 <div class="min-h-screen bg-[#05181e] text-slate-200 font-sans pb-12">
-  
+
   <div
     class="w-full h-48 md:h-64 relative bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e] bg-cover bg-center"
     style={$currentUser.bannerUrl ? `background-image: url('${$currentUser.bannerUrl}')` : ''}
@@ -433,7 +475,7 @@
   </div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    
+
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
         <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
@@ -446,7 +488,14 @@
           {/if}
         </div>
         <div class="pb-2">
-          <h1 class="text-2xl font-bold text-white mb-1">{$currentUser.username}</h1>
+          <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-2xl font-bold text-white">{$currentUser.username}</h1>
+            <ProfileLevelHexagon
+              level={levelInfo.level}
+              size="sm"
+              title="Рівень {levelInfo.level} ({levelInfo.currentXp.toLocaleString('uk-UA')} XP)"
+            />
+          </div>
           <p class="text-sm mb-3 {statusLabel($currentUser.status).color}">{statusLabel($currentUser.status).text}</p>
           <p class="text-sm text-slate-400 max-w-2xl leading-relaxed">
             {$currentUser.bio || 'Розкажіть про себе — додайте опис у налаштуваннях профілю.'}
@@ -454,7 +503,6 @@
         </div>
       </div>
 
-      
       <div class="pb-2 w-full md:w-auto">
         <button
           onclick={openEditProfile}
@@ -466,12 +514,29 @@
       </div>
     </div>
 
-    
+    <div class="lg:hidden bg-[#03232c] border border-cyan-900/40 rounded-2xl p-3.5 mb-4">
+      <ProfileLevelCard tokens={tokenBalance} compact={true} />
+    </div>
+
+    <div class="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {#each menuItems as item}
+        <button
+          type="button"
+          onclick={() => { activeTab = item.id; showCreateDropdown = false; }}
+          class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer {activeTab === item.id ? 'bg-[#0b4e63] text-white shadow-md' : 'bg-[#03232c] text-slate-300 hover:text-white border border-cyan-900/40'}"
+        >
+          <span>{item.label}</span>
+          {#if item.count() !== null}
+            <span class="bg-[#02171d] px-1.5 py-0.5 rounded-full text-[10px] text-cyan-300 font-mono">{item.count()}</span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-      
+
       <div class="space-y-6">
 
-        
         {#if activeTab === 'головна'}
 
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
@@ -524,11 +589,9 @@
           </div>
         {/if}
 
-        <!-- TAB: ЗНАЧКИ ТА ПОДАРУНКИ (NFT ЗІ СМАРТ-КОНТРАКТУ) -->
         {#if activeTab === 'значки'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-6">
-            
-            <!-- Заголовок та кнопка оновлення -->
+
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
@@ -557,34 +620,87 @@
               </button>
             </div>
 
-            <!-- DTP БАЛАНС ТОКЕНІВ -->
-            {#if walletVerification?.isMatch || metaMaskAccount}
-              <div class="p-4 rounded-xl bg-gradient-to-r from-cyan-950/60 to-[#02171d] border border-cyan-500/30 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
-                    <Coins class="w-5 h-5 text-cyan-400" />
+            {#if walletVerification?.isMatch || metaMaskAccount || $currentUser?.hardhatAddress}
+              <div class="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-cyan-950/60 to-[#02171d] border border-cyan-500/30 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                      <Coins class="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Баланс токенів (XP)</span>
+                        <span class="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">1 DTP = 1 XP</span>
+                      </div>
+                      {#if isLoadingBalance}
+                        <span class="text-sm text-cyan-300 font-mono animate-pulse">Завантаження...</span>
+                      {:else if tokenBalance !== null}
+                        <span class="text-lg font-black text-white">{tokenBalance.toLocaleString('uk-UA')} <span class="text-xs text-cyan-400 font-bold">DTP</span></span>
+                      {:else}
+                        <span class="text-sm text-slate-500 font-mono">0 DTP</span>
+                      {/if}
+                    </div>
                   </div>
-                  <div>
-                    <span class="text-xs text-slate-400 block">Баланс DTP токенів</span>
-                    {#if isLoadingBalance}
-                      <span class="text-sm text-cyan-300 font-mono animate-pulse">Завантаження...</span>
-                    {:else if tokenBalance !== null}
-                      <span class="text-lg font-black text-white">{tokenBalance.toLocaleString('uk-UA')} <span class="text-xs text-cyan-400 font-bold">DTP</span></span>
-                    {:else}
-                      <span class="text-sm text-slate-500 font-mono">—</span>
+
+                  <div class="flex items-center gap-3 self-end sm:self-auto">
+                    <div class="flex items-center gap-2 bg-[#02171d]/80 px-3 py-1.5 rounded-xl border border-cyan-900/50">
+                      <span class="text-xs font-bold text-slate-300">Рівень</span>
+                      <ProfileLevelHexagon level={levelInfo.level} size="sm" />
+                    </div>
+                    {#if walletVerification?.isMatch}
+                      <div class="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                        <ShieldCheck class="w-3.5 h-3.5" />
+                        <span class="font-bold">Підтверджено</span>
+                      </div>
                     {/if}
                   </div>
                 </div>
-                {#if walletVerification?.isMatch}
-                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-400">
-                    <ShieldCheck class="w-3.5 h-3.5" />
-                    <span class="font-bold">Підтверджено</span>
+
+                <div class="pt-3 border-t border-cyan-900/40 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium">Рівень {levelInfo.level} ({levelInfo.currentXp.toLocaleString('uk-UA')} XP)</span>
+                    <span class="text-cyan-300 font-mono font-medium">
+                      До {levelInfo.nextLevel} рівня: залишилось {levelInfo.xpRemaining.toLocaleString('uk-UA')} DTP
+                    </span>
                   </div>
-                {/if}
+                  <div class="w-full h-2 bg-[#02171d] rounded-full overflow-hidden border border-cyan-900/50">
+                    <div
+                      class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full transition-all duration-500"
+                      style="width: {levelInfo.progressPercent}%"
+                    ></div>
+                  </div>
+                  <div class="flex items-center justify-between text-[10px] text-slate-500">
+                    <span>{levelInfo.xpForCurrentLevel.toLocaleString('uk-UA')} DTP</span>
+                    <span>{Math.round(levelInfo.progressPercent)}%</span>
+                    <span>{levelInfo.xpForNextLevel.toLocaleString('uk-UA')} DTP</span>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-cyan-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider shrink-0">Контракт DTP:</span>
+                    <span class="font-mono text-[11px] text-cyan-300 select-all break-all leading-relaxed" title={DTEAM_POINTS_CONTRACT_ADDRESS}>
+                      {DTEAM_POINTS_CONTRACT_ADDRESS}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onclick={copyPointsContractAddress}
+                    class="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
+                    title="Скопіювати повну адресу смарт-контракту токенів DTP"
+                  >
+                    {#if copiedPointsAddress}
+                      <Check class="w-3.5 h-3.5 text-emerald-400" />
+                      <span class="text-emerald-400 text-[10px]">Скопійовано</span>
+                    {:else}
+                      <Copy class="w-3.5 h-3.5 text-slate-400 hover:text-cyan-400" />
+                      <span class="text-[10px]">Копіювати</span>
+                    {/if}
+                  </button>
+                </div>
               </div>
             {/if}
 
-            <!-- СТАТУС ПЕРЕВІРКИ КОШЕЛЬКА (ЯКЩО ВІДРІЗНЯЄТЬСЯ) -->
             {#if metaMaskNotDetected}
               <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
                 <div class="flex items-center gap-2">
@@ -605,7 +721,6 @@
               </div>
             {/if}
 
-            <!-- СПИСОК ЗНАЧКІВ (ВІДОБРАЖЕННЯ ЗГІДНО З РЕФЕРЕНСОМ, БЕЗ БАЛІВ, З НОМЕРОМ #111) -->
             {#if isLoadingNfts}
               <div class="flex flex-col items-center justify-center py-16 gap-3 text-cyan-400">
                 <Loader2 class="w-8 h-8 animate-spin" />
@@ -638,7 +753,6 @@
           </div>
         {/if}
 
-        
         {#if activeTab === 'ігри'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $libraryStore.items.length === 0}
@@ -663,7 +777,6 @@
           </div>
         {/if}
 
-        
         {#if activeTab === 'бажане'}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             {#if $wishlistStore.items.length === 0}
@@ -681,7 +794,6 @@
           </div>
         {/if}
 
-        
         {#if ['обговорення', 'скріншоти', 'відео', 'гайди', 'рецензії'].includes(activeTab)}
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 text-sm text-slate-400">
@@ -843,10 +955,14 @@
 
       </div>
 
-      
       <div class="space-y-6">
-        
-        <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+
+        <div class="hidden lg:block bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+
+          <div class="px-2 pb-3.5 mb-3 border-b border-cyan-900/40">
+            <ProfileLevelCard tokens={tokenBalance} />
+          </div>
+
           <nav class="space-y-1">
             {#each menuItems as item}
               <button
@@ -862,7 +978,6 @@
           </nav>
         </div>
 
-        
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
           <div class="flex items-center justify-between px-2 mb-4">
             <span class="font-medium text-white">Друзі</span>
@@ -897,7 +1012,6 @@
   </div>
 </div>
 
-
 {#if isCreatingPost}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) { isCreatingPost = false; resetPostMedia(); } }}>
     <div class="bg-[#092635] border border-cyan-500/30 rounded-3xl p-6 w-full max-w-lg space-y-4">
@@ -906,7 +1020,6 @@
         <button onclick={() => { isCreatingPost = false; resetPostMedia(); }} class="text-slate-400 hover:text-white cursor-pointer"><X class="w-5 h-5" /></button>
       </div>
 
-      <!-- Game Selector for Profile Post -->
       <div class="p-3 rounded-2xl bg-[#02171d] border border-cyan-900/60 flex items-center justify-between gap-3 shadow-inner">
         <div class="flex items-center gap-3 min-w-0">
           {#if selectedPostGame}
@@ -967,7 +1080,7 @@
           {#if postMediaPreviewUrl}
             <div class="relative rounded-xl overflow-hidden border border-cyan-900/60 bg-[#02171d]">
               {#if createPostType === 'videos'}
-                
+
                 <video src={postMediaPreviewUrl} class="w-full max-h-56 object-cover" muted controls></video>
               {:else}
                 <img src={postMediaPreviewUrl} alt="" class="w-full max-h-56 object-cover" />
@@ -1009,7 +1122,6 @@
     </div>
   </div>
 {/if}
-
 
 {#if isEditingProfile}
   <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onclick={(e) => { if (e.target === e.currentTarget) isEditingProfile = false; }}>
@@ -1074,3 +1186,4 @@
   isOpen={isBadgeModalOpen}
   onClose={() => (isBadgeModalOpen = false)}
 />
+

@@ -8,3 +8,4 @@ namespace DteamBackend.Models
         public bool Subtitles { get; set; } = true;
     }
 }
+

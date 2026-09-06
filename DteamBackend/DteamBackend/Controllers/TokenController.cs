@@ -21,10 +21,6 @@ namespace DteamBackend.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Проверка соответствия текущего кошелька с фронтенда с тем, что был привязан в БД при регистрации.
-        /// Принимает строку публичного ключа (кошелька) и опционально UserId (или берет из JWT-токена).
-        /// </summary>
         [HttpPost("verify-wallet")]
         public async Task<ActionResult<VerifyWalletResponseDto>> VerifyWallet([FromBody] VerifyWalletDto dto)
         {
@@ -69,9 +65,6 @@ namespace DteamBackend.Controllers
             }
         }
 
-        /// <summary>
-        /// Начисление токенов пользователю (по UserId или адресу кошелька)
-        /// </summary>
         [HttpPost("award")]
         public async Task<ActionResult<TokenOperationResponseDto>> AwardTokens([FromBody] TokenOperationDto dto)
         {
@@ -111,9 +104,6 @@ namespace DteamBackend.Controllers
             }
         }
 
-        /// <summary>
-        /// Снятие / сжигание токенов у пользователя (по UserId или адресу кошелька)
-        /// </summary>
         [HttpPost("debit")]
         public async Task<ActionResult<TokenOperationResponseDto>> DebitTokens([FromBody] TokenOperationDto dto)
         {
@@ -153,9 +143,6 @@ namespace DteamBackend.Controllers
             }
         }
 
-        /// <summary>
-        /// Получение баланса токенов кошелька
-        /// </summary>
         [HttpGet("balance/{address}")]
         public async Task<ActionResult> GetBalance(string address)
         {
@@ -171,9 +158,6 @@ namespace DteamBackend.Controllers
             }
         }
 
-        /// <summary>
-        /// Обновление адреса администратора в БД из appsettings.json
-        /// </summary>
         [HttpPost("admin/sync-address")]
         public async Task<ActionResult> SyncAdminAddress()
         {
@@ -195,3 +179,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

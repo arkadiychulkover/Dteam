@@ -4,10 +4,10 @@ namespace DteamBackend.Configuration
     {
         public const string SectionName = "Chat";
 
-        public long MaxImageSizeBytes { get; set; } = 25 * 1024 * 1024; // 25 MB
-        public long MaxFileSizeBytes { get; set; } = 200 * 1024 * 1024; // 200 MB
-        public long MaxVoiceSizeBytes { get; set; } = 15 * 1024 * 1024; // 15 MB
-        public int MaxVoiceDurationSeconds { get; set; } = 300; // 5 min
+        public long MaxImageSizeBytes { get; set; } = 25 * 1024 * 1024;
+        public long MaxFileSizeBytes { get; set; } = 200 * 1024 * 1024;
+        public long MaxVoiceSizeBytes { get; set; } = 15 * 1024 * 1024;
+        public int MaxVoiceDurationSeconds { get; set; } = 300;
 
         public string StoragePath { get; set; } = "App_Data/ChatStorage";
 
@@ -19,3 +19,4 @@ namespace DteamBackend.Configuration
         ];
     }
 }
+

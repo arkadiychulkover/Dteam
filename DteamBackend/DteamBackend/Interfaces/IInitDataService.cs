@@ -13,3 +13,4 @@ namespace DteamBackend.Interfaces
         Task EnsureTasteVectorSchemaAsync(AppDbContext context);
     }
 }
+

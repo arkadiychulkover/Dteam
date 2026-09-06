@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { 
-    Wallet, 
-    ArrowDownLeft, 
-    ArrowUpRight, 
-    ShoppingBag, 
-    Coins, 
-    Copy, 
-    Check, 
-    ExternalLink, 
-    RefreshCw, 
-    Sparkles, 
-    ShieldCheck, 
+  import {
+    Wallet,
+    ArrowDownLeft,
+    ArrowUpRight,
+    ShoppingBag,
+    Coins,
+    Copy,
+    Check,
+    ExternalLink,
+    RefreshCw,
+    Sparkles,
+    ShieldCheck,
     Filter,
     Clock,
     CheckCircle2,
@@ -70,7 +70,7 @@
     try {
       transactions = await paymentService.getTransactions();
       if ($currentUser?.id) {
-        // Also refresh profile to get updated balance
+
         await authStore.fetchProfile();
       }
       uiStore.addToast({
@@ -157,8 +157,8 @@
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(t => 
-        t.title.toLowerCase().includes(q) || 
+      list = list.filter(t =>
+        t.title.toLowerCase().includes(q) ||
         (t.txHash && t.txHash.toLowerCase().includes(q))
       );
     }
@@ -167,16 +167,16 @@
 
   const totalDepositsCount = $derived(transactions.filter(t => t.type === 'deposit').length);
   const totalPurchasesCount = $derived(transactions.filter(t => t.type === 'purchase').length);
+
 </script>
 
 <div class="min-h-[calc(100vh-65px)] bg-[#030e14] py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden selection:bg-cyan-500 selection:text-black">
-  <!-- Subtle Background Glows -->
+
   <div class="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
   <div class="absolute bottom-10 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
   <div class="max-w-6xl mx-auto space-y-8 relative z-10">
 
-    <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-500/20 pb-6">
       <div class="flex items-center gap-3.5">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black shadow-lg shadow-cyan-500/25">
@@ -195,7 +195,6 @@
         </div>
       </div>
 
-      <!-- Quick Actions / Refresh -->
       <div class="flex items-center gap-3">
         <button
           onclick={handleRefresh}
@@ -208,10 +207,8 @@
       </div>
     </div>
 
-    <!-- Top Grid: Balance Card + Deposit Card (Matching Figma Settings - Account Wallet) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      <!-- 1. Balance Card (5 cols) -->
       <div class="lg:col-span-5 rounded-3xl bg-gradient-to-b from-[#09222c]/90 to-[#05151c]/90 border border-cyan-500/30 p-6 sm:p-7 shadow-xl shadow-cyan-950/30 backdrop-blur-xl flex flex-col justify-between relative overflow-hidden group">
         <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all pointer-events-none"></div>
 
@@ -270,7 +267,6 @@
         </div>
       </div>
 
-      <!-- 2. Deposit Card (7 cols) -->
       <div class="lg:col-span-7 rounded-3xl bg-gradient-to-b from-[#09222c]/90 to-[#05151c]/90 border border-cyan-500/30 p-6 sm:p-7 shadow-xl shadow-cyan-950/30 backdrop-blur-xl flex flex-col justify-between relative overflow-hidden">
         <div>
           <div class="flex items-center justify-between">
@@ -287,7 +283,6 @@
             </div>
           </div>
 
-          <!-- Quick Presets -->
           <div class="mt-5 space-y-2">
             <label for="deposit-amount-input" class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Швидкий вибір суми:
@@ -298,8 +293,8 @@
                   type="button"
                   onclick={() => depositAmount = preset}
                   class="py-2 px-3 rounded-xl border text-xs font-bold font-mono transition-all cursor-pointer text-center
-                    {depositAmount === preset 
-                      ? 'bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/30 scale-105' 
+                    {depositAmount === preset
+                      ? 'bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/30 scale-105'
                       : 'bg-[#030e14]/70 border-cyan-500/20 text-slate-300 hover:border-cyan-400/60 hover:text-white'}"
                 >
                   {preset} TON
@@ -308,7 +303,6 @@
             </div>
           </div>
 
-          <!-- Custom Amount Input -->
           <div class="mt-4 space-y-2">
             <label for="deposit-amount-input" class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Або вкажіть довільну суму:
@@ -333,7 +327,6 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
         <div class="mt-6 pt-5 border-t border-cyan-500/20 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2 text-[11px] text-slate-400">
             <ShieldCheck class="w-4 h-4 text-cyan-400 shrink-0" />
@@ -352,10 +345,8 @@
 
     </div>
 
-    <!-- Bottom Section: Transaction History -->
     <div class="rounded-3xl bg-[#061820]/90 border border-cyan-500/20 p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
 
-      <!-- Header & Filters Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-cyan-500/20 pb-5">
         <div>
           <h2 class="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2.5">
@@ -369,9 +360,8 @@
           </p>
         </div>
 
-        <!-- Filter Tabs & Search -->
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Filter Tabs -->
+
           <div class="flex items-center p-1 rounded-2xl bg-[#030e14] border border-cyan-500/20">
             <button
               onclick={() => filterType = 'all'}
@@ -403,7 +393,6 @@
             </button>
           </div>
 
-          <!-- Search Input -->
           <div class="relative min-w-[200px]">
             <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -416,9 +405,8 @@
         </div>
       </div>
 
-      <!-- Transaction List -->
       {#if isLoading}
-        <!-- Loading Skeletons -->
+
         <div class="space-y-3">
           {#each Array(4) as _}
             <div class="p-4 rounded-2xl bg-[#09222c]/50 border border-cyan-500/10 animate-pulse flex items-center justify-between">
@@ -434,7 +422,7 @@
           {/each}
         </div>
       {:else if filteredTransactions.length === 0}
-        <!-- Empty State -->
+
         <div class="py-16 flex flex-col items-center justify-center text-center space-y-3 select-none">
           <div class="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
             <Clock class="w-8 h-8 opacity-60" />
@@ -455,20 +443,19 @@
           {/if}
         </div>
       {:else}
-        <!-- Transactions Cards List (Matching Figma Transaction Cards) -->
+
         <div class="space-y-3">
           {#each filteredTransactions as tx (tx.id)}
             <div class="p-4 rounded-2xl bg-[#09222c]/70 hover:bg-[#0c2b38]/90 border border-cyan-500/20 hover:border-cyan-400/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
 
-              <!-- Left Side: Icon / Cover + Info -->
               <div class="flex items-center gap-3.5 min-w-0">
                 {#if tx.type === 'deposit'}
-                  <!-- Deposit Icon Badge -->
+
                   <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 shadow-sm">
                     <ArrowDownLeft class="w-5 h-5" />
                   </div>
                 {:else if tx.type === 'purchase'}
-                  <!-- Game Cover Thumbnail or Shopping Bag -->
+
                   {#if tx.gameCoverUrl}
                     <div class="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-cyan-500/30 bg-slate-900">
                       <BackendImage
@@ -485,7 +472,7 @@
                 {/if}
 
                 <div class="min-w-0 flex-1">
-                  <!-- Title -->
+
                   <div class="flex items-center gap-2">
                     {#if tx.type === 'purchase' && tx.gameId}
                       <button
@@ -501,14 +488,13 @@
                     {/if}
 
                     <span class="text-[10px] px-2 py-0.5 rounded-md font-semibold shrink-0
-                      {tx.type === 'deposit' 
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                      {tx.type === 'deposit'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                         : 'bg-slate-800 text-slate-300 border border-slate-700'}">
                       {tx.type === 'deposit' ? 'Зараховано' : 'Покупка'}
                     </span>
                   </div>
 
-                  <!-- Date & TxHash -->
                   <div class="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-slate-400">
                     <span class="flex items-center gap-1 font-mono">
                       <Clock class="w-3 h-3 text-slate-500" />
@@ -536,7 +522,6 @@
                 </div>
               </div>
 
-              <!-- Right Side: Amount in TON -->
               <div class="text-right shrink-0 sm:pl-4">
                 <div class="text-sm sm:text-base font-black font-mono flex items-center justify-end gap-1
                   {tx.amountTon >= 0 ? 'text-emerald-400' : 'text-slate-200'}">
@@ -557,3 +542,4 @@
 
   </div>
 </div>
+

@@ -75,7 +75,7 @@ namespace DteamBackend.Services
                 }
                 catch
                 {
-                    // Fallback to default
+
                 }
             }
 
@@ -109,3 +109,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

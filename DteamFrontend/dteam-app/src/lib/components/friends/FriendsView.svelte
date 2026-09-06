@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { 
-    ArrowLeft, 
-    UserPlus, 
-    Search, 
-    MoreHorizontal, 
-    Check, 
-    X, 
-    Gamepad2, 
-    ChevronDown, 
-    Shield, 
-    UserMinus, 
-    Ban, 
+  import {
+    ArrowLeft,
+    UserPlus,
+    Search,
+    MoreHorizontal,
+    Check,
+    X,
+    Gamepad2,
+    ChevronDown,
+    Shield,
+    UserMinus,
+    Ban,
     Users,
     User,
     Activity,
@@ -54,8 +54,8 @@
     let list = activeTab === 'online' ? onlineFriends : friends;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      list = list.filter(f => 
-        f.username.toLowerCase().includes(q) || 
+      list = list.filter(f =>
+        f.username.toLowerCase().includes(q) ||
         (searchByGame && f.currentGame?.toLowerCase().includes(q))
       );
     }
@@ -119,6 +119,7 @@
       console.warn('Copy failed', e);
     }
   }
+
 </script>
 
 <svelte:window onclick={closeMenu} />
@@ -181,8 +182,8 @@
     <button
       onclick={() => activeTab = 'all'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'all' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'all'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Усі друзі</span>
@@ -195,8 +196,8 @@
     <button
       onclick={() => activeTab = 'online'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'online' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'online'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Онлайн</span>
@@ -209,8 +210,8 @@
     <button
       onclick={() => activeTab = 'activity'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'activity' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'activity'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <Activity class="w-3.5 h-3.5 {activeTab === 'activity' ? 'text-[#0df2c9]' : 'text-slate-400'}" />
@@ -226,8 +227,8 @@
     <button
       onclick={() => activeTab = 'blocked'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'blocked' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'blocked'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Заблоковані</span>
@@ -240,8 +241,8 @@
     <button
       onclick={() => activeTab = 'requests'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
-        {activeTab === 'requests' 
-          ? 'text-white border-b-2 border-[#0df2c9]' 
+        {activeTab === 'requests'
+          ? 'text-white border-b-2 border-[#0df2c9]'
           : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
     >
       <span>Поточні запити</span>
@@ -298,7 +299,7 @@
     <div class="space-y-2.5">
       {#each filteredFriends as friend (friend.id)}
         <div class="relative flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 hover:border-cyan-500/35 transition-all group">
-          
+
           <button
             type="button"
             onclick={() => profileStore.viewProfile(friend.id)}
@@ -501,3 +502,4 @@
 </div>
 
 <AddFriendModal bind:isOpen={isAddFriendOpen} />
+

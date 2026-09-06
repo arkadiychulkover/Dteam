@@ -18,12 +18,18 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IActivityService _activityService;
+        private readonly IHardhatTokenService _tokenService;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context, IActivityService activityService, ILogger<CartController> logger)
+        public CartController(
+            AppDbContext context,
+            IActivityService activityService,
+            IHardhatTokenService tokenService,
+            ILogger<CartController> logger)
         {
             _context = context;
             _activityService = activityService;
+            _tokenService = tokenService;
             _logger = logger;
         }
 
@@ -337,6 +343,8 @@ namespace DteamBackend.Controllers
                 user.UpdatedAt = DateTime.UtcNow;
 
                 var addedCount = 0;
+                decimal totalTokensToAward = 0m;
+
                 foreach (var (game, effectivePrice) in gamesToPurchase)
                 {
                     if (!ownedSet.Contains(game.Id))
@@ -356,6 +364,13 @@ namespace DteamBackend.Controllers
                             game.Owner.TotalEarningsInNanoTons += effectivePrice;
                         }
 
+                        if (effectivePrice > 0)
+                        {
+                            decimal priceInTon = (decimal)effectivePrice / 1_000_000_000m;
+                            decimal tokensForGame = priceInTon * 1000m;
+                            totalTokensToAward += tokensForGame;
+                        }
+
                         addedCount++;
 
                         try
@@ -370,7 +385,7 @@ namespace DteamBackend.Controllers
                                 imageUrl: game.CoverImageUrl ?? game.HeaderImageUrl
                             );
                         }
-                        catch { /* Best effort logging */ }
+                        catch {  }
                     }
                 }
 
@@ -389,15 +404,63 @@ namespace DteamBackend.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                string? tokenTxHash = null;
+                var recipientAddress = !string.IsNullOrWhiteSpace(user.HardhatAddress)
+                    ? user.HardhatAddress.Trim()
+                    : (user.WalletAddress?.StartsWith("0x", StringComparison.OrdinalIgnoreCase) == true ? user.WalletAddress.Trim() : null);
+
+                if (totalTokensToAward > 0 && !string.IsNullOrWhiteSpace(recipientAddress))
+                {
+                    try
+                    {
+                        tokenTxHash = await _tokenService.AwardTokensByAddressAsync(recipientAddress, totalTokensToAward);
+                        _logger.LogInformation(
+                            "[CartController] Awarded {Tokens} DTP tokens to user {UserId} ({Address}) for game purchase (formula p*1000). TxHash: {TxHash}",
+                            totalTokensToAward, user.Id, recipientAddress, tokenTxHash
+                        );
+
+                        try
+                        {
+                            await _activityService.LogActivityAsync(
+                                userId: user.Id,
+                                type: UserActivityType.BalanceDeposited,
+                                title: $"Нараховано {totalTokensToAward:N0} DTP токенів",
+                                description: $"Бонус за покупку ігор (формула p*1000). TX: {tokenTxHash.Substring(0, Math.Min(12, tokenTxHash.Length))}...",
+                                details: JsonSerializer.Serialize(new { tokens = totalTokensToAward, txHash = tokenTxHash, formula = "p*1000" }),
+                                relatedEntityId: null,
+                                imageUrl: null
+                            );
+                        }
+                        catch {  }
+                    }
+                    catch (Exception tokenEx)
+                    {
+                        _logger.LogWarning(tokenEx, "[CartController] Could not award DTP tokens to {RecipientAddress} (Hardhat node might be offline)", recipientAddress);
+                    }
+                }
+                else if (totalTokensToAward > 0 && string.IsNullOrWhiteSpace(recipientAddress))
+                {
+                    _logger.LogWarning("[CartController] User {UserId} earned {Tokens} DTP tokens, but has no linked Hardhat/MetaMask address.", user.Id, totalTokensToAward);
+                }
+
+                var message = addedCount == 1
+                    ? "Гру успішно придбано та додано до вашої бібліотеки!"
+                    : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!";
+
+                if (totalTokensToAward > 0)
+                {
+                    message += $" Вам нараховано {totalTokensToAward:N0} DTP токенів!";
+                }
+
                 return Ok(new CheckoutResultDto
                 {
                     Success = true,
-                    Message = addedCount == 1
-                        ? "Гру успішно придбано та додано до вашої бібліотеки!"
-                        : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!",
+                    Message = message,
                     NewBalanceInNanoTons = user.BalanceInNanoTons,
                     TotalSpentInNanoTons = totalRequiredNanoTons,
-                    PurchasedGamesCount = addedCount
+                    PurchasedGamesCount = addedCount,
+                    AwardedTokens = totalTokensToAward,
+                    TokenTxHash = tokenTxHash
                 });
             }
             catch (Exception ex)

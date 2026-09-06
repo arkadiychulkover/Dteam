@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Gamepad2, Heart } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
+
 </script>
 
 <footer class="mt-20 border-t border-[#0b2834] bg-[#030d12] pt-8 pb-20 lg:pb-10 px-4 lg:px-8 relative z-20 shadow-2xl">
@@ -19,21 +20,21 @@
     </p>
 
     <div class="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-300">
-      <button 
+      <button
         onclick={() => { uiStore.setTab('terms'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
         Умови використання
       </button>
       <span class="text-slate-600">•</span>
-      <button 
+      <button
         onclick={() => { uiStore.setTab('privacy'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
         Політика конфіденційності
       </button>
       <span class="text-slate-600">•</span>
-      <button 
+      <button
         onclick={() => { uiStore.setTab('refund'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         class="hover:text-cyan-400 transition-colors cursor-pointer"
       >
@@ -42,3 +43,4 @@
     </div>
   </div>
 </footer>
+

@@ -21,9 +21,9 @@ namespace DteamBackend.Models.DTO
         public List<CartItemDto> Items { get; set; } = new();
         public int TotalCount => Items.Count;
         public long TotalBasePriceInNanoTons => Items.Sum(i => i.Game.PriceInNanoTons);
-        public long TotalEffectivePriceInNanoTons => Items.Sum(i => 
-            i.Game.DiscountPercentage > 0 
-                ? (long)Math.Round((double)i.Game.PriceInNanoTons * (100 - i.Game.DiscountPercentage) / 100.0) 
+        public long TotalEffectivePriceInNanoTons => Items.Sum(i =>
+            i.Game.DiscountPercentage > 0
+                ? (long)Math.Round((double)i.Game.PriceInNanoTons * (100 - i.Game.DiscountPercentage) / 100.0)
                 : i.Game.PriceInNanoTons);
         public long TotalSavingsInNanoTons => TotalBasePriceInNanoTons - TotalEffectivePriceInNanoTons;
     }
@@ -35,5 +35,8 @@ namespace DteamBackend.Models.DTO
         public long NewBalanceInNanoTons { get; set; }
         public long TotalSpentInNanoTons { get; set; }
         public int PurchasedGamesCount { get; set; }
+        public decimal AwardedTokens { get; set; }
+        public string? TokenTxHash { get; set; }
     }
 }
+

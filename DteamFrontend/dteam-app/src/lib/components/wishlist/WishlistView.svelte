@@ -39,6 +39,7 @@
 
   let isGenreOpen = $state(false);
   let isPriceOpen = $state(true);
+  let isMobileFiltersOpen = $state(false);
   let isTypeOpen = $state(false);
   let isFeaturesOpen = $state(false);
   let isPlatformOpen = $state(false);
@@ -52,7 +53,7 @@
   let selectedFeatures = $state<string[]>([]);
 
   const genres = [
-    'All', 'Action', 'RPG', 'Strategy', 'Adventure', 
+    'All', 'Action', 'RPG', 'Strategy', 'Adventure',
     'Shooter', 'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi'
   ];
 
@@ -186,6 +187,7 @@
         return 0;
       })
   );
+
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
@@ -241,17 +243,27 @@
     </div>
   </div>
 
-  <div>
+  <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
       <span>Мій список бажаного</span>
       <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#08232e] text-cyan-300 border border-cyan-500/30 font-mono font-bold">
         {$wishlistStore.items.length} { $wishlistStore.items.length === 1 ? 'гра' : 'ігор' }
       </span>
     </h1>
+
+    <button
+      type="button"
+      onclick={() => isMobileFiltersOpen = !isMobileFiltersOpen}
+      class="lg:hidden px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm
+        {isMobileFiltersOpen ? 'bg-cyan-500 text-black border-cyan-400' : ''}"
+    >
+      <SlidersHorizontal class="w-3.5 h-3.5" />
+      <span>{isMobileFiltersOpen ? 'Сховати фільтри' : 'Фільтри'}</span>
+    </button>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-    <aside class="lg:col-span-3 space-y-4">
+    <aside class="lg:col-span-3 space-y-4 {isMobileFiltersOpen ? 'block' : 'hidden lg:block'}">
       <div class="p-4 rounded-2xl bg-[#061820]/90 border border-cyan-500/20 shadow-lg space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-extrabold text-white tracking-wide flex items-center gap-2">
@@ -561,8 +573,8 @@
               onkeydown={(e) => e.key === 'Enter' && openGame(game)}
               class="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#061820]/95 hover:bg-[#092530] border border-cyan-500/20 hover:border-cyan-400/60 shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 cursor-pointer gap-4"
             >
-              <div class="flex items-center gap-4 flex-1 min-w-0">
-                <div class="relative w-28 sm:w-44 aspect-[16/9] rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-cyan-500/30 shadow-md">
+              <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto">
+                <div class="relative w-24 sm:w-44 aspect-[16/9] rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-cyan-500/30 shadow-md">
                   <img
                     src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600'}
                     alt={game.title}
@@ -575,7 +587,7 @@
                   {/if}
                 </div>
 
-                <div class="min-w-0 space-y-1.5">
+                <div class="min-w-0 space-y-1.5 flex-1 pr-6 sm:pr-0">
                   <h3 class="text-sm sm:text-base font-extrabold text-white group-hover:text-cyan-300 transition-colors truncate">
                     {game.title}
                   </h3>
@@ -682,3 +694,4 @@
 
   <GameDetailsModal />
 </div>
+

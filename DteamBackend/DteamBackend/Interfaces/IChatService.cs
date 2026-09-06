@@ -18,3 +18,4 @@ namespace DteamBackend.Interfaces
         Task SendTypingAsync(Guid currentUserId, Guid receiverId, bool isTyping, CancellationToken cancellationToken = default);
     }
 }
+

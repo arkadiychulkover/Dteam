@@ -430,7 +430,6 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Гру з ID '{id}' не знайдено або у вас немає прав на її видалення." });
             }
 
-            // Remove associated cart items and wishlists
             var cartItems = await _context.UserCartItems.Where(c => c.GameId == id).ToListAsync();
             if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
 
@@ -646,3 +645,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

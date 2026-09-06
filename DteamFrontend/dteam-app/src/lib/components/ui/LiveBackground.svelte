@@ -259,11 +259,12 @@
       window.removeEventListener('touchmove', handleTouchMove);
     };
   });
+
 </script>
 
 <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-  <canvas 
-    bind:this={canvas} 
+  <canvas
+    bind:this={canvas}
     class="absolute inset-0 w-full h-full filter blur-[60px] sm:blur-[90px] scale-110 transform"
   ></canvas>
 
@@ -273,3 +274,4 @@
 
   <div class="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#0df2c9_1px,transparent_1px)] [background-size:24px_24px]"></div>
 </div>
+

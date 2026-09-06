@@ -69,6 +69,7 @@
   function handleSelectUser(user: Duser) {
     inputGuid = user.id;
   }
+
 </script>
 
 {#if isOpen}
@@ -182,3 +183,4 @@
     </div>
   </div>
 {/if}
+

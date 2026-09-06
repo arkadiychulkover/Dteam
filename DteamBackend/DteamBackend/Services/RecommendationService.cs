@@ -130,3 +130,4 @@ namespace DteamBackend.Services
             => TasteCategories.IsZeroVector(v);
     }
 }
+

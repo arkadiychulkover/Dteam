@@ -3,7 +3,7 @@ title Hardhat Network
 set "BLOCKCHAIN_DIR=%~dp0..\blockchain"
 cd /d "%BLOCKCHAIN_DIR%"
 echo ===================================================
-echo   Starting Hardhat Network (RPC on 127.0.0.1:8545)
+echo   Starting Hardhat Network with Auto-Deploy & Sync
 echo ===================================================
-npx hardhat node
+node scripts/startNodeAndDeploy.js
 pause

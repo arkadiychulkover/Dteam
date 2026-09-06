@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { 
-    FileText, 
-    Download, 
-    Check, 
-    CheckCheck, 
-    Clock, 
-    AlertCircle, 
+  import {
+    FileText,
+    Download,
+    Check,
+    CheckCheck,
+    Clock,
+    AlertCircle,
     RotateCw,
     Loader2,
     MoreHorizontal,
@@ -101,7 +101,6 @@
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
     isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
-    // Load more when scrolled to top
     if (scrollTop === 0 && hasMore && !isLoadingMore) {
       const prevHeight = scrollHeight;
       chatStore.loadMoreHistory(conversation.friendId).then(() => {
@@ -123,7 +122,7 @@
   }
 
   $effect(() => {
-    // Reactively scroll to bottom when messages count changes
+
     if (messages.length) {
       tick().then(() => {
         if (isNearBottom) {
@@ -139,7 +138,6 @@
     });
   });
 
-  // Group messages by date
   const groupedMessages = $derived.by(() => {
     const groups: { dateLabel: string; items: ChatMessage[] }[] = [];
     let currentLabel = '';
@@ -164,6 +162,7 @@
 
     return groups;
   });
+
 </script>
 
 <div
@@ -171,7 +170,7 @@
   onscroll={handleScroll}
   class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 select-text"
 >
-  <!-- Loading More Spinner at Top -->
+
   {#if isLoadingMore}
     <div class="flex justify-center py-2">
       <Loader2 class="w-5 h-5 text-cyan-400 animate-spin" />
@@ -185,7 +184,7 @@
     </div>
   {:else}
     {#each groupedMessages as group}
-      <!-- Date Divider -->
+
       <div class="flex items-center justify-center gap-3 my-6 select-none">
         <div class="h-px w-16 sm:w-32 bg-gradient-to-r from-transparent to-cyan-500/20"></div>
         <span class="text-[11px] font-semibold text-slate-400/80 px-2 tracking-wider">
@@ -194,12 +193,11 @@
         <div class="h-px w-16 sm:w-32 bg-gradient-to-l from-transparent to-cyan-500/20"></div>
       </div>
 
-      <!-- Messages Group -->
       {#each group.items as msg (msg.id || msg.clientMessageId)}
         {@const isOutgoing = msg.senderId === $currentUser?.id}
 
         <div class="flex items-center gap-1.5 {isOutgoing ? 'justify-end' : 'justify-start'} group relative">
-          <!-- 3 dots button on hover for outgoing messages -->
+
           {#if isOutgoing && !msg.isOptimistic && !msg.isFailed}
             <button
               type="button"
@@ -211,7 +209,6 @@
             </button>
           {/if}
 
-          <!-- Outgoing Outer Timestamp & Status Checks -->
           {#if isOutgoing}
             <div class="flex items-center gap-1 text-[11px] font-mono text-slate-400/80 mb-1 select-none shrink-0">
               {#if msg.isFailed}
@@ -229,14 +226,13 @@
             </div>
           {/if}
 
-          <!-- Message Bubble Container -->
           <div
             class="max-w-md sm:max-w-lg rounded-2xl overflow-hidden shadow-md transition-all
-              {isOutgoing 
-                ? 'bg-gradient-to-br from-[#0e483e] to-[#0c3e35] text-slate-100 border border-emerald-500/30 rounded-br-sm' 
+              {isOutgoing
+                ? 'bg-gradient-to-br from-[#0e483e] to-[#0c3e35] text-slate-100 border border-emerald-500/30 rounded-br-sm'
                 : 'bg-gradient-to-br from-[#102d38] to-[#0e2730] text-slate-100 border border-cyan-500/25 rounded-bl-sm'}"
           >
-            <!-- 1. Voice Message -->
+
             {#if msg.type === 3 && msg.mediaUrl}
               <div class="p-3">
                 <AudioMessagePlayer
@@ -247,7 +243,6 @@
                 />
               </div>
 
-            <!-- 2. Photo / Image Message -->
             {:else if msg.type === 1 && msg.mediaUrl}
               <div class="flex flex-col">
                 <a
@@ -269,7 +264,6 @@
                 {/if}
               </div>
 
-            <!-- 3. File / Document Message -->
             {:else if msg.type === 2 && msg.mediaUrl}
               <a
                 href={msg.mediaUrl}
@@ -277,7 +271,7 @@
                 target="_blank"
                 class="flex items-center gap-3 p-3.5 hover:bg-white/5 transition-colors group/file cursor-pointer"
               >
-                <!-- File Icon -->
+
                 <div class="w-10 h-10 rounded-xl bg-cyan-400/20 text-cyan-300 flex items-center justify-center shrink-0 group-hover/file:bg-cyan-400 group-hover/file:text-black transition-colors">
                   <FileText class="w-5 h-5" />
                 </div>
@@ -299,7 +293,6 @@
                 </div>
               {/if}
 
-            <!-- 4. Plain Text Message -->
             {:else}
               <div class="px-4 py-2.5 text-xs text-slate-100 break-words leading-relaxed whitespace-pre-wrap">
                 {msg.content}
@@ -307,7 +300,6 @@
             {/if}
           </div>
 
-          <!-- Incoming Outer Timestamp -->
           {#if !isOutgoing}
             <div class="text-[11px] font-mono text-slate-400/80 mb-1 select-none shrink-0">
               {formatTime(msg.createdAt)}
@@ -318,7 +310,6 @@
     {/each}
   {/if}
 
-  <!-- Typing Indicator -->
   {#if isTyping}
     <div class="flex items-center gap-2 text-xs text-cyan-400/90 pl-1 select-none animate-in fade-in">
       <span class="font-bold">{conversation.friendUsername}</span>
@@ -332,10 +323,9 @@
   {/if}
 </div>
 
-<!-- Delete Message Confirmation Modal -->
 {#if messageToDelete}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
-    <!-- Click outside backdrop to close -->
+
     <button
       type="button"
       aria-label="Закрити"
@@ -343,7 +333,7 @@
       class="absolute inset-0 w-full h-full cursor-default bg-transparent"
     ></button>
 
-    <div 
+    <div
       class="relative w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl space-y-4 text-slate-100 animate-in zoom-in-95 duration-150 z-10"
     >
       <div class="flex items-center justify-between">
@@ -362,7 +352,6 @@
         </button>
       </div>
 
-      <!-- Preview message snippet -->
       {#if messageToDelete.content}
         <div class="px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 line-clamp-3 italic">
           «{messageToDelete.content}»
@@ -412,3 +401,4 @@
     </div>
   </div>
 {/if}
+

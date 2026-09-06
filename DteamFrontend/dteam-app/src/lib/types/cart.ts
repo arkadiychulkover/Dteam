@@ -21,4 +21,7 @@ export interface CheckoutResult {
   newBalanceInNanoTons: number;
   totalSpentInNanoTons: number;
   purchasedGamesCount: number;
+  awardedTokens?: number;
+  tokenTxHash?: string | null;
 }
+

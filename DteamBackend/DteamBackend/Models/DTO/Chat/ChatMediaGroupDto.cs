@@ -15,7 +15,7 @@ namespace DteamBackend.Models.DTO.Chat
 
     public class ChatMonthGroupDto
     {
-        public string MonthLabel { get; set; } = string.Empty; // e.g. "Травень 2024"
+        public string MonthLabel { get; set; } = string.Empty;
         public int Year { get; set; }
         public int Month { get; set; }
         public List<ChatMediaItemDto> Items { get; set; } = new();
@@ -31,3 +31,4 @@ namespace DteamBackend.Models.DTO.Chat
         public List<ChatMonthGroupDto> VoiceByMonth { get; set; } = new();
     }
 }
+

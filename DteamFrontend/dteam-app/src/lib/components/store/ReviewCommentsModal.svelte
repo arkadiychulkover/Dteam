@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { 
-    X, 
-    Heart, 
-    MessageSquare, 
-    CornerDownRight, 
-    MoreHorizontal, 
-    Star, 
-    Loader2, 
+  import {
+    X,
+    Heart,
+    MessageSquare,
+    CornerDownRight,
+    MoreHorizontal,
+    Star,
+    Loader2,
     Send,
     ChevronDown
   } from 'lucide-svelte';
@@ -108,7 +108,6 @@
     }
     if (!review) return;
 
-    // Optimistic
     rootReviewIsLiked = !rootReviewIsLiked;
     rootReviewLikes += rootReviewIsLiked ? 1 : -1;
 
@@ -125,7 +124,7 @@
         });
       }
     } catch (e: any) {
-      // Revert
+
       rootReviewIsLiked = !rootReviewIsLiked;
       rootReviewLikes += rootReviewIsLiked ? 1 : -1;
       uiStore.addToast({
@@ -150,7 +149,6 @@
     const wasLiked = comment.isLiked ?? false;
     const currentCount = comment.likesCount ?? 0;
 
-    // Optimistic update
     comments = comments.map(c => {
       if (c.id === comment.id) {
         return {
@@ -175,7 +173,7 @@
         return c;
       });
     } catch (e: any) {
-      // Revert
+
       comments = comments.map(c => {
         if (c.id === comment.id) {
           return {
@@ -241,10 +239,11 @@
       isSubmitting = false;
     }
   }
+
 </script>
 
 {#if isOpen && review}
-  <div 
+  <div
     class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 overflow-y-auto"
     onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
@@ -253,8 +252,7 @@
     tabindex="-1"
   >
     <div class="bg-[#061720] border border-cyan-500/30 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      
-      <!-- Modal Header -->
+
       <div class="px-6 py-4 border-b border-cyan-900/40 flex items-center justify-between bg-[#041017]/80">
         <h3 class="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
           <span>Review - comments</span>
@@ -269,19 +267,17 @@
         </button>
       </div>
 
-      <!-- Modal Body (Scrollable) -->
       <div class="p-6 overflow-y-auto space-y-5 custom-scrollbar">
 
-        <!-- 1. Main Review Card (exact layout from screenshot) -->
         <div class="bg-[#08222d] border border-cyan-500/30 rounded-2xl p-5 shadow-lg space-y-4">
-          <!-- Author & Stars -->
+
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-[#030d12] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden shrink-0">
               {#if review.userAvatarUrl || review.user?.avatarUrl}
-                <img 
-                  src={review.userAvatarUrl || review.user?.avatarUrl || ''} 
-                  alt={review.username || review.user?.username || 'User'} 
-                  class="w-full h-full object-cover" 
+                <img
+                  src={review.userAvatarUrl || review.user?.avatarUrl || ''}
+                  alt={review.username || review.user?.username || 'User'}
+                  class="w-full h-full object-cover"
                 />
               {:else}
                 {(review.username || review.user?.username || 'U').charAt(0).toUpperCase()}
@@ -300,12 +296,10 @@
             </div>
           </div>
 
-          <!-- Review Content -->
           <p class="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
             {review.content}
           </p>
 
-          <!-- Card Footer (Likes, Comments, Date) -->
           <div class="flex items-center justify-between pt-3 border-t border-cyan-900/30 text-xs text-slate-400">
             <div class="flex items-center gap-4">
               <button
@@ -329,9 +323,8 @@
           </div>
         </div>
 
-        <!-- 2. Sorting and Input Bar -->
         <div class="space-y-2.5">
-          <!-- Sorting Dropdown -->
+
           <div class="flex items-center justify-between text-xs">
             <div class="relative">
               <button
@@ -379,7 +372,6 @@
             {/if}
           </div>
 
-          <!-- Input Bar (pill shape matching screenshot) -->
           <div class="relative flex items-center">
             <input
               type="text"
@@ -405,7 +397,6 @@
           </div>
         </div>
 
-        <!-- 3. List of Comments / Replies -->
         {#if isLoading}
           <div class="flex items-center justify-center py-8">
             <Loader2 class="w-6 h-6 text-cyan-400 animate-spin" />
@@ -414,16 +405,15 @@
           <div class="space-y-3">
             {#each sortedComments() as comment (comment.id)}
               <div class="bg-[#08222d] border border-cyan-500/25 rounded-2xl p-4 shadow-md space-y-3 group hover:border-cyan-500/50 transition-all">
-                
-                <!-- Comment Header -->
+
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-full bg-[#030d12] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden shrink-0 text-xs">
                       {#if comment.userAvatarUrl || comment.user?.avatarUrl}
-                        <img 
-                          src={comment.userAvatarUrl || comment.user?.avatarUrl || ''} 
-                          alt={comment.username || 'User'} 
-                          class="w-full h-full object-cover" 
+                        <img
+                          src={comment.userAvatarUrl || comment.user?.avatarUrl || ''}
+                          alt={comment.username || 'User'}
+                          class="w-full h-full object-cover"
                         />
                       {:else}
                         {(comment.username || 'U').charAt(0).toUpperCase()}
@@ -449,7 +439,6 @@
                   </button>
                 </div>
 
-                <!-- Inner Quote Block (if replying to another comment) -->
                 {#if comment.parentReview}
                   <div class="bg-[#051720]/80 border-l-2 border-cyan-400 rounded-r-xl p-2.5 space-y-1 text-xs">
                     <div class="flex items-center gap-1.5 text-cyan-300 font-semibold text-[11px]">
@@ -468,12 +457,10 @@
                   </div>
                 {/if}
 
-                <!-- Comment Content -->
                 <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
                   {comment.content}
                 </p>
 
-                <!-- Actions: Like & Reply -->
                 <div class="flex items-center gap-4 pt-2 border-t border-cyan-900/20 text-xs text-slate-400">
                   <button
                     type="button"
@@ -523,4 +510,6 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(34, 211, 238, 0.4);
   }
+
 </style>
+

@@ -27,6 +27,7 @@
       wishlistStore.toggleWishlist(game);
     }
   }
+
 </script>
 
 {#if game}
@@ -161,3 +162,4 @@
     </div>
   </div>
 {/if}
+

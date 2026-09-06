@@ -7,3 +7,4 @@ namespace DteamBackend.Models.Enums
         Read = 2
     }
 }
+

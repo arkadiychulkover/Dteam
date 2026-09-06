@@ -34,10 +34,11 @@
       return '';
     }
   }
+
 </script>
 
 <div class="h-full flex flex-col">
-  <!-- Header -->
+
   <div class="p-4 border-b border-cyan-500/20 flex items-center gap-3">
     <button
       onclick={handleBack}
@@ -51,7 +52,6 @@
     </h3>
   </div>
 
-  <!-- Content List -->
   <div class="flex-1 overflow-y-auto p-4 space-y-6">
     {#if !filesByMonth || filesByMonth.length === 0}
       <div class="h-48 flex flex-col items-center justify-center text-slate-500 text-xs">
@@ -61,7 +61,7 @@
     {:else}
       {#each filesByMonth as group}
         <div class="space-y-3">
-          <!-- Month Separator -->
+
           <div class="flex items-center gap-3">
             <div class="h-px flex-1 bg-cyan-500/20"></div>
             <span class="text-xs font-semibold text-slate-400 tracking-wider">
@@ -70,7 +70,6 @@
             <div class="h-px flex-1 bg-cyan-500/20"></div>
           </div>
 
-          <!-- Files List -->
           <div class="space-y-2">
             {#each group.items as item}
               <a
@@ -79,12 +78,11 @@
                 target="_blank"
                 class="flex items-center gap-3 p-3 rounded-2xl bg-[#0b242e]/80 hover:bg-[#0e303d] border border-cyan-500/20 hover:border-cyan-400/60 transition-all group cursor-pointer shadow-sm"
               >
-                <!-- File Icon -->
+
                 <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-400 group-hover:text-black group-hover:scale-105 transition-all shrink-0">
                   <FileText class="w-5 h-5" />
                 </div>
 
-                <!-- Info -->
                 <div class="flex-1 min-w-0">
                   <div class="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors">
                     {item.originalFileName}
@@ -96,7 +94,6 @@
                   </div>
                 </div>
 
-                <!-- Download button -->
                 <div class="p-1.5 text-slate-400 group-hover:text-cyan-400 shrink-0">
                   <Download class="w-4 h-4" />
                 </div>
@@ -108,3 +105,4 @@
     {/if}
   </div>
 </div>
+

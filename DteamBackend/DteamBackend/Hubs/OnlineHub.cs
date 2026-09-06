@@ -19,12 +19,10 @@ namespace DteamBackend.Hubs
         private readonly INftService _nftService;
         private readonly ILogger<OnlineHub> _logger;
 
-        // Інтервал видачі NFT за час перебування на сайті:
         public const long HourlyRewardIntervalSeconds = 3600;
         public const long ShortRewardIntervalSeconds = 30;
         public const long TenHourRewardIntervalSeconds = 36000;
 
-        // Поточний активний інтервал (10 годин):
         public const long ActiveRewardIntervalSeconds = TenHourRewardIntervalSeconds;
 
         public OnlineHub(
@@ -172,7 +170,7 @@ namespace DteamBackend.Hubs
 
             if (userGuid != Guid.Empty)
             {
-                // Перевіряємо чи у користувача ще залишились активні з'єднання (наприклад інші вкладки)
+
                 bool hasOtherConnections = ConnectionUserGuids.Values.Any(g => g == userGuid);
                 if (!hasOtherConnections)
                 {

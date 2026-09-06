@@ -30,13 +30,14 @@
     uiStore.setTab('chat');
     uiStore.toggleFriendsSidebar();
   }
+
 </script>
 
 {#if $uiStore.isFriendsSidebarOpen}
   <aside
     class="fixed right-0 top-0 bottom-0 w-80 bg-[#061820] border-l border-cyan-500/20 shadow-2xl z-50 flex flex-col p-4 animate-in slide-in-from-right"
   >
-    
+
     <div class="flex items-center justify-between pb-3 border-b border-cyan-950/80">
       <div class="flex items-center gap-2">
         <Users class="w-4 h-4 text-cyan-400" />
@@ -135,3 +136,4 @@
     </div>
   </aside>
 {/if}
+

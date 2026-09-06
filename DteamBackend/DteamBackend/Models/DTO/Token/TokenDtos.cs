@@ -37,3 +37,4 @@ namespace DteamBackend.Models.DTO.Token
         public string Message { get; set; } = string.Empty;
     }
 }
+

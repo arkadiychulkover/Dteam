@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { 
-    Search, 
-    SlidersHorizontal, 
-    ChevronDown, 
-    Star, 
-    ArrowDown, 
-    ArrowLeft, 
-    Loader2, 
-    ShoppingCart, 
-    Check, 
-    Sparkles, 
-    PackageOpen 
+  import {
+    Search,
+    SlidersHorizontal,
+    ChevronDown,
+    Star,
+    ArrowDown,
+    ArrowLeft,
+    Loader2,
+    ShoppingCart,
+    Check,
+    Sparkles,
+    PackageOpen
   } from 'lucide-svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { cartStore } from '../../stores/cartStore';
@@ -61,17 +61,15 @@
   let filteredDlcs = $derived.by(() => {
     let result = [...dlcs];
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter(d => 
-        d.title.toLowerCase().includes(q) || 
+      result = result.filter(d =>
+        d.title.toLowerCase().includes(q) ||
         (d.shortDescription && d.shortDescription.toLowerCase().includes(q)) ||
         (d.description && d.description.toLowerCase().includes(q))
       );
     }
 
-    // Filter Type
     if (filterType === 'free') {
       result = result.filter(d => Number(d.priceInNanoTons) === 0);
     } else if (filterType === 'paid') {
@@ -80,7 +78,6 @@
       result = result.filter(d => (d.discountPercentage ?? 0) > 0);
     }
 
-    // Sorting
     if (sortBy === 'price_asc') {
       result.sort((a, b) => Number(a.priceInNanoTons) - Number(b.priceInNanoTons));
     } else if (sortBy === 'price_desc') {
@@ -107,28 +104,26 @@
       type: 'success'
     });
   }
+
 </script>
 
 <div class="min-h-screen bg-[#030d12] text-slate-100 pb-20">
-  
+
   {#if game}
-    <!-- 1. Hero Banner (from user screenshot) -->
+
     <div class="relative w-full h-[320px] md:h-[400px] overflow-hidden bg-black select-none">
-      <!-- Banner Image -->
-      <img 
-        src={game.headerImageUrl || game.coverImageUrl || '/placeholder.png'} 
-        alt={game.title} 
+
+      <img
+        src={game.headerImageUrl || game.coverImageUrl || '/placeholder.png'}
+        alt={game.title}
         class="w-full h-full object-cover object-center filter brightness-90 transform scale-105"
       />
 
-      <!-- Gradient Overlays -->
       <div class="absolute inset-0 bg-gradient-to-t from-[#030d12] via-[#030d12]/40 to-black/60"></div>
       <div class="absolute inset-0 bg-gradient-to-r from-[#030d12]/90 via-[#030d12]/40 to-transparent"></div>
 
-      <!-- Content Container -->
       <div class="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-6">
-        
-        <!-- Top row: Navigation -->
+
         <div>
           <button
             type="button"
@@ -140,7 +135,6 @@
           </button>
         </div>
 
-        <!-- Banner Text (Overlaid as shown in reference) -->
         <div class="space-y-1 mb-4">
           <p class="text-xs sm:text-sm font-bold text-cyan-300 tracking-wider drop-shadow-md">
             Завантажуваний контент для
@@ -153,14 +147,11 @@
       </div>
     </div>
 
-    <!-- 2. Main Content Area -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10 space-y-8">
 
-      <!-- Search & Filters Toolbar -->
       <div class="bg-[#051720]/90 border border-cyan-500/25 rounded-2xl p-3.5 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
-        
-        <!-- Left: Search input & Filter toggle -->
-        <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+
+        <div class="flex items-center gap-3 flex-1 min-w-0 sm:min-w-[280px] w-full sm:w-auto">
           <div class="relative flex-1">
             <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -181,7 +172,6 @@
           </button>
         </div>
 
-        <!-- Right: Sorting Dropdown -->
         <div class="relative">
           <button
             type="button"
@@ -210,7 +200,6 @@
 
       </div>
 
-      <!-- Expandable Filter Chips -->
       {#if isFilterBarOpen}
         <div class="flex items-center gap-2 pt-1 pb-2 overflow-x-auto">
           <button
@@ -244,7 +233,6 @@
         </div>
       {/if}
 
-      <!-- 3. Grid of DLC Cards (from user screenshot) -->
       {#if isLoading}
         <div class="flex items-center justify-center py-20">
           <Loader2 class="w-10 h-10 text-cyan-400 animate-spin" />
@@ -252,7 +240,7 @@
       {:else if filteredDlcs.length > 0}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           {#each filteredDlcs as dlc (dlc.id)}
-            <div 
+            <div
               role="button"
               tabindex="0"
               onclick={() => openDlcDetails(dlc)}
@@ -260,16 +248,15 @@
               class="bg-[#051720]/90 border border-cyan-500/25 hover:border-cyan-400/70 rounded-3xl overflow-hidden shadow-xl hover:shadow-cyan-950/40 transition-all group cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <!-- Card Header Image -->
+
                 <div class="relative w-full h-48 sm:h-56 bg-black overflow-hidden">
-                  <img 
-                    src={dlc.headerImageUrl || dlc.coverImageUrl || '/placeholder.png'} 
-                    alt={dlc.title} 
+                  <img
+                    src={dlc.headerImageUrl || dlc.coverImageUrl || '/placeholder.png'}
+                    alt={dlc.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-[#051720] via-transparent to-transparent opacity-80"></div>
-                  
-                  <!-- Download Icon Badge (as seen in user screenshot) -->
+
                   <div class="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/70 border border-cyan-500/40 backdrop-blur-md flex items-center justify-center text-cyan-400 shadow-md">
                     <ArrowDown class="w-4 h-4 stroke-[2.5]" />
                   </div>
@@ -281,7 +268,6 @@
                   {/if}
                 </div>
 
-                <!-- Card Body -->
                 <div class="p-5 space-y-3">
                   <div class="flex items-baseline justify-between gap-2">
                     <h3 class="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors leading-tight">
@@ -299,7 +285,6 @@
                 </div>
               </div>
 
-              <!-- Card Footer: Price & Add to Cart button -->
               <div class="px-5 pb-5 pt-2 flex items-center justify-between gap-4 border-t border-cyan-950/60">
                 <div>
                   {#if Number(dlc.priceInNanoTons) === 0}
@@ -372,3 +357,4 @@
   {/if}
 
 </div>
+

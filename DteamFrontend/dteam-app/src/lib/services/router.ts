@@ -66,20 +66,17 @@ function parseLocation(): RouteState {
     return { tab: 'store' };
   }
 
-  // Support both HTML5 path and Hash fallback
   let path = window.location.pathname;
   if (window.location.hash && window.location.hash.startsWith('#/')) {
     path = window.location.hash.slice(1);
   }
 
-  // Remove trailing slashes
   path = path.replace(/\/+$/, '') || '/';
 
   const segments = path.split('/').filter(Boolean);
   const first = segments[0] || '';
   const second = segments[1] || '';
 
-  // Check URL query parameters for fallback (e.g. ?gameId=... or ?id=...)
   const params = new URLSearchParams(window.location.search);
   const queryGameId = params.get('gameId') || params.get('id') || undefined;
   const queryUserId = params.get('userId') || undefined;
@@ -135,7 +132,7 @@ async function applyRoute(route: RouteState) {
   isNavigatingFromUrl = true;
 
   try {
-    // 1. Handle Game loading if route is 'game' or 'all-dlcs'
+
     if ((route.tab === 'game' || route.tab === 'all-dlcs') && route.gameId) {
       const currentSelected = get(gamesStore).selectedGame;
       if (!currentSelected || currentSelected.id !== route.gameId) {
@@ -150,12 +147,10 @@ async function applyRoute(route: RouteState) {
       }
     }
 
-    // 2. Handle Profile loading if route is 'profile'
     if (route.tab === 'profile' && route.userId) {
       profileStore.viewProfile(route.userId);
     }
 
-    // 3. Set the active tab in uiStore
     uiStore.setTab(route.tab);
   } finally {
     isNavigatingFromUrl = false;
@@ -167,17 +162,14 @@ export const router = {
     if (isInitialized || typeof window === 'undefined') return;
     isInitialized = true;
 
-    // Handle initial page load
     const initialRoute = parseLocation();
     applyRoute(initialRoute);
 
-    // Listen to browser Back/Forward navigation
     window.addEventListener('popstate', () => {
       const route = parseLocation();
       applyRoute(route);
     });
 
-    // Listen to tab and selected game changes to synchronize URL
     let lastUrl = window.location.pathname;
 
     uiStore.subscribe(($ui) => {
@@ -239,3 +231,4 @@ export const router = {
     }
   }
 };
+

@@ -296,6 +296,7 @@
     }
     uiStore.setTab('store');
   }
+
 </script>
 
 <svelte:window onclick={handleClickOutside} onkeydown={handleKeydown} />
@@ -303,9 +304,8 @@
 <header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
-    <!-- Left: Logo & Desktop Navigation -->
     <div class="flex items-center gap-3 sm:gap-6 shrink-0">
-      <!-- Mobile Hamburger Button -->
+
       <button
         onclick={() => isMobileMenuOpen = true}
         class="lg:hidden p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 cursor-pointer transition-all shrink-0"
@@ -314,7 +314,6 @@
         <Menu class="w-5 h-5" />
       </button>
 
-      <!-- Logo -->
       <button
         onclick={handleLogoClick}
         class="flex items-center gap-2 group cursor-pointer text-left shrink-0"
@@ -330,7 +329,6 @@
         </div>
       </button>
 
-      <!-- Desktop Nav -->
       <nav class="hidden lg:flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative">
         {#each visibleTabs as tab}
           {@const Icon = tab.icon}
@@ -377,7 +375,6 @@
       </nav>
     </div>
 
-    <!-- Middle: Search Input -->
     <div bind:this={searchWrapperEl} class="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2 transition-all">
       <form onsubmit={handleSearchSubmit} class="relative w-full">
         <input
@@ -407,7 +404,6 @@
       />
     </div>
 
-    <!-- Right: Wishlist, Cart, Balance & Profile -->
     <div class="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
       <button
         onclick={() => uiStore.setTab('wishlist')}
@@ -442,7 +438,7 @@
       </button>
 
       {#if $currentUser}
-        <!-- Balance Pill: Click to go to Wallet, '+' opens Deposit Modal -->
+
         <div class="hidden sm:flex items-center rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] border border-cyan-500/30 hover:border-cyan-400/80 transition-all shadow-inner overflow-hidden">
           <button
             onclick={() => uiStore.setTab('wallet')}
@@ -623,10 +619,9 @@
   </div>
 </header>
 
-<!-- Mobile Slide-over Drawer Menu -->
 {#if isMobileMenuOpen}
   <div class="fixed inset-0 z-50 lg:hidden flex">
-    <!-- Backdrop -->
+
     <button
       type="button"
       onclick={() => isMobileMenuOpen = false}
@@ -634,10 +629,9 @@
       aria-label="Закрити меню"
     ></button>
 
-    <!-- Drawer Panel -->
     <div class="relative w-4/5 max-w-sm bg-[#05151e] border-r border-cyan-500/30 p-5 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200">
       <div class="space-y-6 overflow-y-auto">
-        <!-- Top Drawer Header -->
+
         <div class="flex items-center justify-between border-b border-cyan-500/20 pb-4">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-black">
@@ -656,7 +650,6 @@
           </button>
         </div>
 
-        <!-- User Profile summary (if logged in) -->
         {#if $currentUser}
           <div class="p-3.5 rounded-2xl bg-[#09222c] border border-cyan-500/25 space-y-3">
             <div class="flex items-center gap-3">
@@ -673,7 +666,6 @@
               </div>
             </div>
 
-            <!-- Balance & Deposit Button -->
             <div class="flex items-center justify-between pt-2 border-t border-cyan-950/80">
               <div>
                 <span class="text-[10px] text-slate-400">Баланс TON:</span>
@@ -692,7 +684,6 @@
           </div>
         {/if}
 
-        <!-- Navigation Links List -->
         <div class="space-y-1">
           <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Навігація</p>
           {#each visibleTabs as tab}
@@ -750,7 +741,6 @@
         </div>
       </div>
 
-      <!-- Drawer Bottom: Auth Actions -->
       <div class="pt-4 border-t border-cyan-500/20">
         {#if $currentUser}
           <button
@@ -781,7 +771,6 @@
   </div>
 {/if}
 
-<!-- Mobile Bottom Navigation Bar (Quick Switching on Phone screens) -->
 <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#030e14]/95 backdrop-blur-xl border-t border-cyan-500/20 px-2 py-1.5 flex lg:hidden items-center justify-around shadow-2xl safe-area-pb">
   <button
     onclick={() => uiStore.setTab('store')}

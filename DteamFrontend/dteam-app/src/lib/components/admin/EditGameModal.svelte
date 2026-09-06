@@ -32,7 +32,7 @@
   let selectedPlatforms = $state<string[]>(['Windows']);
   let selectedFeatures = $state<string[]>([]);
   let tagsText = $state('');
-  
+
   let headerImageUrl = $state('');
   let coverImageUrl = $state('');
   let screenshotUrls = $state<string[]>([]);
@@ -45,7 +45,7 @@
   let errorMessage = $state('');
 
   const availableGenres = [
-    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter', 
+    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter',
     'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi', 'Fantasy'
   ];
 
@@ -232,6 +232,7 @@
       uiStore.addToast({ title: 'Помилка', message: err.message, type: 'error' });
     }
   }
+
 </script>
 
 {#if isOpen && game}
@@ -698,3 +699,4 @@
     </div>
   </div>
 {/if}
+

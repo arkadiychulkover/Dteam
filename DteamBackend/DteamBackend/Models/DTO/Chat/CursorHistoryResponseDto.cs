@@ -8,3 +8,4 @@ namespace DteamBackend.Models.DTO.Chat
         public int TotalCount { get; set; }
     }
 }
+

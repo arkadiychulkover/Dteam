@@ -13,7 +13,7 @@ class OnlineHubService {
   private heartbeatTimer: any = null;
 
   constructor() {
-    // ⚠️ Использование относительного пути активирует Vite Proxy
+
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl('/hubs/online', {
         accessTokenFactory: async () => (await api.getValidToken()) || '',
@@ -44,7 +44,6 @@ class OnlineHubService {
       this.startHeartbeat();
     });
 
-    // При оновленні токена перезапускаємо хаб з новим токеном
     api.onTokenRefreshed(async () => {
       console.log('[OnlineHub] Токен оновлено, перепідключаємо OnlineHub...');
       await this.restartConnection();
@@ -65,7 +64,6 @@ class OnlineHubService {
     }
   }
 
-  // Переподключение потрібне, коли токен змінюється (логін/логаут):
   async restartConnection(): Promise<void> {
     if (!this.connection) return;
     try {

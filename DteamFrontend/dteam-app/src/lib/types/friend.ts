@@ -46,3 +46,4 @@ export interface FriendsGameStatusDto {
   friendsWhoOwn: FriendDto[];
   friendsWhoWishlist: FriendDto[];
 }
+

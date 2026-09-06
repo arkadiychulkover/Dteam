@@ -1,16 +1,16 @@
 import { writable } from 'svelte/store';
 import type { Game } from '../types';
 
-export type MainTab = 
-  | 'store' 
+export type MainTab =
+  | 'store'
   | 'library'
   | 'chat'
   | 'community'
   | 'friends'
-  | 'catalog' 
+  | 'catalog'
   | 'game'
   | 'all-dlcs'
-  | 'wishlist' 
+  | 'wishlist'
   | 'cart'
   | 'admin'
   | 'developer'
@@ -92,3 +92,4 @@ function createUiStore() {
 }
 
 export const uiStore = createUiStore();
+

@@ -21,7 +21,6 @@
   let isLoaded = $state(false);
   let isError = $state(false);
 
-  // Резолв относительного пути бэкенда
   const resolvedSrc = $derived.by(() => {
     if (!src) return null;
     let url = src;
@@ -39,6 +38,7 @@
 
     return url;
   });
+
 </script>
 
 <div class="relative overflow-hidden bg-slate-900/60 {className}">
@@ -49,7 +49,7 @@
   {/if}
 
   {#if !resolvedSrc || isError}
-    <!-- Стилизованный Fallback вместо битого изображения -->
+
     <div class="w-full h-full min-h-[100px] flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-900/80 text-slate-400 border border-slate-800 rounded-xl">
       <ImageOff class="{fallbackIconSize} text-slate-500" />
       {#if fallbackText}
@@ -69,3 +69,4 @@
     />
   {/if}
 </div>
+

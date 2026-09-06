@@ -22,3 +22,4 @@ namespace DteamBackend.Models.DTO.Auth
         public string Code { get; set; } = string.Empty;
     }
 }
+

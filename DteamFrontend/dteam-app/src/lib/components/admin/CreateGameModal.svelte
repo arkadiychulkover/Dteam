@@ -29,7 +29,7 @@
   let selectedPlatforms = $state<string[]>(['Windows']);
   let selectedFeatures = $state<string[]>(['SinglePlayer']);
   let tagsText = $state('Cyberpunk, Open World, Story Rich');
-  
+
   let headerImageUrl = $state('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80');
   let coverImageUrl = $state('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80');
   let screenshotUrls = $state<string[]>([
@@ -37,7 +37,7 @@
     'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800'
   ]);
   let trailerUrl = $state('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-  
+
   let isUploadingCover = $state(false);
   let isUploadingHeader = $state(false);
   let isUploadingScreens = $state(false);
@@ -45,7 +45,7 @@
   let errorMessage = $state('');
 
   const availableGenres = [
-    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter', 
+    'Action', 'RPG', 'Strategy', 'Adventure', 'Shooter',
     'Indie', 'Simulation', 'MMO', 'Horror', 'Sports', 'Racing', 'Cyberpunk', 'SciFi', 'Fantasy'
   ];
 
@@ -191,6 +191,7 @@
       isSubmitting = false;
     }
   }
+
 </script>
 
 {#if isOpen}
@@ -607,3 +608,4 @@
     </div>
   </div>
 {/if}
+

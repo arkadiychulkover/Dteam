@@ -126,6 +126,7 @@
       isSubmitting = false;
     }
   }
+
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape' && isOpen && !isSubmitting) handleClose(); }} />
@@ -141,10 +142,9 @@
       aria-modal="true"
       class="relative w-full max-w-2xl bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-cyan-950/60 overflow-hidden max-h-[90vh] flex flex-col"
     >
-      <!-- Background glow -->
+
       <div class="absolute -top-24 -right-24 w-56 h-56 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <!-- Header -->
       <div class="flex items-start justify-between pb-4 border-b border-cyan-900/40 shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
@@ -169,7 +169,6 @@
         </button>
       </div>
 
-      <!-- Game Target Badge -->
       <div class="mt-4 p-3 rounded-2xl bg-[#021319] border border-cyan-900/40 flex items-center gap-3 shrink-0">
         <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-cyan-500/20">
           {#if game.coverImageUrl || game.headerImageUrl}
@@ -186,9 +185,8 @@
         </div>
       </div>
 
-      <!-- Form Body -->
       <form onsubmit={handleSubmit} class="flex-1 overflow-y-auto mt-4 space-y-4 pr-1">
-        <!-- Title -->
+
         <div>
           <label for="news-title" class="block text-xs font-bold text-slate-300 mb-1.5">
             Заголовок новини <span class="text-cyan-400">*</span>
@@ -203,7 +201,6 @@
           />
         </div>
 
-        <!-- Content -->
         <div>
           <label for="news-content" class="block text-xs font-bold text-slate-300 mb-1.5">
             Текст новини / Патч-ноут <span class="text-cyan-400">*</span>
@@ -218,7 +215,6 @@
           ></textarea>
         </div>
 
-        <!-- Media Attachment -->
         <div>
           <span class="block text-xs font-bold text-slate-300 mb-1.5">Медіа (зображення або відео)</span>
           <input
@@ -267,7 +263,6 @@
           {/if}
         </div>
 
-        <!-- Actions -->
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-cyan-900/40">
           <button
             type="button"
@@ -296,3 +291,4 @@
     </div>
   </div>
 {/if}
+

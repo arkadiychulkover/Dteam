@@ -9,3 +9,4 @@ namespace DteamBackend.Models.DTO.Auth
         public string Email { get; set; } = string.Empty;
     }
 }
+

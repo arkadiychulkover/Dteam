@@ -79,6 +79,7 @@
       isSubmitting = false;
     }
   }
+
 </script>
 
 {#if isOpen && user}
@@ -263,3 +264,4 @@
     </div>
   </div>
 {/if}
+

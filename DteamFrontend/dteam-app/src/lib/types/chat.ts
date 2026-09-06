@@ -1,5 +1,5 @@
-export type ChatMessageType = 0 | 1 | 2 | 3; // 0=Text, 1=Image, 2=File, 3=Voice
-export type MessageDeliveryStatus = 0 | 1 | 2; // 0=Sent, 1=Delivered, 2=Read
+export type ChatMessageType = 0 | 1 | 2 | 3;
+export type MessageDeliveryStatus = 0 | 1 | 2;
 
 export interface ChatMessage {
   id: string;
@@ -16,7 +16,7 @@ export interface ChatMessage {
   duration?: number | null;
   createdAt: string;
   readAt?: string | null;
-  // Local UI-only state
+
   isOptimistic?: boolean;
   isFailed?: boolean;
 }
@@ -25,7 +25,7 @@ export interface ChatConversation {
   friendId: string;
   friendUsername: string;
   friendAvatarUrl?: string | null;
-  friendStatus: number; // 0=Offline, 1=Online, 2=InGame, 3=Away, 4=Busy
+  friendStatus: number;
   lastMessage?: ChatMessage | null;
   unreadCount: number;
   lastActivityAt?: string | null;
@@ -74,3 +74,4 @@ export interface CursorHistoryResponse {
   hasMore: boolean;
   totalCount: number;
 }
+

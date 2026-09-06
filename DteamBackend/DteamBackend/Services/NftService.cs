@@ -63,7 +63,7 @@ namespace DteamBackend.Services
         {
             try
             {
-                // 1. Создаем таблицу NftItems в SQLite, если её ещё нет
+
                 await _context.Database.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS ""NftItems"" (
                         ""Id"" TEXT NOT NULL CONSTRAINT ""PK_NftItems"" PRIMARY KEY,
@@ -86,20 +86,17 @@ namespace DteamBackend.Services
                     );
                 ");
 
-                // 2. Безопасное добавление новых колонок для существующей таблицы
                 try { await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""NftItems"" ADD COLUMN ""UserId"" TEXT NULL;"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""NftItems"" ADD COLUMN ""FromAddress"" TEXT NULL;"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""NftItems"" ADD COLUMN ""LastTransferredAt"" TEXT NULL;"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""NftItems"" ADD COLUMN ""GiftMessage"" TEXT NULL;"); } catch { }
 
-                // 3. Индексы для таблицы NftItems
                 try { await _context.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_NftItems_TokenId"" ON ""NftItems"" (""TokenId"");"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_NftItems_Rarity"" ON ""NftItems"" (""Rarity"");"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_NftItems_IsMinted"" ON ""NftItems"" (""IsMinted"");"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_NftItems_UserId"" ON ""NftItems"" (""UserId"");"); } catch { }
                 try { await _context.Database.ExecuteSqlRawAsync(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_NftItems_Combo"" ON ""NftItems"" (""BackgroundIndex"", ""PatternIndex"", ""ModelIndex"");"); } catch { }
 
-                // 4. Таблица NftTransfers и её индексы
                 await _context.Database.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS ""NftTransfers"" (
                         ""Id"" TEXT NOT NULL CONSTRAINT ""PK_NftTransfers"" PRIMARY KEY,
@@ -120,7 +117,6 @@ namespace DteamBackend.Services
                     CREATE INDEX IF NOT EXISTS ""IX_NftTransfers_ToUserId"" ON ""NftTransfers"" (""ToUserId"");
                 ");
 
-                // 5. Синхронизация TokenId для уже сминченных NFT с реальным блокчейн-токеном из NftTransfers
                 try
                 {
                     var targetContract = _configuration["Ethereum:NftContractAddress"] ?? DefaultContractAddress;
@@ -130,7 +126,7 @@ namespace DteamBackend.Services
                         _logger.LogInformation("[NftService] Contract address changed to {NewContract}. Resetting collection for new contract...", targetContract);
                         await _context.Database.ExecuteSqlRawAsync(@"
                             DELETE FROM ""NftTransfers"";
-                            UPDATE ""NftItems"" 
+                            UPDATE ""NftItems""
                             SET ""IsMinted"" = 0, ""OwnerAddress"" = NULL, ""FromAddress"" = NULL, ""UserId"" = NULL, ""ContractAddress"" = {0};
                             UPDATE ""Users"" SET ""TimeRewardNftsMintedCount"" = 0;
                         ", targetContract);
@@ -168,7 +164,6 @@ namespace DteamBackend.Services
                 var existingCount = await _context.NftItems.CountAsync();
                 var pngFiles = Directory.GetFiles(nftOutputDir, "*.png");
 
-                // Если папка пуста или в БД нет записей, запускаем генерацию и сидирование
                 if (pngFiles.Length == 0)
                 {
                     _logger.LogInformation("[NftService] NFT output directory is empty. Running image combination via nftCombiner.js...");
@@ -221,7 +216,6 @@ namespace DteamBackend.Services
                     pngFiles = Directory.GetFiles(nftOutputDir, "*.png");
                 }
 
-                // Сидируем записи в базу данных, если их там ещё нет
                 if (existingCount == 0 && pngFiles.Length > 0)
                 {
                     _logger.LogInformation($"[NftService] Seeding {pngFiles.Length} NFT items to database...");
@@ -418,7 +412,7 @@ namespace DteamBackend.Services
             }
             else
             {
-                // Обираємо випадковий незамінчений NFT зі всієї колекції
+
                 var unmintedIds = await _context.NftItems
                     .Where(n => !n.IsMinted)
                     .Select(n => n.Id)
@@ -482,7 +476,6 @@ namespace DteamBackend.Services
                 );
             }
 
-            // Считываем receipt для получения настоящего ончейн tokenId
             try
             {
                 var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
@@ -546,11 +539,11 @@ namespace DteamBackend.Services
 
         private static NftRarity CalculateRarity(int bgIdx, int patIdx, int modIdx)
         {
-            if (modIdx == 5) return NftRarity.Legendary; // Золотой Король Доллар
-            if (modIdx == 4 || patIdx == 2) return NftRarity.Epic; // Джентльмен или Золотой Дождь
-            if (modIdx == 3 || patIdx == 4) return NftRarity.Rare; // Киберпанк или Бычий Рынок
-            if (modIdx == 2 || patIdx == 1) return NftRarity.Uncommon; // Thug Life или Неон
-            return NftRarity.Common; // Классический безумный доллар
+            if (modIdx == 5) return NftRarity.Legendary;
+            if (modIdx == 4 || patIdx == 2) return NftRarity.Epic;
+            if (modIdx == 3 || patIdx == 4) return NftRarity.Rare;
+            if (modIdx == 2 || patIdx == 1) return NftRarity.Uncommon;
+            return NftRarity.Common;
         }
 
         private static decimal GetBasePrice(NftRarity rarity) => rarity switch
@@ -580,3 +573,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

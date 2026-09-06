@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { 
-    Gamepad2, 
-    ShoppingCart, 
-    UserPlus, 
-    Coins, 
-    Star, 
-    Sparkles, 
-    Trophy, 
-    Heart, 
-    Clock, 
+  import {
+    Gamepad2,
+    ShoppingCart,
+    UserPlus,
+    Coins,
+    Star,
+    Sparkles,
+    Trophy,
+    Heart,
+    Clock,
     ExternalLink,
     ArrowRight
   } from 'lucide-svelte';
@@ -58,15 +58,14 @@
       return null;
     }
   });
+
 </script>
 
 <div class="p-4 sm:p-5 rounded-3xl bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-xl hover:shadow-cyan-950/50 space-y-3.5 group text-slate-100">
-  
-  <!-- Activity Card Header: User Avatar + Action Meta -->
+
   <div class="flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 min-w-0">
-      
-      <!-- User Avatar -->
+
       <button
         type="button"
         onclick={handleOpenUser}
@@ -80,7 +79,6 @@
         {/if}
       </button>
 
-      <!-- Username & Action -->
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <button
@@ -91,7 +89,6 @@
             {activity.username}
           </button>
 
-          <!-- Type Badge -->
           {#if activity.type === UserActivityType.GamePurchased}
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[10px] font-extrabold uppercase tracking-wider">
               <ShoppingCart class="w-3 h-3" />
@@ -131,14 +128,12 @@
       </div>
     </div>
 
-    <!-- Timestamp -->
     <div class="flex items-center gap-1 text-[11px] text-slate-500 shrink-0 font-medium">
       <Clock class="w-3 h-3 text-slate-500" />
       <span>{formatRelativeTime(activity.createdAt)}</span>
     </div>
   </div>
 
-  <!-- Activity Attached Content Details -->
   {#if activity.type === UserActivityType.GamePurchased && activity.imageUrl}
     <div
       role="button"
@@ -188,3 +183,4 @@
     </div>
   {/if}
 </div>
+

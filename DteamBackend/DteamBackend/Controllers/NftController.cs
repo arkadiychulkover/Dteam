@@ -75,7 +75,7 @@ namespace DteamBackend.Controllers
         [HttpGet("config")]
         public async Task<ActionResult> GetConfig()
         {
-            var contractAddress = _configuration["Ethereum:NftContractAddress"] 
+            var contractAddress = _configuration["Ethereum:NftContractAddress"]
                                 ?? "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
             var totalCount = await _nftService.GetTotalCountAsync();
 
@@ -89,3 +89,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

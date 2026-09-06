@@ -1,23 +1,93 @@
 import { network } from "hardhat";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function syncAddresses(pointsAddress, nftAddress) {
+    console.log("\n--- Synchronizing Contract Addresses across Project ---");
+
+    const backendAppSettingsPath = path.resolve(__dirname, "../../DteamBackend/DteamBackend/appsettings.json");
+    if (fs.existsSync(backendAppSettingsPath)) {
+        try {
+            const content = fs.readFileSync(backendAppSettingsPath, "utf-8");
+            const config = JSON.parse(content);
+            if (!config.Ethereum) config.Ethereum = {};
+            config.Ethereum.ContractAddress = pointsAddress;
+            config.Ethereum.NftContractAddress = nftAddress;
+            fs.writeFileSync(backendAppSettingsPath, JSON.stringify(config, null, 2) + "\n", "utf-8");
+            console.log(" [Backend] Updated appsettings.json with new addresses");
+        } catch (err) {
+            console.warn("  [Backend] Could not update appsettings.json:", err.message);
+        }
+    }
+
+    const frontendContractsDir = path.resolve(__dirname, "../../DteamFrontend/dteam-app/src/lib/contracts");
+    if (!fs.existsSync(frontendContractsDir)) {
+        fs.mkdirSync(frontendContractsDir, { recursive: true });
+    }
+    const frontendAddressesPath = path.join(frontendContractsDir, "addresses.json");
+    try {
+        const addressesData = {
+            pointsAddress,
+            nftAddress,
+            updatedAt: new Date().toISOString()
+        };
+        fs.writeFileSync(frontendAddressesPath, JSON.stringify(addressesData, null, 2) + "\n", "utf-8");
+        console.log(" [Frontend] Updated src/lib/contracts/addresses.json");
+    } catch (err) {
+        console.warn("  [Frontend] Could not write addresses.json:", err.message);
+    }
+
+    const nftServicePath = path.resolve(__dirname, "../../DteamFrontend/dteam-app/src/lib/services/nftService.ts");
+    if (fs.existsSync(nftServicePath)) {
+        try {
+            let content = fs.readFileSync(nftServicePath, "utf-8");
+            content = content.replace(
+                /export const DTEAM_NFT_CONTRACT_ADDRESS = ['"][^'"]+['"];/,
+                `export const DTEAM_NFT_CONTRACT_ADDRESS = '${nftAddress}';`
+            );
+            fs.writeFileSync(nftServicePath, content, "utf-8");
+            console.log(" [Frontend] Updated DTEAM_NFT_CONTRACT_ADDRESS in nftService.ts");
+        } catch (err) {
+            console.warn("  [Frontend] Could not update nftService.ts:", err.message);
+        }
+    }
+
+    const blockchainServicePath = path.resolve(__dirname, "../../DteamFrontend/dteam-app/src/lib/services/blockchainService.ts");
+    if (fs.existsSync(blockchainServicePath)) {
+        try {
+            let content = fs.readFileSync(blockchainServicePath, "utf-8");
+            content = content.replace(
+                /export const DTEAM_POINTS_CONTRACT_ADDRESS = ['"][^'"]+['"];/,
+                `export const DTEAM_POINTS_CONTRACT_ADDRESS = '${pointsAddress}';`
+            );
+            fs.writeFileSync(blockchainServicePath, content, "utf-8");
+            console.log(" [Frontend] Updated DTEAM_POINTS_CONTRACT_ADDRESS in blockchainService.ts");
+        } catch (err) {
+            console.warn("  [Frontend] Could not update blockchainService.ts:", err.message);
+        }
+    }
+    console.log("------------------------------------------------------\n");
+}
 
 async function main() {
     const { ethers } = await network.create();
     const [deployer] = await ethers.getSigners();
     console.log("Deploying contracts with account:", deployer.address);
 
-    // 1. Deploy DteamPoints (Nonce 0 -> 0x5FbDB2315678afecb367f032d93F642f64180aa3)
     const DteamPoints = await ethers.getContractFactory("DteamPoints");
     const points = await DteamPoints.deploy();
     await points.waitForDeployment();
     const pointsAddress = await points.getAddress();
     console.log("DteamPoints deployed to:", pointsAddress);
 
-    // 2. Mint initial points to deployer (Nonce 1)
     const mintTx = await points.mint(deployer.address, ethers.parseEther("1000000000"));
     await mintTx.wait();
     console.log("Minted 1,000,000,000 DTP to:", deployer.address);
 
-    // 3. Deploy DNFT (Nonce 2 -> 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0)
     const DNFT = await ethers.getContractFactory("DNFT");
     const nft = await DNFT.deploy();
     await nft.waitForDeployment();
@@ -28,10 +98,13 @@ async function main() {
     console.log(" Dteam Contracts Deployed Successfully!");
     console.log(" DteamPoints (DTP):", pointsAddress);
     console.log(" DNFT (Badges):    ", nftAddress);
-    console.log("=================================\n");
+    console.log("=================================");
+
+    syncAddresses(pointsAddress, nftAddress);
 }
 
 main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
 });
+

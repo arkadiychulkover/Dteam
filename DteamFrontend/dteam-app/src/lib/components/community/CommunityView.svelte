@@ -46,7 +46,6 @@
   let fileInputEl: HTMLInputElement | undefined = $state();
   let selectedFile = $state<File | null>(null);
 
-  // Ссылки на поля ввода текста для модификатора
   let contentTextareaEl: HTMLTextAreaElement | undefined = $state();
 
   function setTab(tab: TabType) {
@@ -222,10 +221,6 @@
     onDestroy(unsubscribeOnline);
   });
 
-  // Экранируем HTML, затем превращаем розмітку тулбара (**bold**, *italic*,
-  // <u>underline</u>, ![alt](url)) у реальні теги. Раніше пост рендерився
-  // як звичайний текст, тому вся розмітка показувалась "як є" — буквально
-  // зі зірочками й тегами. Тепер вона реально застосовується.
   function escapeHtml(text: string): string {
     return text
       .replace(/&/g, '&amp;')
@@ -266,10 +261,10 @@
     const start = contentTextareaEl.selectionStart;
     const end = contentTextareaEl.selectionEnd;
     const selectedText = content.substring(start, end);
-    
+
     // Если текст выделен — оборачиваем его, если нет — подставляем слово "текст"
     const replacement = `${chunk.start}${selectedText || 'текст'}${chunk.end}`;
-    
+
     content = content.substring(0, start) + replacement + content.substring(end);
 
     // Возвращаем фокус и выделяем вставленный шаблон / текст
@@ -313,12 +308,12 @@
       guide: 'guides'
     };
 
-    const finalTitle = activeTab === 'screenshot' || activeTab === 'video' 
-      ? (caption || `${activeTab.toUpperCase()} post`) 
+    const finalTitle = activeTab === 'screenshot' || activeTab === 'video'
+      ? (caption || `${activeTab.toUpperCase()} post`)
       : title;
 
-    const finalContent = activeTab === 'guide' 
-      ? `${description}\n\n${content}` 
+    const finalContent = activeTab === 'guide'
+      ? `${description}\n\n${content}`
       : (content || caption || 'Без опису');
 
     const postPayload = {
@@ -339,7 +334,7 @@
         message: 'Пост успішно опубліковано!',
         type: 'success'
       });
-      
+
       setTab('discussion');
       loadPosts();
     } catch (error: any) {
@@ -369,17 +364,16 @@
 />
 
 <div class="min-h-screen bg-[#05181e] text-slate-100 p-4 md:p-8 flex flex-col items-center w-full">
-  
+
   <h1 class="text-3xl font-black mb-6 tracking-wide text-white font-display">Створення публікації</h1>
 
   <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
     <div class="lg:col-span-3 bg-[#03232c] border border-cyan-900/60 rounded-2xl p-6 shadow-2xl flex flex-col justify-between min-h-[600px]">
-      
+
       <div>
-        
-        <!-- Game Selection for Community Post -->
-        <div class="mb-6 p-4 rounded-2xl bg-[#02171d]/90 border border-cyan-900/60 flex items-center justify-between gap-4 shadow-inner">
+
+        <div class="mb-6 p-4 rounded-2xl bg-[#02171d]/90 border border-cyan-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-inner">
           <div class="flex items-center gap-3.5 min-w-0">
             {#if selectedGame}
               <div class="w-14 h-10 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
@@ -411,13 +405,13 @@
           <button
             type="button"
             onclick={() => isSelectGameModalOpen = true}
-            class="px-4 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm text-center"
           >
             {selectedGame ? 'Змінити гру' : 'Обрати гру'}
           </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-2 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
           <button
             type="button"
             onclick={() => setTab('discussion')}
@@ -425,7 +419,7 @@
           >
             Обговорення
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('screenshot')}
@@ -433,7 +427,7 @@
           >
             Скріншот
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('video')}
@@ -441,7 +435,7 @@
           >
             Відео
           </button>
-          
+
           <button
             type="button"
             onclick={() => setTab('guide')}
@@ -518,7 +512,7 @@
 
         {#if activeTab === 'screenshot'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -558,7 +552,7 @@
 
         {#if activeTab === 'video'}
           <div class="space-y-5">
-            
+
             <button
               type="button"
               onclick={openFilePicker}
@@ -599,7 +593,7 @@
         {#if activeTab === 'guide'}
           <div class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-              
+
               <div>
                 <span class="block text-xs text-slate-400 mb-1.5 font-bold">Обкладинка</span>
                 <button
@@ -693,7 +687,7 @@
         >
           Відхилити
         </button>
-        
+
         <button
           type="button"
           onclick={() => handleSubmit()}
@@ -735,7 +729,7 @@
 
       <div class="bg-[#03232c] border border-cyan-900/60 rounded-2xl p-5 shadow-xl">
         <h2 class="text-base font-bold text-white mb-4">Правила спільноти</h2>
-        
+
         <ol class="space-y-4 text-xs text-slate-300 leading-relaxed">
           <li class="pb-3 border-b border-cyan-900/40">
             <span class="font-bold text-slate-200">1.</span> Публікуйте тільки оригінальний контент.

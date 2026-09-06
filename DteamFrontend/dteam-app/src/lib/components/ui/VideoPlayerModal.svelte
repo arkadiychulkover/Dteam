@@ -46,7 +46,6 @@
   let showControls = $state(true);
   let controlsTimeout: any = null;
 
-  // Resolve backend video URL or external URL
   const resolvedSrc = $derived.by(() => {
     if (!videoUrl) return '';
     if (
@@ -76,7 +75,7 @@
       const v = urlObj.searchParams.get('v');
       if (v) return `https://www.youtube.com/embed/${v}?autoplay=1`;
     } catch {
-      // fallback
+
     }
     return videoUrl;
   });
@@ -211,6 +210,7 @@
       document.body.style.overflow = '';
     };
   });
+
 </script>
 
 {#if isOpen}
@@ -227,7 +227,7 @@
       onmousemove={handleMouseMove}
       class="relative w-full max-w-5xl bg-[#03151e] border border-cyan-500/30 rounded-2xl overflow-hidden shadow-2xl shadow-cyan-950/60 flex flex-col max-h-[92vh] group select-none"
     >
-      <!-- Header bar with Title and Close button -->
+
       <div
         class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-b from-[#021017]/90 to-[#021017]/40 border-b border-cyan-500/20 z-20 transition-opacity duration-300 {showControls
           ? 'opacity-100'
@@ -273,7 +273,6 @@
         </button>
       </div>
 
-      <!-- Video Player Area -->
       <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[300px] md:min-h-[480px]">
         {#if isYouTube}
           <iframe
@@ -284,7 +283,7 @@
             allowfullscreen
           ></iframe>
         {:else if resolvedSrc}
-          <!-- Native HTML5 Video Player -->
+
           <video
             bind:this={videoElement}
             src={resolvedSrc}
@@ -310,14 +309,12 @@
             <track kind="captions" />
           </video>
 
-          <!-- Buffering Spinner -->
           {#if isBuffering}
             <div class="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none z-10">
               <Loader2 class="w-12 h-12 text-cyan-400 animate-spin" />
             </div>
           {/if}
 
-          <!-- Center Big Play Button when paused -->
           {#if !isPlaying && !isBuffering}
             <button
               type="button"
@@ -330,13 +327,12 @@
             </button>
           {/if}
 
-          <!-- Custom Bottom Control Bar -->
           <div
             class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 z-20 flex flex-col gap-2 transition-opacity duration-300 {showControls
               ? 'opacity-100'
               : 'opacity-0 pointer-events-none'}"
           >
-            <!-- Progress Timeline Bar -->
+
             <div class="relative w-full flex items-center group/scrubber">
               <input
                 type="range"
@@ -349,9 +345,8 @@
               />
             </div>
 
-            <!-- Controls Row -->
             <div class="flex items-center justify-between pt-1">
-              <!-- Left: Play/Pause, Rewind, Time, Volume -->
+
               <div class="flex items-center gap-3">
                 <button
                   type="button"
@@ -377,14 +372,12 @@
                   <RotateCcw class="w-4 h-4" />
                 </button>
 
-                <!-- Time display -->
                 <div class="text-xs font-medium text-slate-300 tabular-nums">
                   <span class="text-white">{formatTime(currentTime)}</span>
                   <span class="text-slate-500"> / </span>
                   <span>{formatTime(duration)}</span>
                 </div>
 
-                <!-- Volume control -->
                 <div class="flex items-center gap-1.5 group/vol pl-2">
                   <button
                     type="button"
@@ -406,12 +399,11 @@
                     step="0.05"
                     value={isMuted ? 0 : volume}
                     oninput={handleVolumeChange}
-                    class="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-cyan-400 opacity-80 hover:opacity-100 transition-opacity"
+                    class="hidden sm:block w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-cyan-400 opacity-80 hover:opacity-100 transition-opacity"
                   />
                 </div>
               </div>
 
-              <!-- Right: Source Link & Fullscreen -->
               <div class="flex items-center gap-2">
                 <a
                   href={resolvedSrc}
@@ -447,3 +439,4 @@
     </div>
   </div>
 {/if}
+

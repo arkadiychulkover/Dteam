@@ -64,6 +64,7 @@
     gamesStore.loadGames();
     loadRecommended();
   });
+
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-12 animate-in fade-in">
@@ -481,3 +482,4 @@
   {/if}
 {/if}
 </div>
+

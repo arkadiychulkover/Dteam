@@ -138,6 +138,7 @@
   const favoritesCount = $derived($libraryStore.items.filter((i) => i.isFavorite).length);
 
   const openedGame = $derived<Game | undefined>(openedItem?.game);
+
 </script>
 
 <div class="flex h-full min-h-[calc(100vh-56px)]">
@@ -462,37 +463,42 @@
                     tabindex="0"
                     onclick={() => openGame(item)}
                     onkeydown={(e) => e.key === 'Enter' && openGame(item)}
-                    class="group flex items-center gap-6 p-3 rounded-2xl bg-[#061820]/95 hover:bg-[#092530] border border-cyan-500/20 hover:border-cyan-400/60 shadow-lg transition-all duration-300 cursor-pointer"
+                    class="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 p-3 rounded-2xl bg-[#061820]/95 hover:bg-[#092530] border border-cyan-500/20 hover:border-cyan-400/60 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     <img
                       src={g.headerImageUrl || g.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600'}
                       alt={g.title}
-                      class="w-44 h-20 rounded-xl object-cover shrink-0"
+                      class="w-full sm:w-44 h-32 sm:h-20 rounded-xl object-cover shrink-0"
                     />
 
-                    <div class="flex-1 flex items-center gap-4 min-w-0">
-                      <h4 class="text-base font-bold text-white truncate">{g.title}</h4>
-                      <button
-                        onclick={(e) => { e.stopPropagation(); uiStore.addToast({ title: 'Завантаження', message: `Завантаження '${g.title}' розпочато.`, type: 'success' }); }}
-                        class="px-5 py-1.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-all cursor-pointer shrink-0"
-                      >
-                        Скачати
-                      </button>
-                    </div>
+                    <div class="flex-1 min-w-0 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div class="flex items-center justify-between sm:justify-start gap-3 min-w-0">
+                        <h4 class="text-base font-bold text-white truncate">{g.title}</h4>
+                        <button
+                          onclick={(e) => { e.stopPropagation(); uiStore.addToast({ title: 'Завантаження', message: `Завантаження '${g.title}' розпочато.`, type: 'success' }); }}
+                          class="px-4 py-1.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-all cursor-pointer shrink-0"
+                        >
+                          Скачати
+                        </button>
+                      </div>
 
-                    <div class="flex flex-col items-end text-xs text-slate-400 shrink-0">
-                      <span>Розмір на диску</span>
-                      <strong class="text-white text-sm">{formatPlayTime(item.playTimeMinutes)}</strong>
-                    </div>
+                      <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-cyan-950/40 w-full sm:w-auto">
+                        <div class="flex sm:flex-col items-center sm:items-end justify-between text-xs text-slate-400 gap-2 sm:gap-0">
+                          <span>Час у грі</span>
+                          <strong class="text-white text-xs sm:text-sm">{formatPlayTime(item.playTimeMinutes)}</strong>
+                        </div>
 
-                    <div class="flex items-center gap-2 shrink-0">
-                      <button
-                        onclick={(e) => handleToggleFavorite(e, item.gameId)}
-                        class="w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer
-                          {item.isFavorite ? 'bg-cyan-500/20 text-cyan-300' : 'bg-[#112833] text-slate-300 hover:text-cyan-300'}"
-                      >
-                        <Heart class="w-4 h-4 {item.isFavorite ? 'fill-cyan-300' : ''}" />
-                      </button>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <button
+                            onclick={(e) => handleToggleFavorite(e, item.gameId)}
+                            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer
+                              {item.isFavorite ? 'bg-cyan-500/20 text-cyan-300' : 'bg-[#112833] text-slate-300 hover:text-cyan-300'}"
+                            title={item.isFavorite ? 'Видалити з обраного' : 'Додати до обраного'}
+                          >
+                            <Heart class="w-4 h-4 {item.isFavorite ? 'fill-cyan-300' : ''}" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 {/each}

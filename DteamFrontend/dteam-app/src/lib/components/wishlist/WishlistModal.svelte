@@ -4,14 +4,14 @@
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
   import type { WishlistItem } from '../../types';
-  import { 
-    X, 
-    Heart, 
-    Trash2, 
-    ShoppingCart, 
-    Search, 
-    ArrowUpDown, 
-    Sparkles, 
+  import {
+    X,
+    Heart,
+    Trash2,
+    ShoppingCart,
+    Search,
+    ArrowUpDown,
+    Sparkles,
     Gamepad2,
     ExternalLink
   } from 'lucide-svelte';
@@ -51,6 +51,7 @@
     wishlistStore.closeModal();
     gamesStore.selectGame(item.game);
   }
+
 </script>
 
 {#if $wishlistStore.isModalOpen}
@@ -219,3 +220,4 @@
     </div>
   </div>
 {/if}
+

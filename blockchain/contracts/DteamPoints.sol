@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.8.2 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -13,6 +13,14 @@ contract DteamPoints is ERC20, Ownable {
 
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);
+    }
+
+    function transfer(address, uint256) public pure override returns (bool) {
+        revert("DteamPoints: transfers are disabled");
+    }
+
+    function transferFrom(address, address, uint256) public pure override returns (bool) {
+        revert("DteamPoints: transfers are disabled");
     }
 
     function _update(
@@ -30,3 +38,4 @@ contract DteamPoints is ERC20, Ownable {
         revert("DteamPoints: approvals are disabled");
     }
 }
+

@@ -19,6 +19,7 @@
     onSelect,
     onViewAll
   }: Props = $props();
+
 </script>
 
 {#if isOpen && searchQuery.trim().length > 0}
@@ -91,3 +92,4 @@
     {/if}
   </div>
 {/if}
+

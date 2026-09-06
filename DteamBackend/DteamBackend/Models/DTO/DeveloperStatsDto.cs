@@ -26,3 +26,4 @@ namespace DteamBackend.Models.DTO
         public List<DailyMetricPointDto> DailyDynamics { get; set; } = new();
     }
 }
+

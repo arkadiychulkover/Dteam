@@ -65,3 +65,4 @@ export const developerService = {
     return await api.delete<{ message: string; newsId: string }>(`/developer/news/${newsId}`);
   },
 };
+

@@ -181,6 +181,7 @@
       loadDlcs(game.id);
     }
   });
+
 </script>
 
 <div class="space-y-6 animate-in fade-in duration-300">

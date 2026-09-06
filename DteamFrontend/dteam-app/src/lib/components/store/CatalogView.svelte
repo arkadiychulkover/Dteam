@@ -187,6 +187,7 @@ import { onMount } from 'svelte';
   onMount(() => {
     gamesStore.loadCatalogGames();
   });
+
 </script>
 
 <svelte:window onclick={handleCatalogClickOutside} />
@@ -239,7 +240,7 @@ import { onMount } from 'svelte';
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-cyan-950/80">
     <div class="flex flex-wrap items-center gap-3">
-      <!-- Mobile Filter Toggle Button -->
+
       <button
         type="button"
         onclick={() => isMobileFiltersOpen = !isMobileFiltersOpen}

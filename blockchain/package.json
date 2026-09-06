@@ -7,8 +7,10 @@
     "test": "hardhat test",
     "node": "hardhat node",
     "deploy": "hardhat run scripts/deploy.js",
+    "deploy:all": "hardhat run scripts/deployAll.js --network localhost",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:nft": "hardhat run scripts/nftDeploy.js --network localhost",
+    "node:auto": "node scripts/startNodeAndDeploy.js",
     "console:local": "hardhat console --network localhost",
     "clean": "hardhat clean"
   },

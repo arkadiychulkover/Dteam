@@ -21,14 +21,12 @@
   let archivePath = $state('');
   let isPublished = $state(true);
 
-  // Media
   let coverImageUrl = $state('');
   let headerImageUrl = $state('');
   let screenshotUrls = $state<string[]>([]);
   let isUploadingCover = $state(false);
   let isUploadingScreenshot = $state(false);
 
-  // Genres & Platforms
   const availableGenres = [
     'Action',
     'RPG',
@@ -198,15 +196,16 @@
 
       close();
     } catch {
-      // Handled in store
+
     }
   }
+
 </script>
 
 {#if $uiStore.isEditGameModalOpen && $uiStore.editingGame}
   <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-[#051c27] border border-cyan-500/30 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95">
-      <!-- Header -->
+
       <div class="p-6 bg-[#072432] border-b border-cyan-500/20 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-black flex items-center justify-center font-black shadow-lg shadow-cyan-500/20">
@@ -227,9 +226,8 @@
         </button>
       </div>
 
-      <!-- Form Body -->
       <form onsubmit={(e) => { e.preventDefault(); handleSave(); }} class="p-6 space-y-5 text-xs">
-        <!-- Title & Version -->
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-2">
             <label for="editGameTitle" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -256,7 +254,6 @@
           </div>
         </div>
 
-        <!-- Short Description -->
         <div>
           <label for="editGameShortDesc" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Короткий опис
@@ -269,7 +266,6 @@
           />
         </div>
 
-        <!-- Full Description -->
         <div>
           <label for="editGameDesc" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Повний опис <span class="text-cyan-400">*</span>
@@ -283,7 +279,6 @@
           ></textarea>
         </div>
 
-        <!-- Price & Discount -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label for="editGamePrice" class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -314,7 +309,6 @@
           </div>
         </div>
 
-        <!-- Cover Image -->
         <div>
           <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Обкладинка гри
@@ -340,7 +334,6 @@
           </div>
         </div>
 
-        <!-- Screenshots -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <span class="font-bold text-slate-300 uppercase tracking-wider">
@@ -374,7 +367,6 @@
           {/if}
         </div>
 
-        <!-- Genres Selection -->
         <div>
           <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             Жанри
@@ -392,7 +384,6 @@
           </div>
         </div>
 
-        <!-- Platforms & Tags -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <span class="block font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -424,7 +415,6 @@
           </div>
         </div>
 
-        <!-- Publish toggle -->
         <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#072535] border border-cyan-500/20">
           <div>
             <span class="font-bold text-white block">Статус публікації</span>
@@ -439,7 +429,6 @@
           />
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -467,3 +456,4 @@
     </div>
   </div>
 {/if}
+

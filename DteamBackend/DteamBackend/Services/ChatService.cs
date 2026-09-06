@@ -52,7 +52,6 @@ namespace DteamBackend.Services
                 ? Guid.NewGuid().ToString("N")
                 : dto.ClientMessageId.Trim();
 
-            // 1. Idempotency check: if message with this (SenderId, ClientMessageId) already exists, return it
             var existingMessage = await _context.ChatMessages
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.SenderId == currentUserId && m.ClientMessageId == clientMessageId, cancellationToken);
@@ -105,7 +104,6 @@ namespace DteamBackend.Services
 
             var messageDto = MapToDto(message);
 
-            // Notify receiver & sender in real time
             await _notifier.NotifyMessageReceivedAsync(dto.ReceiverId, messageDto, cancellationToken);
             await _notifier.NotifyMessageReceivedAsync(currentUserId, messageDto, cancellationToken);
 
@@ -155,7 +153,6 @@ namespace DteamBackend.Services
                 nextCursor = EncodeCursor(lastItem.CreatedAt, lastItem.Id);
             }
 
-            // Return items in chronological order for clean client rendering
             pageItems.Reverse();
 
             return new CursorHistoryResponseDto
@@ -186,14 +183,13 @@ namespace DteamBackend.Services
         {
             try
             {
-                // Get all accepted friend IDs
+
                 var friendIds = await _context.Users
                     .AsNoTracking()
                     .Where(u => u.Id == currentUserId)
                     .SelectMany(u => u.Friends.Select(f => f.Id))
                     .ToListAsync(cancellationToken);
 
-                // Also find users with whom we have existing messages
                 var otherUserIdsWithMessages = await _context.ChatMessages
                     .AsNoTracking()
                     .Where(m => (m.SenderId == currentUserId && !m.IsDeletedForSender) ||
@@ -208,13 +204,13 @@ namespace DteamBackend.Services
                 {
                     var demoUsers = await _context.Users
                         .Where(u => u.Id != currentUserId && (
-                            u.Username == "MrsZubarikessa" || 
-                            u.Username == "FirePhoenix" || 
-                            u.Username == "DragonSlayer" || 
-                            u.Username == "TitanCrusher" || 
-                            u.Username == "sinichka_bez_egg" || 
-                            u.Username == "SilentAssassin" || 
-                            u.Username == "LunarMage" || 
+                            u.Username == "MrsZubarikessa" ||
+                            u.Username == "FirePhoenix" ||
+                            u.Username == "DragonSlayer" ||
+                            u.Username == "TitanCrusher" ||
+                            u.Username == "sinichka_bez_egg" ||
+                            u.Username == "SilentAssassin" ||
+                            u.Username == "LunarMage" ||
                             u.Username == "BlazingArrow"))
                         .ToListAsync(cancellationToken);
 
@@ -285,7 +281,6 @@ namespace DteamBackend.Services
 
                         var mainFriend = demoUsers.FirstOrDefault(u => u.Username == "MrsZubarikessa") ?? demoUsers[0];
 
-                        // Seed sample messages with MrsZubarikessa if none exist
                         bool hasAnyMsg = await _context.ChatMessages.AnyAsync(m => (m.SenderId == currentUserId && m.ReceiverId == mainFriend.Id) || (m.SenderId == mainFriend.Id && m.ReceiverId == currentUserId), cancellationToken);
                         if (!hasAnyMsg)
                         {
@@ -447,7 +442,6 @@ namespace DteamBackend.Services
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Real-time SignalR notification for BOTH participants
             await _notifier.NotifyHistoryClearedAsync(friendId, currentUserId, cancellationToken);
             await _notifier.NotifyHistoryClearedAsync(currentUserId, friendId, cancellationToken);
             return true;
@@ -463,7 +457,6 @@ namespace DteamBackend.Services
                 return false;
             }
 
-            // Only the sender (author of the message) can delete it
             if (message.SenderId != currentUserId)
             {
                 return false;
@@ -486,7 +479,6 @@ namespace DteamBackend.Services
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Real-time SignalR notification for BOTH participants
             await _notifier.NotifyMessageDeletedAsync(message.ReceiverId, messageId, message.SenderId, cancellationToken);
             await _notifier.NotifyMessageDeletedAsync(message.SenderId, messageId, message.ReceiverId, cancellationToken);
 
@@ -530,7 +522,6 @@ namespace DteamBackend.Services
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             var contentType = file.ContentType ?? "application/octet-stream";
 
-            // Size checks
             if (file.Length > _options.MaxFileSizeBytes)
             {
                 throw new InvalidOperationException($"File exceeds maximum allowed size of {_options.MaxFileSizeBytes / (1024 * 1024)} MB.");
@@ -578,7 +569,6 @@ namespace DteamBackend.Services
                 return null;
             }
 
-            // Authorization & soft-delete validation: only authenticated participants can access media
             if (currentUserId == Guid.Empty)
             {
                 return null;
@@ -594,7 +584,7 @@ namespace DteamBackend.Services
             }
             else
             {
-                return null; // Not a participant
+                return null;
             }
 
             var fileResult = await _fileStorage.GetFileStreamAsync(message.StorageKey, cancellationToken);
@@ -737,9 +727,10 @@ namespace DteamBackend.Services
             }
             catch
             {
-                // Invalid cursor
+
             }
             return false;
         }
     }
 }
+

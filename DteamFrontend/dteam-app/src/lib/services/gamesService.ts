@@ -95,3 +95,4 @@ export const gamesService = {
     return await api.get<GameRecommendation[]>(`/recommendation${qs}`);
   },
 };
+

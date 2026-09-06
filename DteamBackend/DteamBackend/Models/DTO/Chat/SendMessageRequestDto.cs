@@ -20,3 +20,4 @@ namespace DteamBackend.Models.DTO.Chat
         public Guid? UploadId { get; set; }
     }
 }
+

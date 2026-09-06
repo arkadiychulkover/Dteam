@@ -61,15 +61,16 @@
   }
 
   const filteredConversations = $derived(
-    conversations.filter(c => 
+    conversations.filter(c =>
       !searchQuery.trim() ||
       c.friendUsername.toLowerCase().includes(searchQuery.toLowerCase().trim())
     )
   );
+
 </script>
 
 <aside class="w-80 h-full bg-[#05151c]/95 border-r border-cyan-500/20 flex flex-col shrink-0 overflow-hidden backdrop-blur-xl">
-  <!-- Search Input Bar -->
+
   <div class="p-3.5 border-b border-cyan-500/20">
     <div class="relative">
       <input
@@ -82,13 +83,12 @@
     </div>
   </div>
 
-  <!-- Dialogs List -->
   <div class="flex-1 overflow-y-auto divide-y divide-cyan-500/10">
     {#if filteredConversations.length === 0}
       <div class="h-72 flex flex-col items-center justify-center p-4 text-center text-slate-500 text-xs gap-2">
         <MessageSquareOff class="w-8 h-8 opacity-40 text-cyan-400" />
         <p class="font-medium text-slate-300">{searchQuery ? 'Нічого не знайдено' : 'Немає активних діалогів'}</p>
-        
+
         <div class="flex flex-col gap-2 w-full max-w-[200px] mt-2">
           <button
             type="button"
@@ -115,11 +115,11 @@
           type="button"
           onclick={() => handleSelect(conv.friendId)}
           class="w-full text-left p-3 flex items-center gap-3 transition-all cursor-pointer group relative
-            {isActive 
-              ? 'bg-[#0a2c38] shadow-inner border-l-4 border-cyan-400' 
+            {isActive
+              ? 'bg-[#0a2c38] shadow-inner border-l-4 border-cyan-400'
               : 'hover:bg-[#082029]/80'}"
         >
-          <!-- User Avatar + Online status -->
+
           <div class="relative shrink-0">
             <div class="w-11 h-11 rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-900 to-slate-900 border border-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-sm shadow-md">
               {#if conv.friendAvatarUrl}
@@ -133,13 +133,11 @@
               {/if}
             </div>
 
-            <!-- Online Dot -->
             {#if conv.friendStatus === 1}
               <span class="w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#05151c] absolute -bottom-0.5 -right-0.5 shadow-[0_0_6px_#10b981]"></span>
             {/if}
           </div>
 
-          <!-- Middle Info: Username + Snippet -->
           <div class="flex-1 min-w-0 pr-1">
             <div class="flex items-center justify-between gap-1 mb-0.5">
               <span class="text-xs font-bold text-white truncate tracking-wide group-hover:text-cyan-300 transition-colors">
@@ -155,7 +153,6 @@
                 {formatLastMessageSnippet(conv)}
               </p>
 
-              <!-- Unread Badge -->
               {#if conv.unreadCount > 0}
                 <span class="min-w-[18px] h-[18px] px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-sm animate-in zoom-in">
                   {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
@@ -168,3 +165,4 @@
     {/if}
   </div>
 </aside>
+

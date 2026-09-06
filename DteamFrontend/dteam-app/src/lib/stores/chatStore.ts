@@ -47,7 +47,6 @@ const initialState: ChatState = {
 function createChatStore() {
   const { subscribe, update, set } = writable<ChatState>(initialState);
 
-  // Helper: auto wire SignalR events
   let unsubs: Array<() => void> = [];
 
   function initRealtimeListeners() {
@@ -89,7 +88,6 @@ function createChatStore() {
     update(state => {
       const currentList = state.messages[peerId] || [];
 
-      // Deduplicate / replace optimistic message if clientMessageId matches
       const existingIdx = currentList.findIndex(
         m => m.id === msg.id || (m.clientMessageId && m.clientMessageId === msg.clientMessageId)
       );
@@ -102,7 +100,6 @@ function createChatStore() {
         updatedList = [...currentList, msg];
       }
 
-      // Update conversations list last message and unread count
       const convs = [...state.conversations];
       const convIdx = convs.findIndex(c => c.friendId.toLowerCase() === peerId);
 
@@ -127,7 +124,6 @@ function createChatStore() {
         });
       }
 
-      // Sort conversations by unread and recent
       convs.sort((a, b) => {
         const timeA = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
         const timeB = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
@@ -144,7 +140,6 @@ function createChatStore() {
       };
     });
 
-    // If currently looking at this active conversation and message is from peer, mark read
     const state = get({ subscribe });
     if (state.activeFriendId?.toLowerCase() === peerId && !isMine) {
       chatService.markAsRead(msg.id).catch(() => {});
@@ -310,7 +305,6 @@ function createChatStore() {
     loadHistory(id);
     loadMediaSummary(id);
 
-    // Reset unread count locally for this conversation
     update(s => ({
       ...s,
       conversations: s.conversations.map(c =>
@@ -341,7 +335,6 @@ function createChatStore() {
         isLoadingHistory: false
       }));
 
-      // Mark unread messages as read
       const user = get(currentUser);
       if (user) {
         const unreadIncoming = res.items.filter(m => m.senderId.toLowerCase() === id && m.status !== 2);
@@ -368,7 +361,7 @@ function createChatStore() {
       const res = await chatService.getHistory(friendId, cursor, 50);
       update(s => {
         const existing = s.messages[id] || [];
-        // Prepend older messages
+
         return {
           ...s,
           messages: {
@@ -406,7 +399,6 @@ function createChatStore() {
     const receiverId = rawReceiverId.toLowerCase();
     const clientMessageId = `cm_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Optimistic message
     const optimisticMsg: ChatMessage = {
       id: `opt_${clientMessageId}`,
       clientMessageId,
@@ -420,7 +412,6 @@ function createChatStore() {
       ...extraMeta
     };
 
-    // Add optimistically to UI
     update(s => ({
       ...s,
       messages: {
@@ -438,7 +429,6 @@ function createChatStore() {
         uploadId
       });
 
-      // Update state with confirmed server message
       update(s => {
         const msgs = (s.messages[receiverId] || []).map(m =>
           m.clientMessageId === clientMessageId ? { ...sent, isOptimistic: false } : m
@@ -455,7 +445,7 @@ function createChatStore() {
       loadMediaSummary(receiverId);
     } catch (e) {
       console.warn('[ChatStore] Failed to send message:', e);
-      // Mark optimistic message as failed
+
       update(s => {
         const msgs = (s.messages[receiverId] || []).map(m =>
           m.clientMessageId === clientMessageId ? { ...m, isOptimistic: false, isFailed: true } : m
@@ -565,7 +555,7 @@ function createChatStore() {
 
 export const chatStore = createChatStore();
 
-// Derived total unread count for header badge
 export const totalChatUnreadCount = derived(chatStore, ($c) => {
   return $c.conversations.reduce((sum, item) => sum + item.unreadCount, 0);
 });
+

@@ -181,7 +181,9 @@ namespace DteamBackend.Controllers
                     u.Status,
                     u.IsInFamily,
                     u.IsAdmin,
-                    u.CreatedAt
+                    u.CreatedAt,
+                    u.HardhatAddress,
+                    u.WalletAddress
                 })
                 .FirstOrDefaultAsync();
 
@@ -280,7 +282,9 @@ namespace DteamBackend.Controllers
                 libraryGames,
                 isOwnProfile = viewerId.HasValue && viewerId.Value == userId,
                 friendshipStatus,
-                isIncomingRequest
+                isIncomingRequest,
+                hardhatAddress = user.HardhatAddress,
+                walletAddress = user.WalletAddress
             });
         }
 

@@ -17,3 +17,4 @@ namespace DteamBackend.Interfaces
         Task<NftItem> MintToUserAsync(Guid userId, int? tokenId = null, string? customDescription = null);
     }
 }
+

@@ -37,3 +37,4 @@ namespace DteamBackend.Models
         public DateTime TransferredAt { get; set; } = DateTime.UtcNow;
     }
 }
+

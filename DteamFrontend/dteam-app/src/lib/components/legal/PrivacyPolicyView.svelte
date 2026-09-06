@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Shield, ArrowLeft, Lock, Eye, Database } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
+
 </script>
 
 <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8 animate-in fade-in duration-300">
@@ -74,3 +75,4 @@
     </section>
   </div>
 </div>
+

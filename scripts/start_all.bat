@@ -3,9 +3,9 @@ echo ===================================================
 echo   Starting Dteam: Hardhat, Backend, Frontend
 echo ===================================================
 
-echo [1/3] Starting Hardhat Network...
+echo [1/3] Starting Hardhat Network with Auto-Deploy & Sync...
 start "Hardhat Network" "%~dp0start_hardhat.bat"
-ping 127.0.0.1 -n 3 >nul
+ping 127.0.0.1 -n 6 >nul
 
 echo [2/3] Starting Dteam Backend...
 start "Dteam Backend" "%~dp0start_backend.bat"

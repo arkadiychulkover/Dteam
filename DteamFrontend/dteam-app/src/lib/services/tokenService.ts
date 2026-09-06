@@ -22,3 +22,4 @@ export const tokenService = {
     return res.balance;
   }
 };
+

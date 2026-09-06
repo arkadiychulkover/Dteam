@@ -18,7 +18,7 @@ namespace DteamBackend.Hubs
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? Context.User?.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -51,3 +51,4 @@ namespace DteamBackend.Hubs
         }
     }
 }
+

@@ -1,11 +1,11 @@
 export enum UserActivityType {
-  GamePurchased = 1,       // Покупка гри
-  FriendAdded = 2,         // Новий друг
-  BalanceDeposited = 3,    // Поповнення балансу (TON)
-  ReviewPosted = 4,        // Написано рецензію
-  GamePublished = 5,       // Опубліковано нову гру
-  AchievementUnlocked = 6, // Досягнення
-  WishlistAdded = 7        // Додано у список бажань
+  GamePurchased = 1,
+  FriendAdded = 2,
+  BalanceDeposited = 3,
+  ReviewPosted = 4,
+  GamePublished = 5,
+  AchievementUnlocked = 6,
+  WishlistAdded = 7
 }
 
 export interface UserActivity {
@@ -22,3 +22,4 @@ export interface UserActivity {
   imageUrl?: string | null;
   createdAt: string;
 }
+

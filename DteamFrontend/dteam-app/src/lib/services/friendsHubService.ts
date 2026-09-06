@@ -59,7 +59,6 @@ class FriendsHubService {
           }
         });
 
-        // 1. Подія надсилання заявки у друзі (отримувач підтягує заявки)
         this.connection.on('FriendRequestReceived', (data?: { senderUsername?: string }) => {
           friendsStore.loadRequests();
           if (data?.senderUsername) {
@@ -71,7 +70,6 @@ class FriendsHubService {
           }
         });
 
-        // 2. Подія прийняття заявки (обидві сторони оновлюють друзів та заявки)
         this.connection.on('FriendRequestAccepted', () => {
           friendsStore.loadAll();
         });
@@ -108,3 +106,4 @@ class FriendsHubService {
 }
 
 export const friendsHubService = new FriendsHubService();
+

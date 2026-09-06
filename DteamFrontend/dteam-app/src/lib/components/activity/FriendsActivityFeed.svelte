@@ -22,7 +22,7 @@
         type: 'info'
       });
     } catch {
-      // Handled in store
+
     } finally {
       isRefreshing = false;
     }
@@ -56,7 +56,6 @@
     }
   }
 
-  // Group activities by date
   const groupedActivities = $derived.by(() => {
     const list = $activityStore.friendsActivities;
     const groups: { dateLabel: string; items: UserActivity[] }[] = [];
@@ -82,11 +81,11 @@
 
     return groups;
   });
+
 </script>
 
 <div class="space-y-6">
-  
-  <!-- Feed Header Toolbar -->
+
   <div class="flex items-center justify-between gap-4 pb-2 border-b border-cyan-950/80">
     <div class="flex items-center gap-2">
       <Sparkles class="w-4 h-4 text-cyan-400" />
@@ -110,7 +109,7 @@
   </div>
 
   {#if $activityStore.isLoading && $activityStore.friendsActivities.length === 0}
-    <!-- Loading Skeleton -->
+
     <div class="space-y-4 py-8">
       {#each Array(3) as _}
         <div class="p-5 rounded-3xl bg-[#061820]/60 border border-cyan-500/15 animate-pulse space-y-3">
@@ -127,7 +126,7 @@
     </div>
 
   {:else if $activityStore.friendsActivities.length === 0}
-    <!-- Empty State Matching Figma -->
+
     <div class="py-16 text-center rounded-3xl bg-[#061820]/40 border border-dashed border-cyan-500/20 p-8 space-y-4 max-w-lg mx-auto">
       <div class="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto shadow-lg shadow-cyan-950/50">
         <Activity class="w-8 h-8" />
@@ -150,12 +149,11 @@
     </div>
 
   {:else}
-    <!-- Timeline grouped by date -->
+
     <div class="space-y-6">
       {#each groupedActivities as group (group.dateLabel)}
         <div class="space-y-3">
-          
-          <!-- Date Divider (Matching Figma Date divider component) -->
+
           <div class="flex items-center gap-4 py-1">
             <div class="flex-1 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
             <span class="text-[11px] font-black uppercase tracking-wider text-cyan-300 px-3 py-0.5 rounded-full bg-[#061820] border border-cyan-500/20 shadow-sm">
@@ -164,7 +162,6 @@
             <div class="flex-1 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
           </div>
 
-          <!-- Cards in this date group -->
           <div class="space-y-3">
             {#each group.items as activity (activity.id)}
               <ActivityCard {activity} />
@@ -175,3 +172,4 @@
     </div>
   {/if}
 </div>
+

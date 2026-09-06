@@ -182,7 +182,6 @@ namespace DteamBackend.Services
             await context.Reviews.AddAsync(sampleReview);
             await context.SaveChangesAsync();
 
-            // Seed demo friends from the mockup
             var demoUsersData = new (string email, string username, string avatar, UserStatus status)[]
             {
                 ("mrszubarikessa@dteam.io", "MrsZubarikessa", "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=500&auto=format&fit=crop&q=80", UserStatus.Online),
@@ -195,7 +194,6 @@ namespace DteamBackend.Services
                 ("lunarmage@dteam.io", "LunarMage", "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&auto=format&fit=crop&q=80", UserStatus.Offline)
             };
 
-            // Hardhat accounts #1 to #8 for demo friends
             var hardhatDemoAccounts = new[]
             {
                 "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
@@ -236,7 +234,6 @@ namespace DteamBackend.Services
             }
             await context.SaveChangesAsync();
 
-            // Establish friendships with admin user
             foreach (var friend in friendUsers)
             {
                 bool friendship1 = await context.UserFriends.AnyAsync(uf => uf.UserId == adminUser.Id && uf.FriendId == friend.Id);
@@ -263,7 +260,6 @@ namespace DteamBackend.Services
             }
             await context.SaveChangesAsync();
 
-            // Seed demo messages if none exist
             if (!await context.ChatMessages.AnyAsync())
             {
                 var zubarikessa = friendUsers.First(u => u.Username == "MrsZubarikessa");
@@ -275,7 +271,7 @@ namespace DteamBackend.Services
 
                 var messages = new List<ChatMessage>
                 {
-                    // 1. MrsZubarikessa conversation
+
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -336,7 +332,6 @@ namespace DteamBackend.Services
                         CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5)
                     },
 
-                    // 2. FirePhoenix conversation
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -349,7 +344,6 @@ namespace DteamBackend.Services
                         CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-15)
                     },
 
-                    // 3. DragonSlayer conversation
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -362,7 +356,6 @@ namespace DteamBackend.Services
                         CreatedAt = DateTimeOffset.UtcNow.AddHours(-1)
                     },
 
-                    // 4. TitanCrusher conversation
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -375,7 +368,6 @@ namespace DteamBackend.Services
                         CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-25)
                     },
 
-                    // 5. Sinichka conversation
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -388,7 +380,6 @@ namespace DteamBackend.Services
                         CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-50)
                     },
 
-                    // 6. SilentAssassin conversation
                     new()
                     {
                         Id = Guid.NewGuid(),
@@ -494,7 +485,6 @@ namespace DteamBackend.Services
                                     if (p.LikedByUsers == null) p.LikedByUsers = new List<string>();
                                 }
 
-                                // Обнуляем GameGuidId для постов, чьи игры не существуют в БД
                                 var referencedGameIds = data.Posts
                                     .Where(p => p.GameGuidId.HasValue)
                                     .Select(p => p.GameGuidId!.Value)
@@ -557,7 +547,7 @@ namespace DteamBackend.Services
         {
             try
             {
-                // Check existing columns in Reviews table
+
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();
 
@@ -595,7 +585,6 @@ namespace DteamBackend.Services
                     _logger?.LogInformation("[InitData] Added LikedByUsers column to Reviews table.");
                 }
 
-                // Update index on Reviews table to allow multiple comments by same user on game
                 await context.Database.ExecuteSqlRawAsync(@"
                     DROP INDEX IF EXISTS ""IX_Reviews_UserId_GameId"";
                     CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Reviews_UserId_GameId"" ON ""Reviews"" (""UserId"", ""GameId"") WHERE ""ParentReviewId"" IS NULL;
@@ -693,7 +682,7 @@ namespace DteamBackend.Services
                 {
                     await context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Games"" ADD COLUMN ""SupportedLanguages"" TEXT NULL;");
                 }
-                catch { /* Column already exists or database created fresh */ }
+                catch {  }
 
                 try
                 {
@@ -824,7 +813,6 @@ namespace DteamBackend.Services
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();
 
-                // Check Users table
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "PRAGMA table_info('Users');";
@@ -847,7 +835,6 @@ namespace DteamBackend.Services
                     }
                 }
 
-                // Check Games table
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "PRAGMA table_info('Games');";
@@ -870,7 +857,6 @@ namespace DteamBackend.Services
                     }
                 }
 
-                // Recalculate taste vectors for games that have zero or uninitialized vectors
                 var games = await context.Games.ToListAsync();
                 var changed = false;
                 foreach (var game in games)
@@ -895,3 +881,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

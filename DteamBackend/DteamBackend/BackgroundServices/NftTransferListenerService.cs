@@ -89,7 +89,6 @@ namespace DteamBackend.Services
             var rpcUrl = _configuration["Ethereum:RpcUrl"] ?? "http://127.0.0.1:8545";
             var contractAddress = _configuration["Ethereum:NftContractAddress"] ?? DefaultContractAddress;
 
-            // Wait 5 seconds after startup to ensure DB migrations and initial seeding are complete
             try
             {
                 await Task.Delay(5000, stoppingToken);
@@ -99,7 +98,6 @@ namespace DteamBackend.Services
                 return;
             }
 
-            // Start initial scan from block 0 to ensure any missed historical events are fully captured
             _lastProcessedBlock = 0;
             _logger.LogInformation("[NftTransferListenerService] Starting initial sync scan from block 0");
 
@@ -176,7 +174,6 @@ namespace DteamBackend.Services
             _logger.LogInformation("[NftTransferListenerService] Processing Transfer: From={From}, To={To}, TokenId={TokenId}, Tx={TxHash}",
                 from, to, tokenId, txHash);
 
-            // Prevent duplicate records for the same transaction & token
             var existing = await db.NftTransfers.FirstOrDefaultAsync(
                 t => t.TransactionHash == txHash && t.TokenId == tokenId, ct);
             if (existing != null)
@@ -184,7 +181,6 @@ namespace DteamBackend.Services
                 return;
             }
 
-            // Try matching NftItem by tokenURI from contract (since random items are bound via /api/nft/{guid})
             NftItem? nftItem = null;
             try
             {
@@ -207,7 +203,6 @@ namespace DteamBackend.Services
                 _logger.LogDebug("[NftTransferListenerService] Could not resolve tokenURI for #{TokenId}: {Msg}", tokenId, uriEx.Message);
             }
 
-            // Fallback: Find matching NftItem directly by TokenId
             if (nftItem == null)
             {
                 nftItem = await db.NftItems.FirstOrDefaultAsync(n => n.TokenId == tokenId, ct);
@@ -230,7 +225,6 @@ namespace DteamBackend.Services
                 await db.NftItems.AddAsync(nftItem, ct);
             }
 
-            // Find recipient user with Gifts (by HardhatAddress or WalletAddress, case-insensitive)
             Duser? recipientUser = null;
             if (!string.IsNullOrWhiteSpace(to) && !to.Equals(ZeroAddress, StringComparison.OrdinalIgnoreCase))
             {
@@ -242,7 +236,6 @@ namespace DteamBackend.Services
                         (u.WalletAddress != null && u.WalletAddress.ToLower() == lowerTo), ct);
             }
 
-            // Find sender user with Gifts (if transferred from another user rather than minted from 0x0)
             Duser? senderUser = null;
             if (!string.IsNullOrWhiteSpace(from) && !from.Equals(ZeroAddress, StringComparison.OrdinalIgnoreCase))
             {
@@ -254,7 +247,6 @@ namespace DteamBackend.Services
                         (u.WalletAddress != null && u.WalletAddress.ToLower() == lowerFrom), ct);
             }
 
-            // Remove NFT from previous owner's Gifts collection
             if (senderUser != null)
             {
                 var giftToRemove = senderUser.Gifts.FirstOrDefault(g => g.Id == nftItem.Id || (g.TokenId.HasValue && g.TokenId == tokenId));
@@ -264,7 +256,6 @@ namespace DteamBackend.Services
                 }
             }
 
-            // Update NftItem state and owner
             nftItem.TokenId = tokenId;
             nftItem.Name = $"Dollar NFT #{tokenId:D3}";
             nftItem.OwnerAddress = to;
@@ -274,7 +265,6 @@ namespace DteamBackend.Services
             nftItem.IsMinted = true;
             nftItem.LastTransferredAt = DateTime.UtcNow;
 
-            // Add NFT to new recipient's Gifts collection
             if (recipientUser != null)
             {
                 if (!recipientUser.Gifts.Any(g => g.Id == nftItem.Id || (g.TokenId.HasValue && g.TokenId == tokenId)))
@@ -283,7 +273,6 @@ namespace DteamBackend.Services
                 }
             }
 
-            // Record transfer record in DB
             var transferRecord = new NftTransfer
             {
                 Id = Guid.NewGuid(),
@@ -306,3 +295,4 @@ namespace DteamBackend.Services
         }
     }
 }
+

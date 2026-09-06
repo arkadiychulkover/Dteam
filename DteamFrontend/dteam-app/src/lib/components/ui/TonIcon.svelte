@@ -1,5 +1,6 @@
 <script lang="ts">
   let { class: className = 'w-4 h-4 text-cyan-400 inline-block' }: { class?: string } = $props();
+
 </script>
 
 <svg
@@ -16,3 +17,4 @@
   <path d="M12 14V22" />
   <path d="M3 8.5L12 14L21 8.5" />
 </svg>
+

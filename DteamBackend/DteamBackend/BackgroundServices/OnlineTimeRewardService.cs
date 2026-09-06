@@ -112,7 +112,6 @@ namespace DteamBackend.BackgroundServices
                                     totalTimeSpent = user.TotalTimeSpentSeconds
                                 };
 
-                                // Відправляємо сповіщення на всі активні з'єднання цього користувача
                                 var targetConnectionIds = OnlineHub.ConnectionUserGuids
                                     .Where(kvp => kvp.Value == user.Id)
                                     .Select(kvp => kvp.Key)
@@ -139,3 +138,4 @@ namespace DteamBackend.BackgroundServices
         private const long ActiveRewardIntervalSeconds = OnlineHub.ActiveRewardIntervalSeconds;
     }
 }
+

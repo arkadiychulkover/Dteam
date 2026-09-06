@@ -1,8 +1,8 @@
 import { api } from './api';
-import type { 
-  DepositAddressResponse, 
-  VerifyTransactionRequest, 
-  PaymentVerificationResult, 
+import type {
+  DepositAddressResponse,
+  VerifyTransactionRequest,
+  PaymentVerificationResult,
   TransactionHistoryItem,
   UnifiedTransactionItem
 } from '../types/payment';
@@ -34,3 +34,4 @@ export const paymentService = {
     return await api.get<UnifiedTransactionItem[]>('/payment/transactions');
   }
 };
+

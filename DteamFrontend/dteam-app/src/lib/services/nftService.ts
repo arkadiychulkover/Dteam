@@ -89,12 +89,6 @@ export function getRarityInfo(rarity: NftRarity | number) {
   }
 }
 
-/**
- * Отримання списку значків (NFT) поточного користувача зі смарт-контракту в блокчейні (DNFT):
- * 1. Зчитує токени, які належать даній адресі через події Transfer та перевірку ownerOf
- * 2. Викликає contract.tokenURI(tokenId) для отримання посилання на подарунок
- * 3. Завантажує дані подарунка з бекенда за цим посиланням
- */
 export async function getUserNftsFromContract(walletAddress: string, userId?: string): Promise<NftGift[]> {
   if (!walletAddress) {
     if (userId) {
@@ -105,7 +99,6 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
 
   let provider: any = null;
 
-  // 1. Спроба через MetaMask якщо він підключений до Hardhat (31337)
   if (typeof window !== 'undefined' && (window as any).ethereum) {
     try {
       const browserProvider = new BrowserProvider((window as any).ethereum);
@@ -118,7 +111,6 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     }
   }
 
-  // 2. Фоллбек на прямий Hardhat JSON-RPC
   if (!provider) {
     provider = new JsonRpcProvider(HARDHAT_RPC_URL);
   }
@@ -153,7 +145,6 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     console.warn('[NFT Service] Error querying Transfer events on chain, trying fallback to backend:', err);
   }
 
-  // Якщо через блокчейн нічого не знайшли, але передано userId, фоллбечимось на бекенд
   if (ownedTokenIds.length === 0 && userId) {
     return await getUserGiftsByUserId(userId);
   }
@@ -163,7 +154,6 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     try {
       let uri: string = await contract.tokenURI(tokenId);
 
-      // Якщо uri містить GUID подарунка (/api/nft/{guid})
       const idMatch = uri.match(/\/api\/nft\/([a-f0-9\-]{36})/i);
       if (idMatch && idMatch[1]) {
         try {
@@ -171,7 +161,7 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
           if (giftData) {
             gifts.push({
               ...giftData,
-              tokenId: tokenId, // Номер буквально є айді NFT на блокчейні!
+              tokenId: tokenId,
               onChainTokenId: tokenId
             });
             continue;
@@ -179,12 +169,11 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
         } catch {}
       }
 
-      // Якщо uri повний або відносний, пробуємо також завантажити за tokenId
       const giftData = await api.get<NftGift>(`/nft/token/${tokenId}`);
       if (giftData) {
         gifts.push({
           ...giftData,
-          tokenId: tokenId, // Номер буквально є айді NFT на блокчейні!
+          tokenId: tokenId,
           onChainTokenId: tokenId
         });
       }
@@ -193,15 +182,10 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     }
   }
 
-  // Сортуємо за tokenId за спаданням (найновіші зверху)
   gifts.sort((a, b) => (Number(b.tokenId ?? 0) - Number(a.tokenId ?? 0)));
   return gifts;
 }
 
-/**
- * Отримання подарунків чужого профілю просто за айді користувача з бекенду:
- * GET /api/nft/user/{userId}/gifts
- */
 export async function getUserGiftsByUserId(userId: string): Promise<NftGift[]> {
   if (!userId) return [];
   try {
@@ -212,3 +196,4 @@ export async function getUserGiftsByUserId(userId: string): Promise<NftGift[]> {
     return [];
   }
 }
+

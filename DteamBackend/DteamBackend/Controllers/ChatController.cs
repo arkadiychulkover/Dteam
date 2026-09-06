@@ -22,7 +22,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -127,7 +127,7 @@ namespace DteamBackend.Controllers
         }
 
         [HttpPost("upload")]
-        [RequestSizeLimit(200 * 1024 * 1024)] // 200MB max
+        [RequestSizeLimit(200 * 1024 * 1024)]
         public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file, [FromForm] int? duration, CancellationToken cancellationToken)
         {
             var currentUserId = GetCurrentUserId();
@@ -217,3 +217,4 @@ namespace DteamBackend.Controllers
         public bool IsTyping { get; set; }
     }
 }
+

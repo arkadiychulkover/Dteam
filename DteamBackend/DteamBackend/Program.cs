@@ -140,9 +140,9 @@ namespace DteamBackend
 
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/hubs") || 
-                             path.StartsWithSegments("/hub") || 
-                             path.StartsWithSegments("/api/chat/media") || 
+                            (path.StartsWithSegments("/hubs") ||
+                             path.StartsWithSegments("/hub") ||
+                             path.StartsWithSegments("/api/chat/media") ||
                              path.StartsWithSegments("/api/chat/uploads")))
                         {
                             context.Token = accessToken;
@@ -241,7 +241,6 @@ namespace DteamBackend
 
             app.MapControllers();
 
-            // SignalR hubs
             app.MapHub<FriendsHub>("/hubs/friends");
             app.MapHub<FriendsHub>("/hub/friends");
             app.MapHub<OnlineHub>("/hubs/online");

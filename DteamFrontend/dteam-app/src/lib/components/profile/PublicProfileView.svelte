@@ -19,6 +19,11 @@ import { onMount } from 'svelte';
   import { getUserGiftsByUserId, type NftGift } from '../../services/nftService';
   import BadgeCard from './BadgeCard.svelte';
   import BadgeDetailModal from './BadgeDetailModal.svelte';
+  import { calculateProfileLevel } from '../../utils/levelUtils';
+  import ProfileLevelHexagon from './ProfileLevelHexagon.svelte';
+  import ProfileLevelCard from './ProfileLevelCard.svelte';
+  import { tokenService } from '../../services/tokenService';
+  import { getBalanceDirectFromBlockchain } from '../../services/blockchainService';
 
   type TabId = 'активність' | 'значки' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
   let activeTab = $state<TabId>('активність');
@@ -40,6 +45,31 @@ import { onMount } from 'svelte';
   let selectedGiftForModal = $state<NftGift | null>(null);
   let isGiftModalOpen = $state(false);
 
+  let publicTokenBalance = $state<number | null>(null);
+  let isLoadingPublicBalance = $state(false);
+
+  const publicLevelInfo = $derived(calculateProfileLevel(publicTokenBalance));
+
+  async function loadPublicTokenBalance() {
+    const addr = profile?.hardhatAddress || profile?.walletAddress;
+    if (!addr) {
+      publicTokenBalance = 0;
+      return;
+    }
+    isLoadingPublicBalance = true;
+    try {
+      try {
+        publicTokenBalance = await getBalanceDirectFromBlockchain(addr);
+      } catch {
+        publicTokenBalance = await tokenService.getBalance(addr);
+      }
+    } catch {
+      publicTokenBalance = 0;
+    } finally {
+      isLoadingPublicBalance = false;
+    }
+  }
+
   async function loadUserGifts() {
     if (!profile?.id) return;
     isLoadingGifts = true;
@@ -56,6 +86,7 @@ import { onMount } from 'svelte';
     if (profile?.id) {
       activityStore.loadUserActivities(profile.id);
       loadUserGifts();
+      loadPublicTokenBalance();
     }
   });
 
@@ -150,6 +181,7 @@ import { onMount } from 'svelte';
       default: return { text: 'офлайн', color: 'text-slate-500' };
     }
   }
+
 </script>
 
 <div class="min-h-screen bg-[#05181e] text-slate-200 font-sans pb-12">
@@ -193,6 +225,11 @@ import { onMount } from 'svelte';
           <div class="pb-2">
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <h1 class="text-2xl font-bold text-white">{profile.username}</h1>
+              <ProfileLevelHexagon
+                level={publicLevelInfo.level}
+                size="sm"
+                title="Рівень {publicLevelInfo.level} ({publicLevelInfo.currentXp.toLocaleString('uk-UA')} XP)"
+              />
               {#if profile.isAdmin}
                 <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold uppercase">
                   Admin
@@ -239,6 +276,25 @@ import { onMount } from 'svelte';
             </button>
           </div>
         {/if}
+      </div>
+
+      <div class="lg:hidden bg-[#03232c] border border-cyan-900/40 rounded-2xl p-3.5 mb-4">
+        <ProfileLevelCard tokens={publicTokenBalance} compact={true} />
+      </div>
+
+      <div class="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {#each menuItems as item}
+          <button
+            type="button"
+            onclick={() => activeTab = item.id}
+            class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer {activeTab === item.id ? 'bg-[#0b4e63] text-white shadow-md' : 'bg-[#03232c] text-slate-300 hover:text-white border border-cyan-900/40'}"
+          >
+            <span>{item.label}</span>
+            {#if item.count() !== null}
+              <span class="bg-[#02171d] px-1.5 py-0.5 rounded-full text-[10px] text-cyan-300 font-mono">{item.count()}</span>
+            {/if}
+          </button>
+        {/each}
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
@@ -538,7 +594,12 @@ import { onMount } from 'svelte';
 
         <div class="space-y-6">
 
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+          <div class="hidden lg:block bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+
+            <div class="px-2 pb-3.5 mb-3 border-b border-cyan-900/40">
+              <ProfileLevelCard tokens={publicTokenBalance} />
+            </div>
+
             <div class="flex items-center gap-3 px-4 mb-4">
               <span class="text-base font-medium">Приєднався</span>
               <span class="text-xs text-slate-400 font-mono">{formatDate(profile.createdAt)}</span>

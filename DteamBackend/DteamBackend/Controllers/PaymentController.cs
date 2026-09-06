@@ -26,8 +26,8 @@ namespace DteamBackend.Controllers
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
-            AppDbContext context, 
-            TonService tonService, 
+            AppDbContext context,
+            TonService tonService,
             IActivityService activityService,
             IConfiguration configuration,
             ILogger<PaymentController> logger)
@@ -41,7 +41,7 @@ namespace DteamBackend.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                            ?? User.FindFirst("sub")?.Value;
 
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
@@ -185,7 +185,7 @@ namespace DteamBackend.Controllers
                     imageUrl: null
                 );
             }
-            catch { /* Best effort logging */ }
+            catch {  }
 
             _logger.LogInformation($"[PaymentController] User {user.Id} ({user.Username}) deposited {dto.Amount} TON ({nanoTonsToAdd} nanoTONs). New balance: {user.BalanceInNanoTons} nanoTONs.");
 
@@ -211,7 +211,6 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            // 1. Fetch on-chain TON deposits
             var deposits = await _context.Tranxactions
                 .AsNoTracking()
                 .Where(t => t.UserId == userId)
@@ -230,7 +229,6 @@ namespace DteamBackend.Controllers
                 })
                 .ToListAsync();
 
-            // 2. Fetch game purchases
             var purchases = await _context.UserGames
                 .AsNoTracking()
                 .Include(ug => ug.Game)
@@ -264,7 +262,6 @@ namespace DteamBackend.Controllers
                 };
             }).ToList();
 
-            // 3. Merge & sort chronologically descending
             var allTransactions = deposits
                 .Concat(purchaseDtos)
                 .OrderByDescending(t => t.CreatedAt)
@@ -274,3 +271,4 @@ namespace DteamBackend.Controllers
         }
     }
 }
+

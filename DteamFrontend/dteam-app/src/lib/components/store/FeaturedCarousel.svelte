@@ -28,6 +28,7 @@
       wishlistStore.toggleWishlist(activeGame);
     }
   }
+
 </script>
 
 {#if activeGame}

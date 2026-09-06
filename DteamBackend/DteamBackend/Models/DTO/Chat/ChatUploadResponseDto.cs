@@ -10,3 +10,4 @@ namespace DteamBackend.Models.DTO.Chat
         public string PreviewUrl { get; set; } = string.Empty;
     }
 }
+

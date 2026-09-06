@@ -44,7 +44,6 @@
     }
   });
 
-  // Sync with global player: pause if another audio started
   $effect(() => {
     if ($chatStore.currentPlayingVoiceId !== messageId && isPlaying) {
       pauseAudio();
@@ -145,16 +144,17 @@
   const progressPercent = $derived(
     totalDuration > 0 ? Math.min(100, Math.max(0, (currentTime / totalDuration) * 100)) : 0
   );
+
 </script>
 
 <div class="flex items-center gap-3 w-full {compact ? 'max-w-xs' : 'max-w-sm'} select-none">
-  <!-- Play/Pause Button -->
+
   <button
     type="button"
     onclick={togglePlay}
     class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all duration-200 shadow-md
-      {isPlaying 
-        ? 'bg-cyan-400 text-black shadow-cyan-400/40 scale-105' 
+      {isPlaying
+        ? 'bg-cyan-400 text-black shadow-cyan-400/40 scale-105'
         : 'bg-[#0df2c9] text-black hover:bg-[#00ffa3] hover:scale-105 shadow-[#0df2c9]/30'}"
     title={isPlaying ? 'Пауза' : 'Відтворити'}
   >
@@ -165,19 +165,17 @@
     {/if}
   </button>
 
-  <!-- Progress Bar & Timer -->
   <div class="flex-1 flex flex-col gap-1">
     <div class="relative w-full h-4 flex items-center group cursor-pointer">
-      <!-- Background track -->
+
       <div class="absolute inset-x-0 h-1.5 rounded-full bg-slate-700/60 overflow-hidden">
-        <!-- Filled progress -->
-        <div 
+
+        <div
           class="h-full bg-gradient-to-r from-cyan-400 to-[#0df2c9] rounded-full transition-all duration-75"
           style="width: {progressPercent}%"
         ></div>
       </div>
 
-      <!-- Range input on top for seeking -->
       <input
         type="range"
         min="0"
@@ -188,16 +186,15 @@
         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
 
-      <!-- Scrubber Dot thumb -->
-      <div 
+      <div
         class="absolute w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_8px_rgba(13,242,201,0.8)] pointer-events-none -translate-x-1/2 transition-transform group-hover:scale-125"
         style="left: {progressPercent}%"
       ></div>
     </div>
 
-    <!-- Duration display -->
     <div class="flex justify-between items-center text-[11px] font-mono font-medium text-slate-300/80">
       <span>{formatTime(isPlaying || currentTime > 0 ? currentTime : totalDuration)}</span>
     </div>
   </div>
 </div>
+

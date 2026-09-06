@@ -35,6 +35,8 @@ export interface PublicProfile {
   isOwnProfile: boolean;
   friendshipStatus: 'none' | 'pending' | 'friends';
   isIncomingRequest: boolean;
+  hardhatAddress?: string | null;
+  walletAddress?: string | null;
 }
 
 export interface PublicFriend {
@@ -98,3 +100,4 @@ export const userService = {
     return await api.put('/users/me', patch);
   },
 };
+

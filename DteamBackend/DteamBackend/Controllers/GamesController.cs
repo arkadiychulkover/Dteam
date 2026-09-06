@@ -480,7 +480,6 @@ namespace DteamBackend.Controllers
                 });
             }
 
-            // Top-level review
             var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id && !r.ParentReviewId.HasValue);
             if (existingReview != null)
             {
@@ -512,7 +511,6 @@ namespace DteamBackend.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Calculate average rating and review count only based on top-level reviews
             var topReviews = await _context.Reviews.Where(r => r.GameId == id && !r.ParentReviewId.HasValue).ToListAsync();
             game.ReviewsCount = topReviews.Count;
             game.AverageRating = topReviews.Count > 0 ? Math.Round(topReviews.Average(r => (double)r.Rating), 1) : 5.0;
