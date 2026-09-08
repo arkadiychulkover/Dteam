@@ -104,3 +104,7 @@ build/
 *.db-wal
 App_Data/
 
+# Teammate reference folder
+Dteam-lev/
+
+

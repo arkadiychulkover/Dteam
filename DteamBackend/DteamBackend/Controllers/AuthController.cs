@@ -21,17 +21,20 @@ namespace DteamBackend.Controllers
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
+        private readonly IAccountService _accountService;
 
         public AuthController(
             AppDbContext db,
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IAccountService accountService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
+            _accountService = accountService;
         }
 
         [HttpPost("register")]
@@ -307,6 +310,30 @@ namespace DteamBackend.Controllers
             }
 
             return Ok(new { message = "Success logout" });
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var (success, error) = await _accountService.ChangePasswordAsync(userId, dto);
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return Ok(new { message = "Пароль успішно змінено. Усі активні сесії оновлено." });
         }
     }
 }

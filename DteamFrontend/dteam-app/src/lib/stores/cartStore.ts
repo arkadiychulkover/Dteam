@@ -122,6 +122,55 @@ function createCartStore() {
       }
     },
 
+    addMultipleToCart: async (games: Game[], redirectToCart: boolean = false, successMsg?: string) => {
+      const user = get(currentUser);
+      if (!user?.id) {
+        uiStore.addToast({
+          title: 'Увійдіть в акаунт',
+          message: 'Для додавання товарів до кошика потрібна авторизація.',
+          type: 'warning',
+        });
+        uiStore.setLoginModal(true);
+        return false;
+      }
+
+      let addedCount = 0;
+      for (const game of games) {
+        const state = get({ subscribe });
+        if (!state.cartGameIds.has(game.id)) {
+          try {
+            await cartService.addToCart(game.id);
+            addedCount++;
+          } catch (e) {
+            console.warn('[cartStore] Error adding item to cart:', e);
+          }
+        }
+      }
+
+      try {
+        const summary = await cartService.getCart();
+        const items = summary.items || [];
+        const gameIds = new Set(items.map((i) => i.gameId));
+        update((s) => ({
+          ...s,
+          items,
+          cartGameIds: gameIds,
+          isLoading: false,
+        }));
+      } catch {}
+
+      uiStore.addToast({
+        title: 'Додано до кошика 🛒',
+        message: successMsg || `Додано ${addedCount} товарів до кошика!`,
+        type: 'success',
+      });
+
+      if (redirectToCart) {
+        uiStore.setTab('cart');
+      }
+      return true;
+    },
+
     removeFromCart: async (gameId: string, gameTitle?: string) => {
       const user = get(currentUser);
       if (!user?.id) return;

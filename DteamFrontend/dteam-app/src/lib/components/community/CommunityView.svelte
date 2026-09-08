@@ -4,9 +4,11 @@
   import { mediaService, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { uiStore } from '../../stores/uiStore';
   import { profileStore } from '../../stores/profileStore';
-  import { ThumbsUp, MessageSquare, Loader2, Gamepad2 } from 'lucide-svelte';
+  import { ThumbsUp, MessageSquare, Loader2, Gamepad2, CornerDownRight, Send, X, ZoomIn, Palette } from 'lucide-svelte';
   import { onlineHubService } from '../../services/onlineHubService';
   import SelectGameModal from './SelectGameModal.svelte';
+  import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
+  import type { CommunityComment } from '../../services/communityService';
 
   interface Props {
     gameId?: string | null;
@@ -29,7 +31,7 @@
 
   let onlineCount = $state(onlineHubService.getOnlineCount());
 
-  type TabType = 'discussion' | 'screenshot' | 'video' | 'guide';
+  type TabType = 'discussion' | 'artwork' | 'screenshot' | 'video' | 'guide';
   let activeTab = $state<TabType>('discussion');
 
   let title = $state('');
@@ -47,6 +49,16 @@
   let selectedFile = $state<File | null>(null);
 
   let contentTextareaEl: HTMLTextAreaElement | undefined = $state();
+
+  let openCommentsPostId = $state<string | null>(null);
+  let postCommentsMap = $state<Record<string, CommunityComment[]>>({});
+  let loadingCommentsPostId = $state<string | null>(null);
+  let newCommentText = $state<Record<string, string>>({});
+  let replyingToCommentId = $state<string | null>(null);
+  let replyText = $state('');
+  let isSubmittingReply = $state(false);
+  let isSubmittingComment = $state(false);
+  let lightboxMedia = $state<{ src: string; title?: string; author?: { username: string; avatarUrl?: string } } | null>(null);
 
   function setTab(tab: TabType) {
     activeTab = tab;
@@ -170,9 +182,10 @@
     isDraggingOver = false;
   }
 
-  const feedCategoryLabels: Record<'all' | 'forum' | 'screenshots' | 'videos' | 'guides', string> = {
+  const feedCategoryLabels: Record<'all' | 'forum' | 'artwork' | 'screenshots' | 'videos' | 'guides', string> = {
     all: 'Усі',
     forum: 'Дискусія',
+    artwork: 'Творчі роботи',
     screenshots: 'Скріншот',
     videos: 'Відео',
     guides: 'Гайд',
@@ -303,6 +316,7 @@
 
     const categoryMap: Record<TabType, string> = {
       discussion: 'forum',
+      artwork: 'artwork',
       screenshot: 'screenshots',
       video: 'videos',
       guide: 'guides'
@@ -310,7 +324,7 @@
 
     const finalTitle = activeTab === 'screenshot' || activeTab === 'video'
       ? (caption || `${activeTab.toUpperCase()} post`)
-      : title;
+      : (title || caption || 'Творча робота');
 
     const finalContent = activeTab === 'guide'
       ? `${description}\n\n${content}`
@@ -411,13 +425,21 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
           <button
             type="button"
             onclick={() => setTab('discussion')}
             class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'discussion' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
           >
             Обговорення
+          </button>
+
+          <button
+            type="button"
+            onclick={() => setTab('artwork')}
+            class="py-2.5 rounded-xl font-bold transition-all duration-200 text-center text-xs md:text-sm cursor-pointer {activeTab === 'artwork' ? 'bg-[#0b4e63] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#0b4e63]/20'}"
+          >
+            Творчі роботи
           </button>
 
           <button
@@ -507,6 +529,56 @@
                 </span>
               {/if}
             </button>
+          </div>
+        {/if}
+
+        {#if activeTab === 'artwork'}
+          <div class="space-y-5">
+            <button
+              type="button"
+              onclick={openFilePicker}
+              ondragover={handleDragOver}
+              ondragleave={handleDragLeave}
+              ondrop={handleDrop}
+              disabled={isUploadingMedia}
+              class="w-full border-2 border-dashed rounded-2xl p-14 flex flex-col items-center justify-center bg-[#02171d]/50 hover:bg-[#02171d] transition-colors cursor-pointer disabled:cursor-wait
+                {isDraggingOver ? 'border-cyan-400 bg-[#02171d]' : 'border-cyan-900/60'}"
+            >
+              {#if isUploadingMedia}
+                <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
+                <p class="text-xs text-slate-400">Завантаження арту...</p>
+              {:else if mediaPreviewUrl || mediaUrl}
+                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded Artwork" class="max-h-48 rounded-lg object-cover mb-2" />
+                <p class="text-xs text-cyan-400">Арт успішно обрано</p>
+              {:else}
+                <p class="text-sm text-slate-400 mb-3">Перетягніть файл арту сюди або</p>
+                <span class="bg-[#0b4e63] hover:bg-[#0d6e8a] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-md">
+                  Завантажити арт
+                </span>
+              {/if}
+            </button>
+
+            <div>
+              <label for="artwork-title" class="block text-xs text-slate-400 mb-1.5 font-bold">Назва роботи</label>
+              <input
+                id="artwork-title"
+                type="text"
+                bind:value={title}
+                placeholder="Наприклад: Концепт головного герою..."
+                class="w-full bg-[#02171d] border border-cyan-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="artwork-desc" class="block text-xs text-slate-400 mb-1.5 font-bold">Опис роботи</label>
+              <input
+                id="artwork-desc"
+                type="text"
+                bind:value={caption}
+                placeholder="Короткий опис, інструменти (Photoshop, Blender тощо)..."
+                class="w-full bg-[#02171d] border border-cyan-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
           </div>
         {/if}
 
@@ -819,7 +891,19 @@
             {#if post.media?.type === 'video' && post.media.url}
               <video src={post.media.url} class="mt-3 rounded-xl max-h-96 w-full" controls></video>
             {:else if post.media?.url}
-              <img src={post.media.url} alt="" class="mt-3 rounded-xl max-h-96 w-full object-cover" />
+              <div
+                class="relative mt-3 rounded-xl overflow-hidden cursor-pointer group/img"
+                role="button"
+                tabindex="0"
+                onclick={() => (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
+                onkeydown={(e) => e.key === 'Enter' && (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
+              >
+                <img src={post.media.url} alt="" class="max-h-96 w-full object-cover group-hover/img:scale-101 transition-transform" />
+                <div class="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-xs text-slate-200 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                  <ZoomIn class="w-3 h-3" />
+                  <span>Збільшити</span>
+                </div>
+              </div>
             {/if}
 
             <div class="flex items-center gap-5 mt-4 pt-3 border-t border-cyan-900/40">
@@ -832,17 +916,230 @@
                 <ThumbsUp class="w-3.5 h-3.5 {post.stats.isLiked ? 'fill-cyan-400' : ''}" />
                 {post.stats.likesCount}
               </button>
-              <span class="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+
+              <button
+                type="button"
+                onclick={async () => {
+                  if (openCommentsPostId === post.id) {
+                    openCommentsPostId = null;
+                  } else {
+                    openCommentsPostId = post.id;
+                    if (!postCommentsMap[post.id]) {
+                      loadingCommentsPostId = post.id;
+                      try {
+                        const details = await communityService.getPostDetails(post.id);
+                        postCommentsMap[post.id] = details.comments || [];
+                      } catch {
+                        postCommentsMap[post.id] = [];
+                      } finally {
+                        loadingCommentsPostId = null;
+                      }
+                    }
+                  }
+                }}
+                class="flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer {openCommentsPostId === post.id ? 'text-cyan-300' : 'text-slate-400 hover:text-white'}"
+              >
                 <MessageSquare class="w-3.5 h-3.5" />
-                {post.stats.commentsCount}
-              </span>
+                <span>{post.stats.commentsCount}</span>
+                <span class="text-[10px] text-slate-500 font-normal">
+                  {openCommentsPostId === post.id ? 'Сховати' : 'Коментарі'}
+                </span>
+              </button>
             </div>
+
+            <!-- Expandable Comments with Threaded Replies -->
+            {#if openCommentsPostId === post.id}
+              <div class="mt-4 pt-4 border-t border-cyan-900/40 space-y-4 animate-in fade-in">
+                <!-- Add comment input -->
+                <div class="flex gap-2.5">
+                  <input
+                    type="text"
+                    bind:value={newCommentText[post.id]}
+                    placeholder="Написати коментар..."
+                    onkeydown={async (e) => {
+                      if (e.key === 'Enter') {
+                        const text = (newCommentText[post.id] || '').trim();
+                        if (!text) return;
+                        isSubmittingComment = true;
+                        try {
+                          const c = await communityService.addComment(post.id, text);
+                          postCommentsMap[post.id] = [...(postCommentsMap[post.id] || []), c];
+                          newCommentText[post.id] = '';
+                          post.stats.commentsCount++;
+                        } catch (err: any) {
+                          uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося надіслати коментар', type: 'error' });
+                        } finally {
+                          isSubmittingComment = false;
+                        }
+                      }
+                    }}
+                    class="flex-1 bg-[#02171d] border border-cyan-900/60 focus:border-cyan-400 rounded-xl px-4 py-2 text-xs text-white placeholder:text-slate-500 outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onclick={async () => {
+                      const text = (newCommentText[post.id] || '').trim();
+                      if (!text) return;
+                      isSubmittingComment = true;
+                      try {
+                        const c = await communityService.addComment(post.id, text);
+                        postCommentsMap[post.id] = [...(postCommentsMap[post.id] || []), c];
+                        newCommentText[post.id] = '';
+                        post.stats.commentsCount++;
+                      } catch (err: any) {
+                        uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося надіслати коментар', type: 'error' });
+                      } finally {
+                        isSubmittingComment = false;
+                      }
+                    }}
+                    disabled={isSubmittingComment || !newCommentText[post.id]?.trim()}
+                    class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-colors cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1.5"
+                  >
+                    <Send class="w-3.5 h-3.5" />
+                    <span>Надіслати</span>
+                  </button>
+                </div>
+
+                <!-- Comments list -->
+                {#if loadingCommentsPostId === post.id}
+                  <div class="flex items-center justify-center py-6 text-xs text-slate-400 gap-2">
+                    <Loader2 class="w-4 h-4 text-cyan-400 animate-spin" />
+                    <span>Завантаження коментарів...</span>
+                  </div>
+                {:else if !postCommentsMap[post.id] || postCommentsMap[post.id].length === 0}
+                  <p class="text-xs text-slate-500 text-center py-4">Ще немає коментарів. Будьте першим!</p>
+                {:else}
+                  <div class="space-y-3">
+                    {#each postCommentsMap[post.id] as comment (comment.id)}
+                      <div class="p-3 rounded-xl bg-[#02171d]/80 border border-cyan-900/40 space-y-2">
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2">
+                            <img
+                              src={comment.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.username)}`}
+                              alt={comment.author.username}
+                              class="w-6 h-6 rounded-full object-cover border border-cyan-500/20"
+                            />
+                            <span class="text-xs font-bold text-slate-200">{comment.author.username}</span>
+                            <span class="text-[10px] text-slate-500">{new Date(comment.createdAt).toLocaleDateString('uk-UA')}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onclick={() => {
+                              replyingToCommentId = replyingToCommentId === comment.id ? null : comment.id;
+                              replyText = '';
+                            }}
+                            class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <CornerDownRight class="w-3 h-3" />
+                            <span>Відповісти</span>
+                          </button>
+                        </div>
+
+                        <p class="text-xs text-slate-300 leading-relaxed pl-8">{comment.content}</p>
+
+                        <!-- Nested Replies -->
+                        {#if comment.replies && comment.replies.length > 0}
+                          <div class="pl-8 pt-2 space-y-2 border-l-2 border-cyan-500/20 ml-3">
+                            {#each comment.replies as reply (reply.id)}
+                              <div class="p-2.5 rounded-lg bg-[#03232c]/60 border border-cyan-900/30 space-y-1">
+                                <div class="flex items-center gap-2">
+                                  <img
+                                    src={reply.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author.username)}`}
+                                    alt={reply.author.username}
+                                    class="w-5 h-5 rounded-full object-cover border border-cyan-500/20"
+                                  />
+                                  <span class="text-[11px] font-bold text-slate-200">{reply.author.username}</span>
+                                  <span class="text-[9px] text-slate-500">{new Date(reply.createdAt).toLocaleDateString('uk-UA')}</span>
+                                </div>
+                                <p class="text-xs text-slate-300 pl-7">{reply.content}</p>
+                              </div>
+                            {/each}
+                          </div>
+                        {/if}
+
+                        <!-- Inline Reply Box -->
+                        {#if replyingToCommentId === comment.id}
+                          <div class="pl-8 pt-2 animate-in fade-in flex gap-2">
+                            <input
+                              type="text"
+                              bind:value={replyText}
+                              placeholder="Ваша відповідь..."
+                              onkeydown={async (e) => {
+                                if (e.key === 'Enter') {
+                                  if (!replyText.trim()) return;
+                                  isSubmittingReply = true;
+                                  try {
+                                    const r = await communityService.addReply(comment.id, replyText.trim());
+                                    comment.replies = comment.replies || [];
+                                    comment.replies.push(r);
+                                    postCommentsMap[post.id] = [...postCommentsMap[post.id]];
+                                    replyText = '';
+                                    replyingToCommentId = null;
+                                    post.stats.commentsCount++;
+                                  } catch (err: any) {
+                                    uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося надіслати відповідь', type: 'error' });
+                                  } finally {
+                                    isSubmittingReply = false;
+                                  }
+                                }
+                              }}
+                              class="flex-1 bg-[#011015] border border-cyan-500/40 rounded-xl px-3.5 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none"
+                            />
+                            <button
+                              type="button"
+                              onclick={async () => {
+                                if (!replyText.trim()) return;
+                                isSubmittingReply = true;
+                                try {
+                                  const r = await communityService.addReply(comment.id, replyText.trim());
+                                  comment.replies = comment.replies || [];
+                                  comment.replies.push(r);
+                                  postCommentsMap[post.id] = [...postCommentsMap[post.id]];
+                                  replyText = '';
+                                  replyingToCommentId = null;
+                                  post.stats.commentsCount++;
+                                } catch (err: any) {
+                                  uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося надіслати відповідь', type: 'error' });
+                                } finally {
+                                  isSubmittingReply = false;
+                                }
+                              }}
+                              disabled={isSubmittingReply || !replyText.trim()}
+                              class="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-colors cursor-pointer disabled:opacity-40 shrink-0"
+                            >
+                              Відповісти
+                            </button>
+                            <button
+                              type="button"
+                              onclick={() => { replyingToCommentId = null; replyText = ''; }}
+                              class="p-1.5 rounded-xl text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              <X class="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
     {/if}
   </div>
 </div>
+
+{#if lightboxMedia}
+  <MediaLightboxModal
+    src={lightboxMedia.src}
+    title={lightboxMedia.title}
+    author={lightboxMedia.author}
+    onClose={() => (lightboxMedia = null)}
+  />
+{/if}
 
 <SelectGameModal
   isOpen={isSelectGameModalOpen}

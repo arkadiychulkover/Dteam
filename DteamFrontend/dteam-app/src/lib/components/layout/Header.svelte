@@ -27,12 +27,20 @@
     Menu,
     X,
     Code2,
-    MessageSquare
+    MessageSquare,
+    Settings,
+    Bell,
+    Check,
+    Trash2,
+    Clock
   } from 'lucide-svelte';
   import TonIcon from '../ui/TonIcon.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { formatAddress, formatTon, nanoTonToTon } from '../../utils/formatters';
   import { friendsStore } from '../../stores/friendsStore';
-  import { totalChatUnreadCount } from '../../stores/chatStore';
+  import { chatStore, totalChatUnreadCount } from '../../stores/chatStore';
+  import { notificationStore } from '../../stores/notificationStore';
+  import { getNotificationUrl, type AppNotification } from '../../types/notification';
   import { gamesService } from '../../services/gamesService';
   import type { GameRecommendation } from '../../types';
   import type { CatalogFilterState } from '../../stores/gamesStore';
@@ -65,6 +73,42 @@
   const visibleTabs = $derived(
     baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin)
   );
+
+  function formatRelativeTime(dateStr: string): string {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+      if (diffSec < 60) return 'щойно';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin} хв тому`;
+      const diffHours = Math.floor(diffMin / 60);
+      if (diffHours < 24) return `${diffHours} год тому`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} дн тому`;
+    } catch {
+      return '';
+    }
+  }
+
+  function handleNotificationClick(item: AppNotification) {
+    if (!item.isRead) {
+      notificationStore.markAsRead(item.id);
+    }
+    notificationStore.closeDropdown();
+
+    const target = getNotificationUrl(item);
+    if (target.tab === 'settings') {
+      uiStore.setTab('settings');
+    } else if (target.tab === 'friends') {
+      uiStore.setTab('friends');
+    } else if (target.tab === 'chat') {
+      uiStore.setTab('chat');
+      if (target.param) {
+        chatStore.selectConversation(target.param);
+      }
+    }
+  }
 
   function handleLogout() {
     authStore.logout();
@@ -438,6 +482,150 @@
       </button>
 
       {#if $currentUser}
+        <!-- Notifications Bell & Dropdown Popover -->
+        <div class="relative">
+          <button
+            onclick={() => notificationStore.toggleDropdown()}
+            class="relative w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md
+              {$notificationStore.isDropdownOpen
+                ? 'bg-cyan-500 text-black shadow-cyan-500/30 scale-105'
+                : 'bg-[#061820] text-slate-300 hover:text-white hover:bg-cyan-950/60 border border-cyan-500/30'}"
+            title="Сповіщення"
+          >
+            <Bell class="w-4 h-4" />
+            {#if $notificationStore.unreadCount > 0}
+              <span class="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-lg shadow-rose-500/50 animate-pulse">
+                {$notificationStore.unreadCount > 99 ? '99+' : $notificationStore.unreadCount}
+              </span>
+            {/if}
+          </button>
+
+          {#if $notificationStore.isDropdownOpen}
+            <button type="button" aria-label="Закрити меню" class="fixed inset-0 z-40 bg-transparent border-0 p-0 cursor-default" onclick={() => notificationStore.closeDropdown()}></button>
+            <div class="absolute right-0 mt-2 w-80 sm:w-96 bg-[#081722]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-black/80 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <!-- Popover Header -->
+              <div class="px-4 py-3 border-b border-cyan-500/20 flex items-center justify-between bg-[#040e15]/80">
+                <div class="flex items-center gap-2">
+                  <Bell class="w-4 h-4 text-cyan-400" />
+                  <span class="text-xs font-black text-white tracking-wide uppercase font-display">Сповіщення</span>
+                  {#if $notificationStore.unreadCount > 0}
+                    <span class="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[10px] font-mono font-bold">
+                      +{$notificationStore.unreadCount} нових
+                    </span>
+                  {/if}
+                </div>
+                {#if $notificationStore.notifications.some(n => !n.isRead)}
+                  <button
+                    onclick={() => notificationStore.markAllAsRead()}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Check class="w-3 h-3" /> Прочитати всі
+                  </button>
+                {/if}
+              </div>
+
+              <!-- Notifications Feed -->
+              <div class="max-h-[380px] overflow-y-auto divide-y divide-slate-800/40 custom-scrollbar">
+                {#if $notificationStore.notifications.length === 0}
+                  <div class="py-10 px-4 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-950/40 border border-cyan-500/20 mx-auto flex items-center justify-center text-cyan-400/60 mb-2">
+                      <Bell class="w-6 h-6" />
+                    </div>
+                    <p class="text-xs font-bold text-slate-300">Немає сповіщень</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Тут з'являтимуться важливі події та оновлення</p>
+                  </div>
+                {:else}
+                  {#each $notificationStore.notifications as item (item.id)}
+                    <div
+                      role="button"
+                      tabindex="0"
+                      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNotificationClick(item); }}
+                      class="p-3.5 flex items-start gap-3 transition-colors group relative cursor-pointer
+                        {item.isRead ? 'bg-transparent hover:bg-slate-800/30' : 'bg-cyan-950/20 hover:bg-cyan-900/30 border-l-2 border-cyan-400'}"
+                      onclick={() => handleNotificationClick(item)}
+                    >
+                      <!-- Type Icon / Avatar -->
+                      <div class="relative shrink-0 mt-0.5">
+                        {#if item.actor?.avatarUrl}
+                          <BackendImage src={item.actor.avatarUrl} alt={item.actor.username} class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30" />
+                        {:else if item.type === 'wallet_deposit'}
+                          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <TonIcon class="w-4 h-4" />
+                          </div>
+                        {:else if item.type === 'friend_request' || item.type === 'friend_accepted'}
+                          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            <UserPlus class="w-4 h-4" />
+                          </div>
+                        {:else if item.type === 'chat_message'}
+                          <div class="w-8 h-8 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                            <MessageSquare class="w-4 h-4" />
+                          </div>
+                        {:else}
+                          <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <Bell class="w-4 h-4" />
+                          </div>
+                        {/if}
+                        {#if !item.isRead}
+                          <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-[#081722]"></span>
+                        {/if}
+                      </div>
+
+                      <!-- Text details -->
+                      <div class="flex-1 min-w-0 pr-6">
+                        <h5 class="text-xs font-bold text-white truncate {item.isRead ? 'font-medium' : 'font-black'}">
+                          {item.title}
+                        </h5>
+                        <p class="text-[11px] text-slate-400 leading-snug mt-0.5 break-words">
+                          {item.message}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500 font-mono">
+                          <Clock class="w-2.5 h-2.5" />
+                          <span>{formatRelativeTime(item.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <!-- Delete action -->
+                      <div class="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        <button
+                          onclick={(e) => { e.stopPropagation(); notificationStore.deleteNotification(item.id); }}
+                          class="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          title="Видалити"
+                        >
+                          <Trash2 class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+
+              <!-- Footer with Load More -->
+              {#if $notificationStore.hasMore}
+                <div class="p-2 border-t border-slate-800/80 text-center bg-[#040e15]/40">
+                  <button
+                    onclick={() => notificationStore.loadMore()}
+                    disabled={$notificationStore.isLoading}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {$notificationStore.isLoading ? 'Завантаження...' : 'Показати давніші сповіщення'}
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
+        <!-- Settings Quick Button -->
+        <button
+          onclick={() => uiStore.setTab('settings')}
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md
+            {$uiStore.activeTab === 'settings'
+              ? 'bg-white text-black shadow-white/30 scale-105'
+              : 'bg-[#061820] text-slate-300 hover:text-white hover:bg-cyan-950/60 border border-cyan-500/30'}"
+          title="Налаштування"
+        >
+          <Settings class="w-4 h-4" />
+        </button>
 
         <div class="hidden sm:flex items-center rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] border border-cyan-500/30 hover:border-cyan-400/80 transition-all shadow-inner overflow-hidden">
           <button
@@ -464,9 +652,9 @@
             onclick={() => isUserDropdownOpen = !isUserDropdownOpen}
             class="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 sm:pl-2.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer"
           >
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden">
               {#if $currentUser.avatarUrl}
-                <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
+                <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
               {:else}
                 {$currentUser.username.charAt(0).toUpperCase()}
               {/if}
@@ -499,6 +687,13 @@
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
               >
                 <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('settings'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 hover:text-white cursor-pointer font-bold mt-1"
+              >
+                <Settings class="w-3.5 h-3.5 text-cyan-400" /> Налаштування
               </button>
 
               <button
@@ -653,9 +848,9 @@
         {#if $currentUser}
           <div class="p-3.5 rounded-2xl bg-[#09222c] border border-cyan-500/25 space-y-3">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-sm shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-sm shrink-0 overflow-hidden">
                 {#if $currentUser.avatarUrl}
-                  <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-xl object-cover" />
+                  <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-xl object-cover" />
                 {:else}
                   {$currentUser.username.charAt(0).toUpperCase()}
                 {/if}
@@ -728,6 +923,13 @@
               >
                 <User class="w-4 h-4 text-cyan-400" />
                 <span>Мій профіль</span>
+              </button>
+              <button
+                onclick={() => { uiStore.setTab('settings'); isMobileMenuOpen = false; }}
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-cyan-300 hover:bg-cyan-500/10 cursor-pointer"
+              >
+                <Settings class="w-4 h-4 text-cyan-400" />
+                <span>Налаштування</span>
               </button>
               <button
                 onclick={() => { uiStore.setTab('developer'); isMobileMenuOpen = false; }}

@@ -36,7 +36,9 @@
     Users,
     Gamepad2,
     Cloud,
-    Trophy
+    Trophy,
+    PackageOpen,
+    Sparkles,
   } from 'lucide-svelte';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { friendsService } from '../../services/friendsService';
@@ -192,8 +194,12 @@
     return dlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0);
   });
 
+  const bundleDlcsDiscountedNanoTons = $derived.by(() => {
+    return Math.round(effectiveTotalDlcsNanoTons * 0.8);
+  });
+
   const completeEditionEffectiveNanoTons = $derived.by(() => {
-    return gameEffectivePriceNanoTons + effectiveTotalDlcsNanoTons;
+    return gameEffectivePriceNanoTons + bundleDlcsDiscountedNanoTons;
   });
 
   const completeEditionBaseNanoTons = $derived.by(() => {
@@ -216,12 +222,22 @@
     await cartStore.addToCart(game, redirectToCart);
   }
 
+  async function handleBuyCompleteEdition() {
+    if (!game) return;
+    await cartStore.addMultipleToCart(
+      [game, ...dlcs],
+      true,
+      `Комплект "${game.title}: Повне видання" (гра + усі DLC зі знижкою 20%) додано до кошика!`
+    );
+  }
+
   async function handleAddAllDLC() {
     if (dlcs.length === 0) return;
-    for (const dlc of dlcs) {
-      await cartStore.addToCart(dlc, false);
-    }
-    uiStore.setTab('cart');
+    await cartStore.addMultipleToCart(
+      dlcs,
+      true,
+      `Усі ${dlcs.length} DLC успішно додано до кошика зі знижкою 20%!`
+    );
   }
 
   async function handleAddReview() {
@@ -367,6 +383,35 @@
 
 {#if game}
   <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8 animate-in fade-in duration-300">
+
+    {#if game.isDlc}
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-950/70 via-cyan-950/50 to-[#061820] border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0">
+            <PackageOpen class="w-5 h-5" />
+          </div>
+          <div>
+            <div class="text-xs font-bold text-purple-300 uppercase tracking-wider">Завантажуваний вміст (DLC)</div>
+            <p class="text-xs text-slate-300">
+              Для запуску цього додаткового вмісту необхідна оригінальна гра
+              {#if game.parentGameTitle}
+                <strong class="text-white font-bold"> «{game.parentGameTitle}»</strong>.
+              {:else}
+                в бібліотеці Dteam.
+              {/if}
+            </p>
+          </div>
+        </div>
+        {#if game.parentGameId}
+          <button
+            onclick={() => uiStore.openGameDetails(game.parentGameId!)}
+            class="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-400/40 text-xs font-bold transition-all cursor-pointer shrink-0"
+          >
+            Перейти до базової гри →
+          </button>
+        {/if}
+      </div>
+    {/if}
 
     <div class="sticky top-14 z-30 bg-[#030d12]/95 backdrop-blur-xl -mx-4 lg:-mx-8 px-4 lg:px-8 py-2.5 sm:py-3 border-b border-cyan-950/80 flex items-center justify-between gap-3 shadow-lg overflow-x-auto no-scrollbar">
       <div class="flex items-center gap-4 sm:gap-8 shrink-0">
@@ -774,11 +819,9 @@
               <div>
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-black text-white">{game.title}: Повне видання</h3>
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="px-2 py-0.5 rounded-lg bg-rose-600 text-white font-extrabold text-[10px]">
-                      -{game.discountPercentage}%
-                    </span>
-                  {/if}
+                  <span class="px-2 py-0.5 rounded-lg bg-cyan-400 text-black font-black text-[10px]">
+                    -20% НА DLC
+                  </span>
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-cyan-950/80 text-xs text-slate-400 space-y-1.5">
@@ -792,7 +835,7 @@
                           onclick={() => openDlc(dlc)}
                           class="hover:text-cyan-300 transition-colors cursor-pointer text-left"
                         >
-                          {dlc.title} <span class="text-purple-400">(DLC)</span>
+                          {dlc.title} <span class="text-purple-400">(DLC зі знижкою 20%)</span>
                         </button>
                       </li>
                     {/each}
@@ -813,9 +856,10 @@
                 </div>
 
                 <button
-                  onclick={() => handleBuy(`${game.title}: Повне видання`)}
+                  onclick={handleBuyCompleteEdition}
                   class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs tracking-wide shadow-md transition-all cursor-pointer flex items-center gap-1.5"
                 >
+                  <ShoppingCart class="w-3.5 h-3.5" />
                   <span>У кошик</span>
                 </button>
               </div>
@@ -860,6 +904,17 @@
                 </span>
               </div>
             {/each}
+          </div>
+
+          <div class="pt-2 flex justify-end">
+            <button
+              type="button"
+              onclick={handleAddAllDLC}
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-black font-extrabold text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-2 cursor-pointer"
+            >
+              <ShoppingCart class="w-3.5 h-3.5" />
+              <span>Додати всі DLC до кошика зі знижкою 20% ({dlcs.length})</span>
+            </button>
           </div>
         </div>
       {/if}

@@ -9,6 +9,7 @@ import { onMount } from 'svelte';
   import { gamesService } from '../../services/gamesService';
   import GameRecommendationsDropdown from '../ui/GameRecommendationsDropdown.svelte';
   import GameDetailsModal from './GameDetailsModal.svelte';
+  import CategoryIcon from '../ui/CategoryIcon.svelte';
   import {
     Search,
     SlidersHorizontal,
@@ -236,6 +237,49 @@ import { onMount } from 'svelte';
         Знайти
       </button>
     </form>
+  </div>
+
+  <!-- Category Visual Tiles Showcase -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+        <Sparkles class="w-3.5 h-3.5 text-cyan-400" />
+        <span>Популярні категорії</span>
+      </h3>
+      {#if $gamesStore.filters.genre !== 'All Games'}
+        <button
+          onclick={() => applyFilter({ genre: 'All Games' })}
+          class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer"
+        >
+          Скинути категорію
+        </button>
+      {/if}
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
+      {#each [
+        { name: 'Action', color: 'from-amber-600/25 via-orange-900/30 to-rose-950/50', border: 'border-amber-500/40 hover:border-amber-400' },
+        { name: 'RPG', color: 'from-purple-600/25 via-indigo-900/30 to-purple-950/50', border: 'border-purple-500/40 hover:border-purple-400' },
+        { name: 'Strategy', color: 'from-sky-600/25 via-blue-900/30 to-cyan-950/50', border: 'border-sky-500/40 hover:border-sky-400' },
+        { name: 'Adventure', color: 'from-emerald-600/25 via-teal-900/30 to-emerald-950/50', border: 'border-emerald-500/40 hover:border-emerald-400' },
+        { name: 'Shooter', color: 'from-red-600/25 via-rose-900/30 to-red-950/50', border: 'border-red-500/40 hover:border-red-400' },
+        { name: 'Indie', color: 'from-pink-600/25 via-fuchsia-900/30 to-purple-950/50', border: 'border-pink-500/40 hover:border-pink-400' },
+        { name: 'Cyberpunk', color: 'from-cyan-600/25 via-blue-900/30 to-cyan-950/50', border: 'border-cyan-400/50 hover:border-cyan-300' },
+        { name: 'Horror', color: 'from-rose-950/40 via-stone-900/40 to-black/70', border: 'border-rose-800/40 hover:border-rose-500' },
+      ] as cat}
+        {@const isSelected = $gamesStore.filters.genre === cat.name}
+        <button
+          type="button"
+          onclick={() => applyFilter({ genre: isSelected ? 'All Games' : cat.name })}
+          class="py-3 px-2 rounded-2xl bg-gradient-to-br {cat.color} backdrop-blur-sm border {isSelected ? 'border-cyan-400 ring-2 ring-cyan-400/40 shadow-lg shadow-cyan-500/25 scale-[1.03]' : cat.border} flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-105 cursor-pointer text-center group shadow-md"
+        >
+          <div class="w-8 h-8 flex items-center justify-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] group-hover:scale-115 transition-transform duration-300">
+            <CategoryIcon category={cat.name} class="w-7 h-7" />
+          </div>
+          <span class="text-xs font-black text-white tracking-wide truncate max-w-full group-hover:text-cyan-300 transition-colors">{cat.name}</span>
+        </button>
+      {/each}
+    </div>
   </div>
 
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-cyan-950/80">

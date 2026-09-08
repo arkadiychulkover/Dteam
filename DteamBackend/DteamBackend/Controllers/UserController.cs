@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
+using DteamBackend.Services;
+using DteamBackend.Models.DTO;
+
 namespace DteamBackend.Controllers
 {
     [ApiController]
@@ -14,10 +17,12 @@ namespace DteamBackend.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAccountService _accountService;
 
-        public UserController(AppDbContext context)
+        public UserController(AppDbContext context, IAccountService accountService)
         {
             _context = context;
+            _accountService = accountService;
         }
 
         public class UpdateProfileRequest
@@ -400,5 +405,193 @@ namespace DteamBackend.Controllers
             createdAt = game.CreatedAt,
             updatedAt = game.UpdatedAt
         };
+
+        [HttpGet("settings")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUserSettings()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.NotificationPreferences)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            var prefs = user.NotificationPreferences;
+            var response = new SettingsResponseDto
+            {
+                Profile = new UserProfileSettingsDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Bio = user.Bio,
+                    AvatarUrl = user.AvatarUrl,
+                    BannerUrl = user.BannerUrl,
+                    PreferredLanguage = user.PreferredLanguage ?? "uk",
+                    CreatedAt = user.CreatedAt
+                },
+                Preferences = new NotificationPreferencesDto
+                {
+                    NotifyBigSales = prefs?.NotifyBigSales ?? true,
+                    NotifyWishlistDiscounts = prefs?.NotifyWishlistDiscounts ?? true,
+                    NotifyProfileComments = prefs?.NotifyProfileComments ?? true,
+                    NotifyFriendRequests = prefs?.NotifyFriendRequests ?? true,
+                    NotifyFriendRequestAccepted = prefs?.NotifyFriendRequestAccepted ?? true,
+                    NotifyFriendRequestDeclined = prefs?.NotifyFriendRequestDeclined ?? true,
+                    ChatNotificationsEnabled = prefs?.ChatNotificationsEnabled ?? true,
+                    ChatSoundEnabled = prefs?.ChatSoundEnabled ?? true
+                },
+                WalletSummary = new WalletSummaryDto
+                {
+                    BalanceInNanoTons = user.BalanceInNanoTons,
+                    FormattedBalance = user.BalanceInNanoTons / 1_000_000_000m,
+                    Currency = "TON"
+                }
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPut("settings/general")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateGeneralSettings([FromBody] UpdateGeneralSettingsDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            var cleanUsername = dto.Username.Trim();
+            var cleanEmail = dto.Email.Trim().ToLowerInvariant();
+
+            // Check username uniqueness (excluding current user)
+            var usernameTaken = await _context.Users
+                .AnyAsync(u => u.Id != userId && u.Username.ToLower() == cleanUsername.ToLower());
+            if (usernameTaken)
+            {
+                return BadRequest(new { message = "Користувач з таким нікнеймом вже існує." });
+            }
+
+            // Check email uniqueness (excluding current user)
+            var emailTaken = await _context.Users
+                .AnyAsync(u => u.Id != userId && u.Email.ToLower() == cleanEmail);
+            if (emailTaken)
+            {
+                return BadRequest(new { message = "Користувач з такою електронною поштою вже існує." });
+            }
+
+            user.Username = cleanUsername;
+            user.Email = cleanEmail;
+            user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
+            user.AvatarUrl = string.IsNullOrWhiteSpace(dto.AvatarUrl) ? null : dto.AvatarUrl.Trim();
+            user.BannerUrl = string.IsNullOrWhiteSpace(dto.BannerUrl) ? null : dto.BannerUrl.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.PreferredLanguage))
+            {
+                user.PreferredLanguage = dto.PreferredLanguage.Trim();
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new UserProfileSettingsDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Bio = user.Bio,
+                AvatarUrl = user.AvatarUrl,
+                BannerUrl = user.BannerUrl,
+                PreferredLanguage = user.PreferredLanguage,
+                CreatedAt = user.CreatedAt
+            });
+        }
+
+        [HttpPut("settings/notifications")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateNotificationSettings([FromBody] NotificationPreferencesDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var prefs = await _context.UserNotificationPreferences.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (prefs == null)
+            {
+                prefs = new UserNotificationPreferences
+                {
+                    UserId = userId
+                };
+                await _context.UserNotificationPreferences.AddAsync(prefs);
+            }
+
+            prefs.NotifyBigSales = dto.NotifyBigSales;
+            prefs.NotifyWishlistDiscounts = dto.NotifyWishlistDiscounts;
+            prefs.NotifyProfileComments = dto.NotifyProfileComments;
+            prefs.NotifyFriendRequests = dto.NotifyFriendRequests;
+            prefs.NotifyFriendRequestAccepted = dto.NotifyFriendRequestAccepted;
+            prefs.NotifyFriendRequestDeclined = dto.NotifyFriendRequestDeclined;
+            prefs.ChatNotificationsEnabled = dto.ChatNotificationsEnabled;
+            prefs.ChatSoundEnabled = dto.ChatSoundEnabled;
+            prefs.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dto);
+        }
+
+        [HttpDelete("me")]
+        [HttpPost("delete-account")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var (success, error) = await _accountService.DeleteAccountAsync(userId, dto);
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return Ok(new { message = "Ваш акаунт було успішно видалено." });
+        }
     }
 }

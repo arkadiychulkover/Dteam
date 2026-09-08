@@ -40,6 +40,8 @@ function getPathForState(tab: MainTab, game?: Game | null, userId?: string | nul
       return '/my-profile';
     case 'wallet':
       return '/wallet';
+    case 'settings':
+      return '/settings';
     case 'login':
       return '/login';
     case 'register':
@@ -107,6 +109,8 @@ function parseLocation(): RouteState {
       return { tab: 'my-profile' };
     case 'wallet':
       return { tab: 'wallet' };
+    case 'settings':
+      return { tab: 'settings' };
     case 'login':
       return { tab: 'login' };
     case 'register':

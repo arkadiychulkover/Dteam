@@ -98,6 +98,8 @@ namespace DteamBackend.Models
 
         public ICollection<NftItem> Gifts { get; set; } = new List<NftItem>();
 
+        public ICollection<GameCollection> Collections { get; set; } = new List<GameCollection>();
+
         public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Baseline());
 
         [NotMapped]
@@ -106,6 +108,15 @@ namespace DteamBackend.Models
             get => JsonSerializer.Deserialize<float[]>(TasteVectorJson) ?? TasteCategories.Empty();
             set => TasteVectorJson = JsonSerializer.Serialize(value);
         }
+
+        [MaxLength(10)]
+        public string PreferredLanguage { get; set; } = "uk";
+
+        public UserNotificationPreferences? NotificationPreferences { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
+
+        public DateTime? DeletedAt { get; set; }
     }
 }
 

@@ -271,11 +271,6 @@ namespace DteamBackend.Controllers
                 }
             }
 
-            if (dto.IsPublished && string.IsNullOrWhiteSpace(dto.ServerArchivePath))
-            {
-                return BadRequest(new { message = "Для публікації гри в каталозі необхідно завантажити файл білду гри (.zip). Без файлу білду проект можна зберегти лише як чернетку." });
-            }
-
             var archivePath = dto.ServerArchivePath?.Trim() ?? string.Empty;
 
             var game = new Game

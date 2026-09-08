@@ -13,7 +13,8 @@
   import { gamesService } from '../../services/gamesService';
   import type { Review } from '../../types';
   import { formatBytes, formatDate, formatPrice } from '../../utils/formatters';
-  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight } from 'lucide-svelte';
+  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
+  import CreateCollectionModal from './CreateCollectionModal.svelte';
 
   interface Props {
     game: Game;
@@ -46,6 +47,9 @@
 
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
+
+  let showCollectionsDropdown = $state(false);
+  let showCreateCollectionModal = $state(false);
 
   async function loadReviews(gameId: string) {
     isLoadingReviews = true;
@@ -226,6 +230,61 @@
           >
             <Star class="w-4 h-4 {isFavorite ? 'fill-cyan-300' : ''}" />
           </button>
+          <div class="relative">
+            <button
+              onclick={() => (showCollectionsDropdown = !showCollectionsDropdown)}
+              title="Додати або прибрати з колекції"
+              class="w-10 h-10 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md
+                {showCollectionsDropdown || $libraryStore.collections.some(c => c.items.some(i => i.gameId === game.id))
+                  ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                  : 'bg-black/50 border-white/20 text-slate-300 hover:text-cyan-300 hover:border-cyan-400/60'}"
+            >
+              <FolderPlus class="w-4 h-4" />
+            </button>
+
+            {#if showCollectionsDropdown}
+              <div
+                class="absolute right-0 bottom-12 w-64 p-3 rounded-2xl bg-[#061820] border border-cyan-500/30 shadow-2xl z-30 space-y-2 animate-in fade-in"
+              >
+                <div class="flex items-center justify-between border-b border-cyan-500/15 pb-2">
+                  <span class="text-xs font-bold text-white">Колекції</span>
+                  <button
+                    type="button"
+                    onclick={() => { showCollectionsDropdown = false; showCreateCollectionModal = true; }}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1"
+                  >
+                    + Нова
+                  </button>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto space-y-1">
+                  {#if $libraryStore.collections.length === 0}
+                    <p class="text-[11px] text-slate-500 py-2 text-center">Немає колекцій</p>
+                  {:else}
+                    {#each $libraryStore.collections as col (col.id)}
+                      {@const inCol = (col.items ?? []).some((i) => i.gameId === game.id)}
+                      <button
+                        type="button"
+                        onclick={() => libraryStore.toggleGameInCollection(col.id, game.id)}
+                        class="w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors cursor-pointer hover:bg-white/5 {inCol ? 'text-cyan-300 bg-cyan-950/40' : 'text-slate-300'}"
+                      >
+                        <div class="flex items-center gap-2 truncate">
+                          <Folder class="w-3.5 h-3.5 shrink-0 {inCol ? 'text-cyan-400' : 'text-slate-500'}" />
+                          <span class="truncate">{col.name}</span>
+                        </div>
+                        <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 {inCol ? 'bg-cyan-500 border-cyan-400 text-black' : 'border-slate-600'}">
+                          {#if inCol}
+                            <Check class="w-3 h-3" />
+                          {/if}
+                        </div>
+                      </button>
+                    {/each}
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </div>
+
           <button
             class="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 border border-white/20 text-slate-300 hover:text-white transition-all cursor-pointer backdrop-blur-md"
             title="Про гру"
@@ -555,3 +614,9 @@
     </aside>
   </div>
 </div>
+
+{#if showCreateCollectionModal}
+  <CreateCollectionModal
+    onClose={() => (showCreateCollectionModal = false)}
+  />
+{/if}

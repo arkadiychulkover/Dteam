@@ -235,11 +235,6 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserDto>> CreditUserBalance(Guid id, [FromBody] CreditBalanceDto dto)
         {
-            if (dto.AmountInNanoTons == 0)
-            {
-                return BadRequest(new { message = "Сумма начисления не может быть равна нулю" });
-            }
-
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {

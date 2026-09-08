@@ -9,6 +9,8 @@ using DteamBackend.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+using DteamBackend.Models.DTO.Notification;
+
 namespace DteamBackend.Services
 {
     public class ChatService : IChatService
@@ -16,6 +18,7 @@ namespace DteamBackend.Services
         private readonly AppDbContext _context;
         private readonly IChatFileStorage _fileStorage;
         private readonly IChatRealtimeNotifier _notifier;
+        private readonly INotificationService _notificationService;
         private readonly ChatOptions _options;
         private readonly ILogger<ChatService> _logger;
 
@@ -25,12 +28,14 @@ namespace DteamBackend.Services
             AppDbContext context,
             IChatFileStorage fileStorage,
             IChatRealtimeNotifier notifier,
+            INotificationService notificationService,
             IOptions<ChatOptions> options,
             ILogger<ChatService> logger)
         {
             _context = context;
             _fileStorage = fileStorage;
             _notifier = notifier;
+            _notificationService = notificationService;
             _options = options.Value ?? new ChatOptions();
             _logger = logger;
         }
@@ -106,6 +111,26 @@ namespace DteamBackend.Services
 
             await _notifier.NotifyMessageReceivedAsync(dto.ReceiverId, messageDto, cancellationToken);
             await _notifier.NotifyMessageReceivedAsync(currentUserId, messageDto, cancellationToken);
+
+            var sender = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
+            var contentSnippet = message.Type == ChatMessageType.Voice
+                ? "Голосове повідомлення"
+                : (message.Type == ChatMessageType.Image 
+                    ? "Зображення" 
+                    : (!string.IsNullOrEmpty(message.Content) && message.Content.Length > 60 
+                        ? message.Content.Substring(0, 57) + "..." 
+                        : (message.Content ?? "Нове повідомлення")));
+
+            await _notificationService.NotifyAsync(new CreateNotificationCommand
+            {
+                UserId = dto.ReceiverId,
+                ActorUserId = currentUserId,
+                Type = NotificationTypes.ChatMessage,
+                EntityType = "chat_message",
+                EntityId = message.Id,
+                Title = $"Повідомлення від {sender?.Username ?? "користувача"}",
+                Message = contentSnippet
+            });
 
             return messageDto;
         }

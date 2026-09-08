@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DteamBackend.Validation;
 
 namespace DteamBackend.Models.DTO
 {
@@ -39,7 +40,7 @@ namespace DteamBackend.Models.DTO
         [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
         public int Rating { get; set; } = 5;
 
-        [Required(ErrorMessage = "Текст відгуку або коментаря обов'язковий")]
+        [RequiredNonWhiteSpace(ErrorMessage = "Текст відгуку або коментаря обов'язковий")]
         [MinLength(1, ErrorMessage = "Текст має містити щонайменше 1 символ")]
         [MaxLength(4000, ErrorMessage = "Текст не може перевищувати 4000 символів")]
         public string Content { get; set; } = string.Empty;
@@ -49,7 +50,7 @@ namespace DteamBackend.Models.DTO
 
     public class CreateReviewCommentDto
     {
-        [Required(ErrorMessage = "Текст коментаря обов'язковий")]
+        [RequiredNonWhiteSpace(ErrorMessage = "Текст коментаря обов'язковий")]
         [MinLength(1, ErrorMessage = "Текст має містити щонайменше 1 символ")]
         [MaxLength(4000, ErrorMessage = "Текст не може перевищувати 4000 символів")]
         public string Content { get; set; } = string.Empty;

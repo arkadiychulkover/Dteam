@@ -74,6 +74,18 @@ class FriendsHubService {
           friendsStore.loadAll();
         });
 
+        this.connection.on('FriendRemoved', () => {
+          friendsStore.loadAll();
+        });
+
+        this.connection.on('FriendRequestCancelled', () => {
+          friendsStore.loadRequests();
+        });
+
+        this.connection.on('FriendRequestRejected', () => {
+          friendsStore.loadRequests();
+        });
+
         this.connection.onreconnected(() => {
           friendsStore.loadAll();
         });

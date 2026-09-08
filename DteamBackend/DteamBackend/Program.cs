@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace DteamBackend
 {
@@ -26,7 +27,15 @@ namespace DteamBackend
 
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
             {
-                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+                var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=dteam.db";
+                if (connStr.Contains("Host=", StringComparison.OrdinalIgnoreCase) || connStr.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+                {
+                    options.UseNpgsql(connStr);
+                }
+                else
+                {
+                    options.UseSqlite(connStr);
+                }
                 options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
             builder.Services.AddScoped(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
@@ -38,6 +47,7 @@ namespace DteamBackend
             builder.Services.AddScoped<IInitDataService, InitDataService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<TonService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.Configure<EthereumOptions>(builder.Configuration.GetSection(EthereumOptions.SectionName));
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IHardhatTokenService, HardhatTokenService>();
@@ -49,6 +59,7 @@ namespace DteamBackend
             builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();
             builder.Services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
             builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
@@ -196,13 +207,8 @@ namespace DteamBackend
                     await context.Database.EnsureCreatedAsync();
 
                     var initDataService = services.GetRequiredService<IInitDataService>();
+                    await initDataService.EnsureAllSchemasAsync(context);
                     await initDataService.InitializeAsync(context);
-                    await initDataService.EnsureCommunityDataAsync(context);
-                    await initDataService.EnsureReviewSchemaAsync(context);
-                    await initDataService.EnsureChatSchemaAsync(context);
-                    await initDataService.EnsureActivitySchemaAsync(context);
-                    await initDataService.EnsureUserOnlineTrackingSchemaAsync(context);
-                    await initDataService.EnsureTasteVectorSchemaAsync(context);
 
                     var nftService = services.GetRequiredService<INftService>();
                     await nftService.EnsureNftCollectionInitializedAsync();
@@ -213,6 +219,14 @@ namespace DteamBackend
                     logger.LogError(ex, "Ошибка при инициализации начальных данных в базе данных.");
                 }
             }
+
+            var forwardedHeadersOptions = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            };
+            forwardedHeadersOptions.KnownIPNetworks.Clear();
+            forwardedHeadersOptions.KnownProxies.Clear();
+            app.UseForwardedHeaders(forwardedHeadersOptions);
 
             app.UseRouting();
 
@@ -247,6 +261,8 @@ namespace DteamBackend
             app.MapHub<OnlineHub>("/hub/online");
             app.MapHub<ChatHub>("/hubs/chat");
             app.MapHub<ChatHub>("/hub/chat");
+            app.MapHub<NotificationHub>("/hubs/notifications");
+            app.MapHub<NotificationHub>("/hub/notifications");
 
             await app.RunAsync();
         }

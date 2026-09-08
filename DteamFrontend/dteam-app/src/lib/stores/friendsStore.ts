@@ -91,14 +91,18 @@ function createFriendsStore() {
 
       const isGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
       try {
-        const res = await friendsService.sendFriendRequest(
+        const res: any = await friendsService.sendFriendRequest(
           isGuid ? { receiverId: trimmed } : { receiverUsername: trimmed }
         );
         uiStore.addToast({
           title: 'Запит надіслано!',
-          message: `Запит у друзі для '${res.receiverUsername || trimmed}' успішно надіслано.`,
+          message: res?.message || `Запит у друзі для '${trimmed}' успішно надіслано.`,
           type: 'success'
         });
+        await Promise.all([
+          friendsService.getFriendRequests('incoming').then((reqs) => update((s) => ({ ...s, requests: reqs }))).catch(() => {}),
+          friendsService.getFriends().then((frs) => update((s) => ({ ...s, friends: frs }))).catch(() => {})
+        ]);
         return true;
       } catch (err: any) {
         uiStore.addToast({

@@ -105,6 +105,28 @@
     });
   }
 
+  const paidDlcs = $derived(dlcs.filter((d) => Number(d.priceInNanoTons) > 0));
+  const totalDlcsPrice = $derived(
+    paidDlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0)
+  );
+  const bundleDiscountedPrice = $derived(Math.round(totalDlcsPrice * 0.8));
+  const bundleSavings = $derived(totalDlcsPrice - bundleDiscountedPrice);
+
+  let isAddingAll = $state(false);
+
+  async function handleBuyAllDlcs() {
+    if (dlcs.length === 0) return;
+    isAddingAll = true;
+    try {
+      await cartStore.addMultipleToCart(
+        dlcs,
+        false,
+        `Усі ${dlcs.length} DLC додано до кошика зі знижкою 20%!`
+      );
+    } finally {
+      isAddingAll = false;
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-[#030d12] text-slate-100 pb-20">
@@ -148,6 +170,80 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10 space-y-8">
+
+      {#if dlcs.length > 1}
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-[#072433] via-[#041924] to-[#071d27] border-2 border-cyan-400/40 shadow-2xl shadow-cyan-500/10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="space-y-3 z-10 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-cyan-400 text-black font-black text-xs uppercase tracking-wider shadow-md">
+                -20% Знижка на комплект
+              </span>
+              <span class="text-xs font-semibold text-cyan-300 flex items-center gap-1">
+                <Sparkles class="w-3.5 h-3.5" />
+                Вигідна пропозиція
+              </span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-black text-white font-display">
+              Купити всі {dlcs.length} DLC зі знижкою 20%
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Отримайте повний набір контенту для {game.title}! Придбайте всі доповнення разом одним кліком і заощаджуйте 20% на кожному DLC.
+            </p>
+
+            <div class="flex items-center gap-2 pt-1 overflow-x-auto">
+              {#each dlcs.slice(0, 6) as dlc}
+                <img
+                  src={dlc.coverImageUrl || dlc.headerImageUrl || '/placeholder.png'}
+                  alt={dlc.title}
+                  title={dlc.title}
+                  class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30 shrink-0"
+                />
+              {/each}
+              {#if dlcs.length > 6}
+                <div class="w-10 h-10 rounded-lg bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-xs font-bold text-cyan-300 shrink-0">
+                  +{dlcs.length - 6}
+                </div>
+              {/if}
+            </div>
+          </div>
+
+          <div class="z-10 flex flex-col sm:flex-row lg:flex-col items-start lg:items-end justify-between gap-4 p-5 rounded-2xl bg-black/40 border border-cyan-500/20 shrink-0">
+            <div>
+              <div class="text-[11px] text-slate-400">Ціна комплекту всіх DLC:</div>
+              <div class="flex items-baseline gap-2">
+                {#if totalDlcsPrice > 0}
+                  <span class="text-xs text-slate-400 line-through font-mono">
+                    {formatPrice(totalDlcsPrice)}
+                  </span>
+                  <span class="text-xl font-black text-cyan-300 font-mono">
+                    {formatPrice(bundleDiscountedPrice)}
+                  </span>
+                {:else}
+                  <span class="text-xl font-black text-emerald-400">Безкоштовно</span>
+                {/if}
+              </div>
+              {#if bundleSavings > 0}
+                <div class="text-[10px] font-bold text-emerald-400 mt-0.5">
+                  Ви заощаджуєте {formatPrice(bundleSavings)} (-20%)
+                </div>
+              {/if}
+            </div>
+
+            <button
+              type="button"
+              onclick={handleBuyAllDlcs}
+              disabled={isAddingAll}
+              class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-black font-extrabold text-xs transition-all duration-200 shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <ShoppingCart class="w-4 h-4" />
+              <span>{isAddingAll ? 'Додавання...' : `Додати в кошик усі DLC (${dlcs.length})`}</span>
+            </button>
+          </div>
+        </div>
+      {/if}
 
       <div class="bg-[#051720]/90 border border-cyan-500/25 rounded-2xl p-3.5 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
 

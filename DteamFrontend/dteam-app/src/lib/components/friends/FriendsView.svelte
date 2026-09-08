@@ -50,17 +50,27 @@
     friends.filter(f => f.status === UserStatus.Online || f.status === UserStatus.InGame)
   );
 
+  let selectedGameFilter = $state<string | 'all'>('all');
+
+  const distinctPlayingGames = $derived.by(() => {
+    const set = new Set<string>();
+    friends.forEach((f) => {
+      if (f.currentGame) set.add(f.currentGame);
+    });
+    return Array.from(set);
+  });
+
   const filteredFriends = $derived.by(() => {
     let list = activeTab === 'online' ? onlineFriends : friends;
+    if (selectedGameFilter !== 'all') {
+      list = list.filter((f) => f.currentGame === selectedGameFilter);
+    }
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter(f =>
         f.username.toLowerCase().includes(q) ||
-        (searchByGame && f.currentGame?.toLowerCase().includes(q))
+        (f.currentGame?.toLowerCase().includes(q) ?? false)
       );
-    }
-    if (searchByGame && !q) {
-      list = list.filter(f => Boolean(f.currentGame));
     }
     return list;
   });
@@ -255,36 +265,38 @@
 
   <div class="space-y-3 mb-6">
     {#if activeTab === 'all' || activeTab === 'online'}
-      <div class="flex items-center gap-2">
-        <label class="flex items-center gap-2 text-xs font-semibold text-slate-400 cursor-pointer select-none">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div class="relative flex-1">
           <input
-            type="checkbox"
-            bind:checked={searchByGame}
-            class="w-4 h-4 rounded-md border-cyan-500/30 bg-[#062029] text-cyan-400 focus:ring-0 focus:outline-none accent-[#0df2c9]"
+            type="text"
+            placeholder="Пошук за нікнеймом або назвою гри..."
+            bind:value={searchQuery}
+            class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs sm:text-sm text-white focus:outline-none focus:border-[#0df2c9] transition-colors"
           />
-          <span class="flex items-center gap-1 hover:text-cyan-300 transition-colors">
-            Шукати лише тих, хто грає
-            <ChevronDown class="w-3.5 h-3.5 text-cyan-400" />
-          </span>
-        </label>
-      </div>
+          <Search class="w-4 h-4 text-cyan-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {#if searchQuery}
+            <button
+              type="button"
+              onclick={() => searchQuery = ''}
+              class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          {/if}
+        </div>
 
-      <div class="relative">
-        <input
-          type="text"
-          placeholder="Пошук за нікнеймом{searchByGame ? ' або назвою гри' : ''}..."
-          bind:value={searchQuery}
-          class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs sm:text-sm text-white focus:outline-none focus:border-[#0df2c9] transition-colors"
-        />
-        <Search class="w-4 h-4 text-cyan-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        {#if searchQuery}
-          <button
-            type="button"
-            onclick={() => searchQuery = ''}
-            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
-          >
-            <X class="w-4 h-4" />
-          </button>
+        {#if distinctPlayingGames.length > 0}
+          <div class="relative shrink-0">
+            <select
+              bind:value={selectedGameFilter}
+              class="px-3.5 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs font-bold text-cyan-300 focus:outline-none focus:border-[#0df2c9] cursor-pointer"
+            >
+              <option value="all">Усі ігри ({friends.length})</option>
+              {#each distinctPlayingGames as gName}
+                <option value={gName}>Грає в: {gName}</option>
+              {/each}
+            </select>
+          </div>
         {/if}
       </div>
     {/if}

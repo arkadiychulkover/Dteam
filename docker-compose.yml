@@ -1,48 +1,70 @@
+name: dteam
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: dteam-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dteam_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-dteam_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - db-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d dteam_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dteam_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
   backend:
     build:
       context: ./DteamBackend
       dockerfile: Dockerfile
-    container_name: dteam-backend
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5117
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=dteam_db;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-dteam_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - Jwt__Secret=${JWT_SECRET:-DteamSuperSecretJwtKey2026_dteam_io_security_token_key_spec_32bytes_long}
     ports:
       - "5117:5117"
     volumes:
-      - ./DteamBackend/DteamBackend/wwwroot/game_images:/app/wwwroot/game_images
-    networks:
-      - db-internal
-      - app-network
+      - backend_uploads:/app/wwwroot/uploads
+      - backend_game_images:/app/wwwroot/game_images
+      - backend_community:/app/wwwroot/comunity
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5117/api/check-status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./DteamFrontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
 
 networks:
-  db-internal:
-    internal: true
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  backend_uploads:
+  backend_game_images:
+  backend_community:

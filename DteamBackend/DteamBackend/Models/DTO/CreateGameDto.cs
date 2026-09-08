@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Models.DTO
 {
-    public class CreateGameDto
+    public class CreateGameDto : IValidatableObject
     {
         [Required(ErrorMessage = "Title is required")]
         [MaxLength(200)]
@@ -20,9 +20,8 @@ namespace DteamBackend.Models.DTO
         [Range(0, 100)]
         public int DiscountPercentage { get; set; } = 0;
 
-        [Required(ErrorMessage = "Server archive path is required")]
         [MaxLength(500)]
-        public string ServerArchivePath { get; set; } = string.Empty;
+        public string? ServerArchivePath { get; set; }
 
         public Guid? OwnerId { get; set; }
 
@@ -57,6 +56,16 @@ namespace DteamBackend.Models.DTO
 
         [MaxLength(500)]
         public string? TrailerUrl { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (IsPublished && string.IsNullOrWhiteSpace(ServerArchivePath))
+            {
+                yield return new ValidationResult(
+                    "Для публікації гри в каталозі необхідно завантажити файл білду гри (.zip). Без файлу білду проект можна зберегти лише як чернетку.",
+                    new[] { nameof(ServerArchivePath) });
+            }
+        }
     }
 }
 

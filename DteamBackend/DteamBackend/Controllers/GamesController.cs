@@ -549,11 +549,6 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ReviewDto>> PostReviewComment(Guid id, Guid reviewId, [FromBody] CreateReviewCommentDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Content))
-            {
-                return BadRequest(new { message = "Текст коментаря обов'язковий." });
-            }
-
             return await PostReview(id, new CreateReviewDto
             {
                 ParentReviewId = reviewId,

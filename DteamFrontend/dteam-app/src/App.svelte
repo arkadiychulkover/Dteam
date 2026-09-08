@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
+  import MobileBottomNav from './lib/components/layout/MobileBottomNav.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
   import CatalogView from './lib/components/store/CatalogView.svelte';
   import GameDetailsView from './lib/components/store/GameDetailsView.svelte';
@@ -11,6 +12,7 @@
   import AdminView from './lib/components/admin/AdminView.svelte';
   import BannedView from './lib/components/banned/BannedView.svelte';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
+  import CustomCursor from './lib/components/ui/CustomCursor.svelte';
   import LiveBackground from './lib/components/ui/LiveBackground.svelte';
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
@@ -20,6 +22,7 @@
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
   import WalletView from './lib/components/wallet/WalletView.svelte';
   import DeveloperView from './lib/components/developer/DeveloperView.svelte';
+  import SettingsView from './lib/components/settings/SettingsView.svelte';
   import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
   import EditDeveloperGameModal from './lib/components/developer/EditDeveloperGameModal.svelte';
   import TermsOfUseView from './lib/components/legal/TermsOfUseView.svelte';
@@ -42,6 +45,8 @@
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
   import { chatStore } from './lib/stores/chatStore';
+  import { notificationStore } from './lib/stores/notificationStore';
+  import { soundService } from './lib/services/soundService';
   import { friendsHubService } from './lib/services/friendsHubService';
   import { chatHubService } from './lib/services/chatHubService';
   import { onlineHubService } from './lib/services/onlineHubService';
@@ -76,13 +81,16 @@
       friendsHubService.start();
       chatStore.loadConversations();
       chatHubService.start();
+      notificationStore.init();
     } else {
       friendsHubService.stop();
       chatHubService.stop();
+      notificationStore.reset();
     }
   });
 
   onMount(() => {
+    soundService.registerUserGestureUnlock();
     router.init();
     onlineHubService.startConnection();
 
@@ -95,6 +103,7 @@
       friendsHubService.start();
       chatStore.loadConversations();
       chatHubService.start();
+      notificationStore.init();
     }
     const interval = setInterval(checkUserBanStatus, 5000);
     return () => clearInterval(interval);
@@ -104,6 +113,7 @@
     friendsHubService.stop();
     chatHubService.stop();
     onlineHubService.stopConnection();
+    notificationStore.reset();
   });
 
 </script>
@@ -115,7 +125,7 @@
     <Header />
   {/if}
 
-  <main class="flex-1 relative z-10">
+  <main class="flex-1 relative z-10 pb-16 md:pb-0">
     {#if isBanned}
       <BannedView onRetry={checkUserBanStatus} />
     {:else if $uiStore.activeTab === 'store'}
@@ -164,6 +174,8 @@
       <ConfirmCodeView />
     {:else if $uiStore.activeTab === 'reset-password'}
       <ResetPasswordView />
+    {:else if $uiStore.activeTab === 'settings'}
+      <SettingsView />
     {/if}
   </main>
 
@@ -174,9 +186,11 @@
   {#if $uiStore.isDepositModalOpen}
     <DepositModal />
   {/if}
+  <CustomCursor />
   <ToastContainer />
 
   {#if !isBanned}
+    <MobileBottomNav />
     <Footer />
   {/if}
 </div>

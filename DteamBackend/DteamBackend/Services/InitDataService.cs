@@ -26,6 +26,81 @@ namespace DteamBackend.Services
             _configuration = configuration;
         }
 
+        public async Task EnsureAllSchemasAsync(AppDbContext context)
+        {
+            try
+            {
+                await EnsureNotificationAndSettingsSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureNotificationAndSettingsSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureCollectionSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureCollectionSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureUserOnlineTrackingSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureUserOnlineTrackingSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureTasteVectorSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureTasteVectorSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureReviewSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureReviewSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureChatSchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureChatSchemaAsync");
+            }
+
+            try
+            {
+                await EnsureActivitySchemaAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureActivitySchemaAsync");
+            }
+
+            try
+            {
+                await EnsureCommunityDataAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureCommunityDataAsync");
+            }
+        }
+
         public async Task InitializeAsync(AppDbContext context)
         {
             if (await context.Users.AnyAsync())
@@ -877,6 +952,159 @@ namespace DteamBackend.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[InitData] Error ensuring TasteVector schema in SQLite database.");
+            }
+        }
+
+        public async Task EnsureNotificationAndSettingsSchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                // Direct fail-safe column additions
+                try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"PreferredLanguage\" TEXT NOT NULL DEFAULT 'uk';"); } catch { }
+                try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"IsDeleted\" INTEGER NOT NULL DEFAULT 0;"); } catch { }
+                try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"DeletedAt\" TEXT NULL;"); } catch { }
+
+                var connection = context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                }
+
+                // 1. Check columns in Users
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA table_info('Users');";
+                    var userCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var colName = reader["name"]?.ToString();
+                            if (!string.IsNullOrEmpty(colName)) userCols.Add(colName);
+                        }
+                    }
+
+                    if (!userCols.Contains("PreferredLanguage"))
+                    {
+                        await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"PreferredLanguage\" TEXT NOT NULL DEFAULT 'uk';");
+                        _logger?.LogInformation("[InitData] Added PreferredLanguage column to Users table.");
+                    }
+
+                    if (!userCols.Contains("IsDeleted"))
+                    {
+                        await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"IsDeleted\" INTEGER NOT NULL DEFAULT 0;");
+                        _logger?.LogInformation("[InitData] Added IsDeleted column to Users table.");
+                    }
+
+                    if (!userCols.Contains("DeletedAt"))
+                    {
+                        await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"DeletedAt\" TEXT NULL;");
+                        _logger?.LogInformation("[InitData] Added DeletedAt column to Users table.");
+                    }
+                }
+
+                // 2. Create UserNotificationPreferences
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""UserNotificationPreferences"" (
+                        ""UserId"" TEXT NOT NULL CONSTRAINT ""PK_UserNotificationPreferences"" PRIMARY KEY,
+                        ""NotifyBigSales"" INTEGER NOT NULL DEFAULT 1,
+                        ""NotifyWishlistDiscounts"" INTEGER NOT NULL DEFAULT 1,
+                        ""NotifyProfileComments"" INTEGER NOT NULL DEFAULT 1,
+                        ""NotifyFriendRequests"" INTEGER NOT NULL DEFAULT 1,
+                        ""NotifyFriendRequestAccepted"" INTEGER NOT NULL DEFAULT 1,
+                        ""NotifyFriendRequestDeclined"" INTEGER NOT NULL DEFAULT 1,
+                        ""ChatNotificationsEnabled"" INTEGER NOT NULL DEFAULT 1,
+                        ""ChatSoundEnabled"" INTEGER NOT NULL DEFAULT 1,
+                        ""UpdatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_UserNotificationPreferences_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                    );
+                ");
+
+                // 3. Create WalletTransactions
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""WalletTransactions"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_WalletTransactions"" PRIMARY KEY,
+                        ""UserId"" TEXT NOT NULL,
+                        ""Type"" INTEGER NOT NULL,
+                        ""Status"" INTEGER NOT NULL DEFAULT 1,
+                        ""AmountInNanoTons"" INTEGER NOT NULL,
+                        ""Title"" TEXT NOT NULL,
+                        ""Currency"" TEXT NOT NULL DEFAULT 'TON',
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""ReferenceId"" TEXT NULL,
+                        ""Metadata"" TEXT NULL,
+                        CONSTRAINT ""FK_WalletTransactions_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE RESTRICT
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_WalletTransactions_UserId"" ON ""WalletTransactions"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_WalletTransactions_CreatedAt"" ON ""WalletTransactions"" (""CreatedAt"");
+                ");
+
+                // 4. Create Notifications
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""Notifications"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_Notifications"" PRIMARY KEY,
+                        ""UserId"" TEXT NOT NULL,
+                        ""ActorUserId"" TEXT NULL,
+                        ""Type"" TEXT NOT NULL,
+                        ""EntityType"" TEXT NULL,
+                        ""EntityId"" TEXT NULL,
+                        ""EventId"" TEXT NULL,
+                        ""Title"" TEXT NOT NULL,
+                        ""Message"" TEXT NOT NULL,
+                        ""DataJson"" TEXT NULL,
+                        ""IsRead"" INTEGER NOT NULL DEFAULT 0,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""ReadAt"" TEXT NULL,
+                        ""IsDeleted"" INTEGER NOT NULL DEFAULT 0,
+                        ""DeletedAt"" TEXT NULL,
+                        CONSTRAINT ""FK_Notifications_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE,
+                        CONSTRAINT ""FK_Notifications_Users_ActorUserId"" FOREIGN KEY (""ActorUserId"") REFERENCES ""Users"" (""Id"") ON DELETE SET NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_Notifications_UserId_IsDeleted_CreatedAt"" ON ""Notifications"" (""UserId"", ""IsDeleted"", ""CreatedAt"");
+                    CREATE INDEX IF NOT EXISTS ""IX_Notifications_UserId_IsDeleted_IsRead"" ON ""Notifications"" (""UserId"", ""IsDeleted"", ""IsRead"");
+                ");
+
+                _logger?.LogInformation("[InitData] Notifications and Settings schema successfully ensured.");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring Notification and Settings schema in database.");
+            }
+        }
+
+        public async Task EnsureCollectionSchemaAsync(AppDbContext context)
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ""GameCollections"" (
+                        ""Id"" TEXT NOT NULL CONSTRAINT ""PK_GameCollections"" PRIMARY KEY,
+                        ""UserId"" TEXT NOT NULL,
+                        ""Name"" TEXT NOT NULL,
+                        ""Description"" TEXT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""UpdatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_GameCollections_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_GameCollections_UserId"" ON ""GameCollections"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_GameCollections_UserId_Name"" ON ""GameCollections"" (""UserId"", ""Name"");
+
+                    CREATE TABLE IF NOT EXISTS ""GameCollectionItems"" (
+                        ""CollectionId"" TEXT NOT NULL,
+                        ""GameId"" TEXT NOT NULL,
+                        ""AddedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""PK_GameCollectionItems"" PRIMARY KEY (""CollectionId"", ""GameId""),
+                        CONSTRAINT ""FK_GameCollectionItems_GameCollections_CollectionId"" FOREIGN KEY (""CollectionId"") REFERENCES ""GameCollections"" (""Id"") ON DELETE CASCADE,
+                        CONSTRAINT ""FK_GameCollectionItems_Games_GameId"" FOREIGN KEY (""GameId"") REFERENCES ""Games"" (""Id"") ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_GameCollectionItems_GameId"" ON ""GameCollectionItems"" (""GameId"");
+                ");
+
+                _logger?.LogInformation("[InitData] Game collections schema successfully ensured.");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring Game collections schema in database.");
             }
         }
     }

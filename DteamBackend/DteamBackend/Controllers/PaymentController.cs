@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
+using DteamBackend.Models.DTO.Notification;
+
 namespace DteamBackend.Controllers
 {
     [Authorize]
@@ -22,6 +24,7 @@ namespace DteamBackend.Controllers
         private readonly AppDbContext _context;
         private readonly TonService _tonService;
         private readonly IActivityService _activityService;
+        private readonly INotificationService _notificationService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PaymentController> _logger;
 
@@ -29,12 +32,14 @@ namespace DteamBackend.Controllers
             AppDbContext context,
             TonService tonService,
             IActivityService activityService,
+            INotificationService notificationService,
             IConfiguration configuration,
             ILogger<PaymentController> logger)
         {
             _context = context;
             _tonService = tonService;
             _activityService = activityService;
+            _notificationService = notificationService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -168,10 +173,37 @@ namespace DteamBackend.Controllers
             await _context.Tranxactions.AddAsync(transactionRecord);
 
             long nanoTonsToAdd = (long)Math.Round(dto.Amount * 1_000_000_000m);
+
+            var walletTx = new WalletTransaction
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Type = WalletTransactionType.Deposit,
+                Status = WalletTransactionStatus.Completed,
+                AmountInNanoTons = nanoTonsToAdd,
+                Title = "Поповнення балансу",
+                Currency = "TON",
+                ReferenceId = cleanHash,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.WalletTransactions.AddAsync(walletTx);
+
             user.BalanceInNanoTons += nanoTonsToAdd;
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            await _notificationService.NotifyAsync(new CreateNotificationCommand
+            {
+                UserId = user.Id,
+                Type = NotificationTypes.WalletDeposit,
+                EntityType = "wallet_transaction",
+                EntityId = walletTx.Id,
+                EventId = $"deposit_{cleanHash}",
+                Title = "Поповнення гаманця",
+                Message = $"Ваш баланс успішно поповнено на {dto.Amount} TON",
+                Data = new { amount = dto.Amount, txHash = cleanHash }
+            });
 
             try
             {
@@ -268,6 +300,53 @@ namespace DteamBackend.Controllers
                 .ToList();
 
             return Ok(allTransactions);
+        }
+
+        [HttpGet("transactions-history")]
+        [ProducesResponseType(typeof(PagedResult<WalletTransactionItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<PagedResult<WalletTransactionItemDto>>> GetTransactionHistory(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+            if (pageSize > 50) pageSize = 50;
+
+            var query = _context.WalletTransactions
+                .AsNoTracking()
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(t => t.CreatedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(t => new WalletTransactionItemDto
+                {
+                    Id = t.Id,
+                    Amount = t.AmountInNanoTons / 1_000_000_000m,
+                    Type = t.Type.ToString(),
+                    Title = t.Title,
+                    Currency = t.Currency,
+                    Date = t.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(new PagedResult<WalletTransactionItemDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
         }
     }
 }

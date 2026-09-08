@@ -358,6 +358,19 @@ namespace DteamBackend.Controllers
                             IsFavorite = false
                         });
 
+                        await _context.WalletTransactions.AddAsync(new WalletTransaction
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            Type = WalletTransactionType.Purchase,
+                            Status = WalletTransactionStatus.Completed,
+                            AmountInNanoTons = effectivePrice,
+                            Title = game.Title,
+                            Currency = "TON",
+                            ReferenceId = game.Id.ToString(),
+                            CreatedAt = DateTime.UtcNow
+                        });
+
                         game.DownloadCount += 1;
                         if (game.Owner != null && effectivePrice > 0)
                         {
