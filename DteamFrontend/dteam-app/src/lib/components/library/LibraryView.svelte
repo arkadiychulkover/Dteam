@@ -5,6 +5,7 @@
   import { profileStore } from '../../stores/profileStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { formatPlayTime } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
   import type { Game, UserGame } from '../../types';
   import LibraryGameDetailsView from './LibraryGameDetailsView.svelte';
   import {
@@ -395,7 +396,7 @@
                         </div>
 
                         <h3 class="text-sm font-bold text-white line-clamp-1">{post.title}</h3>
-                        <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                        <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{@html renderDecoratedText(post.content)}</p>
                       </div>
 
                       <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
@@ -478,7 +479,7 @@
 
                   <div class="p-4 space-y-1.5">
                     {#if post.title}<h4 class="text-sm font-bold text-white line-clamp-1">{post.title}</h4>{/if}
-                    <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                    <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{@html renderDecoratedText(post.content)}</p>
                     <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
                       <span class="flex items-center gap-1"><Heart class="w-3 h-3" />{post.stats.likesCount}</span>
                       <span class="flex items-center gap-1"><MessageSquare class="w-3 h-3" />{post.stats.commentsCount}</span>

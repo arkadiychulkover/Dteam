@@ -30,12 +30,14 @@
   import AddFriendModal from './AddFriendModal.svelte';
   import FriendsActivityFeed from '../activity/FriendsActivityFeed.svelte';
   import { activityStore } from '../../stores/activityStore';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let isIdCopied = $state(false);
 
   type ActiveFriendTab = 'all' | 'online' | 'activity' | 'blocked' | 'requests';
 
   let activeTab = $state<ActiveFriendTab>('all');
+  let requestSubTab = $state<'incoming' | 'outgoing'>('incoming');
   let searchQuery = $state('');
   let searchByGame = $state(false);
   let isAddFriendOpen = $state(false);
@@ -43,6 +45,7 @@
 
   const friends = $derived($friendsStore.friends);
   const requests = $derived($friendsStore.requests);
+  const outgoingRequests = $derived($friendsStore.outgoingRequests || []);
   const blocked = $derived($friendsStore.blocked);
   const isLoading = $derived($friendsStore.isLoading);
 
@@ -85,6 +88,12 @@
     const q = searchQuery.trim().toLowerCase();
     if (!q) return requests;
     return requests.filter(r => r.senderUsername.toLowerCase().includes(q));
+  });
+
+  const filteredOutgoingRequests = $derived.by(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return outgoingRequests;
+    return outgoingRequests.filter(r => r.receiverUsername.toLowerCase().includes(q));
   });
 
   onMount(() => {
@@ -258,7 +267,7 @@
       <span>Поточні запити</span>
       <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black
         {activeTab === 'requests' ? 'bg-[#0a3542] text-[#0df2c9]' : 'bg-[#061d24] text-slate-400'}">
-        {requests.length}
+        {requests.length + outgoingRequests.length}
       </span>
     </button>
   </div>
@@ -320,7 +329,7 @@
           >
             <div class="relative w-11 h-11 rounded-full shrink-0 select-none group-hover/user:scale-105 transition-transform">
               {#if friend.avatarUrl}
-                <img
+                <BackendImage
                   src={friend.avatarUrl}
                   alt={friend.username}
                   class="w-full h-full rounded-full object-cover border border-cyan-500/30 group-hover/user:border-cyan-400"
@@ -427,7 +436,7 @@
           <div class="flex items-center gap-3">
             <div class="relative w-10 h-10 rounded-full shrink-0">
               {#if b.avatarUrl}
-                <img src={b.avatarUrl} alt={b.username} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                <BackendImage src={b.avatarUrl} alt={b.username} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
               {:else}
                 <div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">
                   {b.username.charAt(0).toUpperCase()}
@@ -457,58 +466,132 @@
     </div>
 
   {:else if activeTab === 'requests'}
-    <div class="space-y-2.5">
-      {#each filteredRequests as req (req.id)}
-        <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="relative w-10 h-10 rounded-full shrink-0">
-              {#if req.senderAvatarUrl}
-                <img src={req.senderAvatarUrl} alt={req.senderUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
-              {:else}
-                <div class="w-full h-full rounded-full bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
-                  {req.senderUsername.charAt(0).toUpperCase()}
+    <div class="space-y-4">
+      <div class="flex items-center gap-2 p-1 bg-[#041920] border border-cyan-500/20 rounded-2xl w-fit">
+        <button
+          type="button"
+          onclick={() => requestSubTab = 'incoming'}
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {requestSubTab === 'incoming' ? 'bg-cyan-500/20 text-[#0df2c9] border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}"
+        >
+          <span>Вхідні</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono {requestSubTab === 'incoming' ? 'bg-cyan-400/20 text-[#0df2c9]' : 'bg-slate-800 text-slate-400'}">
+            {requests.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => requestSubTab = 'outgoing'}
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {requestSubTab === 'outgoing' ? 'bg-cyan-500/20 text-[#0df2c9] border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}"
+        >
+          <span>Вихідні</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono {requestSubTab === 'outgoing' ? 'bg-cyan-400/20 text-[#0df2c9]' : 'bg-slate-800 text-slate-400'}">
+            {outgoingRequests.length}
+          </span>
+        </button>
+      </div>
+
+      {#if requestSubTab === 'incoming'}
+        <div class="space-y-2.5">
+          {#each filteredRequests as req (req.id)}
+            <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative w-10 h-10 rounded-full shrink-0">
+                  {#if req.senderAvatarUrl}
+                    <BackendImage src={req.senderAvatarUrl} alt={req.senderUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                  {:else}
+                    <div class="w-full h-full rounded-full bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
+                      {req.senderUsername.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-amber-400 border border-[#06242e]"></span>
                 </div>
-              {/if}
-              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-pink-500 border border-[#06242e]"></span>
+
+                <div class="min-w-0">
+                  <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
+                    {req.senderUsername}
+                  </span>
+                  <span class="block text-[10px] text-slate-400 mt-0.5">
+                    Вхідний запит у друзі
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onclick={() => friendsStore.acceptRequest(req.id, req.senderUsername)}
+                  class="w-9 h-9 rounded-xl bg-[#54e346] hover:bg-[#48ce3b] text-black font-black flex items-center justify-center shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                  title="Прийняти запит"
+                >
+                  <Check class="w-5 h-5 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onclick={() => friendsStore.rejectRequest(req.id, req.senderUsername)}
+                  class="w-9 h-9 rounded-xl bg-[#f87171] hover:bg-[#ef4444] text-white font-black flex items-center justify-center shadow-md shadow-rose-500/20 transition-all cursor-pointer"
+                  title="Відхилити запит"
+                >
+                  <X class="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </div>
             </div>
-
-            <div class="min-w-0">
-              <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
-                {req.senderUsername}
-              </span>
-              <span class="block text-[10px] text-slate-400 mt-0.5">
-                Запит у друзі
-              </span>
+          {:else}
+            <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
+              <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
+              <p class="text-sm font-bold text-slate-300">Немає вхідних запитів</p>
+              <p class="text-xs text-slate-500 mt-1">Нові запити в друзі будуть з'являтися тут.</p>
             </div>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onclick={() => friendsStore.acceptRequest(req.id, req.senderUsername)}
-              class="w-9 h-9 rounded-xl bg-[#54e346] hover:bg-[#48ce3b] text-black font-black flex items-center justify-center shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-              title="Прийняти запит"
-            >
-              <Check class="w-5 h-5 stroke-[2.5]" />
-            </button>
-
-            <button
-              type="button"
-              onclick={() => friendsStore.rejectRequest(req.id, req.senderUsername)}
-              class="w-9 h-9 rounded-xl bg-[#f87171] hover:bg-[#ef4444] text-white font-black flex items-center justify-center shadow-md shadow-rose-500/20 transition-all cursor-pointer"
-              title="Відхилити запит"
-            >
-              <X class="w-5 h-5 stroke-[2.5]" />
-            </button>
-          </div>
+          {/each}
         </div>
       {:else}
-        <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
-          <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
-          <p class="text-sm font-bold text-slate-300">Немає вхідних запитів</p>
-          <p class="text-xs text-slate-500 mt-1">Нові запити в друзі будуть з'являтися тут.</p>
+        <div class="space-y-2.5">
+          {#each filteredOutgoingRequests as req (req.id)}
+            <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative w-10 h-10 rounded-full shrink-0">
+                  {#if req.receiverAvatarUrl}
+                    <BackendImage src={req.receiverAvatarUrl} alt={req.receiverUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                  {:else}
+                    <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-700 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                      {req.receiverUsername.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-[#06242e]"></span>
+                </div>
+
+                <div class="min-w-0">
+                  <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
+                    {req.receiverUsername}
+                  </span>
+                  <span class="block text-[10px] text-slate-400 mt-0.5">
+                    Вихідний запит • Очікує на відповідь
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onclick={() => friendsStore.cancelRequest(req.id, req.receiverUsername)}
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  title="Скасувати запит"
+                >
+                  <X class="w-4 h-4 stroke-[2.5]" />
+                  <span class="hidden sm:inline">Скасувати</span>
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
+              <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
+              <p class="text-sm font-bold text-slate-300">Немає вихідних запитів</p>
+              <p class="text-xs text-slate-500 mt-1">Ви ще не надсилали запитів у друзі або всі вони вже оброблені.</p>
+            </div>
+          {/each}
         </div>
-      {/each}
+      {/if}
     </div>
   {/if}
 </div>

@@ -44,13 +44,13 @@
     try {
       const res = await authStore.requestPasswordReset(currentEmail);
       uiStore.addToast({
-        title: 'Код переотправлен',
-        message: res.debugCode ? `Новый GUID код: ${res.debugCode}` : 'Новый код отправлен на ваш адрес.',
+        title: 'Код надіслано повторно',
+        message: res.debugCode ? `Новий GUID код: ${res.debugCode}` : 'Новий код надіслано на вашу адресу.',
         type: 'info'
       });
       startCountdown();
     } catch (err: any) {
-      errorMessage = err.message || 'Не удалось повторно отправить код.';
+      errorMessage = err.message || 'Не вдалося повторно надіслати код.';
     }
   }
 
@@ -59,7 +59,7 @@
     const trimmedCode = resetCode.trim();
 
     if (!trimmedCode) {
-      errorMessage = 'Введите код подтверждения (GUID)';
+      errorMessage = 'Введіть код підтвердження (GUID)';
       return;
     }
 
@@ -69,13 +69,13 @@
     try {
       await authStore.verifyResetCode(trimmedCode);
       uiStore.addToast({
-        title: 'Код подтвержден',
-        message: 'Теперь установите новый пароль.',
+        title: 'Код підтверджено',
+        message: 'Тепер встановіть новий пароль.',
         type: 'success'
       });
       uiStore.setTab('reset-password');
     } catch (err: any) {
-      errorMessage = err.message || 'Неверный или истекший код подтверждения.';
+      errorMessage = err.message || 'Невірний або застарілий код підтвердження.';
     } finally {
       isSubmitting = false;
     }
@@ -95,10 +95,10 @@
           <ShieldCheck class="w-7 h-7" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
-          Подтверждение кода
+          Підтвердження коду
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Введите код подтверждения из письма
+          Введіть код підтвердження з листа
         </p>
       </div>
 
@@ -111,7 +111,7 @@
       <form onsubmit={handleSubmit} class="space-y-6">
         <div>
           <label for="code-input" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-            Код подтверждения
+            Код підтвердження
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -131,7 +131,7 @@
         <div class="text-center">
           {#if resendCountdown > 0}
             <p class="text-xs text-slate-500 flex items-center justify-center gap-1">
-              <span>Отправить повторно через</span>
+              <span>Надіслати повторно через</span>
               <span class="font-mono text-cyan-400 font-bold">{resendCountdown}с</span>
             </p>
           {:else}
@@ -141,7 +141,7 @@
               class="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
             >
               <RefreshCw class="w-3.5 h-3.5" />
-              <span>Отправить код повторно</span>
+              <span>Надіслати код повторно</span>
             </button>
           {/if}
         </div>
@@ -153,10 +153,10 @@
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Проверка...</span>
+            <span>Перевірка...</span>
           {:else}
             <CheckCircle class="w-4 h-4 text-black" />
-            <span>Подтвердить код</span>
+            <span>Підтвердити код</span>
           {/if}
         </button>
       </form>
@@ -167,7 +167,7 @@
           class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
         >
           <ArrowLeft class="w-4 h-4" />
-          <span>Вернуться ко входу</span>
+          <span>Повернутися до входу</span>
         </button>
       </div>
     </div>

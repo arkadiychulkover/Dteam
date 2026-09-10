@@ -221,26 +221,29 @@ function createCartStore() {
       }
     },
 
-    moveToWishlist: async (game: Game) => {
+    moveToWishlist: async (gameOrId: Game | string, title?: string) => {
       const user = get(currentUser);
       if (!user?.id) return;
 
+      const gameId = typeof gameOrId === 'string' ? gameOrId : gameOrId.id;
+      const gameTitle = typeof gameOrId === 'string' ? (title || 'Гру') : gameOrId.title;
+
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
-        nextGameIds.delete(game.id);
+        nextGameIds.delete(gameId);
         return {
           ...s,
-          items: s.items.filter((i) => i.gameId !== game.id),
+          items: s.items.filter((i) => i.gameId !== gameId),
           cartGameIds: nextGameIds,
         };
       });
 
       try {
-        await cartService.moveToWishlist(game.id);
+        await cartService.moveToWishlist(gameId);
         wishlistStore.loadWishlist();
         uiStore.addToast({
           title: 'Переміщено до бажаного ♥',
-          message: `Гру '${game.title}' переміщено зі списку кошика до списку бажань!`,
+          message: `Гру '${gameTitle}' переміщено зі списку кошика до списку бажань!`,
           type: 'success',
         });
       } catch (err: any) {

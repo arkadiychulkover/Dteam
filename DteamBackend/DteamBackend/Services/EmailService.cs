@@ -68,17 +68,17 @@ namespace DteamBackend.Services
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
-            var subject = "Код восстановления пароля — DTEAM";
+            var subject = "Код відновлення пароля — DTEAM";
             var bodyHtml = $@"
                 <div style=""font-family: Arial, sans-serif; background-color: #0a0c14; color: #f1f5f9; padding: 24px; border-radius: 12px;"">
-                    <h2 style=""color: #22d3ee;"">Восстановление доступа DTEAM</h2>
-                    <p>Здравствуйте!</p>
-                    <p>Вы запросили сброс пароля для вашей учетной записи DTEAM.</p>
-                    <p>Ваш одноразовый код подтверждения:</p>
+                    <h2 style=""color: #22d3ee;"">Відновлення доступу DTEAM</h2>
+                    <p>Вітаємо!</p>
+                    <p>Ви надіслали запит на скидання пароля для вашого облікового запису DTEAM.</p>
+                    <p>Ваш одноразовий код підтвердження:</p>
                     <div style=""background-color: #1e293b; color: #38bdf8; font-size: 20px; font-weight: bold; letter-spacing: 1px; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; word-break: break-all;"">
                         {resetCode}
                     </div>
-                    <p style=""font-size: 13px; color: #94a3b8;"">Код действителен в течение 15 минут. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
+                    <p style=""font-size: 13px; color: #94a3b8;"">Код дійсний протягом 15 хвилин. Якщо ви не надсилали запит на скидання пароля, просто проігноруйте цей лист.</p>
                 </div>
             ";
 

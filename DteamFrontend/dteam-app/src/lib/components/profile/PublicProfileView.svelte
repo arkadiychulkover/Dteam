@@ -1,15 +1,20 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { profileStore } from '../../stores/profileStore';
   import { currentUser } from '../../stores/authStore';
   import { friendsService } from '../../services/friendsService';
+  import { friendsStore } from '../../stores/friendsStore';
+  import { chatStore } from '../../stores/chatStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatDate } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { UserStatus } from '../../types';
   import {
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
-    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity, Award, RefreshCw
+    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity, Award, RefreshCw,
+    Check, X
   } from 'lucide-svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { gamesService } from '../../services/gamesService';
@@ -155,12 +160,7 @@ import { onMount } from 'svelte';
     if (!profile || isSendingRequest) return;
     isSendingRequest = true;
     try {
-      await friendsService.sendFriendRequest(profile.username);
-      uiStore.addToast({
-        title: 'Запит надіслано',
-        message: `Запит у друзі надіслано користувачеві ${profile.username}.`,
-        type: 'success',
-      });
+      await friendsStore.sendRequest(profile.username);
       profileStore.reload();
     } catch (e: any) {
       uiStore.addToast({
@@ -173,12 +173,114 @@ import { onMount } from 'svelte';
     }
   }
 
+  async function handleAcceptRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.requests.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const incomings = await friendsService.getFriendRequests('incoming');
+        reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.acceptRequest(reqId, profile.username);
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося прийняти запит.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  async function handleRejectRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.requests.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const incomings = await friendsService.getFriendRequests('incoming');
+        reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.rejectRequest(reqId, profile.username);
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося відхилити запит.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  async function handleCancelRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.outgoingRequests.find(r => r.receiverId === profile.id || r.receiverUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const outgoings = await friendsService.getFriendRequests('outgoing');
+        reqId = outgoings.find(r => r.receiverId === profile.id || r.receiverUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.cancelRequest(reqId, profile.username);
+      } else {
+        throw new Error('Запит не знайдено');
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося скасувати запит у друзі.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  function handleOpenChat() {
+    if (!profile?.id) return;
+    chatStore.selectConversation(profile.id);
+    uiStore.setTab('chat');
+  }
+
+  async function handleCopyProfileLink() {
+    if (!profile?.username) return;
+    try {
+      const url = `${window.location.origin}/#profile-${encodeURIComponent(profile.username)}`;
+      await navigator.clipboard.writeText(url);
+      uiStore.addToast({
+        title: 'Посилання скопійовано',
+        message: `Посилання на профіль ${profile.username} скопійовано в буфер обміну!`,
+        type: 'success',
+      });
+    } catch {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: 'Не вдалося скопіювати посилання.',
+        type: 'error',
+      });
+    }
+  }
+
   function statusLabel(status?: number) {
+    if (profile?.isOwnProfile || profile?.id === $currentUser?.id) {
+      return { text: 'у мережі', color: 'text-emerald-400' };
+    }
     switch (status) {
-      case UserStatus.Online: return { text: 'онлайн', color: 'text-emerald-400' };
+      case UserStatus.Online: return { text: 'у мережі', color: 'text-emerald-400' };
       case UserStatus.InGame: return { text: 'у грі', color: 'text-cyan-400' };
       case UserStatus.Away: return { text: 'відійшов', color: 'text-amber-400' };
-      default: return { text: 'офлайн', color: 'text-slate-500' };
+      default: return { text: 'не в мережі', color: 'text-slate-500' };
     }
   }
 
@@ -214,7 +316,7 @@ import { onMount } from 'svelte';
 
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
             {#if profile.avatarUrl}
-              <img src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
+              <BackendImage src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
             {:else}
               <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
                 {profile.username.charAt(0).toUpperCase()}
@@ -255,9 +357,36 @@ import { onMount } from 'svelte';
                 <UserCheck class="w-4 h-4" /> У друзях
               </span>
             {:else if profile.friendshipStatus === 'pending'}
-              <span class="flex items-center gap-2 bg-slate-800/80 text-slate-300 border border-slate-700 px-5 py-2.5 rounded-full text-sm font-medium">
-                <Clock class="w-4 h-4" /> {profile.isIncomingRequest ? 'Запит вам' : 'Запит надіслано'}
-              </span>
+              {#if profile.isIncomingRequest}
+                <button
+                  type="button"
+                  onclick={handleAcceptRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Прийняти запит у друзі"
+                >
+                  <Check class="w-4 h-4" /> Прийняти
+                </button>
+                <button
+                  type="button"
+                  onclick={handleRejectRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Відхилити запит у друзі"
+                >
+                  <X class="w-4 h-4" /> Відхилити
+                </button>
+              {:else}
+                <button
+                  type="button"
+                  onclick={handleCancelRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Скасувати запит у друзі"
+                >
+                  <X class="w-4 h-4" /> Скасувати запит
+                </button>
+              {/if}
             {:else}
               <button
                 onclick={handleAddFriend}
@@ -268,10 +397,20 @@ import { onMount } from 'svelte';
                 {isSendingRequest ? 'Надсилання...' : 'Додати в друзі'}
               </button>
             {/if}
-            <button class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer" title="Написати повідомлення">
+            <button
+              type="button"
+              onclick={handleOpenChat}
+              class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer"
+              title="Написати повідомлення"
+            >
               <MessageSquare class="w-5 h-5" />
             </button>
-            <button class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer" title="Ще">
+            <button
+              type="button"
+              onclick={handleCopyProfileLink}
+              class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer"
+              title="Скопіювати посилання на профіль"
+            >
               <MoreHorizontal class="w-5 h-5" />
             </button>
           </div>
@@ -392,7 +531,7 @@ import { onMount } from 'svelte';
                           class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
                         >
                           {#if game.coverImageUrl}
-                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                            <BackendImage src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
                           {:else}
                             <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
                               {game.title}
@@ -425,7 +564,7 @@ import { onMount } from 'svelte';
                           class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
                         >
                           {#if game.coverImageUrl}
-                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                            <BackendImage src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
                           {:else}
                             <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
                               {game.title}
@@ -458,7 +597,7 @@ import { onMount } from 'svelte';
                     onclick={() => profileStore.viewProfile(f.id)}
                     class="flex items-center gap-3 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-600/60 transition-colors text-left cursor-pointer"
                   >
-                    <img src={f.avatarUrl || undefined} alt={f.username} class="w-10 h-10 rounded-full object-cover bg-slate-800" />
+                    <BackendImage src={f.avatarUrl} alt={f.username} class="w-10 h-10 rounded-full object-cover bg-slate-800" />
                     <span class="text-sm font-bold text-slate-200 truncate">{f.username}</span>
                   </button>
                 {/each}
@@ -479,7 +618,7 @@ import { onMount } from 'svelte';
                       <span class="text-xs text-slate-500">{formatDate(post.createdAt)}</span>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                    <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{post.content}</p>
+                    <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                     {#if post.media?.type === 'image' && post.media.url}
                       <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                     {/if}
@@ -573,7 +712,7 @@ import { onMount } from 'svelte';
                       {/if}
                       <div>
                         <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                        <p class="text-sm text-slate-400 line-clamp-3 whitespace-pre-line">{post.content}</p>
+                        <p class="text-sm text-slate-400 line-clamp-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       </div>
                     </div>
                     <div class="flex gap-4 text-xs font-medium text-slate-400">

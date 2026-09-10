@@ -9,6 +9,7 @@
   import SelectGameModal from './SelectGameModal.svelte';
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
   import type { CommunityComment } from '../../services/communityService';
+  import { renderDecoratedText } from '../../utils/textDecorator';
 
   interface Props {
     gameId?: string | null;
@@ -244,20 +245,7 @@
   }
 
   function renderPostContent(raw: string): string {
-    if (!raw) return '';
-    let safe = escapeHtml(raw);
-    safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    safe = safe.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/g, '<u>$1</u>');
-    safe = safe.replace(/!\[(.*?)\]\((.*?)\)/g, (_match, alt, url) => {
-      const trimmed = (url || '').trim();
-      if (trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/uploads/')) {
-        return `<img src="${trimmed}" alt="${alt}" class="rounded-xl max-h-80 w-auto my-2 object-cover border border-cyan-900/60" loading="lazy" decoding="async" />`;
-      }
-      return '';
-    });
-    safe = safe.replace(/\n/g, '<br />');
-    return safe;
+    return renderDecoratedText(raw);
   }
 
   function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
@@ -1036,7 +1024,7 @@
                           </button>
                         </div>
 
-                        <p class="text-xs text-slate-300 leading-relaxed pl-8">{comment.content}</p>
+                        <p class="text-xs text-slate-300 leading-relaxed pl-8">{@html renderPostContent(comment.content)}</p>
 
                         <!-- Nested Replies -->
                         {#if comment.replies && comment.replies.length > 0}
@@ -1052,7 +1040,7 @@
                                   <span class="text-[11px] font-bold text-slate-200">{reply.author.username}</span>
                                   <span class="text-[9px] text-slate-500">{new Date(reply.createdAt).toLocaleDateString('uk-UA')}</span>
                                 </div>
-                                <p class="text-xs text-slate-300 pl-7">{reply.content}</p>
+                                <p class="text-xs text-slate-300 pl-7">{@html renderPostContent(reply.content)}</p>
                               </div>
                             {/each}
                           </div>

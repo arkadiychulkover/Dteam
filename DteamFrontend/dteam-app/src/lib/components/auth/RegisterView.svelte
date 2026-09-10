@@ -49,7 +49,7 @@
   async function connectMetaMask() {
     errorMessage = '';
     if (typeof window === 'undefined' || !(window as any).ethereum) {
-      errorMessage = 'MetaMask не обнаружен! Пожалуйста, установите расширение MetaMask для браузера.';
+      errorMessage = 'MetaMask не виявлено! Будь ласка, встановіть розширення MetaMask для браузера.';
       return;
     }
 
@@ -63,9 +63,9 @@
       }
     } catch (err: any) {
       if (err.code === 4001) {
-        errorMessage = 'Подключение MetaMask было отклонено пользователем.';
+        errorMessage = 'Підключення MetaMask було відхилено користувачем.';
       } else {
-        errorMessage = err.message || 'Не удалось подключиться к MetaMask.';
+        errorMessage = err.message || 'Не вдалося підключитися до MetaMask.';
       }
     } finally {
       isConnectingWallet = false;
@@ -76,32 +76,32 @@
     e.preventDefault();
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
-      errorMessage = 'Заполните все обязательные поля';
+      errorMessage = 'Заповніть усі обов\'язкові поля';
       return;
     }
 
     if (!hardhatAddress.trim()) {
-      errorMessage = 'Пожалуйста, подключите кошелек MetaMask (Hardhat-адрес обязателен для регистрации)';
+      errorMessage = 'Будь ласка, підключіть гаманець MetaMask (Hardhat-адреса обов\'язкова для реєстрації)';
       return;
     }
 
     if (!/^0x[a-fA-F0-9]{40}$/.test(hardhatAddress.trim())) {
-      errorMessage = 'Некорректный формат Ethereum/Hardhat адреса кошелька';
+      errorMessage = 'Некоректний формат Ethereum/Hardhat адреси гаманця';
       return;
     }
 
     if (password !== confirmPassword) {
-      errorMessage = 'Пароли не совпадают';
+      errorMessage = 'Паролі не співпадають';
       return;
     }
 
     if (password.length < 6) {
-      errorMessage = 'Пароль должен быть не менее 6 символов';
+      errorMessage = 'Пароль має бути не менше 6 символів';
       return;
     }
 
     if (!acceptTerms) {
-      errorMessage = 'Необходимо согласиться с условиями использования';
+      errorMessage = 'Необхідно погодитися з умовами використання та політикою конфіденційності';
       return;
     }
 
@@ -111,13 +111,13 @@
     try {
       await authStore.register(email.trim(), username.trim(), password, hardhatAddress.trim());
       uiStore.addToast({
-        title: 'Регистрация успешна',
-        message: `Добро пожаловать в DTEAM, ${username}!`,
+        title: 'Реєстрація успішна',
+        message: `Ласкаво просимо до DTEAM, ${username}!`,
         type: 'success'
       });
       uiStore.setTab('store');
     } catch (err: any) {
-      errorMessage = err.message || 'Ошибка при создании аккаунта.';
+      errorMessage = err.message || 'Помилка під час створення акаунта.';
     } finally {
       isSubmitting = false;
     }
@@ -138,10 +138,10 @@
           <Gamepad2 class="w-7 h-7 text-black font-black" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
-          Создание аккаунта <span class="text-cyan-400">DTEAM</span>
+          Створення акаунта <span class="text-cyan-400">DTEAM</span>
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Присоединяйтесь к игровой платформе нового поколения
+          Приєднуйтесь до ігрової платформи нового покоління
         </p>
       </div>
 
@@ -155,7 +155,7 @@
 
         <div>
           <label for="reg-username" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-            Логин (Никнейм)
+            Логін (Нікнейм)
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -195,12 +195,12 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
               <Wallet class="w-3.5 h-3.5 text-cyan-400" />
-              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hardhat / Web3 Кошелек</span>
+              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hardhat / Web3 Гаманець</span>
               <span class="text-rose-400 text-xs font-bold">*</span>
             </div>
             {#if hardhatAddress}
               <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                <Check class="w-3 h-3" /> Подключен
+                <Check class="w-3 h-3" /> Підключено
               </span>
             {/if}
           </div>
@@ -216,7 +216,7 @@
                 </div>
               </div>
               <span class="inline-flex items-center text-[10px] font-medium text-slate-400 shrink-0 bg-slate-800/40 px-2 py-1 rounded-lg border border-slate-700/40">
-                Авто-синхронизация
+                Автосинхронізація
               </span>
             </div>
           {:else}
@@ -228,14 +228,14 @@
             >
               {#if isConnectingWallet}
                 <div class="w-3.5 h-3.5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin"></div>
-                <span>Подключение к MetaMask...</span>
+                <span>Підключення до MetaMask...</span>
               {:else}
                 <span class="text-base">🦊</span>
-                <span>Подключить кошелек MetaMask</span>
+                <span>Підключити гаманець MetaMask</span>
               {/if}
             </button>
             <p class="text-[10px] text-slate-400 leading-tight">
-              Адрес кошелька будет привязан к вашему аккаунту для начисления и использования токенов DteamPoints.
+              Адреса гаманця буде прив'язана до вашого акаунта для нарахування та використання токенів DteamPoints.
             </p>
           {/if}
         </div>
@@ -274,7 +274,7 @@
 
           <div>
             <label for="reg-confirm-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Подтверждение
+              Підтвердження
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -300,7 +300,7 @@
               class="mt-0.5 w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
             />
             <span class="text-xs text-slate-400 leading-snug group-hover:text-slate-300 transition-colors">
-              Я соглашаюсь с <a href="#terms" onclick={(e) => e.preventDefault()} class="text-cyan-400 hover:underline">Условиями использования</a> и <a href="#privacy" onclick={(e) => e.preventDefault()} class="text-cyan-400 hover:underline">Политикой конфиденциальности</a> DTEAM.
+              Я погоджуюся з <button type="button" onclick={() => uiStore.setTab('terms')} class="text-cyan-400 hover:underline font-semibold cursor-pointer">Умовами використання</button> та <button type="button" onclick={() => uiStore.setTab('privacy')} class="text-cyan-400 hover:underline font-semibold cursor-pointer">Політикою конфіденційності</button> DTEAM.
             </span>
           </label>
         </div>
@@ -312,10 +312,10 @@
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Создание...</span>
+            <span>Створення...</span>
           {:else}
             <UserPlus class="w-4 h-4 text-black" />
-            <span>Создать аккаунт</span>
+            <span>Створити акаунт</span>
             <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
@@ -323,12 +323,12 @@
 
       <div class="mt-6 pt-5 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
-          Уже есть аккаунт?
+          Вже є акаунт?
           <button
             onclick={() => uiStore.setTab('login')}
             class="font-bold text-cyan-400 hover:text-cyan-300 ml-1 transition-colors cursor-pointer"
           >
-            Войти
+            Увійти
           </button>
         </p>
       </div>
