@@ -14,10 +14,14 @@ ping 127.0.0.1 -n 3 >nul
 echo [3/3] Starting Dteam Frontend...
 start "Dteam Frontend" "%~dp0start_frontend.bat"
 
+echo [4/4] Starting Ngrok Tunnel for Hardhat...
+start "Ngrok Tunnel" "%~dp0start_ngrok.bat"
+
 echo.
 echo ===================================================
 echo  All services launched in separate windows!
 echo  Hardhat:  http://127.0.0.1:8545
+echo  Ngrok:    https://goldmine-unloved-capsule.ngrok-free.dev
 echo  Backend:  http://localhost:5117
 echo  Frontend: http://localhost:5173
 echo ===================================================
