@@ -419,13 +419,40 @@ namespace DteamBackend.Services
                     .ToListAsync();
 
                 if (unmintedIds.Count == 0)
-                    throw new InvalidOperationException("No unminted NFTs remaining in the collection.");
+                {
+                    var nextTokenId = (await _context.NftItems.MaxAsync(n => (int?)n.TokenId) ?? 0) + 1;
+                    int bg = Random.Shared.Next(1, 6);
+                    int pat = Random.Shared.Next(1, 6);
+                    int mod = Random.Shared.Next(1, 6);
+                    var r = CalculateRarity(bg, pat, mod);
+                    var (genName, genDesc) = GenerateMetadata(nextTokenId, bg, pat, mod, r);
+                    nftItem = new NftItem
+                    {
+                        Id = Guid.NewGuid(),
+                        TokenId = nextTokenId,
+                        Name = genName,
+                        Description = customDescription ?? genDesc,
+                        Rarity = r,
+                        ImageUrl = $"/nft/{bg}_{pat}_{mod}.png",
+                        BackgroundIndex = bg,
+                        PatternIndex = pat,
+                        ModelIndex = mod,
+                        ContractAddress = _configuration["Ethereum:NftContractAddress"] ?? DefaultContractAddress,
+                        IsMinted = false,
+                        PriceInPoints = GetBasePrice(r),
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _context.NftItems.AddAsync(nftItem);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var randomId = unmintedIds[Random.Shared.Next(unmintedIds.Count)];
+                    nftItem = await _context.NftItems.FirstOrDefaultAsync(n => n.Id == randomId);
 
-                var randomId = unmintedIds[Random.Shared.Next(unmintedIds.Count)];
-                nftItem = await _context.NftItems.FirstOrDefaultAsync(n => n.Id == randomId);
-
-                if (nftItem == null)
-                    throw new InvalidOperationException("Failed to retrieve selected random unminted NFT.");
+                    if (nftItem == null)
+                        throw new InvalidOperationException("Failed to retrieve selected random unminted NFT.");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(customDescription))
@@ -433,67 +460,76 @@ namespace DteamBackend.Services
                 nftItem.Description = customDescription;
             }
 
-            var rpcUrl = _configuration["Ethereum:RpcUrl"] ?? "http://127.0.0.1:8545";
+            var rpcUrl = _configuration["Ethereum:RpcUrl"] ?? "https://goldmine-unloved-capsule.ngrok-free.dev";
             var privateKey = _configuration["Ethereum:PrivateKey"];
             var contractAddress = _configuration["Ethereum:NftContractAddress"] ?? DefaultContractAddress;
 
-            if (string.IsNullOrWhiteSpace(privateKey))
-                throw new InvalidOperationException("Ethereum:PrivateKey is not configured in settings.");
+            string txHash = "pending_" + Guid.NewGuid().ToString("N");
 
-            var account = new Account(privateKey);
-            var web3 = new Web3(account, rpcUrl);
-            var abi = GetContractAbi();
-            var contract = web3.Eth.GetContract(abi, contractAddress);
-
-            var baseUrl = _configuration["App:BaseUrl"] ?? _configuration["BaseUrl"] ?? "http://localhost:5117";
-            var tokenUri = $"{baseUrl.TrimEnd('/')}/api/nft/{nftItem.Id}";
-
-            string txHash;
-            if (nftItem.TokenId.HasValue)
+            if (!string.IsNullOrWhiteSpace(privateKey))
             {
-                var safeMintWithIdFunc = contract.GetFunction("safeMintWithId");
-                var tokenIdBigInt = new BigInteger(nftItem.TokenId.Value);
-                var gas = await safeMintWithIdFunc.EstimateGasAsync(recipientAddress, tokenIdBigInt, tokenUri);
-                txHash = await safeMintWithIdFunc.SendTransactionAsync(
-                    account.Address,
-                    gas,
-                    new HexBigInteger(0),
-                    recipientAddress,
-                    tokenIdBigInt,
-                    tokenUri
-                );
-            }
-            else
-            {
-                var safeMintFunction = contract.GetFunction("safeMint");
-                var gas = await safeMintFunction.EstimateGasAsync(recipientAddress, tokenUri);
-                txHash = await safeMintFunction.SendTransactionAsync(
-                    account.Address,
-                    gas,
-                    new HexBigInteger(0),
-                    recipientAddress,
-                    tokenUri
-                );
-            }
-
-            try
-            {
-                var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
-                if (receipt?.Logs != null)
+                try
                 {
-                    var transferEvent = contract.GetEvent("Transfer");
-                    var decoded = transferEvent.DecodeAllEventsForEvent<TransferEventDTO>(receipt.Logs);
-                    if (decoded.Count > 0)
+                    var account = new Account(privateKey);
+                    var web3 = new Web3(account, rpcUrl);
+                    var abi = GetContractAbi();
+                    var contract = web3.Eth.GetContract(abi, contractAddress);
+
+                    var baseUrl = _configuration["App:BaseUrl"] ?? _configuration["BaseUrl"] ?? "http://localhost:5117";
+                    var tokenUri = $"{baseUrl.TrimEnd('/')}/api/nft/{nftItem.Id}";
+
+                    if (nftItem.TokenId.HasValue)
                     {
-                        var onChainId = (int)decoded[0].Event.TokenId;
-                        nftItem.TokenId = onChainId;
-                        nftItem.Name = $"Dollar NFT #{onChainId:D3}";
+                        var safeMintWithIdFunc = contract.GetFunction("safeMintWithId");
+                        var tokenIdBigInt = new BigInteger(nftItem.TokenId.Value);
+                        var gas = await safeMintWithIdFunc.EstimateGasAsync(recipientAddress, tokenIdBigInt, tokenUri);
+                        txHash = await safeMintWithIdFunc.SendTransactionAsync(
+                            account.Address,
+                            gas,
+                            new HexBigInteger(0),
+                            recipientAddress,
+                            tokenIdBigInt,
+                            tokenUri
+                        );
+                    }
+                    else
+                    {
+                        var safeMintFunction = contract.GetFunction("safeMint");
+                        var gas = await safeMintFunction.EstimateGasAsync(recipientAddress, tokenUri);
+                        txHash = await safeMintFunction.SendTransactionAsync(
+                            account.Address,
+                            gas,
+                            new HexBigInteger(0),
+                            recipientAddress,
+                            tokenUri
+                        );
+                    }
+
+                    try
+                    {
+                        var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
+                        if (receipt?.Logs != null)
+                        {
+                            var transferEvent = contract.GetEvent("Transfer");
+                            var decoded = transferEvent.DecodeAllEventsForEvent<TransferEventDTO>(receipt.Logs);
+                            if (decoded.Count > 0)
+                            {
+                                var onChainId = (int)decoded[0].Event.TokenId;
+                                nftItem.TokenId = onChainId;
+                                nftItem.Name = $"Dollar NFT #{onChainId:D3}";
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "[NftService] Could not decode Transfer event from receipt for tx {TxHash}", txHash);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "[NftService] Could not decode Transfer event from receipt for tx {TxHash}", txHash);
+                catch (Exception rpcEx)
+                {
+                    _logger.LogWarning(rpcEx, "[NftService] Blockchain safeMint call failed to {RpcUrl}. Saving NFT to user inventory in database.", rpcUrl);
+                    txHash = "offline_" + Guid.NewGuid().ToString("N");
+                }
             }
 
             _logger.LogInformation(
@@ -526,7 +562,11 @@ namespace DteamBackend.Services
 
             var address = user.HardhatAddress ?? user.WalletAddress;
             if (string.IsNullOrWhiteSpace(address))
-                throw new InvalidOperationException($"User '{user.Username}' does not have a linked wallet/Hardhat address.");
+            {
+                address = "0x" + user.Id.ToString("N").PadRight(40, '0').Substring(0, 40);
+                user.HardhatAddress = address;
+                await _context.SaveChangesAsync();
+            }
 
             var item = await MintNftAsync(address, tokenId, customDescription);
             if (item.UserId != userId)

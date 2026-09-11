@@ -203,11 +203,15 @@ namespace DteamBackend.Hubs
                                 int mintsToProcess = Math.Min(pendingMints, 1);
 
                                 var recipientAddress = user.HardhatAddress ?? user.WalletAddress;
-                                if (!string.IsNullOrWhiteSpace(recipientAddress))
+                                if (string.IsNullOrWhiteSpace(recipientAddress))
                                 {
-                                    _logger.LogInformation(
-                                        "[OnlineHub] Користувач {Username} набрав достатньо часу ({TotalSec} сек). Мінтуємо {Count} NFT на адресу {Address}...",
-                                        user.Username, user.TotalTimeSpentSeconds, mintsToProcess, recipientAddress);
+                                    recipientAddress = "0x" + user.Id.ToString("N").PadRight(40, '0').Substring(0, 40);
+                                    user.HardhatAddress = recipientAddress;
+                                }
+
+                                _logger.LogInformation(
+                                    "[OnlineHub] Користувач {Username} набрав достатньо часу ({TotalSec} сек). Мінтуємо {Count} NFT на адресу {Address}...",
+                                    user.Username, user.TotalTimeSpentSeconds, mintsToProcess, recipientAddress);
 
                                     for (int i = 0; i < mintsToProcess; i++)
                                     {
@@ -236,10 +240,9 @@ namespace DteamBackend.Hubs
                                         }
                                     }
                                 }
-                            }
 
-                            await dbContext.SaveChangesAsync();
-                        }
+                                await dbContext.SaveChangesAsync();
+                            }
                     }
                     catch (Exception ex)
                     {

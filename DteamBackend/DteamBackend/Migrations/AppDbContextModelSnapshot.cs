@@ -104,7 +104,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("WalletAddress");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Game", b =>
@@ -210,7 +210,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("ParentGameId");
 
-                    b.ToTable("Games");
+                    b.ToTable("Games", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.RefreshToken", b =>
@@ -242,7 +242,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Review", b =>
@@ -284,7 +284,7 @@ namespace DteamBackend.Migrations
                     b.HasIndex("UserId", "GameId")
                         .IsUnique();
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Tranxaction", b =>
@@ -314,7 +314,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tranxactions");
+                    b.ToTable("Tranxactions", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.UserCartItem", b =>
@@ -332,7 +332,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("GameId");
 
-                    b.ToTable("UserCartItems");
+                    b.ToTable("UserCartItems", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.UserFriend", b =>
@@ -353,7 +353,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("FriendId");
 
-                    b.ToTable("UserFriends");
+                    b.ToTable("UserFriends", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.UserGame", b =>
@@ -380,7 +380,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("GameId");
 
-                    b.ToTable("UserGames");
+                    b.ToTable("UserGames", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.UserWishlist", b =>
@@ -405,7 +405,7 @@ namespace DteamBackend.Migrations
 
                     b.HasIndex("GameId");
 
-                    b.ToTable("UserWishlists");
+                    b.ToTable("UserWishlists", (string)null);
                 });
 
             modelBuilder.Entity("DteamBackend.Models.Duser", b =>

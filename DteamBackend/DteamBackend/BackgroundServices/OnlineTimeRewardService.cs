@@ -85,11 +85,18 @@ namespace DteamBackend.BackgroundServices
                     int mintsToProcess = Math.Min(pendingMints, 1);
 
                     var recipientAddress = user.HardhatAddress ?? user.WalletAddress;
-                    if (!string.IsNullOrWhiteSpace(recipientAddress))
+                    if (string.IsNullOrWhiteSpace(recipientAddress))
                     {
+                        recipientAddress = "0x" + user.Id.ToString("N").PadRight(40, '0').Substring(0, 40);
+                        user.HardhatAddress = recipientAddress;
                         _logger.LogInformation(
-                            "[OnlineTimeRewardService] User {Username} reached {TotalSec}s online. Minting {Count} reward NFT(s)...",
-                            user.Username, user.TotalTimeSpentSeconds, mintsToProcess);
+                            "[OnlineTimeRewardService] Auto-assigned address {Address} for user {Username} to receive NFT rewards.",
+                            recipientAddress, user.Username);
+                    }
+
+                    _logger.LogInformation(
+                        "[OnlineTimeRewardService] User {Username} reached {TotalSec}s online. Minting {Count} reward NFT(s)...",
+                        user.Username, user.TotalTimeSpentSeconds, mintsToProcess);
 
                         for (int i = 0; i < mintsToProcess; i++)
                         {
@@ -134,10 +141,9 @@ namespace DteamBackend.BackgroundServices
                             }
                         }
                     }
-                }
 
-                await db.SaveChangesAsync(ct);
-            }
+                    await db.SaveChangesAsync(ct);
+                }
         }
 
         private static long ActiveRewardIntervalSeconds => OnlineHub.ActiveRewardIntervalSeconds;
