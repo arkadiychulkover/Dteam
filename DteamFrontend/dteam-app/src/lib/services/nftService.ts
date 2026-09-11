@@ -1,11 +1,11 @@
-import { BrowserProvider, Contract, FetchRequest, JsonRpcProvider } from 'ethers';
+import { BrowserProvider, Contract, JsonRpcProvider } from 'ethers';
 import { DTEAM_NFT_ABI } from '../contracts/DteamNFTAbi';
 import { api } from './api';
 
 export const DTEAM_NFT_CONTRACT_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
 export const HARDHAT_RPC_URL =
   import.meta.env.VITE_HARDHAT_RPC_URL ||
-  'https://goldmine-unloved-capsule.ngrok-free.dev';
+  'https://dteam-backend-production.up.railway.app/api/rpc';
 
 export enum NftRarity {
   Common = 0,
@@ -114,9 +114,7 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
   }
 
   if (!provider) {
-    const fetchReq = new FetchRequest(HARDHAT_RPC_URL);
-    fetchReq.setHeader('ngrok-skip-browser-warning', 'true');
-    provider = new JsonRpcProvider(fetchReq);
+    provider = new JsonRpcProvider(HARDHAT_RPC_URL);
   }
 
   const contract = new Contract(DTEAM_NFT_CONTRACT_ADDRESS, DTEAM_NFT_ABI as any, provider);
