@@ -2,6 +2,7 @@ using System.Security.Claims;
 using DteamBackend.Interfaces;
 using DteamBackend.Models.DTO.Chat;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DteamBackend.Controllers
@@ -9,6 +10,7 @@ namespace DteamBackend.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [EnableCors("DteamCorsPolicy")]
     public class ChatController : ControllerBase
     {
         private readonly IChatService _chatService;
@@ -166,7 +168,7 @@ namespace DteamBackend.Controllers
             var (stream, contentType, fileName) = contentResult.Value;
 
             Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
-            return File(stream, contentType);
+            return File(stream, contentType, enableRangeProcessing: true);
         }
 
         [HttpGet("uploads/{uploadId:guid}/preview")]
@@ -187,7 +189,7 @@ namespace DteamBackend.Controllers
             var (stream, contentType, fileName) = previewResult.Value;
 
             Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
-            return File(stream, contentType);
+            return File(stream, contentType, enableRangeProcessing: true);
         }
 
         [HttpPost("typing")]

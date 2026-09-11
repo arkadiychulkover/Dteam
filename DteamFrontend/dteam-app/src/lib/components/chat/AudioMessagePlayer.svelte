@@ -3,6 +3,7 @@
   import { Play, Pause } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
   import { api } from '../../services/api';
+  import { BACKEND_URL } from '../../utils/constants';
 
   interface Props {
     src: string;
@@ -24,7 +25,8 @@
     if (!src) return '';
     let url = src;
     if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
-      url = url.startsWith('/') ? url : `/${url}`;
+      const cleanPath = url.startsWith('/') ? url : `/${url}`;
+      url = BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
     }
 
     if (url.includes('/api/chat/media') || url.includes('/api/chat/uploads')) {
@@ -50,16 +52,29 @@
     }
   });
 
-  $effect(() => {
-    if (audio && resolvedSrc && audio.src !== resolvedSrc) {
+  function initAudio() {
+    if (!resolvedSrc) return null;
+    if (!audio) {
+      audio = new Audio();
+      setupAudioListeners();
+    }
+    if (audio.src !== resolvedSrc) {
       audio.src = resolvedSrc;
+      audio.load();
+    }
+    return audio;
+  }
+
+  $effect(() => {
+    if (resolvedSrc && audio && audio.src !== resolvedSrc) {
+      audio.src = resolvedSrc;
+      audio.load();
     }
   });
 
   onMount(() => {
     if (resolvedSrc) {
-      audio = new Audio(resolvedSrc);
-      setupAudioListeners();
+      initAudio();
     }
 
     return () => {
@@ -98,16 +113,14 @@
   }
 
   function togglePlay() {
-    if (!audio && resolvedSrc) {
-      audio = new Audio(resolvedSrc);
-      setupAudioListeners();
-    }
+    const currentAudio = initAudio();
+    if (!currentAudio) return;
 
     if (isPlaying) {
       pauseAudio();
     } else {
       chatStore.setPlayingVoiceId(messageId);
-      audio.play().then(() => {
+      currentAudio.play().then(() => {
         isPlaying = true;
       }).catch(err => {
         console.warn('[AudioPlayer] Playback failed:', err);
