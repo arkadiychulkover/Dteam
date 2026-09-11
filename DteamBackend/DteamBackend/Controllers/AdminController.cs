@@ -277,19 +277,130 @@ namespace DteamBackend.Controllers
 
         [HttpDelete("users/{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                  ?? User.FindFirst("sub")?.Value;
+            if (Guid.TryParse(currentUserIdClaim, out var currentAdminId) && currentAdminId == id)
+            {
+                return BadRequest(new { message = "Нельзя удалить свой собственный аккаунт администратора." });
+            }
+
+            var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id);
             if (user == null)
             {
                 return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
             }
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Refresh tokens
+                var refreshTokens = await _context.RefreshTokens.Where(rt => rt.UserId == id).ToListAsync();
+                if (refreshTokens.Count > 0) _context.RefreshTokens.RemoveRange(refreshTokens);
 
-            return Ok(new { message = $"Пользователь '{user.Username}' успешно удален" });
+                // 2. Chat messages and uploads
+                var uploads = await _context.ChatUploads.Where(u => u.UserId == id).ToListAsync();
+                if (uploads.Count > 0) _context.ChatUploads.RemoveRange(uploads);
+
+                var messages = await _context.ChatMessages.Where(m => m.SenderId == id || m.ReceiverId == id).ToListAsync();
+                if (messages.Count > 0) _context.ChatMessages.RemoveRange(messages);
+
+                // 3. Wallet transactions
+                var walletTx = await _context.WalletTransactions.Where(t => t.UserId == id).ToListAsync();
+                if (walletTx.Count > 0) _context.WalletTransactions.RemoveRange(walletTx);
+
+                // 4. Crypto transactions
+                var tranxactions = await _context.Tranxactions.Where(t => t.UserId == id).ToListAsync();
+                foreach (var tx in tranxactions) tx.UserId = null;
+
+                // 5. Social & Friends
+                var friendRequests = await _context.FriendRequests.Where(fr => fr.SenderId == id || fr.ReceiverId == id).ToListAsync();
+                if (friendRequests.Count > 0) _context.FriendRequests.RemoveRange(friendRequests);
+
+                var userFriends = await _context.UserFriends.Where(uf => uf.UserId == id || uf.FriendId == id).ToListAsync();
+                if (userFriends.Count > 0) _context.UserFriends.RemoveRange(userFriends);
+
+                var userBlocks = await _context.UserBlocks.Where(ub => ub.UserId == id || ub.BlockedUserId == id).ToListAsync();
+                if (userBlocks.Count > 0) _context.UserBlocks.RemoveRange(userBlocks);
+
+                // 6. Library, Wishlist, Cart
+                var userGames = await _context.UserGames.Where(ug => ug.UserId == id).ToListAsync();
+                if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
+
+                var wishlists = await _context.UserWishlists.Where(w => w.UserId == id).ToListAsync();
+                if (wishlists.Count > 0) _context.UserWishlists.RemoveRange(wishlists);
+
+                var cartItems = await _context.UserCartItems.Where(c => c.UserId == id).ToListAsync();
+                if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
+
+                // 7. Reviews
+                var reviews = await _context.Reviews.Where(r => r.UserId == id).ToListAsync();
+                if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
+
+                // 8. Activities, notifications, preferences
+                var activities = await _context.UserActivities.Where(a => a.UserId == id).ToListAsync();
+                if (activities.Count > 0) _context.UserActivities.RemoveRange(activities);
+
+                var notifications = await _context.Notifications.Where(n => n.UserId == id || n.ActorUserId == id).ToListAsync();
+                if (notifications.Count > 0) _context.Notifications.RemoveRange(notifications);
+
+                var notifPrefs = await _context.UserNotificationPreferences.Where(p => p.UserId == id).ToListAsync();
+                if (notifPrefs.Count > 0) _context.UserNotificationPreferences.RemoveRange(notifPrefs);
+
+                // 9. NFTs & transfers
+                var nfts = await _context.NftItems.Where(n => n.UserId == id).ToListAsync();
+                foreach (var nft in nfts) nft.UserId = null;
+
+                var transfers = await _context.NftTransfers.Where(t => t.FromUserId == id || t.ToUserId == id).ToListAsync();
+                foreach (var t in transfers)
+                {
+                    if (t.FromUserId == id) t.FromUserId = null;
+                    if (t.ToUserId == id) t.ToUserId = null;
+                }
+
+                // 10. Game collections
+                var collections = await _context.GameCollections.Include(c => c.Items).Where(c => c.UserId == id).ToListAsync();
+                if (collections.Count > 0) _context.GameCollections.RemoveRange(collections);
+
+                // 11. Family links
+                var familyMembers = await _context.Users.Where(u => u.FamilyOwnerId == id).ToListAsync();
+                foreach (var member in familyMembers)
+                {
+                    member.FamilyOwnerId = null;
+                    member.IsInFamily = false;
+                }
+
+                // 12. Created games
+                var createdGames = await _context.Games.Where(g => g.OwnerId == id).ToListAsync();
+                if (createdGames.Count > 0)
+                {
+                    var otherAdmin = await _context.Users.FirstOrDefaultAsync(u => u.IsAdmin && u.Id != id);
+                    if (otherAdmin != null)
+                    {
+                        foreach (var g in createdGames) g.OwnerId = otherAdmin.Id;
+                    }
+                    else
+                    {
+                        _context.Games.RemoveRange(createdGames);
+                    }
+                }
+
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("[Admin] User '{Username}' (ID: {Id}) permanently deleted with all relations.", user.Username, id);
+                return Ok(new { message = $"Пользователь '{user.Username}' успешно удален" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "[Admin] Error permanently deleting user {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Ошибка при удалении пользователя: {ex.Message}" });
+            }
         }
 
         [HttpGet("games")]
@@ -444,16 +555,60 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteGame(Guid id)
         {
-            var game = await _context.Games.FindAsync(id);
+            var game = await _context.Games
+                .Include(g => g.Dlcs)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
             if (game == null)
             {
                 return NotFound(new { message = $"Игра с ID '{id}' не найдена" });
             }
 
-            _context.Games.Remove(game);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. DLCs
+                foreach (var dlc in game.Dlcs)
+                {
+                    dlc.ParentGameId = null;
+                }
 
-            return Ok(new { message = $"Игра '{game.Title}' успешно удалена" });
+                // 2. User cart & wishlist
+                var cartItems = await _context.UserCartItems.Where(c => c.GameId == id).ToListAsync();
+                if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
+
+                var wishlists = await _context.UserWishlists.Where(w => w.GameId == id).ToListAsync();
+                if (wishlists.Count > 0) _context.UserWishlists.RemoveRange(wishlists);
+
+                // 3. User games (library)
+                var userGames = await _context.UserGames.Where(ug => ug.GameId == id).ToListAsync();
+                if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
+
+                // 4. Collection items
+                var colItems = await _context.GameCollectionItems.Where(ci => ci.GameId == id).ToListAsync();
+                if (colItems.Count > 0) _context.GameCollectionItems.RemoveRange(colItems);
+
+                // 5. Reviews
+                var reviews = await _context.Reviews.Where(r => r.GameId == id).ToListAsync();
+                if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
+
+                // 6. Community posts linking to this game
+                var posts = await _context.CommunityPosts.Where(p => p.GameGuidId == id).ToListAsync();
+                foreach (var p in posts) p.GameGuidId = null;
+
+                _context.Games.Remove(game);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("[Admin] Game '{Title}' (ID: {Id}) deleted by admin.", game.Title, id);
+                return Ok(new { message = $"Игра '{game.Title}' успешно удалена" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "[Admin] Error deleting game {GameId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Ошибка при удалении игры: {ex.Message}" });
+            }
         }
 
         [HttpGet("reward-settings")]
