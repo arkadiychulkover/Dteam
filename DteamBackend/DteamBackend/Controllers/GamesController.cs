@@ -730,58 +730,15 @@ namespace DteamBackend.Controllers
                 else if (System.IO.File.Exists(candidate3)) physicalPath = candidate3;
             }
 
+            if (physicalPath == null || !System.IO.File.Exists(physicalPath))
+            {
+                return NotFound(new { message = "Файл білду для цієї гри наразі відсутній або ще не завантажений розробником на сервер." });
+            }
+
             game.DownloadCount += 1;
             await _context.SaveChangesAsync();
 
-            if (physicalPath != null && System.IO.File.Exists(physicalPath))
-            {
-                return PhysicalFile(physicalPath, "application/zip", $"{safeTitle}.zip", enableRangeProcessing: true);
-            }
-
-            using var memoryStream = new MemoryStream();
-            using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
-            {
-                var readmeEntry = archive.CreateEntry("README.txt");
-                using (var entryStream = readmeEntry.Open())
-                using (var writer = new StreamWriter(entryStream))
-                {
-                    writer.WriteLine("=================================================");
-                    writer.WriteLine($" Dteam Gaming Hub — {game.Title}");
-                    writer.WriteLine("=================================================");
-                    writer.WriteLine($"Версія: {game.Version ?? "1.0.0"}");
-                    writer.WriteLine($"Розробник: {game.Owner?.Username ?? "Dteam Studios"}");
-                    writer.WriteLine($"Завантажено гравцем: {userId}");
-                    writer.WriteLine($"Дата: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-                    writer.WriteLine("");
-                    writer.WriteLine("Опис гри:");
-                    writer.WriteLine(game.Description ?? game.ShortDescription ?? "Гра з бібліотеки Dteam.");
-                    writer.WriteLine("");
-                    writer.WriteLine("Приємної гри та нових досягнень!");
-                }
-
-                var exeEntry = archive.CreateEntry($"{safeTitle}.exe");
-                using (var entryStream = exeEntry.Open())
-                {
-                    var stubBytes = System.Text.Encoding.UTF8.GetBytes($"MZ_DTEAM_LAUNCHER_STUB_FOR_{safeTitle}");
-                    entryStream.Write(stubBytes, 0, stubBytes.Length);
-                }
-
-                var infoEntry = archive.CreateEntry("game_info.json");
-                using (var entryStream = infoEntry.Open())
-                using (var writer = new StreamWriter(entryStream))
-                {
-                    var json = System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        gameId = game.Id,
-                        title = game.Title,
-                        version = game.Version ?? "1.0.0",
-                        downloadedAt = DateTime.UtcNow
-                    });
-                    writer.Write(json);
-                }
-            }
-
-            return File(memoryStream.ToArray(), "application/zip", $"{safeTitle}.zip");
+            return PhysicalFile(physicalPath, "application/zip", $"{safeTitle}.zip", enableRangeProcessing: true);
         }
     }
 }

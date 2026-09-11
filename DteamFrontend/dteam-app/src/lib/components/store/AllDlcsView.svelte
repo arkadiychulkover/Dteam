@@ -20,6 +20,7 @@
   import { gamesService } from '../../services/gamesService';
   import { router } from '../../services/router';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { Game } from '../../types';
 
   const game = $derived($gamesStore.selectedGame || $gamesStore.games[0]);
@@ -135,8 +136,8 @@
 
     <div class="relative w-full h-[320px] md:h-[400px] overflow-hidden bg-black select-none">
 
-      <img
-        src={game.headerImageUrl || game.coverImageUrl || '/placeholder.png'}
+      <BackendImage
+        src={game.headerImageUrl || game.coverImageUrl}
         alt={game.title}
         class="w-full h-full object-cover object-center filter brightness-90 transform scale-105"
       />
@@ -195,8 +196,8 @@
 
             <div class="flex items-center gap-2 pt-1 overflow-x-auto">
               {#each dlcs.slice(0, 6) as dlc}
-                <img
-                  src={dlc.coverImageUrl || dlc.headerImageUrl || '/placeholder.png'}
+                <BackendImage
+                  src={dlc.coverImageUrl || dlc.headerImageUrl}
                   alt={dlc.title}
                   title={dlc.title}
                   class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30 shrink-0"
@@ -346,8 +347,8 @@
               <div>
 
                 <div class="relative w-full h-48 sm:h-56 bg-black overflow-hidden">
-                  <img
-                    src={dlc.headerImageUrl || dlc.coverImageUrl || '/placeholder.png'}
+                  <BackendImage
+                    src={dlc.headerImageUrl || dlc.coverImageUrl}
                     alt={dlc.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

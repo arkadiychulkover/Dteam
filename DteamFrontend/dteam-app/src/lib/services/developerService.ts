@@ -8,6 +8,10 @@ export const developerService = {
     return await api.get<DeveloperStats>('/developer/stats');
   },
 
+  async getSalesDynamics(days: number = 30): Promise<Array<{ date: string; downloads: number; earningsInTon: number }>> {
+    return await api.get<Array<{ date: string; downloads: number; earningsInTon: number }>>(`/developer/sales-dynamics?days=${days}`);
+  },
+
   async getMyGames(): Promise<Game[]> {
     return await api.get<Game[]>('/developer/games');
   },

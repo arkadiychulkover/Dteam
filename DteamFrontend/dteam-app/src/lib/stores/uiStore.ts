@@ -56,7 +56,6 @@ function createUiStore() {
     isConfirmCodeModalOpen: boolean;
     isDepositModalOpen: boolean;
     isFriendsSidebarOpen: boolean;
-    isWalletModalOpen: boolean;
     isPublishGameModalOpen: boolean;
     isEditGameModalOpen: boolean;
     editingGame: Game | null;
@@ -67,7 +66,6 @@ function createUiStore() {
     isConfirmCodeModalOpen: false,
     isDepositModalOpen: false,
     isFriendsSidebarOpen: false,
-    isWalletModalOpen: false,
     isPublishGameModalOpen: false,
     isEditGameModalOpen: false,
     editingGame: null,
@@ -97,7 +95,6 @@ function createUiStore() {
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
     setDepositModal: (isOpen: boolean) => update((s) => ({ ...s, isDepositModalOpen: isOpen })),
     toggleFriendsSidebar: () => update((s) => ({ ...s, isFriendsSidebarOpen: !s.isFriendsSidebarOpen })),
-    setWalletModal: (isOpen: boolean) => update((s) => ({ ...s, isWalletModalOpen: isOpen })),
     setPublishGameModal: (isOpen: boolean) => update((s) => ({ ...s, isPublishGameModalOpen: isOpen })),
     setEditGameModal: (isOpen: boolean, game: Game | null = null) =>
       update((s) => ({ ...s, isEditGameModalOpen: isOpen, editingGame: game })),

@@ -149,16 +149,6 @@ namespace DteamBackend.Controllers
                 int downloadsCount = dayPurchases.Count;
                 long dayEarnings = dayPurchases.Sum(ug => (long)ug.Game.PriceInNanoTons);
 
-                if (userGames.Count == 0 && totalDownloads > 0)
-                {
-                    if (day.Day == 19 || day.Day == 26 || (day.Day == now.Day && day.Month == now.Month))
-                    {
-                        downloadsCount = day.Day == now.Day ? 2 : 1;
-                        var samplePrice = myGames.FirstOrDefault()?.PriceInNanoTons ?? 4_000_000_000;
-                        dayEarnings = downloadsCount * samplePrice;
-                    }
-                }
-
                 dailyPoints.Add(new DailyMetricPointDto
                 {
                     Date = day.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
@@ -180,12 +170,9 @@ namespace DteamBackend.Controllers
                 }
             }
 
-            if (earnings30d == 0 && user.TotalEarningsInNanoTons > 0) earnings30d = user.TotalEarningsInNanoTons;
-            if (downloads30d == 0 && totalDownloads > 0) downloads30d = totalDownloads;
-
             var stats = new DeveloperStatsDto
             {
-                TotalEarningsInNanoTons = Math.Max(user.TotalEarningsInNanoTons, earnings30d),
+                TotalEarningsInNanoTons = user.TotalEarningsInNanoTons,
                 TotalDownloads = totalDownloads,
                 TotalGames = myGames.Count,
                 AverageRating = avgRating,
@@ -200,6 +187,49 @@ namespace DteamBackend.Controllers
             };
 
             return Ok(stats);
+        }
+
+        [HttpGet("sales-dynamics")]
+        public async Task<ActionResult<List<DailyMetricPointDto>>> GetSalesDynamics([FromQuery] int days = 30)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var safeDays = Math.Clamp(days, 1, 90);
+            var now = DateTime.UtcNow;
+            var startDate = now.AddDays(-safeDays + 1).Date;
+
+            var myGameIds = await _context.Games
+                .AsNoTracking()
+                .Where(g => g.OwnerId == userId)
+                .Select(g => g.Id)
+                .ToListAsync();
+
+            var purchases = await _context.UserGames
+                .AsNoTracking()
+                .Include(ug => ug.Game)
+                .Where(ug => myGameIds.Contains(ug.GameId) && ug.PurchasedAt >= startDate)
+                .ToListAsync();
+
+            var dailyPoints = new List<DailyMetricPointDto>();
+            for (int i = 0; i < safeDays; i++)
+            {
+                var day = startDate.AddDays(i);
+                var nextDay = day.AddDays(1);
+                var dayPurchases = purchases.Where(ug => ug.PurchasedAt >= day && ug.PurchasedAt < nextDay).ToList();
+
+                dailyPoints.Add(new DailyMetricPointDto
+                {
+                    Date = day.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
+                    Downloads = dayPurchases.Count,
+                    EarningsInTon = (decimal)dayPurchases.Sum(ug => (long)ug.Game.PriceInNanoTons) / 1_000_000_000m
+                });
+            }
+
+            return Ok(dailyPoints);
         }
 
         [HttpGet("games")]
