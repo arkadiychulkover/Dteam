@@ -16,11 +16,16 @@ namespace DteamBackend.Controllers
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IRewardSettingsService _rewardSettingsService;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(AppDbContext context, ILogger<AdminController> logger)
+        public AdminController(
+            AppDbContext context,
+            IRewardSettingsService rewardSettingsService,
+            ILogger<AdminController> logger)
         {
             _context = context;
+            _rewardSettingsService = rewardSettingsService;
             _logger = logger;
         }
 
@@ -449,6 +454,35 @@ namespace DteamBackend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = $"Игра '{game.Title}' успешно удалена" });
+        }
+
+        [HttpGet("reward-settings")]
+        [ProducesResponseType(typeof(RewardSettingsDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<RewardSettingsDto>> GetRewardSettings()
+        {
+            var settings = await _rewardSettingsService.GetSettingsAsync();
+            return Ok(new RewardSettingsDto
+            {
+                RewardIntervalMinutes = settings.RewardIntervalMinutes,
+                TokensPerHour = settings.TokensPerHour,
+                IsEnabled = settings.IsEnabled,
+                UpdatedAt = settings.UpdatedAt
+            });
+        }
+
+        [HttpPut("reward-settings")]
+        [ProducesResponseType(typeof(RewardSettingsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<RewardSettingsDto>> UpdateRewardSettings([FromBody] UpdateRewardSettingsDto dto)
+        {
+            var settings = await _rewardSettingsService.UpdateSettingsAsync(dto);
+            return Ok(new RewardSettingsDto
+            {
+                RewardIntervalMinutes = settings.RewardIntervalMinutes,
+                TokensPerHour = settings.TokensPerHour,
+                IsEnabled = settings.IsEnabled,
+                UpdatedAt = settings.UpdatedAt
+            });
         }
     }
 }

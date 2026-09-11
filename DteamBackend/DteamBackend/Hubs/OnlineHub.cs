@@ -23,7 +23,7 @@ namespace DteamBackend.Hubs
         public const long ShortRewardIntervalSeconds = 30;
         public const long TenHourRewardIntervalSeconds = 36000;
 
-        public const long ActiveRewardIntervalSeconds = TenHourRewardIntervalSeconds;
+        public static long ActiveRewardIntervalSeconds { get; set; } = 3600;
 
         public OnlineHub(
             IDbContextFactory<AppDbContext> contextFactory,

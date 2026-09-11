@@ -58,6 +58,16 @@ function createCartStore() {
         return false;
       }
 
+      const library = get(libraryStore);
+      if (library.items.some((item) => item.gameId === game.id)) {
+        uiStore.addToast({
+          title: 'Вже придбано',
+          message: `Гра "${game.title}" вже є у вашій бібліотеці!`,
+          type: 'info',
+        });
+        return false;
+      }
+
       const state = get({ subscribe });
       const isAlreadyIn = state.cartGameIds.has(game.id);
 
@@ -134,8 +144,21 @@ function createCartStore() {
         return false;
       }
 
+      const library = get(libraryStore);
+      const ownedSet = new Set(library.items.map(i => i.gameId));
+      const unownedGames = games.filter(g => !ownedSet.has(g.id));
+
+      if (unownedGames.length === 0) {
+        uiStore.addToast({
+          title: 'Вже придбано',
+          message: 'Всі обрані ігри вже є у вашій бібліотеці!',
+          type: 'info',
+        });
+        return true;
+      }
+
       let addedCount = 0;
-      for (const game of games) {
+      for (const game of unownedGames) {
         const state = get({ subscribe });
         if (!state.cartGameIds.has(game.id)) {
           try {

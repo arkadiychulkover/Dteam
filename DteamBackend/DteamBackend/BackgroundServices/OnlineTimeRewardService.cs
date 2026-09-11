@@ -1,6 +1,7 @@
 using DteamBackend.Data;
 using DteamBackend.Hubs;
 using DteamBackend.Interfaces;
+using DteamBackend.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,10 @@ namespace DteamBackend.BackgroundServices
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var nftService = scope.ServiceProvider.GetRequiredService<INftService>();
+            var rewardSettingsService = scope.ServiceProvider.GetRequiredService<IRewardSettingsService>();
+
+            var currentSettings = await rewardSettingsService.GetSettingsAsync();
+            if (!currentSettings.IsEnabled) return;
 
             foreach (var userGuid in activeGuids)
             {
@@ -135,7 +140,7 @@ namespace DteamBackend.BackgroundServices
             }
         }
 
-        private const long ActiveRewardIntervalSeconds = OnlineHub.ActiveRewardIntervalSeconds;
+        private static long ActiveRewardIntervalSeconds => OnlineHub.ActiveRewardIntervalSeconds;
     }
 }
 

@@ -20,10 +20,12 @@ namespace DteamBackend.Controllers
     public class CommunityController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public CommunityController(AppDbContext context)
+        public CommunityController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         private Guid GetCurrentUserId()
@@ -278,7 +280,8 @@ namespace DteamBackend.Controllers
             }
 
             var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "community");
+            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var folder = Path.Combine(webRoot, "community");
             if (!Directory.Exists(folder))
             {
                 Directory.CreateDirectory(folder);

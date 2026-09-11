@@ -152,6 +152,27 @@ class AdminService {
   public async deleteGame(id: string, _customAdminId?: string): Promise<{ message: string }> {
     return await api.delete<{ message: string }>(`/admin/games/${id}`);
   }
+
+  public async getRewardSettings(): Promise<RewardSettingsDto> {
+    return await api.get<RewardSettingsDto>('/admin/reward-settings');
+  }
+
+  public async updateRewardSettings(dto: UpdateRewardSettingsDto): Promise<RewardSettingsDto> {
+    return await api.put<RewardSettingsDto>('/admin/reward-settings', dto);
+  }
+}
+
+export interface RewardSettingsDto {
+  rewardIntervalMinutes: number;
+  tokensPerHour: number;
+  isEnabled: boolean;
+  updatedAt?: string;
+}
+
+export interface UpdateRewardSettingsDto {
+  rewardIntervalMinutes: number;
+  tokensPerHour: number;
+  isEnabled: boolean;
 }
 
 export const adminService = new AdminService();

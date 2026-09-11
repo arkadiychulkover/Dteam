@@ -5,7 +5,7 @@
   import { profileStore } from '../../stores/profileStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { formatPlayTime } from '../../utils/formatters';
-  import { renderDecoratedText } from '../../utils/textDecorator';
+  import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import type { Game, UserGame } from '../../types';
   import LibraryGameDetailsView from './LibraryGameDetailsView.svelte';
   import {
@@ -366,12 +366,12 @@
                   <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-400/50 transition-all flex flex-col justify-between">
                     {#if post.media?.url}
                       {#if post.media.type === 'video'}
-                        <video src={post.media.url} class="w-full h-32 object-cover" muted></video>
+                        <video src={resolveMediaUrl(post.media.url)} class="w-full h-32 object-cover" controls playsinline muted></video>
                       {:else}
-                        <img src={post.media.url} alt="" class="w-full h-32 object-cover" />
+                        <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-32 object-cover" />
                       {/if}
                     {:else if post.gameBannerUrl}
-                      <img src={post.gameBannerUrl} alt="" class="w-full h-32 object-cover opacity-80" />
+                      <img src={resolveMediaUrl(post.gameBannerUrl)} alt="" class="w-full h-32 object-cover opacity-80" />
                     {/if}
 
                     <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
@@ -464,11 +464,11 @@
 
                   {#if post.media?.type === 'image' && post.media.url}
                     <div class="relative mt-3">
-                      <img src={post.media.url} alt="" class="w-full h-40 object-cover" />
+                      <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-40 object-cover" />
                     </div>
                   {:else if post.media?.type === 'video' && post.media.url}
                     <div class="relative mt-3">
-                      <video src={post.media.url} class="w-full h-40 object-cover" muted></video>
+                      <video src={resolveMediaUrl(post.media.url)} class="w-full h-40 object-cover" muted></video>
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="w-10 h-10 rounded-full bg-black/50 border-2 border-white flex items-center justify-center">
                           <div class="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1"></div>

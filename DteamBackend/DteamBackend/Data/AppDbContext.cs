@@ -35,6 +35,7 @@ namespace DteamBackend.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<GameCollection> GameCollections => Set<GameCollection>();
         public DbSet<GameCollectionItem> GameCollectionItems => Set<GameCollectionItem>();
+        public DbSet<RewardSettings> RewardSettings => Set<RewardSettings>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

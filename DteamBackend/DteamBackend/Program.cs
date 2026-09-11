@@ -52,6 +52,7 @@ namespace DteamBackend
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IInitDataService, InitDataService>();
+            builder.Services.AddScoped<IRewardSettingsService, RewardSettingsService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<TonService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
@@ -289,7 +290,7 @@ namespace DteamBackend
                 {
                     Directory.CreateDirectory(webRoot);
                 }
-                foreach (var subDir in new[] { "uploads", "game_images", "comunity" })
+                foreach (var subDir in new[] { "uploads", "game_images", "community", "comunity", "storage" })
                 {
                     var dirPath = Path.Combine(webRoot, subDir);
                     if (!Directory.Exists(dirPath))
@@ -304,7 +305,18 @@ namespace DteamBackend
                 logger.LogWarning(ex, "Failed to ensure static upload folders exist.");
             }
 
-            app.UseStaticFiles();
+            var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            contentTypeProvider.Mappings[".mp4"] = "video/mp4";
+            contentTypeProvider.Mappings[".webm"] = "video/webm";
+            contentTypeProvider.Mappings[".mov"] = "video/quicktime";
+            contentTypeProvider.Mappings[".m4v"] = "video/x-m4v";
+            contentTypeProvider.Mappings[".webp"] = "image/webp";
+            contentTypeProvider.Mappings[".zip"] = "application/zip";
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ContentTypeProvider = contentTypeProvider
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();

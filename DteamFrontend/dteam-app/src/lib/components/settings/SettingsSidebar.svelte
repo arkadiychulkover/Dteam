@@ -1,9 +1,11 @@
 <script lang="ts">
   import { settingsStore } from '../../stores/settingsStore';
+  import { themeStore } from '../../stores/themeStore';
   import SettingsToggle from './primitives/SettingsToggle.svelte';
   import {
     Search,
     Moon,
+    Sun,
     User,
     Lock,
     Bell,
@@ -14,7 +16,7 @@
 
   const { uiState } = settingsStore;
 
-  let isDarkTheme = $state(true);
+  const isDark = $derived($themeStore === 'dark');
 
   const navItems: { id: SettingsTabId; label: string; icon: any; keywords: string[] }[] = [
     { id: 'general', label: 'Загальні налаштування', icon: User, keywords: ['профіль', 'аватар', 'банер', 'нікнейм', 'пошта', 'мова', 'біо'] },
@@ -47,16 +49,21 @@
     />
   </div>
 
-  <!-- Dark Theme Toggle Row (from mockup) -->
+  <!-- Dark / Light Theme Toggle Row -->
   <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-[#011c27]/60 border border-cyan-900/20">
     <div class="flex items-center gap-2.5 text-xs font-bold text-slate-200">
-      <Moon class="w-4 h-4 text-cyan-400" />
-      <span>Темна тема</span>
+      {#if isDark}
+        <Moon class="w-4 h-4 text-cyan-400" />
+        <span>Темна тема</span>
+      {:else}
+        <Sun class="w-4 h-4 text-amber-400" />
+        <span>Світла тема</span>
+      {/if}
     </div>
     <SettingsToggle
-      checked={isDarkTheme}
-      onchange={(val) => isDarkTheme = val}
-      ariaLabel="Перемикач темної теми"
+      checked={isDark}
+      onchange={(val) => themeStore.setTheme(val ? 'dark' : 'light')}
+      ariaLabel="Перемикач теми оформлення"
     />
   </div>
 

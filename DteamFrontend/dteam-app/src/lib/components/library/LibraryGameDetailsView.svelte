@@ -13,8 +13,8 @@
   import { gamesService } from '../../services/gamesService';
   import type { Review } from '../../types';
   import { formatBytes, formatDate, formatPrice } from '../../utils/formatters';
-  import { renderDecoratedText } from '../../utils/textDecorator';
-  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
+  import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
+  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Download, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
   import CreateCollectionModal from './CreateCollectionModal.svelte';
 
   interface Props {
@@ -143,12 +143,56 @@
     }
   }
 
-  function handleDownload() {
+  let isDownloading = $state(false);
+
+  async function handleDownload() {
+    if (!game?.id || isDownloading) return;
+    isDownloading = true;
     uiStore.addToast({
-      title: 'Завантаження',
-      message: `Завантаження '${game.title}' розпочато.`,
-      type: 'success',
+      title: 'Завантаження розпочато',
+      message: `Підготовка архіву гри '${game.title}'...`,
+      type: 'info',
     });
+
+    try {
+      const token = localStorage.getItem('dteam_token') || sessionStorage.getItem('dteam_token');
+      const res = await fetch(`/api/games/${game.id}/download`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Помилка завантаження гри';
+        try {
+          const errData = await res.json();
+          if (errData.message) errMsg = errData.message;
+        } catch {}
+        throw new Error(errMsg);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${game.title.replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_')}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      uiStore.addToast({
+        title: 'Успішно завантажено',
+        message: `Архів '${game.title}' збережено на ваш пристрій!`,
+        type: 'success',
+      });
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка завантаження',
+        message: e?.message || 'Не вдалося завантажити гру.',
+        type: 'error',
+      });
+    } finally {
+      isDownloading = false;
+    }
   }
 
   function handleToggleFavorite() {
@@ -210,9 +254,16 @@
       <div class="flex flex-wrap items-center gap-4">
         <button
           onclick={handleDownload}
-          class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
+          disabled={isDownloading}
+          class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-50 text-black font-black text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2"
         >
-          Скачати
+          {#if isDownloading}
+            <Loader2 class="w-4 h-4 animate-spin" />
+            <span>Завантаження...</span>
+          {:else}
+            <Download class="w-4 h-4" />
+            <span>Завантажити</span>
+          {/if}
         </button>
 
         <div class="flex flex-col text-xs text-slate-300">
@@ -416,12 +467,12 @@
             <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg mb-4">
               {#if post.media?.url}
                 {#if post.media.type === 'video'}
-                  <video src={post.media.url} class="w-full max-h-72" controls></video>
+                  <video src={resolveMediaUrl(post.media.url)} class="w-full max-h-72" controls playsinline></video>
                 {:else}
-                  <img src={post.media.url} alt="" class="w-full max-h-72 object-cover" />
+                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full max-h-72 object-cover" />
                 {/if}
               {:else if post.gameBannerUrl}
-                <img src={post.gameBannerUrl} alt="" class="w-full max-h-56 object-cover opacity-80" />
+                <img src={resolveMediaUrl(post.gameBannerUrl)} alt="" class="w-full max-h-56 object-cover opacity-80" />
               {/if}
 
               <div class="p-5 space-y-3">
@@ -506,9 +557,9 @@
                 </div>
 
                 {#if post.media?.type === 'image' && post.media.url}
-                  <img src={post.media.url} alt="" class="w-full h-32 object-cover mt-3" />
+                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-32 object-cover mt-3" />
                 {:else if post.media?.type === 'video' && post.media.url}
-                  <video src={post.media.url} class="w-full h-32 object-cover mt-3" muted></video>
+                  <video src={resolveMediaUrl(post.media.url)} class="w-full h-32 object-cover mt-3" controls playsinline muted></video>
                 {/if}
 
                 <div class="p-4 space-y-2">

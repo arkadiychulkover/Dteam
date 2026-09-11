@@ -3,6 +3,7 @@
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
+  import { libraryStore } from '../../stores/libraryStore';
   import { uiStore } from '../../stores/uiStore';
   import { currentUser } from '../../stores/authStore';
   import { gamesService } from '../../services/gamesService';
@@ -51,6 +52,7 @@
 
   const game = $derived($gamesStore.selectedGame || $gamesStore.games[0]);
   const isWishlisted = $derived(game ? $wishlistStore.wishlistGameIds.has(game.id) : false);
+  const isOwned = $derived(game ? $libraryStore.items.some(i => i.gameId === game.id) : false);
 
   let selectedReviewForComments = $state<Review | null>(null);
   let isReviewCommentsModalOpen = $state(false);
@@ -603,33 +605,43 @@
               {/if}
             </div>
 
-            <button
-              onclick={() => handleBuy(game.title, true)}
-              class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-base tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Купити</span>
-            </button>
-
-            <div class="flex items-center gap-2">
+            {#if isOwned}
               <button
-                onclick={() => handleBuy(game.title, false)}
-                class="flex-1 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                onclick={() => { uiStore.setTab('library'); libraryStore.selectGame(game.id); }}
+                class="w-full py-3.5 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-cyan-300 font-black text-base tracking-wide shadow-lg shadow-cyan-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <ShoppingCart class="w-4 h-4 text-cyan-400" />
-                <span>Додати у кошик</span>
+                <Check class="w-5 h-5 text-cyan-400" />
+                <span>У вашій бібліотеці — Відкрити</span>
+              </button>
+            {:else}
+              <button
+                onclick={() => handleBuy(game.title, true)}
+                class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-base tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Купити</span>
               </button>
 
-              <button
-                onclick={() => wishlistStore.toggleWishlist(game)}
-                class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-center
-                  {isWishlisted
-                    ? 'bg-rose-950/80 border-rose-500 text-rose-500 shadow-md shadow-rose-500/20'
-                    : 'bg-[#0b2834] hover:bg-[#0f3444] border-cyan-500/30 text-slate-300 hover:text-rose-400'}"
-                title={isWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}
-              >
-                <Heart class="w-4 h-4 {isWishlisted ? 'fill-rose-500 text-rose-500' : ''}" />
-              </button>
-            </div>
+              <div class="flex items-center gap-2">
+                <button
+                  onclick={() => handleBuy(game.title, false)}
+                  class="flex-1 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart class="w-4 h-4 text-cyan-400" />
+                  <span>Додати у кошик</span>
+                </button>
+
+                <button
+                  onclick={() => wishlistStore.toggleWishlist(game)}
+                  class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-center
+                    {isWishlisted
+                      ? 'bg-rose-950/80 border-rose-500 text-rose-500 shadow-md shadow-rose-500/20'
+                      : 'bg-[#0b2834] hover:bg-[#0f3444] border-cyan-500/30 text-slate-300 hover:text-rose-400'}"
+                  title={isWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}
+                >
+                  <Heart class="w-4 h-4 {isWishlisted ? 'fill-rose-500 text-rose-500' : ''}" />
+                </button>
+              </div>
+            {/if}
 
             <div class="flex items-center justify-between pt-2 border-t border-cyan-950/80 text-xs font-semibold text-slate-400">
               <button

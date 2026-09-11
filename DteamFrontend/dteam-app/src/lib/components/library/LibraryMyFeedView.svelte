@@ -5,7 +5,7 @@
   import { profileStore } from '../../stores/profileStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
-  import { renderDecoratedText } from '../../utils/textDecorator';
+  import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import {
     Rss,
     Heart,
@@ -215,7 +215,7 @@
             </div>
           {:else if post.media?.url && post.media.type === 'video'}
             <div class="relative max-h-64 bg-black">
-              <video src={post.media.url} controls class="w-full h-full object-contain"></video>
+              <video src={resolveMediaUrl(post.media.url)} controls playsinline class="w-full h-full object-contain"></video>
             </div>
           {/if}
 

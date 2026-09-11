@@ -52,6 +52,7 @@
   import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
   import { router } from './lib/services/router';
+  import { themeStore } from './lib/stores/themeStore';
 
   let isBanned = $state(false);
 
@@ -90,6 +91,7 @@
   });
 
   onMount(() => {
+    themeStore.init();
     soundService.registerUserGestureUnlock();
     router.init();
     onlineHubService.startConnection();

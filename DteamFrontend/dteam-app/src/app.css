@@ -212,4 +212,160 @@ body.hidecur * {
   opacity: 0;
 }
 
+/* ==========================================================================
+   Light Theme System
+   ========================================================================== */
+html.light,
+html.light-theme,
+body.light-theme {
+  color-scheme: light;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light body,
+.light-theme body,
+body.light-theme {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Dark teal surfaces converted to clean white cards with crisp borders */
+html.light .bg-\[\#040e14\],
+html.light .bg-\[\#0a0c14\],
+html.light .bg-\[\#030d12\],
+html.light .bg-\[\#030d12\]\/90,
+html.light .bg-\[\#061820\],
+html.light .bg-\[\#061820\]\/90,
+html.light .bg-\[\#061820\]\/80,
+html.light .bg-\[\#061820\]\/70,
+html.light .bg-\[\#061820\]\/60,
+html.light .bg-\[\#081722\]\/95,
+html.light .bg-\[\#09151e\],
+html.light .bg-\[\#09222c\],
+html.light .bg-\[\#02222d\]\/80,
+html.light .bg-\[\#011c27\],
+html.light .bg-\[\#011c27\]\/60,
+html.light .bg-\[\#001824\],
+html.light .bg-\[\#05151e\],
+html.light .bg-slate-900,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-950,
+.light-theme .bg-\[\#040e14\],
+.light-theme .bg-\[\#0a0c14\],
+.light-theme .bg-\[\#030d12\],
+.light-theme .bg-\[\#030d12\]\/90,
+.light-theme .bg-\[\#061820\],
+.light-theme .bg-\[\#061820\]\/90,
+.light-theme .bg-\[\#061820\]\/80,
+.light-theme .bg-\[\#061820\]\/70,
+.light-theme .bg-\[\#061820\]\/60,
+.light-theme .bg-\[\#081722\]\/95,
+.light-theme .bg-\[\#09151e\],
+.light-theme .bg-\[\#09222c\],
+.light-theme .bg-\[\#02222d\]\/80,
+.light-theme .bg-\[\#011c27\],
+.light-theme .bg-\[\#011c27\]\/60,
+.light-theme .bg-\[\#001824\],
+.light-theme .bg-\[\#05151e\],
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/80,
+.light-theme .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+html.light header,
+.light-theme header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 4px 25px -4px rgba(0, 0, 0, 0.07);
+}
+
+html.light .glass-panel,
+html.light .glass-panel-glow,
+.light-theme .glass-panel,
+.light-theme .glass-panel-glow {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Light text contrast */
+html.light .text-white,
+.light-theme .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100,
+html.light .text-slate-200,
+.light-theme .text-slate-100,
+.light-theme .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400,
+.light-theme .text-slate-300,
+.light-theme .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Borders in light mode */
+html.light .border-cyan-500\/20,
+html.light .border-cyan-500\/30,
+html.light .border-cyan-900\/20,
+html.light .border-cyan-900\/30,
+html.light .border-cyan-800\/40,
+html.light .border-slate-800,
+html.light .border-slate-800\/40,
+html.light .border-slate-800\/80,
+.light-theme .border-cyan-500\/20,
+.light-theme .border-cyan-500\/30,
+.light-theme .border-cyan-900\/20,
+.light-theme .border-cyan-900\/30,
+.light-theme .border-cyan-800\/40,
+.light-theme .border-slate-800,
+.light-theme .border-slate-800\/40,
+.light-theme .border-slate-800\/80 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Inputs and controls in light mode */
+html.light input,
+html.light textarea,
+html.light select,
+.light-theme input,
+.light-theme textarea,
+.light-theme select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder,
+.light-theme input::placeholder,
+.light-theme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Scrollbar */
+html.light ::-webkit-scrollbar-track,
+.light-theme ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb,
+.light-theme ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover,
+.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
+}
+
 

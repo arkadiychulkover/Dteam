@@ -348,8 +348,7 @@
 <header class="sticky top-0 z-40 relative bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 transition-all">
   <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
-    <div class="flex items-center gap-3 sm:gap-6 shrink-0">
-
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
       <button
         onclick={() => isMobileMenuOpen = true}
         class="lg:hidden p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 cursor-pointer transition-all shrink-0"
@@ -372,8 +371,11 @@
           <span class="block text-[7px] sm:text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">GAMING HUB</span>
         </div>
       </button>
+    </div>
 
-      <nav class="hidden lg:flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative">
+    <!-- Center: Navigation Tabs + Search Bar directly underneath stretched to tab bar width -->
+    <div class="hidden lg:flex flex-col items-stretch gap-1.5 shrink-0">
+      <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative justify-between">
         {#each visibleTabs as tab}
           {@const Icon = tab.icon}
           {#if tab.id === 'catalog'}
@@ -417,35 +419,51 @@
           {/if}
         {/each}
       </nav>
+
+      <div bind:this={searchWrapperEl} class="relative w-full">
+        <form onsubmit={handleSearchSubmit} class="relative w-full">
+          <input
+            type="text"
+            placeholder="Пошук у Крамниці..."
+            bind:value={headerSearchQuery}
+            oninput={handleSearchInput}
+            onfocus={handleSearchFocus}
+            class="w-full pl-3.5 pr-9 py-1.5 rounded-xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+          />
+          <button
+            type="submit"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
+            title="Пошук"
+          >
+            <Search class="w-3.5 h-3.5" />
+          </button>
+        </form>
+
+        <GameRecommendationsDropdown
+          {recommendations}
+          isOpen={isRecommendationsOpen}
+          isLoading={isLoadingRecommendations}
+          searchQuery={headerSearchQuery}
+          onSelect={handleSelectRecommendation}
+          onViewAll={handleSearchSubmit}
+        />
+      </div>
     </div>
 
-    <div bind:this={searchWrapperEl} class="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2 transition-all">
+    <!-- Mobile compact search (visible only below lg) -->
+    <div class="lg:hidden flex-1 max-w-xs mx-1">
       <form onsubmit={handleSearchSubmit} class="relative w-full">
         <input
           type="text"
-          placeholder="Пошук у Крамниці..."
+          placeholder="Пошук..."
           bind:value={headerSearchQuery}
           oninput={handleSearchInput}
-          onfocus={handleSearchFocus}
-          class="w-full pl-3 sm:pl-4 pr-8 sm:pr-10 py-1.5 sm:py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+          class="w-full pl-3 pr-8 py-1.5 rounded-xl bg-[#061820]/90 border border-cyan-500/30 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
         />
-        <button
-          type="submit"
-          class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
-          title="Пошук"
-        >
-          <Search class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 p-1">
+          <Search class="w-3.5 h-3.5" />
         </button>
       </form>
-
-      <GameRecommendationsDropdown
-        {recommendations}
-        isOpen={isRecommendationsOpen}
-        isLoading={isLoadingRecommendations}
-        searchQuery={headerSearchQuery}
-        onSelect={handleSelectRecommendation}
-        onViewAll={handleSearchSubmit}
-      />
     </div>
 
     <div class="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">

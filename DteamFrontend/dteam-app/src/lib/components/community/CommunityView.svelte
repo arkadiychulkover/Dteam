@@ -9,7 +9,7 @@
   import SelectGameModal from './SelectGameModal.svelte';
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
   import type { CommunityComment } from '../../services/communityService';
-  import { renderDecoratedText } from '../../utils/textDecorator';
+  import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
 
   interface Props {
     gameId?: string | null;
@@ -877,16 +877,16 @@
             <p class="text-sm text-slate-300 leading-relaxed">{@html renderPostContent(post.content)}</p>
 
             {#if post.media?.type === 'video' && post.media.url}
-              <video src={post.media.url} class="mt-3 rounded-xl max-h-96 w-full" controls></video>
+              <video src={resolveMediaUrl(post.media.url)} class="mt-3 rounded-xl max-h-96 w-full" controls playsinline></video>
             {:else if post.media?.url}
               <div
                 class="relative mt-3 rounded-xl overflow-hidden cursor-pointer group/img"
                 role="button"
                 tabindex="0"
-                onclick={() => (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
-                onkeydown={(e) => e.key === 'Enter' && (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
+                onclick={() => (lightboxMedia = { src: resolveMediaUrl(post.media.url), title: post.title, author: post.author })}
+                onkeydown={(e) => e.key === 'Enter' && (lightboxMedia = { src: resolveMediaUrl(post.media.url), title: post.title, author: post.author })}
               >
-                <img src={post.media.url} alt="" class="max-h-96 w-full object-cover group-hover/img:scale-101 transition-transform" />
+                <img src={resolveMediaUrl(post.media.url)} alt="" class="max-h-96 w-full object-cover group-hover/img:scale-101 transition-transform" />
                 <div class="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-xs text-slate-200 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
                   <ZoomIn class="w-3 h-3" />
                   <span>Збільшити</span>

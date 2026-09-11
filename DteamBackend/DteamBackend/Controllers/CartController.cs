@@ -132,6 +132,12 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Гру з ID '{dto.GameId}' не знайдено." });
             }
 
+            var isAlreadyOwned = await _context.UserGames.AnyAsync(ug => ug.UserId == userId && ug.GameId == dto.GameId);
+            if (isAlreadyOwned)
+            {
+                return BadRequest(new { message = "Ця гра вже придбана та є у вашій бібліотеці." });
+            }
+
             var existingItem = await _context.UserCartItems
                 .Include(c => c.Game)
                     .ThenInclude(g => g.Owner)
@@ -304,10 +310,27 @@ namespace DteamBackend.Controllers
                     return BadRequest(new { message = "Кошик порожній." });
                 }
 
+                var existingOwnedGameIds = await _context.UserGames
+                    .Where(ug => ug.UserId == userId)
+                    .Select(ug => ug.GameId)
+                    .ToListAsync();
+
+                var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
+
+                var eligibleItems = cartItems.Where(item => !ownedSet.Contains(item.GameId)).ToList();
+                if (eligibleItems.Count == 0)
+                {
+                    _context.UserCartItems.RemoveRange(cartItems);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return BadRequest(new { message = "Всі ігри з кошика вже є у вашій бібліотеці." });
+                }
+
                 long totalRequiredNanoTons = 0;
                 var gamesToPurchase = new List<(Game game, long effectivePrice)>();
 
-                foreach (var item in cartItems)
+                foreach (var item in eligibleItems)
                 {
                     var game = item.Game;
                     long effectivePrice = game.PriceInNanoTons;
@@ -331,13 +354,6 @@ namespace DteamBackend.Controllers
                         missingNanoTons = totalRequiredNanoTons - user.BalanceInNanoTons
                     });
                 }
-
-                var existingOwnedGameIds = await _context.UserGames
-                    .Where(ug => ug.UserId == userId)
-                    .Select(ug => ug.GameId)
-                    .ToListAsync();
-
-                var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
 
                 user.BalanceInNanoTons -= totalRequiredNanoTons;
                 user.UpdatedAt = DateTime.UtcNow;

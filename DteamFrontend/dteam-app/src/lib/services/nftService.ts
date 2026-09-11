@@ -3,7 +3,9 @@ import { DTEAM_NFT_ABI } from '../contracts/DteamNFTAbi';
 import { api } from './api';
 
 export const DTEAM_NFT_CONTRACT_ADDRESS = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
-export const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
+export const HARDHAT_RPC_URL =
+  import.meta.env.VITE_HARDHAT_RPC_URL ||
+  'https://goldmine-unloved-capsule.ngrok-free.dev';
 
 export enum NftRarity {
   Common = 0,

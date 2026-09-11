@@ -9,7 +9,7 @@
   import { uiStore } from "../../stores/uiStore";
   import { profileStore } from "../../stores/profileStore";
   import { gamesStore } from "../../stores/gamesStore";
-  import { renderDecoratedText } from "../../utils/textDecorator";
+  import { renderDecoratedText, resolveMediaUrl } from "../../utils/textDecorator";
   import {
     Users,
     Search,
@@ -895,8 +895,9 @@
                   ></iframe>
                 {:else}
                   <video
-                    src={selectedPost.media.url}
+                    src={resolveMediaUrl(selectedPost.media.url)}
                     controls
+                    playsinline
                     class="w-full h-full"
                   ></video>
                 {/if}

@@ -2,7 +2,9 @@ import { BrowserProvider, Contract, formatEther, JsonRpcProvider } from 'ethers'
 import { DTEAM_POINTS_ABI } from '../contracts/DteamPointsAbi';
 
 export const DTEAM_POINTS_CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
+export const HARDHAT_RPC_URL =
+  import.meta.env.VITE_HARDHAT_RPC_URL ||
+  'https://goldmine-unloved-capsule.ngrok-free.dev';
 
 export { DTEAM_POINTS_ABI };
 
