@@ -341,6 +341,19 @@ namespace DteamBackend
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHub<NotificationHub>("/hub/notifications");
 
+            // Initialize default reward settings and ensure table exists
+            try
+            {
+                using var scope = app.Services.CreateScope();
+                var rewardService = scope.ServiceProvider.GetRequiredService<IRewardSettingsService>();
+                await rewardService.GetSettingsAsync();
+            }
+            catch (Exception ex)
+            {
+                var logger = app.Services.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Failed to initialize reward settings on startup.");
+            }
+
             await app.RunAsync();
         }
 
