@@ -16,7 +16,7 @@
     const trimmedCode = resetCode.trim();
 
     if (!trimmedCode) {
-      errorMessage = 'Введите код подтверждения (GUID)';
+      errorMessage = 'Введіть код підтвердження (GUID)';
       return;
     }
 
@@ -26,14 +26,14 @@
     try {
       await authStore.verifyResetCode(trimmedCode);
       uiStore.addToast({
-        title: 'Код подтвержден',
-        message: 'Успешная верификация!',
+        title: 'Код підтверджено',
+        message: 'Успішна верифікація!',
         type: 'success'
       });
       closeModal();
       uiStore.setTab('reset-password');
     } catch (err: any) {
-      errorMessage = err.message || 'Неверный или истекший код.';
+      errorMessage = err.message || 'Невірний або застарілий код.';
     } finally {
       isSubmitting = false;
     }
@@ -67,7 +67,7 @@
           <ShieldCheck class="w-6 h-6" />
         </div>
         <h2 class="text-xl sm:text-2xl font-extrabold text-white font-display">
-          Введите код подтверждения
+          Введіть код підтвердження
         </h2>
       </div>
 
@@ -100,10 +100,10 @@
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Проверка...</span>
+            <span>Перевірка...</span>
           {:else}
             <CheckCircle class="w-4 h-4 text-black" />
-            <span>Подтвердить</span>
+            <span>Підтвердити</span>
           {/if}
         </button>
       </form>

@@ -2,6 +2,7 @@ import * as signalR from '@microsoft/signalr';
 import { authStore } from '../stores/authStore';
 import { get } from 'svelte/store';
 import type { AppNotification } from '../types/notification';
+import { BACKEND_URL } from '../utils/constants';
 
 type NotificationHandler = (notification: AppNotification) => void;
 
@@ -33,8 +34,10 @@ class NotificationHubService {
 
     try {
       if (!this.connection) {
+        const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/notifications`;
+
         this.connection = new signalR.HubConnectionBuilder()
-          .withUrl('/hubs/notifications', {
+          .withUrl(hubUrl, {
             accessTokenFactory: () => {
               const current = get(authStore);
               return current.token || localStorage.getItem('dteam_token') || '';

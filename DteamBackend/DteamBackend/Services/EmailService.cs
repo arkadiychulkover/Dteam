@@ -24,11 +24,13 @@ namespace DteamBackend.Services
     public class SmtpEmailService : IEmailService
     {
         private readonly EmailSettings _settings;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<SmtpEmailService> _logger;
 
-        public SmtpEmailService(IOptions<EmailSettings> settings, ILogger<SmtpEmailService> logger)
+        public SmtpEmailService(IOptions<EmailSettings> settings, IConfiguration configuration, ILogger<SmtpEmailService> logger)
         {
             _settings = settings.Value;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -68,17 +70,21 @@ namespace DteamBackend.Services
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
-            var subject = "Код восстановления пароля — DTEAM";
+            var frontendUrl = _configuration["FrontendUrl"] ?? _configuration["FRONTEND_URL"] ?? "https://dteam-app.vercel.app";
+            var subject = "Код відновлення пароля — DTEAM";
             var bodyHtml = $@"
-                <div style=""font-family: Arial, sans-serif; background-color: #0a0c14; color: #f1f5f9; padding: 24px; border-radius: 12px;"">
-                    <h2 style=""color: #22d3ee;"">Восстановление доступа DTEAM</h2>
-                    <p>Здравствуйте!</p>
-                    <p>Вы запросили сброс пароля для вашей учетной записи DTEAM.</p>
-                    <p>Ваш одноразовый код подтверждения:</p>
-                    <div style=""background-color: #1e293b; color: #38bdf8; font-size: 20px; font-weight: bold; letter-spacing: 1px; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; word-break: break-all;"">
+                <div style=""font-family: Arial, sans-serif; background-color: #0a0c14; color: #f1f5f9; padding: 28px; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid #1e293b;"">
+                    <h2 style=""color: #22d3ee; margin-top: 0;"">Відновлення доступу DTEAM</h2>
+                    <p>Вітаємо!</p>
+                    <p>Ви надіслали запит на скидання пароля для вашого облікового запису DTEAM.</p>
+                    <p>Ваш одноразовий код підтвердження:</p>
+                    <div style=""background-color: #1e293b; color: #38bdf8; font-size: 24px; font-weight: bold; letter-spacing: 2px; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; word-break: break-all; border: 1px solid #334155;"">
                         {resetCode}
                     </div>
-                    <p style=""font-size: 13px; color: #94a3b8;"">Код действителен в течение 15 минут. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
+                    <div style=""text-align: center; margin: 24px 0;"">
+                        <a href=""{frontendUrl}"" style=""display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;"">Перейти до DTEAM</a>
+                    </div>
+                    <p style=""font-size: 13px; color: #94a3b8; margin-bottom: 0;"">Код дійсний протягом 15 хвилин. Якщо ви не надсилали запит на скидання пароля, просто проігноруйте цей лист.</p>
                 </div>
             ";
 

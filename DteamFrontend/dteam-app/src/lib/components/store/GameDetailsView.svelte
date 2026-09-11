@@ -7,6 +7,7 @@
   import { currentUser } from '../../stores/authStore';
   import { gamesService } from '../../services/gamesService';
   import { formatPrice, formatBasePrice, formatBytes } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
   import type { Game, Review } from '../../types';
   import {
     Star,
@@ -46,6 +47,7 @@
   import type { FriendsGameStatusDto } from '../../types/friend';
   import { router } from '../../services/router';
   import ReviewCommentsModal from './ReviewCommentsModal.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   const game = $derived($gamesStore.selectedGame || $gamesStore.games[0]);
   const isWishlisted = $derived(game ? $wishlistStore.wishlistGameIds.has(game.id) : false);
@@ -712,7 +714,7 @@
                         >
                           <div class="w-6 h-6 rounded-full overflow-hidden bg-cyan-900 shrink-0">
                             {#if friend.avatarUrl}
-                              <img src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                              <BackendImage src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
                             {:else}
                               <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-cyan-700">
                                 {friend.username.charAt(0).toUpperCase()}
@@ -744,7 +746,7 @@
                         >
                           <div class="w-6 h-6 rounded-full overflow-hidden bg-rose-950 shrink-0">
                             {#if friend.avatarUrl}
-                              <img src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                              <BackendImage src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
                             {:else}
                               <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-rose-700">
                                 {friend.username.charAt(0).toUpperCase()}
@@ -950,7 +952,7 @@
                   </h3>
 
                   <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">
-                    {newsItem.content}
+                    {@html renderDecoratedText(newsItem.content)}
                   </p>
                 </div>
 
@@ -1173,7 +1175,7 @@
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
                       {#if review.userAvatarUrl || review.user?.avatarUrl}
-                        <img
+                        <BackendImage
                           src={review.userAvatarUrl || review.user?.avatarUrl || ''}
                           alt={review.username || review.user?.username || 'User'}
                           class="w-full h-full object-cover"
@@ -1348,7 +1350,7 @@
             <img src={selectedNewsModal.media.url} alt="" class="w-full rounded-2xl max-h-64 object-cover" />
           {/if}
         {/if}
-        <p>{selectedNewsModal.content}</p>
+        <p>{@html renderDecoratedText(selectedNewsModal.content)}</p>
       </div>
     </div>
   </div>

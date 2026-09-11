@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 5117
+EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:5117
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -18,5 +19,6 @@ RUN dotnet publish "DteamBackend.csproj" -c Release -o /app/publish /p:UseAppHos
 
 FROM base AS final
 WORKDIR /app
+RUN mkdir -p /app/wwwroot/uploads /app/wwwroot/game_images /app/wwwroot/comunity
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "DteamBackend.dll"]

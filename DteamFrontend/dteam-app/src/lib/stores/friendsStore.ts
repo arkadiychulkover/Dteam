@@ -10,6 +10,7 @@ function createFriendsStore() {
   const { subscribe, set, update } = writable<{
     friends: FriendDto[];
     requests: FriendRequestDto[];
+    outgoingRequests: FriendRequestDto[];
     blocked: FriendDto[];
     onlineUserIds: Set<string>;
     isLoading: boolean;
@@ -17,6 +18,7 @@ function createFriendsStore() {
   }>({
     friends: [],
     requests: [],
+    outgoingRequests: [],
     blocked: [],
     onlineUserIds: new Set<string>(),
     isLoading: false,
@@ -31,13 +33,17 @@ function createFriendsStore() {
 
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const [friendsList, requestsList, blockedList] = await Promise.all([
+        const [friendsList, incomingList, outgoingList, blockedList] = await Promise.all([
           friendsService.getFriends().catch((err) => {
             console.warn('Failed to load friends list:', err);
             return [];
           }),
           friendsService.getFriendRequests('incoming').catch((err) => {
             console.warn('Failed to load friend requests:', err);
+            return [];
+          }),
+          friendsService.getFriendRequests('outgoing').catch((err) => {
+            console.warn('Failed to load outgoing friend requests:', err);
             return [];
           }),
           friendsService.getBlocked().catch((err) => {
@@ -53,7 +59,8 @@ function createFriendsStore() {
             ...f,
             status: s.onlineUserIds.has(f.id.toLowerCase()) ? UserStatus.Online : f.status
           })),
-          requests: requestsList,
+          requests: incomingList,
+          outgoingRequests: outgoingList,
           blocked: blockedList,
           isLoading: false
         }));
@@ -78,8 +85,11 @@ function createFriendsStore() {
       if (!api.getToken()) return;
 
       try {
-        const list = await friendsService.getFriendRequests('incoming');
-        update((s) => ({ ...s, requests: list }));
+        const [incoming, outgoing] = await Promise.all([
+          friendsService.getFriendRequests('incoming').catch(() => []),
+          friendsService.getFriendRequests('outgoing').catch(() => [])
+        ]);
+        update((s) => ({ ...s, requests: incoming, outgoingRequests: outgoing }));
       } catch (err: any) {
         console.warn('Failed to load friend requests', err);
       }
@@ -101,6 +111,7 @@ function createFriendsStore() {
         });
         await Promise.all([
           friendsService.getFriendRequests('incoming').then((reqs) => update((s) => ({ ...s, requests: reqs }))).catch(() => {}),
+          friendsService.getFriendRequests('outgoing').then((reqs) => update((s) => ({ ...s, outgoingRequests: reqs }))).catch(() => {}),
           friendsService.getFriends().then((frs) => update((s) => ({ ...s, friends: frs }))).catch(() => {})
         ]);
         return true;
@@ -159,6 +170,31 @@ function createFriendsStore() {
         uiStore.addToast({
           title: 'Помилка',
           message: err.message || 'Не вдалося відхилити запит',
+          type: 'error'
+        });
+        return false;
+      }
+    },
+
+    cancelRequest: async (requestId: string, username?: string) => {
+      try {
+        const res = await friendsService.cancelFriendRequest(requestId);
+        update((s) => ({
+          ...s,
+          outgoingRequests: s.outgoingRequests.filter((r) => r.id !== requestId),
+          requests: s.requests.filter((r) => r.id !== requestId)
+        }));
+
+        uiStore.addToast({
+          title: 'Запит скасовано',
+          message: res.message || `Запит до ${username || 'користувача'} скасовано.`,
+          type: 'info'
+        });
+        return true;
+      } catch (err: any) {
+        uiStore.addToast({
+          title: 'Помилка',
+          message: err.message || 'Не вдалося скасувати запит',
           type: 'error'
         });
         return false;

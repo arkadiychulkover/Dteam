@@ -13,6 +13,8 @@
   import { getBalanceDirectFromBlockchain, DTEAM_POINTS_CONTRACT_ADDRESS } from '../../services/blockchainService';
   import { uiStore } from '../../stores/uiStore';
   import { formatDate } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { UserStatus } from '../../types';
   import {
     Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
@@ -437,12 +439,10 @@
   }
 
   function statusLabel(status?: number) {
-    switch (status) {
-      case UserStatus.Online: return { text: 'онлайн', color: 'text-emerald-400' };
-      case UserStatus.InGame: return { text: 'у грі', color: 'text-cyan-400' };
-      case UserStatus.Away: return { text: 'відійшов', color: 'text-amber-400' };
-      default: return { text: 'офлайн', color: 'text-slate-500' };
-    }
+    if (status === UserStatus.InGame) return { text: 'у грі', color: 'text-cyan-400' };
+    if (status === UserStatus.Away) return { text: 'відійшов', color: 'text-amber-400' };
+    // Current user is actively logged in and viewing their profile
+    return { text: 'у мережі', color: 'text-emerald-400' };
   }
 
 </script>
@@ -480,7 +480,7 @@
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
         <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
           {#if $currentUser.avatarUrl}
-            <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
+            <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
           {:else}
             <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
               {$currentUser.username.charAt(0).toUpperCase()}
@@ -841,7 +841,7 @@
                         {/if}
                       </div>
                       <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                      <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{post.content}</p>
+                      <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       {#if post.media?.url && post.media?.type !== 'video'}
                         <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                       {/if}
@@ -919,7 +919,7 @@
                       {/if}
                       <div>
                         <h3 class="text-base font-bold text-white mb-2">{post.title}</h3>
-                        <p class="text-xs text-slate-400 line-clamp-3 whitespace-pre-line">{post.content}</p>
+                        <p class="text-xs text-slate-400 line-clamp-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       </div>
                     </div>
                   {/each}
@@ -943,7 +943,7 @@
                           <Star class="w-4 h-4 {i < review.rating ? 'fill-rose-500' : 'text-slate-600'}" />
                         {/each}
                       </div>
-                      <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{review.content}</p>
+                      <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{@html renderDecoratedText(review.content)}</p>
                       <span class="block text-[11px] text-slate-500 mt-3">{formatDate(review.createdAt)}</span>
                     </div>
                   {/each}

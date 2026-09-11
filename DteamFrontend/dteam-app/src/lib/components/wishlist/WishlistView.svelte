@@ -4,6 +4,8 @@
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
+  import { currentUser } from '../../stores/authStore';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
   import type { WishlistItem, Game } from '../../types';
   import GameDetailsModal from '../store/GameDetailsModal.svelte';
@@ -105,13 +107,14 @@
     }
   }
 
-  function handleDecorativeBuy(e: MouseEvent, game: Game) {
+  function openGame(game: Game) {
+    gamesStore.selectGame(game);
+    uiStore.setTab('game');
+  }
+
+  function handleAddToCart(e: MouseEvent, game: Game) {
     e.stopPropagation();
-    uiStore.addToast({
-      title: 'Кошик',
-      message: `Гру '${game.title}' додано до кошика.`,
-      type: 'success',
-    });
+    cartStore.addToCart(game);
   }
 
   const filteredItems = $derived(
@@ -233,11 +236,16 @@
         </button>
 
         <button
-          onclick={() => uiStore.addToast({ title: 'Кошик', message: 'Кошик порожній.', type: 'info' })}
-          class="p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/70 border border-cyan-500/20 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
+          onclick={() => uiStore.setTab('cart')}
+          class="relative p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/70 border border-cyan-500/20 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
           title="Кошик"
         >
           <ShoppingBag class="w-4 h-4" />
+          {#if $cartStore.items.length > 0}
+            <span class="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-cyan-400 text-black text-[9px] font-black flex items-center justify-center">
+              {$cartStore.items.length}
+            </span>
+          {/if}
         </button>
       </div>
     </div>
@@ -575,8 +583,8 @@
             >
               <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto">
                 <div class="relative w-24 sm:w-44 aspect-[16/9] rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-cyan-500/30 shadow-md">
-                  <img
-                    src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600'}
+                  <BackendImage
+                    src={game.headerImageUrl || game.coverImageUrl}
                     alt={game.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -676,17 +684,30 @@
           <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mx-auto">
             <Heart class="w-8 h-8 text-rose-400/70" />
           </div>
-          <h4 class="text-lg font-bold text-white">Список бажаного порожній</h4>
-          <p class="text-xs text-slate-400 max-w-sm mx-auto">
-            Зберігайте ігри за допомогою кнопки з сердечком ♥ у крамниці, щоб стежити за релізами та знижками.
-          </p>
-          <button
-            onclick={() => uiStore.setTab('catalog')}
-            class="mt-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer inline-flex items-center gap-2"
-          >
-            <Gamepad2 class="w-4 h-4" />
-            <span>Перейти до каталогу ігор</span>
-          </button>
+          {#if !$currentUser}
+            <h4 class="text-lg font-bold text-white">Увійдіть у свій акаунт</h4>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">
+              Щоб переглядати та зберігати ігри в списку бажаного, будь ласка, увійдіть у свій обліковий запис.
+            </p>
+            <button
+              onclick={() => uiStore.setLoginModal(true)}
+              class="mt-3 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              Увійти в акаунт
+            </button>
+          {:else}
+            <h4 class="text-lg font-bold text-white">Список бажаного порожній</h4>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">
+              Зберігайте ігри за допомогою кнопки з сердечком ♥ у крамниці, щоб стежити за релізами та знижками.
+            </p>
+            <button
+              onclick={() => uiStore.setTab('catalog')}
+              class="mt-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <Gamepad2 class="w-4 h-4" />
+              <span>Перейти до каталогу ігор</span>
+            </button>
+          {/if}
         </div>
       {/if}
     </main>

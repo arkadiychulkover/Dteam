@@ -1,13 +1,16 @@
-name: dteam
+name: dteam-backend
 
 services:
   postgres:
     image: postgres:17-alpine
+    container_name: dteam-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dteam_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -16,12 +19,13 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - backend-network
 
   backend:
     build:
       context: ./DteamBackend
       dockerfile: Dockerfile
+    container_name: dteam-backend
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -40,28 +44,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - app-network
-
-  frontend:
-    build:
-      context: ./DteamFrontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "5173:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - app-network
+      - backend-network
 
 networks:
-  app-network:
+  backend-network:
     driver: bridge
 
 volumes:

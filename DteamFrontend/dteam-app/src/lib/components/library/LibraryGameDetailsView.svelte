@@ -13,6 +13,7 @@
   import { gamesService } from '../../services/gamesService';
   import type { Review } from '../../types';
   import { formatBytes, formatDate, formatPrice } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
   import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
   import CreateCollectionModal from './CreateCollectionModal.svelte';
 
@@ -438,7 +439,7 @@
                 </button>
 
                 <h3 class="text-base font-bold text-white">{post.title}</h3>
-                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">{post.content}</p>
+                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">{@html renderDecoratedText(post.content)}</p>
 
                 <div class="flex items-center gap-4 pt-2">
                   <button
@@ -512,7 +513,7 @@
 
                 <div class="p-4 space-y-2">
                   {#if post.title}<h4 class="text-sm font-bold text-white line-clamp-1">{post.title}</h4>{/if}
-                  <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                  <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{@html renderDecoratedText(post.content)}</p>
                   <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
                     <span class="flex items-center gap-1"><Heart class="w-3 h-3" />{post.stats.likesCount}</span>
                     <span class="flex items-center gap-1"><MessageSquare class="w-3 h-3" />{post.stats.commentsCount}</span>

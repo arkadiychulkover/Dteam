@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { fly } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import type { CatalogFilterState } from '../../stores/gamesStore';
   import { Sparkles, Gamepad2, Users, Monitor, Flame, Tag, ChevronRight, X } from 'lucide-svelte';
 
@@ -64,9 +66,13 @@
 
 {#if isOpen}
   <div
-    class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[calc(100vw-2rem)] max-w-5xl max-h-[85vh] overflow-y-auto bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 z-50 animate-in fade-in zoom-in-95 duration-150 text-left cursor-default select-none before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 relative"
+    class="absolute top-full left-0 right-0 mx-auto mt-2 w-[calc(100vw-2rem)] max-w-5xl z-50 pointer-events-auto"
+    transition:fly={{ y: -8, duration: 200, easing: cubicOut }}
   >
-    {#if onClose}
+    <div
+      class="w-full max-h-[80vh] overflow-y-auto bg-[#041a22]/98 backdrop-blur-2xl border border-cyan-500/35 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.18)] p-6 sm:p-7 text-left cursor-default select-none relative before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3"
+    >
+      {#if onClose}
       <button
         type="button"
         onclick={onClose}
@@ -198,5 +204,6 @@
       </button>
     </div>
   </div>
+</div>
 {/if}
 

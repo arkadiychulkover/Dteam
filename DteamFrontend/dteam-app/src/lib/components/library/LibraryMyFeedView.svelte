@@ -5,6 +5,7 @@
   import { profileStore } from '../../stores/profileStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
+  import { renderDecoratedText } from '../../utils/textDecorator';
   import {
     Rss,
     Heart,
@@ -188,7 +189,7 @@
               </h3>
             {/if}
             <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line line-clamp-4">
-              {post.content}
+              {@html renderDecoratedText(post.content)}
             </p>
           </div>
 

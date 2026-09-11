@@ -1,4 +1,9 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+export const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string)
+  || (import.meta.env.VITE_API_URL ? (import.meta.env.VITE_API_URL as string).replace(/\/api\/?$/, '') : '')
+  || 'https://dteam-backend-production.up.railway.app';
+
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string)
+  || `${BACKEND_URL.replace(/\/+$/, '')}/api`;
 
 export const GENRES = [
   'All Games',

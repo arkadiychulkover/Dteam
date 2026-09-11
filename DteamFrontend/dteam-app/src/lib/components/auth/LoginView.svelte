@@ -13,7 +13,7 @@
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!identifier.trim() || !password) {
-      errorMessage = 'Пожалуйста, заполните все поля';
+      errorMessage = 'Будь ласка, заповніть усі поля';
       return;
     }
 
@@ -23,13 +23,13 @@
     try {
       await authStore.login(identifier, password);
       uiStore.addToast({
-        title: 'Успешный вход',
-        message: `С возвращением, ${identifier}!`,
+        title: 'Успішний вхід',
+        message: `З поверненням, ${identifier}!`,
         type: 'success'
       });
       uiStore.setTab('store');
     } catch (err: any) {
-      errorMessage = err.message || 'Ошибка входа. Проверьте введенные данные.';
+      errorMessage = err.message || 'Помилка входу. Перевірте введені дані.';
     } finally {
       isSubmitting = false;
     }
@@ -50,10 +50,10 @@
           <Gamepad2 class="w-7 h-7 text-black font-black" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
-          Вход в <span class="text-cyan-400">DTEAM</span>
+          Вхід у <span class="text-cyan-400">DTEAM</span>
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Вход в мир Web3 гейминга и цифровых коллекций
+          Вхід у світ Web3 геймінгу та цифрових колекцій
         </p>
       </div>
 
@@ -67,7 +67,7 @@
 
         <div>
           <label for="login-identifier" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-            Логин или Email
+            Логін або Email
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -77,7 +77,7 @@
               id="login-identifier"
               type="text"
               bind:value={identifier}
-              placeholder="username или user@example.com"
+              placeholder="username або user@example.com"
               required
               class="w-full pl-10 pr-4 py-3 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
@@ -94,7 +94,7 @@
               onclick={() => uiStore.setTab('forgot-password')}
               class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
             >
-              Забыли пароль?
+              Забули пароль?
             </button>
           </div>
           <div class="relative">
@@ -131,7 +131,7 @@
               class="w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
             />
             <span class="text-xs text-slate-300 group-hover:text-white transition-colors">
-              Запомнить меня
+              Запам'ятати мене
             </span>
           </label>
 
@@ -147,10 +147,10 @@
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Вход...</span>
+            <span>Вхід...</span>
           {:else}
             <LogIn class="w-4 h-4 text-black" />
-            <span>Войти</span>
+            <span>Увійти</span>
             <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
@@ -158,12 +158,12 @@
 
       <div class="mt-8 pt-6 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
-          Еще нет аккаунта?
+          Ще немає акаунта?
           <button
             onclick={() => uiStore.setTab('register')}
             class="font-bold text-cyan-400 hover:text-cyan-300 ml-1 transition-colors cursor-pointer"
           >
-            Зарегистрироваться
+            Зареєструватися
           </button>
         </p>
       </div>

@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { uiStore } from '../stores/uiStore';
 import { api } from './api';
+import { BACKEND_URL } from '../utils/constants';
 
 type OnlineCountCallback = (count: number) => void;
 type RewardMintedCallback = (reward: any) => void;
@@ -13,9 +14,10 @@ class OnlineHubService {
   private heartbeatTimer: any = null;
 
   constructor() {
+    const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/online`;
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('/hubs/online', {
+      .withUrl(hubUrl, {
         accessTokenFactory: async () => (await api.getValidToken()) || '',
       })
       .withAutomaticReconnect()

@@ -1,6 +1,8 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { Game } from '../types';
 import { soundService } from '../services/soundService';
+import { gamesService } from '../services/gamesService';
+import { gamesStore } from './gamesStore';
 
 export type MainTab =
   | 'store'
@@ -75,6 +77,22 @@ function createUiStore() {
   return {
     subscribe,
     setTab: (tab: MainTab) => update((s) => ({ ...s, activeTab: tab })),
+    openGameDetails: async (gameId: string) => {
+      try {
+        const fullGame = await gamesService.getGameById(gameId);
+        gamesStore.selectGame(fullGame);
+      } catch {
+        const currentGames = get(gamesStore).games;
+        const cached = currentGames.find((g) => g.id === gameId);
+        if (cached) {
+          gamesStore.selectGame(cached);
+        }
+      }
+      update((s) => ({ ...s, activeTab: 'game' }));
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
     setLoginModal: (isOpen: boolean) => update((s) => ({ ...s, isLoginModalOpen: isOpen })),
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
     setDepositModal: (isOpen: boolean) => update((s) => ({ ...s, isDepositModalOpen: isOpen })),

@@ -2,6 +2,7 @@ import * as signalR from '@microsoft/signalr';
 import { authStore } from '../stores/authStore';
 import { get } from 'svelte/store';
 import type { ChatMessage } from '../types/chat';
+import { BACKEND_URL } from '../utils/constants';
 
 type MessageHandler = (msg: ChatMessage) => void;
 type ReadHandler = (data: { messageId: string; readerUserId: string; readAt: string }) => void;
@@ -69,8 +70,10 @@ class ChatHubService {
 
     try {
       if (!this.connection) {
+        const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/chat`;
+
         this.connection = new signalR.HubConnectionBuilder()
-          .withUrl('/hubs/chat', {
+          .withUrl(hubUrl, {
             accessTokenFactory: () => {
               const current = get(authStore);
               return current.token || localStorage.getItem('dteam_token') || '';

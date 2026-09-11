@@ -9,6 +9,7 @@
   import { uiStore } from "../../stores/uiStore";
   import { profileStore } from "../../stores/profileStore";
   import { gamesStore } from "../../stores/gamesStore";
+  import { renderDecoratedText } from "../../utils/textDecorator";
   import {
     Users,
     Search,
@@ -568,7 +569,7 @@
                     <p
                       class="text-xs text-slate-400 line-clamp-2 leading-relaxed"
                     >
-                      {post.content}
+                      {@html renderDecoratedText(post.content)}
                     </p>
                   </div>
                 </div>
@@ -593,7 +594,7 @@
                   <p
                     class="text-xs text-slate-400 line-clamp-3 leading-relaxed"
                   >
-                    {post.content}
+                    {@html renderDecoratedText(post.content)}
                   </p>
                 </div>
               {:else}
@@ -608,7 +609,7 @@
                   <p
                     class="text-xs text-slate-300 line-clamp-3 leading-relaxed whitespace-pre-wrap"
                   >
-                    {post.content}
+                    {@html renderDecoratedText(post.content)}
                   </p>
 
                   {#if post.media.type === "image" && post.media.url}
@@ -862,7 +863,7 @@
             <p
               class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap"
             >
-              {selectedPost.content}
+              {@html renderDecoratedText(selectedPost.content)}
             </p>
 
             {#if selectedPost.media.type === "image" && selectedPost.media.url}

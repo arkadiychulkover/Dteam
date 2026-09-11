@@ -3,6 +3,7 @@ import { authStore } from '../stores/authStore';
 import { friendsStore } from '../stores/friendsStore';
 import { uiStore } from '../stores/uiStore';
 import { get } from 'svelte/store';
+import { BACKEND_URL } from '../utils/constants';
 
 class FriendsHubService {
   private connection: signalR.HubConnection | null = null;
@@ -26,8 +27,10 @@ class FriendsHubService {
 
     try {
       if (!this.connection) {
+        const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/friends`;
+
         this.connection = new signalR.HubConnectionBuilder()
-          .withUrl('/hubs/friends', {
+          .withUrl(hubUrl, {
             accessTokenFactory: () => {
               const current = get(authStore);
               return current.token || localStorage.getItem('dteam_token') || '';

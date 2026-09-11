@@ -17,7 +17,7 @@
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!identifier.trim() || !password) {
-      errorMessage = 'Пожалуйста, заполните все поля';
+      errorMessage = 'Будь ласка, заповніть усі поля';
       return;
     }
 
@@ -27,13 +27,13 @@
     try {
       await authStore.login(identifier, password);
       uiStore.addToast({
-        title: 'Авторизация успешна',
-        message: `Приветствуем, ${identifier}!`,
+        title: 'Авторизація успішна',
+        message: `Вітаємо, ${identifier}!`,
         type: 'success'
       });
       closeModal();
     } catch (err: any) {
-      errorMessage = err.message || 'Ошибка входа. Проверьте введенные данные.';
+      errorMessage = err.message || 'Помилка входу. Перевірте введені дані.';
     } finally {
       isSubmitting = false;
     }
@@ -68,7 +68,7 @@
           <Gamepad2 class="w-6 h-6 text-black font-black" />
         </div>
         <h2 class="text-xl sm:text-2xl font-extrabold text-white font-display">
-          Быстрый вход в <span class="text-cyan-400">DTEAM</span>
+          Швидкий вхід у <span class="text-cyan-400">DTEAM</span>
         </h2>
       </div>
 
@@ -82,7 +82,7 @@
 
         <div>
           <label for="modal-login-id" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-            Логин / Email
+            Логін / Email
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -92,7 +92,7 @@
               id="modal-login-id"
               type="text"
               bind:value={identifier}
-              placeholder="user@example.com или логин"
+              placeholder="user@example.com або логін"
               required
               class="w-full pl-10 pr-4 py-2.5 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
@@ -109,7 +109,7 @@
               onclick={() => { closeModal(); uiStore.setTab('forgot-password'); }}
               class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 cursor-pointer"
             >
-              Забыли пароль?
+              Забули пароль?
             </button>
           </div>
           <div class="relative">
@@ -145,7 +145,7 @@
               bind:checked={rememberMe}
               class="w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 cursor-pointer"
             />
-            <span class="text-xs text-slate-300">Запомнить меня</span>
+            <span class="text-xs text-slate-300">Запам'ятати мене</span>
           </label>
         </div>
 
@@ -156,10 +156,10 @@
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Вход...</span>
+            <span>Вхід...</span>
           {:else}
             <LogIn class="w-4 h-4 text-black" />
-            <span>Войти</span>
+            <span>Увійти</span>
             <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
@@ -167,12 +167,12 @@
 
       <div class="mt-6 pt-4 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
-          Нет аккаунта?
+          Немає акаунта?
           <button
             onclick={() => { closeModal(); uiStore.setTab('register'); }}
             class="font-bold text-cyan-400 hover:text-cyan-300 ml-1 cursor-pointer"
           >
-            Зарегистрироваться
+            Зареєструватися
           </button>
         </p>
       </div>
