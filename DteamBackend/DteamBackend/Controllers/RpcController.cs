@@ -50,6 +50,7 @@ namespace DteamBackend.Controllers
                     nodeVersion = HardhatNodeManagerService.NodeVersion,
                     blockchainDir = HardhatNodeManagerService.DetectedBlockchainDir,
                     isProcessActive = HardhatNodeManagerService.ActiveHardhatProcess != null && !HardhatNodeManagerService.ActiveHardhatProcess.HasExited,
+                    isNgrokActive = HardhatNodeManagerService.ActiveNgrokProcess != null && !HardhatNodeManagerService.ActiveNgrokProcess.HasExited,
                     processExitCode = HardhatNodeManagerService.ActiveHardhatProcess?.HasExited == true ? HardhatNodeManagerService.ActiveHardhatProcess.ExitCode : (int?)null,
                     recentLogs = HardhatNodeManagerService.RecentLogs.TakeLast(30).ToList()
                 });

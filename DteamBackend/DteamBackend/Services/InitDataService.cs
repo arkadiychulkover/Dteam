@@ -622,6 +622,7 @@ namespace DteamBackend.Services
         {
             try
             {
+                if (!context.Database.IsSqlite()) return;
 
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();
@@ -832,6 +833,7 @@ namespace DteamBackend.Services
         {
             try
             {
+                if (!context.Database.IsSqlite()) return;
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();
 
@@ -885,6 +887,7 @@ namespace DteamBackend.Services
         {
             try
             {
+                if (!context.Database.IsSqlite()) return;
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();
 
@@ -959,6 +962,7 @@ namespace DteamBackend.Services
         {
             try
             {
+                if (!context.Database.IsSqlite()) return;
                 // Direct fail-safe column additions
                 try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"PreferredLanguage\" TEXT NOT NULL DEFAULT 'uk';"); } catch { }
                 try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"IsDeleted\" INTEGER NOT NULL DEFAULT 0;"); } catch { }

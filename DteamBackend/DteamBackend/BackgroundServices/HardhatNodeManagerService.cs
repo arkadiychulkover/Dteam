@@ -16,6 +16,7 @@ namespace DteamBackend.BackgroundServices
         public static string? DetectedBlockchainDir { get; set; }
         public static string? NodeVersion { get; set; }
         public static Process? ActiveHardhatProcess { get; private set; }
+        public static Process? ActiveNgrokProcess { get; private set; }
 
         public HardhatNodeManagerService(IConfiguration configuration, ILogger<HardhatNodeManagerService> logger)
         {
@@ -45,12 +46,34 @@ namespace DteamBackend.BackgroundServices
                 CheckNodeVersion();
                 await StartHardhatNodeAsync(ct);
                 await StartNgrokTunnelAsync(ct);
+                _ = Task.Run(() => NgrokWatchdogLoopAsync(ct), ct);
             }
             catch (Exception ex)
             {
                 LastError = ex.ToString();
                 LogDiagnostic($"Error initializing services: {ex.Message}");
                 _logger.LogError(ex, "[HardhatNodeManager] Error initializing Hardhat / Ngrok services.");
+            }
+        }
+
+        private async Task NgrokWatchdogLoopAsync(CancellationToken ct)
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(15000, ct);
+                    if (_ngrokProcess == null || _ngrokProcess.HasExited)
+                    {
+                        LogDiagnostic("Ngrok watchdog: tunnel is offline or exited. Retrying connection...");
+                        await StartNgrokTunnelAsync(ct);
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    LogDiagnostic($"Ngrok watchdog error: {ex.Message}");
+                }
             }
         }
 
@@ -258,10 +281,15 @@ namespace DteamBackend.BackgroundServices
 
             try
             {
+                if (_ngrokProcess != null && !_ngrokProcess.HasExited)
+                {
+                    try { _ngrokProcess.Kill(true); } catch { }
+                }
+
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = "ngrok",
-                    Arguments = $"http --url={domain} 8545",
+                    Arguments = $"http --url={domain} --pooling-enabled 8545",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -270,6 +298,7 @@ namespace DteamBackend.BackgroundServices
                 startInfo.EnvironmentVariables["NGROK_AUTHTOKEN"] = authtoken;
 
                 _ngrokProcess = new Process { StartInfo = startInfo };
+                ActiveNgrokProcess = _ngrokProcess;
                 _ngrokProcess.OutputDataReceived += (s, e) =>
                 {
                     if (!string.IsNullOrWhiteSpace(e.Data))
