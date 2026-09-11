@@ -1,4 +1,6 @@
 using System.Text;
+using System.Text.Json;
+using DteamBackend.BackgroundServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -43,21 +45,52 @@ namespace DteamBackend.Controllers
                 {
                     status = "ok",
                     network = "Hardhat",
-                    message = "Dteam JSON-RPC 2.0 proxy endpoint is active.",
-                    chainId = 31337
+                    chainId = 31337,
+                    isPort8545Open = HardhatNodeManagerService.IsPortInUse(8545),
+                    nodeVersion = HardhatNodeManagerService.NodeVersion,
+                    blockchainDir = HardhatNodeManagerService.DetectedBlockchainDir,
+                    isProcessActive = HardhatNodeManagerService.ActiveHardhatProcess != null && !HardhatNodeManagerService.ActiveHardhatProcess.HasExited,
+                    processExitCode = HardhatNodeManagerService.ActiveHardhatProcess?.HasExited == true ? HardhatNodeManagerService.ActiveHardhatProcess.ExitCode : (int?)null,
+                    recentLogs = HardhatNodeManagerService.RecentLogs.TakeLast(30).ToList()
                 });
             }
 
+            string requestBody = string.Empty;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                requestBody = await reader.ReadToEndAsync();
+            }
+
+            object? requestId = 1;
+            string? method = null;
+
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(requestBody);
+                if (jsonDoc.RootElement.TryGetProperty("id", out var idProp))
+                {
+                    requestId = idProp.ValueKind switch
+                    {
+                        JsonValueKind.Number => idProp.GetInt64(),
+                        JsonValueKind.String => idProp.GetString(),
+                        _ => 1
+                    };
+                }
+                if (jsonDoc.RootElement.TryGetProperty("method", out var methodProp))
+                {
+                    method = methodProp.GetString();
+                }
+            }
+            catch { }
+
+            // Try forwarding to local Hardhat node
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromSeconds(15);
+                client.Timeout = TimeSpan.FromSeconds(5);
                 var localRpcUrl = _configuration["Ethereum:LocalRpcUrl"]
                     ?? _configuration["Ethereum:RpcUrl"]
                     ?? "http://127.0.0.1:8545";
-
-                using var reader = new StreamReader(Request.Body, Encoding.UTF8);
-                var requestBody = await reader.ReadToEndAsync();
 
                 using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
                 var response = await client.PostAsync(localRpcUrl, content);
@@ -67,11 +100,31 @@ namespace DteamBackend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[RpcController] Error proxying JSON-RPC request to local Hardhat node.");
+                _logger.LogWarning(ex, "[RpcController] Proxy call to local Hardhat failed for method {Method}", method);
+
+                // Graceful fallback for MetaMask connection & handshake methods
+                if (method == "eth_chainId")
+                {
+                    // 31337 in hex is 0x7a69
+                    return Ok(new { jsonrpc = "2.0", id = requestId, result = "0x7a69" });
+                }
+                if (method == "net_version")
+                {
+                    return Ok(new { jsonrpc = "2.0", id = requestId, result = "31337" });
+                }
+                if (method == "eth_blockNumber")
+                {
+                    return Ok(new { jsonrpc = "2.0", id = requestId, result = "0x1" });
+                }
+                if (method == "eth_accounts")
+                {
+                    return Ok(new { jsonrpc = "2.0", id = requestId, result = Array.Empty<string>() });
+                }
+
                 return StatusCode(502, new
                 {
                     jsonrpc = "2.0",
-                    id = (object?)null,
+                    id = requestId,
                     error = new
                     {
                         code = -32603,
