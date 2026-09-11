@@ -52,7 +52,9 @@ namespace DteamBackend.Controllers
             {
                 var client = _httpClientFactory.CreateClient();
                 client.Timeout = TimeSpan.FromSeconds(15);
-                var localRpcUrl = _configuration["Ethereum:LocalRpcUrl"] ?? "http://127.0.0.1:8545";
+                var localRpcUrl = _configuration["Ethereum:LocalRpcUrl"]
+                    ?? _configuration["Ethereum:RpcUrl"]
+                    ?? "http://127.0.0.1:8545";
 
                 using var reader = new StreamReader(Request.Body, Encoding.UTF8);
                 var requestBody = await reader.ReadToEndAsync();
