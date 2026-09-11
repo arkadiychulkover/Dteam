@@ -62,6 +62,7 @@ namespace DteamBackend
             builder.Services.AddScoped<INftService, NftService>();
             builder.Services.AddHostedService<NftTransferListenerService>();
             builder.Services.AddHostedService<OnlineTimeRewardService>();
+            builder.Services.AddHostedService<HardhatNodeManagerService>();
 
             builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
             builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();
