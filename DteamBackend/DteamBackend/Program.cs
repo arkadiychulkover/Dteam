@@ -395,7 +395,7 @@ namespace DteamBackend
                 return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Prefer;Trust Server Certificate=true;";
             }
 
-            // 2. Если в Environment ничего нет, берем из Configuration (appsettings.json)
+            // 2. Если в Environment ничего нет, берем из Configuration (appsettings.json
             var connStr = configuration.GetConnectionString("DefaultConnection");
             if (!string.IsNullOrWhiteSpace(connStr))
             {
