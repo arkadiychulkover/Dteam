@@ -40,7 +40,6 @@
 
     return url;
   });
-
 </script>
 
 <div class="relative overflow-hidden bg-slate-900/60 {className}">
@@ -71,4 +70,3 @@
     />
   {/if}
 </div>
-

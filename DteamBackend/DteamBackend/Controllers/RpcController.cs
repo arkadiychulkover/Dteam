@@ -84,7 +84,6 @@ namespace DteamBackend.Controllers
             }
             catch { }
 
-            // Try forwarding to local Hardhat node
             try
             {
                 var client = _httpClientFactory.CreateClient();
@@ -103,10 +102,9 @@ namespace DteamBackend.Controllers
             {
                 _logger.LogWarning(ex, "[RpcController] Proxy call to local Hardhat failed for method {Method}", method);
 
-                // Graceful fallback for MetaMask connection & handshake methods
                 if (method == "eth_chainId")
                 {
-                    // 31337 in hex is 0x7a69
+
                     return Ok(new { jsonrpc = "2.0", id = requestId, result = "0x7a69" });
                 }
                 if (method == "net_version")

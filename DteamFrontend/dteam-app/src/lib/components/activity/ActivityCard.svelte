@@ -58,7 +58,6 @@
       return null;
     }
   });
-
 </script>
 
 <div class="p-4 sm:p-5 rounded-3xl bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-xl hover:shadow-cyan-950/50 space-y-3.5 group text-slate-100">
@@ -183,4 +182,3 @@
     </div>
   {/if}
 </div>
-

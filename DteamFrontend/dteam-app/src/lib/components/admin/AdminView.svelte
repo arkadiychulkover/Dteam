@@ -295,7 +295,6 @@
       uiStore.addToast({ title: 'Update Error', message: err.message, type: 'error' });
     }
   }
-
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 animate-in fade-in">

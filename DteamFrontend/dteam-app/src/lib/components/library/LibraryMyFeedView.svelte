@@ -25,7 +25,6 @@
   let activeCategory = $state<'all' | 'news' | 'screenshots' | 'forum'>('all');
   let lightboxMedia = $state<{ src: string; title?: string; author?: { username: string; avatarUrl?: string } } | null>(null);
 
-  // Set of owned game IDs for fast matching
   const ownedGameIds = $derived(
     new Set($libraryStore.items.map((i) => i.gameId.toLowerCase()))
   );
@@ -33,11 +32,10 @@
   async function loadFeed() {
     isLoading = true;
     try {
-      // Fetch posts for category
+
       const res = await communityService.getPosts(null, activeCategory === 'all' ? 'all' : activeCategory);
       let allPosts = res.posts || [];
 
-      // Prioritize posts from games user owns in library
       allPosts.sort((a, b) => {
         const aOwned = a.gameId && ownedGameIds.has(a.gameId.toLowerCase()) ? 1 : 0;
         const bOwned = b.gameId && ownedGameIds.has(b.gameId.toLowerCase()) ? 1 : 0;
@@ -79,7 +77,7 @@
 </script>
 
 <div class="space-y-6">
-  <!-- Feed Hero Header -->
+
   <div class="p-6 rounded-2xl bg-gradient-to-r from-[#061e2a] via-[#04121a] to-[#061820] border border-cyan-500/20 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div class="space-y-1">
       <div class="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider">
@@ -92,7 +90,6 @@
       </p>
     </div>
 
-    <!-- Category Pills -->
     <div class="flex items-center gap-1.5 p-1 bg-black/40 rounded-xl border border-cyan-500/15 shrink-0 overflow-x-auto">
       <button
         type="button"
@@ -125,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Feed Content -->
   {#if isLoading}
     <div class="flex flex-col items-center justify-center py-24 text-slate-400 text-xs gap-3">
       <div class="w-8 h-8 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
@@ -144,7 +140,7 @@
       {#each posts as post (post.id)}
         {@const isOwned = post.gameId && ownedGameIds.has(post.gameId.toLowerCase())}
         <article class="bg-[#061820]/90 border {isOwned ? 'border-cyan-500/40 shadow-cyan-950/20 shadow-lg' : 'border-cyan-500/20'} rounded-2xl overflow-hidden hover:border-cyan-400/60 transition-all duration-300 flex flex-col justify-between group">
-          <!-- Card Header -->
+
           <div class="p-4 space-y-3">
             <div class="flex items-center justify-between gap-3">
               <button
@@ -182,7 +178,6 @@
               </div>
             </div>
 
-            <!-- Title & Body -->
             {#if post.title}
               <h3 class="text-sm font-bold text-white group-hover:text-cyan-200 transition-colors">
                 {post.title}
@@ -193,7 +188,6 @@
             </p>
           </div>
 
-          <!-- Media -->
           {#if post.media?.url && post.media.type === 'image'}
             <div
               class="relative overflow-hidden cursor-pointer max-h-64 bg-black/40"
@@ -219,7 +213,6 @@
             </div>
           {/if}
 
-          <!-- Footer Actions -->
           <div class="px-4 py-3 bg-black/20 border-t border-cyan-500/10 flex items-center justify-between text-xs">
             <div class="flex items-center gap-4">
               <button

@@ -137,4 +137,3 @@ class ChatHubService {
 }
 
 export const chatHubService = new ChatHubService();
-

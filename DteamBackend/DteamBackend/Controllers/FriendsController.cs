@@ -291,7 +291,7 @@ namespace DteamBackend.Controllers
                 }
                 else
                 {
-                    // Receiver already sent us a request: accept it automatically!
+
                     pendingRequest.Status = FriendRequestStatus.Accepted;
                     pendingRequest.RespondedAt = DateTime.UtcNow;
 

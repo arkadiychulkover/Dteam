@@ -25,7 +25,6 @@ namespace DteamBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Support dynamic PORT assigned by Railway / Cloud providers
             var port = Environment.GetEnvironmentVariable("PORT");
             if (!string.IsNullOrEmpty(port))
             {
@@ -267,7 +266,6 @@ namespace DteamBackend
             forwardedHeadersOptions.KnownProxies.Clear();
             app.UseForwardedHeaders(forwardedHeadersOptions);
 
-            // Глобальный перехватчик исключений и отправка алертов в Telegram
             app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
             app.UseRouting();
@@ -283,7 +281,6 @@ namespace DteamBackend
                 c.RoutePrefix = "swagger";
             });
 
-            // Ensure upload and static asset directories exist
             try
             {
                 var webRoot = app.Environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
@@ -342,7 +339,6 @@ namespace DteamBackend
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHub<NotificationHub>("/hub/notifications");
 
-            // Initialize default reward settings and ensure table exists
             try
             {
                 using var scope = app.Services.CreateScope();
@@ -360,9 +356,7 @@ namespace DteamBackend
 
         private static string ResolveConnectionString(IConfiguration configuration)
         {
-            // 1. Высший приоритет: Environment переменные (Railway, Docker, Production)
 
-            // 1.1 Явный ConnectionStrings__DefaultConnection в Environment
             var envDefaultConn = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                               ?? Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection");
             if (!string.IsNullOrWhiteSpace(envDefaultConn))
@@ -371,7 +365,6 @@ namespace DteamBackend
                 return ParseIfNeeded(envDefaultConn);
             }
 
-            // 1.2 Дефолтный ключ Railway / Cloud - DATABASE_URL или DATABASE_PUBLIC_URL
             var envDatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
                               ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
             if (!string.IsNullOrWhiteSpace(envDatabaseUrl))
@@ -380,7 +373,6 @@ namespace DteamBackend
                 return ParseIfNeeded(envDatabaseUrl);
             }
 
-            // 1.3 Дефолтные ключи Railway PostgreSQL (PGHOST, PGDATABASE, PGUSER, PGPASSWORD, PGPORT)
             var pgHost = Environment.GetEnvironmentVariable("PGHOST");
             var pgDb = Environment.GetEnvironmentVariable("PGDATABASE");
             if (!string.IsNullOrWhiteSpace(pgHost) || !string.IsNullOrWhiteSpace(pgDb))
@@ -395,14 +387,12 @@ namespace DteamBackend
                 return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Prefer;Trust Server Certificate=true;";
             }
 
-            // 2. Если в Environment ничего нет, берем из Configuration (appsettings.json
             var connStr = configuration.GetConnectionString("DefaultConnection");
             if (!string.IsNullOrWhiteSpace(connStr))
             {
                 return ParseIfNeeded(connStr);
             }
 
-            // 3. Fallback по умолчанию
             Console.WriteLine("[Database] Fallback to local SQLite database (dteam.db).");
             return "Data Source=dteam.db";
         }

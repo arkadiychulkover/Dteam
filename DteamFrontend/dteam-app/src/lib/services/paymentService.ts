@@ -34,4 +34,3 @@ export const paymentService = {
     return await api.get<UnifiedTransactionItem[]>('/payment/transactions');
   }
 };
-

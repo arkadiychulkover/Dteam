@@ -62,4 +62,3 @@ export interface UpdateDeveloperGameRequest {
   screenshotUrls?: string[];
   trailerUrl?: string;
 }
-

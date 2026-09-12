@@ -115,10 +115,10 @@ namespace DteamBackend.Services
             var sender = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
             var contentSnippet = message.Type == ChatMessageType.Voice
                 ? "Голосове повідомлення"
-                : (message.Type == ChatMessageType.Image 
-                    ? "Зображення" 
-                    : (!string.IsNullOrEmpty(message.Content) && message.Content.Length > 60 
-                        ? message.Content.Substring(0, 57) + "..." 
+                : (message.Type == ChatMessageType.Image
+                    ? "Зображення"
+                    : (!string.IsNullOrEmpty(message.Content) && message.Content.Length > 60
+                        ? message.Content.Substring(0, 57) + "..."
                         : (message.Content ?? "Нове повідомлення")));
 
             await _notificationService.NotifyAsync(new CreateNotificationCommand
@@ -758,4 +758,3 @@ namespace DteamBackend.Services
         }
     }
 }
-

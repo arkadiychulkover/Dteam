@@ -206,4 +206,3 @@ namespace DteamBackend.Hubs
         }
     }
 }
-

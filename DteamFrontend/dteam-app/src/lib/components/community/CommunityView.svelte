@@ -263,12 +263,10 @@
     const end = contentTextareaEl.selectionEnd;
     const selectedText = content.substring(start, end);
 
-    // Если текст выделен — оборачиваем его, если нет — подставляем слово "текст"
     const replacement = `${chunk.start}${selectedText || 'текст'}${chunk.end}`;
 
     content = content.substring(0, start) + replacement + content.substring(end);
 
-    // Возвращаем фокус и выделяем вставленный шаблон / текст
     setTimeout(() => {
       if (!contentTextareaEl) return;
       contentTextareaEl.focus();
@@ -354,7 +352,6 @@
   function handleCancel() {
     setTab('discussion');
   }
-
 </script>
 
 <input
@@ -935,10 +932,9 @@
               </button>
             </div>
 
-            <!-- Expandable Comments with Threaded Replies -->
             {#if openCommentsPostId === post.id}
               <div class="mt-4 pt-4 border-t border-cyan-900/40 space-y-4 animate-in fade-in">
-                <!-- Add comment input -->
+
                 <div class="flex gap-2.5">
                   <input
                     type="text"
@@ -988,7 +984,6 @@
                   </button>
                 </div>
 
-                <!-- Comments list -->
                 {#if loadingCommentsPostId === post.id}
                   <div class="flex items-center justify-center py-6 text-xs text-slate-400 gap-2">
                     <Loader2 class="w-4 h-4 text-cyan-400 animate-spin" />
@@ -1026,7 +1021,6 @@
 
                         <p class="text-xs text-slate-300 leading-relaxed pl-8">{@html renderPostContent(comment.content)}</p>
 
-                        <!-- Nested Replies -->
                         {#if comment.replies && comment.replies.length > 0}
                           <div class="pl-8 pt-2 space-y-2 border-l-2 border-cyan-500/20 ml-3">
                             {#each comment.replies as reply (reply.id)}
@@ -1046,7 +1040,6 @@
                           </div>
                         {/if}
 
-                        <!-- Inline Reply Box -->
                         {#if replyingToCommentId === comment.id}
                           <div class="pl-8 pt-2 animate-in fade-in flex gap-2">
                             <input

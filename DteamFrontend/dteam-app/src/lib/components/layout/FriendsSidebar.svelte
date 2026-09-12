@@ -30,7 +30,6 @@
     uiStore.setTab('chat');
     uiStore.toggleFriendsSidebar();
   }
-
 </script>
 
 {#if $uiStore.isFriendsSidebarOpen}
@@ -136,4 +135,3 @@
     </div>
   </aside>
 {/if}
-

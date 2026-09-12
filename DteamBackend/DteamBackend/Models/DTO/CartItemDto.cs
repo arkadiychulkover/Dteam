@@ -39,4 +39,3 @@ namespace DteamBackend.Models.DTO
         public string? TokenTxHash { get; set; }
     }
 }
-

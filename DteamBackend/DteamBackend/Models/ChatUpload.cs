@@ -36,4 +36,3 @@ namespace DteamBackend.Models
         public bool IsCommitted { get; set; } = false;
     }
 }
-

@@ -73,4 +73,3 @@ export const chatService = {
     return api.post<ChatConversation[]>('/chat/seed-demo', {});
   }
 };
-

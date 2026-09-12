@@ -35,7 +35,6 @@
     chatStore.selectConversation('');
     isMobileProfileDrawerOpen = false;
   }
-
 </script>
 
 <div class="h-[calc(100dvh-116px)] lg:h-[calc(100dvh-65px)] flex overflow-hidden bg-[#030e14] text-slate-100 relative">
@@ -149,4 +148,3 @@
     </div>
   {/if}
 </div>
-

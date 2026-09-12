@@ -14,6 +14,6 @@ namespace DteamBackend.Interfaces
         Task EnsureTasteVectorSchemaAsync(AppDbContext context);
         Task EnsureNotificationAndSettingsSchemaAsync(AppDbContext context);
         Task EnsureCollectionSchemaAsync(AppDbContext context);
+        Task EnsureGamesSeededAsync(AppDbContext context);
     }
 }
-

@@ -16,4 +16,3 @@ namespace DteamBackend.Models.DTO
         public Guid? GameId { get; set; }
     }
 }
-

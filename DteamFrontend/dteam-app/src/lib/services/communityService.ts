@@ -123,4 +123,3 @@ export const communityService = {
     return await api.post<any>(`community/comments/${commentId}/reply`, { content });
   }
 };
-

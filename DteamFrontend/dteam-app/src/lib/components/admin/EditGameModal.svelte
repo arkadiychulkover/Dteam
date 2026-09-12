@@ -232,7 +232,6 @@
       uiStore.addToast({ title: 'Помилка', message: err.message, type: 'error' });
     }
   }
-
 </script>
 
 {#if isOpen && game}
@@ -699,4 +698,3 @@
     </div>
   </div>
 {/if}
-

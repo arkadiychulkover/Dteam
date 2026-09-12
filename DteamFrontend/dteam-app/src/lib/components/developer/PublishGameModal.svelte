@@ -204,7 +204,6 @@
     archivePath = '/storage/games/white-punk-v1.zip';
     archiveFileName = 'white-punk-v1.zip';
   }
-
 </script>
 
 {#if $uiStore.isPublishGameModalOpen}

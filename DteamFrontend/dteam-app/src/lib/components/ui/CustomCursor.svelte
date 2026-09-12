@@ -15,7 +15,7 @@
   let animId: number | null = null;
 
   onMount(() => {
-    // Only activate for mouse/fine pointer devices
+
     if (!window.matchMedia('(pointer: fine)').matches) {
       return;
     }
@@ -49,7 +49,6 @@
       isHidden = false;
     };
 
-    // Event delegation for interactive elements (dynamically covers all SPA routes)
     const handleMouseOver = (e: MouseEvent) => {
       const target = (e.target as HTMLElement)?.closest(
         'a, button, input, textarea, select, [role="button"], .cursor-pointer, label, summary, [tabindex]:not([tabindex="-1"])'
@@ -64,7 +63,6 @@
     document.addEventListener('mouseenter', handleMouseEnter);
     document.addEventListener('mouseover', handleMouseOver, { passive: true });
 
-    // Smooth physics trailing loop identical to NULLSPREAD
     const renderLoop = () => {
       ringX += (mouseX - ringX) * 0.18;
       ringY += (mouseY - ringY) * 0.18;

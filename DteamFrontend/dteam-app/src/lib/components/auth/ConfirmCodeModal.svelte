@@ -44,7 +44,6 @@
       closeModal();
     }
   }
-
 </script>
 
 {#if $uiStore.isConfirmCodeModalOpen}
@@ -110,4 +109,3 @@
     </div>
   </div>
 {/if}
-

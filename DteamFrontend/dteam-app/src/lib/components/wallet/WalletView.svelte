@@ -167,7 +167,6 @@
 
   const totalDepositsCount = $derived(transactions.filter(t => t.type === 'deposit').length);
   const totalPurchasesCount = $derived(transactions.filter(t => t.type === 'purchase').length);
-
 </script>
 
 <div class="min-h-[calc(100vh-65px)] bg-[#030e14] py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden selection:bg-cyan-500 selection:text-black">
@@ -542,4 +541,3 @@
 
   </div>
 </div>
-

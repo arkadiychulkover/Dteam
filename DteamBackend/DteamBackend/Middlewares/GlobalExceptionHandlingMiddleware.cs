@@ -4,9 +4,7 @@ using DteamBackend.Interfaces;
 
 namespace DteamBackend.Middlewares
 {
-    /// <summary>
-    /// Глобальный middleware для перехвата необработанных исключений и их отправки в Telegram
-    /// </summary>
+
     public class GlobalExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -28,7 +26,6 @@ namespace DteamBackend.Middlewares
             {
                 _logger.LogError(ex, "Необработанное исключение при выполнении запроса: {Method} {Path}", context.Request.Method, context.Request.Path);
 
-                // Отправляем уведомление в Telegram (не блокируя ответ клиенту)
                 _ = Task.Run(async () =>
                 {
                     try

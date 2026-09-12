@@ -188,7 +188,6 @@ import { onMount } from 'svelte';
   onMount(() => {
     gamesStore.loadCatalogGames();
   });
-
 </script>
 
 <svelte:window onclick={handleCatalogClickOutside} />
@@ -239,7 +238,6 @@ import { onMount } from 'svelte';
     </form>
   </div>
 
-  <!-- Category Visual Tiles Showcase -->
   <div class="mb-8">
     <div class="flex items-center justify-between mb-3">
       <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -699,4 +697,3 @@ import { onMount } from 'svelte';
     </main>
   </div>
 </div>
-

@@ -14,7 +14,6 @@
   function handleBack() {
     chatStore.setRightSidebarTab('profile');
   }
-
 </script>
 
 <div class="h-full flex flex-col">
@@ -90,4 +89,3 @@
     </div>
   </div>
 {/if}
-

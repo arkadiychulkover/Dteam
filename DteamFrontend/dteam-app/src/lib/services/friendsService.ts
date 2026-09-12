@@ -51,4 +51,3 @@ export const friendsService = {
     return await api.get<import('../types/friend').FriendsGameStatusDto>(`/friends/game/${gameId}`);
   }
 };
-

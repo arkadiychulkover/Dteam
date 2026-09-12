@@ -99,14 +99,21 @@ namespace DteamBackend.Services
             {
                 _logger?.LogError(ex, "[InitData] Error in EnsureCommunityDataAsync");
             }
+
+            try
+            {
+                await EnsureGamesSeededAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureGamesSeededAsync");
+            }
         }
 
         public async Task InitializeAsync(AppDbContext context)
         {
-            if (await context.Users.AnyAsync())
+            if (!await context.Users.AnyAsync())
             {
-                return;
-            }
 
             PasswordHasher.CreatePasswordHash("admin123321", out string passwordHash, out string passwordSalt);
 
@@ -133,128 +140,6 @@ namespace DteamBackend.Services
 
             await context.Users.AddAsync(adminUser);
 
-            var mainGameId = Guid.NewGuid();
-            var mainGame = new Game
-            {
-                Id = mainGameId,
-                Title = "Cyberpunk 2077",
-                Description = "Cyberpunk 2077 — пригодницький бойовик і рольова гра з відкритим світом. Дія відбувається у темному майбутньому Найт-Сіті, небезпечного мегаполіса, одержимого владою, гламуром і ненаситною модифікацією тіла. Грайте за найманця V у пошуках унікального імплантату безсмертя.",
-                ShortDescription = "Пригодницький рольовий екшн у відкритому світі майбутнього з глибоким сюжетом.",
-                PriceInNanoTons = 5_000_000_000,
-                DiscountPercentage = 20,
-                ServerArchivePath = "/storage/games/cyberpunk-2077.zip",
-                OwnerId = adminUser.Id,
-                DownloadCount = 14200,
-                AverageRating = 4.9,
-                ReviewsCount = 4,
-                IsDlc = false,
-                ParentGameId = null,
-                Genres = new List<string> { "Action", "RPG", "Cyberpunk", "Open World" },
-                Platforms = new List<string> { "Windows", "MacOS" },
-                Features = new List<string> { "SinglePlayer", "SteamAchievements", "FullControllerSupport", "SteamCloud", "SteamTradingCards" },
-                SupportedLanguages = new List<GameLanguageSupport>
-                {
-                    new() { Language = "Українська", Interface = true, FullAudio = false, Subtitles = true },
-                    new() { Language = "English", Interface = true, FullAudio = true, Subtitles = true },
-                    new() { Language = "Deutsch", Interface = true, FullAudio = true, Subtitles = true },
-                    new() { Language = "Français", Interface = true, FullAudio = true, Subtitles = true },
-                    new() { Language = "Polski", Interface = true, FullAudio = true, Subtitles = true },
-                    new() { Language = "Español", Interface = true, FullAudio = true, Subtitles = true },
-                    new() { Language = "日本語", Interface = true, FullAudio = true, Subtitles = true }
-                },
-                Tags = new List<string> { "шутер", "екшн", "кіберпанк", "відкритий світ", "майбутнє", "рольова гра" },
-                Version = "2.1.0",
-                SizeInBytes = 70L * 1024 * 1024 * 1024,
-                IsPublished = true,
-                HeaderImageUrl = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80",
-                CoverImageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-                ScreenshotUrls = new List<string>
-                {
-                    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
-                    "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80"
-                },
-                TrailerUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var dlc1 = new Game
-            {
-                Id = Guid.NewGuid(),
-                Title = "Cyberpunk 2077: Bonus Content",
-                Description = "Офіційний додатковий контент та шпалери для Cyberpunk 2077.",
-                ShortDescription = "Офіційний бонусний контент.",
-                PriceInNanoTons = 0,
-                DiscountPercentage = 0,
-                ServerArchivePath = "/storage/games/cyberpunk-bonus.zip",
-                OwnerId = adminUser.Id,
-                DownloadCount = 5000,
-                AverageRating = 5.0,
-                ReviewsCount = 1,
-                IsDlc = true,
-                ParentGameId = mainGameId,
-                Genres = new List<string> { "DLC" },
-                Platforms = new List<string> { "Windows" },
-                IsPublished = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var dlc2 = new Game
-            {
-                Id = Guid.NewGuid(),
-                Title = "Cyberpunk 2077: REDmod",
-                Description = "Безкоштовний інструмент для створення та завантаження модифікацій.",
-                ShortDescription = "Інструмент модифікацій.",
-                PriceInNanoTons = 0,
-                DiscountPercentage = 0,
-                ServerArchivePath = "/storage/games/cyberpunk-redmod.zip",
-                OwnerId = adminUser.Id,
-                DownloadCount = 8000,
-                AverageRating = 5.0,
-                ReviewsCount = 1,
-                IsDlc = true,
-                ParentGameId = mainGameId,
-                Genres = new List<string> { "DLC", "Modding" },
-                Platforms = new List<string> { "Windows" },
-                IsPublished = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var dlc3 = new Game
-            {
-                Id = Guid.NewGuid(),
-                Title = "Cyberpunk 2077: Phantom Liberty",
-                Description = "Масштабне сюжетне доповнення у жанрі шпигунського трилера до Cyberpunk 2077.",
-                ShortDescription = "Шпигунський трилер у Найт-Сіті.",
-                PriceInNanoTons = 2_500_000_000,
-                DiscountPercentage = 0,
-                ServerArchivePath = "/storage/games/cyberpunk-phantom-liberty.zip",
-                OwnerId = adminUser.Id,
-                DownloadCount = 11000,
-                AverageRating = 5.0,
-                ReviewsCount = 2,
-                IsDlc = true,
-                ParentGameId = mainGameId,
-                Genres = new List<string> { "Action", "RPG", "DLC" },
-                Platforms = new List<string> { "Windows", "MacOS" },
-                IsPublished = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await context.Games.AddRangeAsync(new[] { mainGame, dlc1, dlc2, dlc3 });
-
-            var sampleReview = new Review
-            {
-                Id = Guid.NewGuid(),
-                UserId = adminUser.Id,
-                GameId = mainGameId,
-                Rating = 5,
-                Content = "Чудова гра! Неймовірна атмосфера, графіка та сюжет тримають у напрузі до останньої хвилини. Рекомендую всім!",
-                IsRecommended = true,
-                PlayTimeHoursAtReview = 48.5,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await context.Reviews.AddAsync(sampleReview);
             await context.SaveChangesAsync();
 
             var demoUsersData = new (string email, string username, string avatar, UserStatus status)[]
@@ -471,6 +356,9 @@ namespace DteamBackend.Services
                 await context.ChatMessages.AddRangeAsync(messages);
                 await context.SaveChangesAsync();
             }
+            }
+
+            await EnsureGamesSeededAsync(context);
         }
 
         public async Task InitializeAsync()
@@ -963,7 +851,7 @@ namespace DteamBackend.Services
             try
             {
                 if (!context.Database.IsSqlite()) return;
-                // Direct fail-safe column additions
+
                 try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"PreferredLanguage\" TEXT NOT NULL DEFAULT 'uk';"); } catch { }
                 try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"IsDeleted\" INTEGER NOT NULL DEFAULT 0;"); } catch { }
                 try { await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Users\" ADD COLUMN \"DeletedAt\" TEXT NULL;"); } catch { }
@@ -974,7 +862,6 @@ namespace DteamBackend.Services
                     await connection.OpenAsync();
                 }
 
-                // 1. Check columns in Users
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "PRAGMA table_info('Users');";
@@ -1007,7 +894,6 @@ namespace DteamBackend.Services
                     }
                 }
 
-                // 2. Create UserNotificationPreferences
                 await context.Database.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS ""UserNotificationPreferences"" (
                         ""UserId"" TEXT NOT NULL CONSTRAINT ""PK_UserNotificationPreferences"" PRIMARY KEY,
@@ -1024,7 +910,6 @@ namespace DteamBackend.Services
                     );
                 ");
 
-                // 3. Create WalletTransactions
                 await context.Database.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS ""WalletTransactions"" (
                         ""Id"" TEXT NOT NULL CONSTRAINT ""PK_WalletTransactions"" PRIMARY KEY,
@@ -1043,7 +928,6 @@ namespace DteamBackend.Services
                     CREATE INDEX IF NOT EXISTS ""IX_WalletTransactions_CreatedAt"" ON ""WalletTransactions"" (""CreatedAt"");
                 ");
 
-                // 4. Create Notifications
                 await context.Database.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS ""Notifications"" (
                         ""Id"" TEXT NOT NULL CONSTRAINT ""PK_Notifications"" PRIMARY KEY,
@@ -1111,6 +995,547 @@ namespace DteamBackend.Services
                 _logger?.LogError(ex, "[InitData] Error ensuring Game collections schema in database.");
             }
         }
+
+        public async Task EnsureGamesSeededAsync(AppDbContext context)
+        {
+            try
+            {
+                var adminUser = await context.Users.FirstOrDefaultAsync(u => u.IsAdmin)
+                    ?? await context.Users.FirstOrDefaultAsync();
+
+                if (adminUser == null)
+                {
+                    return;
+                }
+
+                var existingGames = await context.Games.ToListAsync();
+                var gamesByTitle = existingGames.ToDictionary(g => g.Title, g => g, StringComparer.OrdinalIgnoreCase);
+
+                var officialMainTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "Cyberpunk 2077",
+                    "The Witcher 3: Wild Hunt",
+                    "Elden Ring",
+                    "DOOM Eternal",
+                    "Sid Meier's Civilization VI",
+                    "Forza Horizon 5",
+                    "Resident Evil 4 Remake",
+                    "Baldur's Gate 3",
+                    "Dead Cells",
+                    "Subnautica"
+                };
+
+                var officialDlcTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "Cyberpunk 2077: Phantom Liberty",
+                    "Cyberpunk 2077: REDmod",
+                    "The Witcher 3: Hearts of Stone",
+                    "The Witcher 3: Blood and Wine",
+                    "Elden Ring: Shadow of the Erdtree",
+                    "Elden Ring: Colosseum & Soundtrack",
+                    "DOOM Eternal: The Ancient Gods - Part One",
+                    "DOOM Eternal: The Ancient Gods - Part Two",
+                    "Civilization VI: Gathering Storm",
+                    "Civilization VI: Rise and Fall",
+                    "Forza Horizon 5: Hot Wheels",
+                    "Forza Horizon 5: Rally Adventure",
+                    "Resident Evil 4: Separate Ways",
+                    "Resident Evil 4: Extra DLC Pack",
+                    "Baldur's Gate 3: Digital Deluxe Upgrade",
+                    "Baldur's Gate 3: Adventure Companion Pack",
+                    "Dead Cells: Return to Castlevania",
+                    "Dead Cells: The Bad Seed",
+                    "Subnautica: Below Zero",
+                    "Subnautica: Deep Sea Pack"
+                };
+
+                var unwantedGames = existingGames
+                    .Where(g => !officialMainTitles.Contains(g.Title) && !officialDlcTitles.Contains(g.Title))
+                    .ToList();
+
+                if (unwantedGames.Count > 0)
+                {
+                    var unwantedIds = unwantedGames.Select(g => g.Id).ToList();
+
+                    var reviews = await context.Reviews.Where(r => unwantedIds.Contains(r.GameId)).ToListAsync();
+                    if (reviews.Count > 0) context.Reviews.RemoveRange(reviews);
+
+                    var carts = await context.UserCartItems.Where(c => unwantedIds.Contains(c.GameId)).ToListAsync();
+                    if (carts.Count > 0) context.UserCartItems.RemoveRange(carts);
+
+                    var wishes = await context.UserWishlists.Where(w => unwantedIds.Contains(w.GameId)).ToListAsync();
+                    if (wishes.Count > 0) context.UserWishlists.RemoveRange(wishes);
+
+                    var userGames = await context.UserGames.Where(ug => unwantedIds.Contains(ug.GameId)).ToListAsync();
+                    if (userGames.Count > 0) context.UserGames.RemoveRange(userGames);
+
+                    var collectionItems = await context.GameCollectionItems.Where(ci => unwantedIds.Contains(ci.GameId)).ToListAsync();
+                    if (collectionItems.Count > 0) context.GameCollectionItems.RemoveRange(collectionItems);
+
+                    context.Games.RemoveRange(unwantedGames);
+                    await context.SaveChangesAsync();
+
+                    foreach (var g in unwantedGames)
+                    {
+                        gamesByTitle.Remove(g.Title);
+                    }
+                }
+
+                var defaultLanguages = new List<GameLanguageSupport>
+                {
+                    new() { Language = "Українська", Interface = true, FullAudio = false, Subtitles = true },
+                    new() { Language = "English", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Deutsch", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Français", Interface = true, FullAudio = true, Subtitles = true },
+                    new() { Language = "Polski", Interface = true, FullAudio = true, Subtitles = true }
+                };
+
+                var gamesToSave = new List<Game>();
+                var reviewsToSave = new List<Review>();
+
+                Game GetOrAddMainGame(
+                    string title,
+                    string description,
+                    string shortDescription,
+                    long price,
+                    int discount,
+                    string archivePath,
+                    int downloads,
+                    double rating,
+                    int reviewsCount,
+                    List<string> genres,
+                    List<string> platforms,
+                    List<string> features,
+                    List<string> tags,
+                    string version,
+                    long sizeBytes,
+                    string headerImg,
+                    string coverImg,
+                    List<string> screenshots,
+                    string trailerUrl,
+                    string reviewText)
+                {
+                    if (gamesByTitle.TryGetValue(title, out var existing))
+                    {
+                        existing.CoverImageUrl = coverImg;
+                        existing.HeaderImageUrl = headerImg;
+                        existing.ScreenshotUrls = screenshots;
+                        existing.PriceInNanoTons = price;
+                        existing.DiscountPercentage = discount;
+                        existing.AverageRating = rating;
+                        existing.ReviewsCount = reviewsCount;
+                        existing.DownloadCount = downloads;
+                        existing.Genres = genres;
+                        existing.Platforms = platforms;
+                        existing.Features = features;
+                        existing.Tags = tags;
+                        existing.Description = description;
+                        existing.ShortDescription = shortDescription;
+                        existing.IsDlc = false;
+                        existing.ParentGameId = null;
+                        existing.IsPublished = true;
+                        existing.Version = version;
+                        existing.SizeInBytes = sizeBytes;
+                        existing.TrailerUrl = trailerUrl;
+                        existing.RecalculateTasteVector();
+                        context.Games.Update(existing);
+                        return existing;
+                    }
+
+                    var g = new Game
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = title,
+                        Description = description,
+                        ShortDescription = shortDescription,
+                        PriceInNanoTons = price,
+                        DiscountPercentage = discount,
+                        ServerArchivePath = archivePath,
+                        OwnerId = adminUser.Id,
+                        DownloadCount = downloads,
+                        AverageRating = rating,
+                        ReviewsCount = reviewsCount,
+                        IsDlc = false,
+                        ParentGameId = null,
+                        Genres = genres,
+                        Platforms = platforms,
+                        Features = features,
+                        SupportedLanguages = defaultLanguages,
+                        Tags = tags,
+                        Version = version,
+                        SizeInBytes = sizeBytes,
+                        IsPublished = true,
+                        HeaderImageUrl = headerImg,
+                        CoverImageUrl = coverImg,
+                        ScreenshotUrls = screenshots,
+                        TrailerUrl = trailerUrl,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    g.RecalculateTasteVector();
+                    context.Games.Add(g);
+                    gamesByTitle[g.Title] = g;
+                    gamesToSave.Add(g);
+
+                    if (!string.IsNullOrWhiteSpace(reviewText))
+                    {
+                        reviewsToSave.Add(new Review
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = adminUser.Id,
+                            GameId = g.Id,
+                            Rating = (int)Math.Round(rating),
+                            Content = reviewText,
+                            IsRecommended = true,
+                            PlayTimeHoursAtReview = 24.5,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+
+                    return g;
+                }
+
+                void GetOrAddDlc(
+                    Guid parentGameId,
+                    string title,
+                    string description,
+                    string shortDescription,
+                    long price,
+                    int discount,
+                    string archivePath,
+                    int downloads,
+                    double rating,
+                    int reviewsCount,
+                    List<string> genres,
+                    List<string> platforms,
+                    string headerImg,
+                    string coverImg)
+                {
+                    if (gamesByTitle.TryGetValue(title, out var existing))
+                    {
+                        existing.ParentGameId = parentGameId;
+                        existing.CoverImageUrl = coverImg;
+                        existing.HeaderImageUrl = headerImg;
+                        existing.ScreenshotUrls = new List<string> { coverImg, headerImg };
+                        existing.PriceInNanoTons = price;
+                        existing.DiscountPercentage = discount;
+                        existing.AverageRating = rating;
+                        existing.ReviewsCount = reviewsCount;
+                        existing.DownloadCount = downloads;
+                        existing.Genres = genres;
+                        existing.Platforms = platforms;
+                        existing.Description = description;
+                        existing.ShortDescription = shortDescription;
+                        existing.IsDlc = true;
+                        existing.IsPublished = true;
+                        existing.RecalculateTasteVector();
+                        context.Games.Update(existing);
+                        return;
+                    }
+
+                    var dlc = new Game
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = title,
+                        Description = description,
+                        ShortDescription = shortDescription,
+                        PriceInNanoTons = price,
+                        DiscountPercentage = discount,
+                        ServerArchivePath = archivePath,
+                        OwnerId = adminUser.Id,
+                        DownloadCount = downloads,
+                        AverageRating = rating,
+                        ReviewsCount = reviewsCount,
+                        IsDlc = true,
+                        ParentGameId = parentGameId,
+                        Genres = genres,
+                        Platforms = platforms,
+                        SupportedLanguages = defaultLanguages,
+                        IsPublished = true,
+                        HeaderImageUrl = headerImg,
+                        CoverImageUrl = coverImg,
+                        ScreenshotUrls = new List<string> { coverImg, headerImg },
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    dlc.RecalculateTasteVector();
+                    context.Games.Add(dlc);
+                    gamesByTitle[dlc.Title] = dlc;
+                    gamesToSave.Add(dlc);
+                }
+
+                var cp2077 = GetOrAddMainGame(
+                    "Cyberpunk 2077",
+                    "Cyberpunk 2077 — пригодницький бойовик і рольова гра з відкритим світом. Дія відбувається у темному майбутньому Найт-Сіті, небезпечного мегаполіса, одержимого владою, гламуром і ненаситною модифікацією тіла. Грайте за найманця V у пошуках унікального імплантату безсмертя.",
+                    "Пригодницький рольовий екшн у відкритому світі майбутнього з глибоким сюжетом.",
+                    5_000_000_000,
+                    20,
+                    "/storage/games/cyberpunk-2077.zip",
+                    14200,
+                    4.9,
+                    4,
+                    new List<string> { "Action", "RPG", "Cyberpunk", "SciFi" },
+                    new List<string> { "Windows", "MacOS" },
+                    new List<string> { "SinglePlayer", "Achievements", "FullControllerSupport", "CloudSaves" },
+                    new List<string> { "шутер", "екшн", "кіберпанк", "відкритий світ", "майбутнє", "рольова гра" },
+                    "2.1.0",
+                    70L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+                    new List<string>
+                    {
+                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
+                        "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80"
+                    },
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "Чудова гра! Неймовірна атмосфера, графіка та сюжет тримають у напрузі до останньої хвилини. Рекомендую всім!"
+                );
+                GetOrAddDlc(cp2077.Id, "Cyberpunk 2077: Phantom Liberty", "Масштабне сюжетне доповнення у жанрі шпигунського трилера до Cyberpunk 2077.", "Шпигунський трилер у Найт-Сіті.", 2_500_000_000, 0, "/storage/games/cyberpunk-phantom-liberty.zip", 11000, 5.0, 2, new List<string> { "Action", "RPG", "Cyberpunk", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(cp2077.Id, "Cyberpunk 2077: REDmod", "Безкоштовний інструмент для створення та завантаження модифікацій.", "Інструмент модифікацій.", 0, 0, "/storage/games/cyberpunk-redmod.zip", 8000, 5.0, 1, new List<string> { "DLC", "Modding" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80");
+
+                var witcher3 = GetOrAddMainGame(
+                    "The Witcher 3: Wild Hunt",
+                    "Ви Ґеральт із Рівії, найманий убивця чудовиськ. Перед вами спустошений війною, заповнений монстрами континент, який ви можете досліджувати за своїм бажанням. Ваш поточний контракт? Знайти Цірі — Дитя Приреченості, живу зброю, яка може змінити форму світу.",
+                    "Сюжетна рольова гра у відкритому фентезійному всесвіті з незабутніми пригодами.",
+                    4_000_000_000,
+                    70,
+                    "/storage/games/witcher3.zip",
+                    38500,
+                    4.95,
+                    12,
+                    new List<string> { "RPG", "Fantasy", "Action", "Adventure" },
+                    new List<string> { "Windows", "MacOS" },
+                    new List<string> { "SinglePlayer", "Achievements", "FullControllerSupport", "CloudSaves" },
+                    new List<string> { "рольова гра", "відкритий світ", "фентезі", "магія", "мечі", "шедевр", "сюжет" },
+                    "4.04",
+                    50L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=800&auto=format&fit=crop&q=80",
+                    new List<string>
+                    {
+                        "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80",
+                        "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80"
+                    },
+                    "https://www.youtube.com/watch?v=c0i88t0Kacs",
+                    "Одна з найкращих RPG в історії! Неймовірний сюжет, живі персонажі та прекрасна музика."
+                );
+                GetOrAddDlc(witcher3.Id, "The Witcher 3: Hearts of Stone", "Знову станьте Ґеральтом із Рівії, щоб виконати контракт для безжального капітана бандитів Ольґерда фон Еверека.", "Перше велике сюжетне доповнення для гри The Witcher 3.", 1_200_000_000, 30, "/storage/games/witcher3-hos.zip", 14000, 4.9, 3, new List<string> { "RPG", "Fantasy", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1514533450685-4493e01d1fdc?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(witcher3.Id, "The Witcher 3: Blood and Wine", "Вирушайте до далекої та залитої сонцем землі Туссент, де безтурботне життя ховає страшну та криваву таємницю.", "Масштабне доповнення на 30+ годин у новому регіоні Туссент.", 1_800_000_000, 30, "/storage/games/witcher3-baw.zip", 19000, 5.0, 5, new List<string> { "RPG", "Fantasy", "Adventure", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80");
+
+                var eldenRing = GetOrAddMainGame(
+                    "Elden Ring",
+                    "Золотий Порядок був порушений. Повстаньте, згаслі, і нехай благодать веде вас, щоб здобути силу Кільця Елден і стати Повелителем Елдену у Межизем'ї. Неперевершений шедевр від Hidetaka Miyazaki та George R. R. Martin.",
+                    "Епічна рольова екшн-гра у величній фентезійній реальності Межизем'я.",
+                    6_000_000_000,
+                    0,
+                    "/storage/games/elden-ring.zip",
+                    52000,
+                    4.9,
+                    16,
+                    new List<string> { "RPG", "Fantasy", "Action" },
+                    new List<string> { "Windows" },
+                    new List<string> { "SinglePlayer", "MultiPlayer", "CoOp", "Achievements", "FullControllerSupport" },
+                    new List<string> { "souls-like", "відкритий світ", "темне фентезі", "складний екшн", "магія", "боси" },
+                    "1.12",
+                    60L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop&q=80",
+                    new List<string>
+                    {
+                        "https://images.unsplash.com/photo-1514533450685-4493e01d1fdc?w=800&auto=format&fit=crop&q=80",
+                        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80"
+                    },
+                    "https://www.youtube.com/watch?v=E3Huy2cdih0",
+                    "Неймовірний відкритий світ і незабутні битви з босами. Справжнє мистецтво геймдизайну."
+                );
+                GetOrAddDlc(eldenRing.Id, "Elden Ring: Shadow of the Erdtree", "Вирушайте в Землі Тіні слідами Мікелли та розкрийте темні таємниці світового порядку.", "Найбільше сюжетне доповнення для Elden Ring.", 3_800_000_000, 0, "/storage/games/elden-ring-erdtree.zip", 22000, 4.8, 6, new List<string> { "RPG", "Fantasy", "Action", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(eldenRing.Id, "Elden Ring: Colosseum & Soundtrack", "Офіційне доповнення із PvP-аренами Колізеїв та цифровим саундтреком.", "PvP-арени Колізеїв та офіційний саундтрек.", 800_000_000, 0, "/storage/games/elden-ring-colosseum.zip", 14000, 4.8, 3, new List<string> { "RPG", "Action", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80");
+
+                var doom = GetOrAddMainGame(
+                    "DOOM Eternal",
+                    "Армії пекла заполонили Землю. Станьте Катом Року та зупиніть демонічне вторгнення у всіх вимірах. Відчуйте абсолютну швидкість і силу у передовому шутері від першої особи.",
+                    "Неперевершений динамічний шутер від id Software з потужним саундтреком.",
+                    3_500_000_000,
+                    67,
+                    "/storage/games/doom-eternal.zip",
+                    29000,
+                    4.85,
+                    8,
+                    new List<string> { "Shooter", "Action", "Horror", "SciFi" },
+                    new List<string> { "Windows" },
+                    new List<string> { "SinglePlayer", "MultiPlayer", "Achievements", "FullControllerSupport" },
+                    new List<string> { "шутер", "швидкий бій", "демони", "фантастика", "кров", "важкий метал", "адреналін" },
+                    "6.66",
+                    80L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=_NOJ2b_k2yo",
+                    "Безперервний адреналіновий екшн і неймовірна музика Міка Гордона. Чистий драйв!"
+                );
+                GetOrAddDlc(doom.Id, "DOOM Eternal: The Ancient Gods - Part One", "Ваша війна проти демонів триває. Здолайте нові загрози у найвищих небесних сферах та безоднях.", "Перше сюжетне доповнення найвищої складності.", 1_800_000_000, 50, "/storage/games/doom-ancient-gods-1.zip", 9500, 4.7, 2, new List<string> { "Shooter", "Action", "SciFi", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(doom.Id, "DOOM Eternal: The Ancient Gods - Part Two", "Кульмінація саги про Ката Року. Штурмуйте цитадель Темного Володаря в Іммфорі.", "Фінальне епічне протистояння з владикою Пекла.", 1_800_000_000, 50, "/storage/games/doom-ancient-gods-2.zip", 8900, 4.75, 2, new List<string> { "Shooter", "Action", "SciFi", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80");
+
+                var civ6 = GetOrAddMainGame(
+                    "Sid Meier's Civilization VI",
+                    "Будуйте імперію, яка витримає випробування часом. Досліджуйте нові землі, відкривайте технології, перемагайте ворогів та ведіть свій народ від кам'яного віку до космічної ери.",
+                    "Легендарна покрокова глобальна стратегія світового рівня.",
+                    3_000_000_000,
+                    85,
+                    "/storage/games/civ6.zip",
+                    41000,
+                    4.7,
+                    9,
+                    new List<string> { "Strategy", "Simulation" },
+                    new List<string> { "Windows", "MacOS", "Linux" },
+                    new List<string> { "SinglePlayer", "MultiPlayer", "CoOp", "CloudSaves" },
+                    new List<string> { "стратегія", "покрокова", "історія", "дипломатія", "тактика", "симулятор імперії" },
+                    "1.0.12",
+                    25L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=5KdE0p2joJw",
+                    "Ще один хід — і вже ранок! Чудова покрокова стратегія для довгих вечорів."
+                );
+                GetOrAddDlc(civ6.Id, "Civilization VI: Gathering Storm", "Світ стає живим: кліматичні зміни, стихійні лиха, енергетичні ресурси та Світовий конгрес.", "Глобальне доповнення з новими механіками екології та дипломатії.", 1_500_000_000, 70, "/storage/games/civ6-gs.zip", 16000, 4.8, 3, new List<string> { "Strategy", "Simulation", "DLC" }, new List<string> { "Windows", "MacOS", "Linux" }, "https://images.unsplash.com/photo-1527489377706-5bf97e608852?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(civ6.Id, "Civilization VI: Rise and Fall", "Епохи розквіту й темряви, вірність міст та нова система губернаторів.", "Доповнення про піднесення та занепад цивілізацій.", 1_200_000_000, 70, "/storage/games/civ6-rf.zip", 14000, 4.7, 2, new List<string> { "Strategy", "Simulation", "DLC" }, new List<string> { "Windows", "MacOS", "Linux" }, "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80");
+
+                var fh5 = GetOrAddMainGame(
+                    "Forza Horizon 5",
+                    "Ваша неперевершена пригода Horizon починається! Досліджуйте яскраві пейзажі Мексики у безперервному русі на сотнях найкращих автомобілів світу.",
+                    "Найкращий відкритий світ перегонів сучасності з фотореалістичною графікою.",
+                    5_500_000_000,
+                    35,
+                    "/storage/games/fh5.zip",
+                    47000,
+                    4.8,
+                    10,
+                    new List<string> { "Racing", "Sports", "Simulation" },
+                    new List<string> { "Windows" },
+                    new List<string> { "SinglePlayer", "MultiPlayer", "CoOp", "FullControllerSupport" },
+                    new List<string> { "перегони", "спорт", "відкритий світ", "автомобілі", "мультиплеєр", "швидкість" },
+                    "1.650",
+                    110L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=FYH9n37B7Yw",
+                    "Приголомшлива графіка і фізика керування авто. Найкраща автогонка десятиліття."
+                );
+                GetOrAddDlc(fh5.Id, "Forza Horizon 5: Hot Wheels", "Злітайте у небеса на запаморочливих помаранчевих треках Hot Wheels у хмарах над Мексикою.", "Шалені петлі та екстремальні треки Hot Wheels.", 1_800_000_000, 20, "/storage/games/fh5-hotwheels.zip", 18000, 4.85, 4, new List<string> { "Racing", "Sports", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(fh5.Id, "Forza Horizon 5: Rally Adventure", "Підкорюйте бездоріжжя Сьєрра-Нуева на спеціально підготовлених ралійних болідах.", "Справжнє ралі з ґрунтовими трасами та пилом.", 1_800_000_000, 20, "/storage/games/fh5-rally.zip", 13000, 4.7, 2, new List<string> { "Racing", "Sports", "DLC" }, new List<string> { "Windows" }, "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&auto=format&fit=crop&q=80");
+
+                var re4 = GetOrAddMainGame(
+                    "Resident Evil 4 Remake",
+                    "Виживання — це лише перший крок. Агент Леон С. Кеннеді вирушає до глухого європейського селища, щоб урятувати викрадену доньку президента, але стикається з жахом культу Лос-Ілюмінадос.",
+                    "Переосмислення легендарного шедевра жахів на виживання від Capcom.",
+                    4_500_000_000,
+                    25,
+                    "/storage/games/re4-remake.zip",
+                    36000,
+                    4.9,
+                    11,
+                    new List<string> { "Horror", "Action", "Adventure" },
+                    new List<string> { "Windows", "MacOS" },
+                    new List<string> { "SinglePlayer", "Achievements", "FullControllerSupport" },
+                    new List<string> { "жахи", "виживання", "зомбі", "трилер", "екшн", "кінематографічно", "напруга" },
+                    "1.10",
+                    65L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=j5Ic2z3_xP8",
+                    "Ідеальний ремейк. Атмосфера жаху та напружені перестрілки тримають до фінальних титрів."
+                );
+                GetOrAddDlc(re4.Id, "Resident Evil 4: Separate Ways", "Дізнайтеся інший бік історії очима загадкової Ади Вонг під час її таємної місії.", "Сюжетна кампанія Ади Вонг із крюком-кішкою.", 1_200_000_000, 0, "/storage/games/re4-separate-ways.zip", 15000, 4.95, 3, new List<string> { "Horror", "Action", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(re4.Id, "Resident Evil 4: Extra DLC Pack", "Комплект спеціальних костюмів, фільтрів та ексклюзивної зброї для Леона та Ешлі.", "Набір ексклюзивного спорядження та стилів.", 700_000_000, 0, "/storage/games/re4-extra-dlc.zip", 12000, 4.8, 2, new List<string> { "Horror", "Action", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&auto=format&fit=crop&q=80");
+
+                var bg3 = GetOrAddMainGame(
+                    "Baldur's Gate 3",
+                    "Зберіть загін і поверніться у Забуті Королівства. Вас заразили личинкою іллітіда, яка наділяє вас неймовірною силою, але вимагає страшної ціни. Обирайте між добром і злом у найкращій RPG десятиліття.",
+                    "Грандіозна кінематографічна рольова гра нового покоління за системою D&D.",
+                    6_000_000_000,
+                    15,
+                    "/storage/games/bg3.zip",
+                    75000,
+                    4.98,
+                    20,
+                    new List<string> { "RPG", "Fantasy", "Strategy", "Adventure" },
+                    new List<string> { "Windows", "MacOS" },
+                    new List<string> { "SinglePlayer", "MultiPlayer", "CoOp", "Achievements", "FullControllerSupport" },
+                    new List<string> { "D&D", "рольова гра", "магія", "покрокові бої", "вибір має значення", "кооператив", "шедевр" },
+                    "4.1.1",
+                    125L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1563089145-599997674d42?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=1T22wN1BIzU",
+                    "Абсолютна свобода дій та неймовірно прописані супутники. Гра року!"
+                );
+                GetOrAddDlc(bg3.Id, "Baldur's Gate 3: Digital Deluxe Upgrade", "Унікальні бардичні пісні, артефакти з всесвіту Divinity, цифровий артбук та саундтрек.", "Колекційний набір бонусних матеріалів.", 1_000_000_000, 0, "/storage/games/bg3-deluxe.zip", 21000, 4.9, 3, new List<string> { "RPG", "Fantasy", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(bg3.Id, "Baldur's Gate 3: Adventure Companion Pack", "Додаткові косметичні набори, ігрові кубики та унікальні діалогові портрети.", "Набір кастомізації персонажів та кубиків.", 600_000_000, 0, "/storage/games/bg3-companion.zip", 16000, 4.85, 2, new List<string> { "RPG", "Fantasy", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1514533450685-4493e01d1fdc?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=800&auto=format&fit=crop&q=80");
+
+                var deadCells = GetOrAddMainGame(
+                    "Dead Cells",
+                    "Dead Cells — це roguelite-метроїдванія у мінливому замку. Відсутність контрольних точок: убивайте, помирайте, вчіться на помилках і повторюйте знову в шаленому ритмі.",
+                    "Динамічний екшн-платформер із безкінечною реіграбельністю.",
+                    2_000_000_000,
+                    40,
+                    "/storage/games/dead-cells.zip",
+                    33000,
+                    4.85,
+                    7,
+                    new List<string> { "Indie", "Action", "Fantasy" },
+                    new List<string> { "Windows", "MacOS", "Linux" },
+                    new List<string> { "SinglePlayer", "Achievements", "FullControllerSupport" },
+                    new List<string> { "рогалик", "метроїдванія", "піксель-арт", "складний бій", "зброя", "швидкий темп" },
+                    "35.0",
+                    5L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=rvXZQn44AAU",
+                    "Неймовірна динаміка та різноманіття зброї. Відірватися неможливо."
+                );
+                GetOrAddDlc(deadCells.Id, "Dead Cells: Return to Castlevania", "Легендарний кросовер: бийтеся пліч-о-пліч з Алукардом і Ріхтером Белмонтом у залах замку Дракули.", "Масштабне доповнення за мотивами всесвіту Castlevania.", 900_000_000, 20, "/storage/games/dead-cells-castlevania.zip", 17000, 4.95, 4, new List<string> { "Indie", "Action", "Fantasy", "DLC" }, new List<string> { "Windows", "MacOS", "Linux" }, "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(deadCells.Id, "Dead Cells: The Bad Seed", "Досліджуйте розслаблене Дендропарк, боріться з новими мутантами у болотах та киньте виклик Матері Кліщів.", "Доповнення з новими біомами та зброєю.", 700_000_000, 20, "/storage/games/dead-cells-bad-seed.zip", 13000, 4.8, 2, new List<string> { "Indie", "Action", "DLC" }, new List<string> { "Windows", "MacOS", "Linux" }, "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80");
+
+                var subnautica = GetOrAddMainGame(
+                    "Subnautica",
+                    "Здійсніть вимушену посадку на невідомій океанічній планеті 4546B. Створюйте спорядження, будуйте підводні бази та субмарини, щоб досліджувати коралові рифи та глибоководні розломи.",
+                    "Захоплива підводна пригода на виживання в чужому інопланетному океані.",
+                    2_800_000_000,
+                    50,
+                    "/storage/games/subnautica.zip",
+                    39000,
+                    4.85,
+                    10,
+                    new List<string> { "Adventure", "SciFi", "Simulation" },
+                    new List<string> { "Windows", "MacOS" },
+                    new List<string> { "SinglePlayer", "Achievements", "FullControllerSupport", "VR" },
+                    new List<string> { "під водою", "виживання", "крафтинг", "океан", "інопланетяни", "дослідження", "Sci-Fi" },
+                    "2.0.1",
+                    20L * 1024 * 1024 * 1024,
+                    "https://images.unsplash.com/photo-1682687220063-4742bd7fd538?w=1200&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop&q=80",
+                    new List<string> { "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80" },
+                    "https://www.youtube.com/watch?v=Rz2SNm8VguE",
+                    "Неймовірне відчуття першовідкривача та легкий страх глибини. Чудовий підводний світ!"
+                );
+                GetOrAddDlc(subnautica.Id, "Subnautica: Below Zero", "Зануртеся в крижану експедицію на арктичному регіоні планети 4546B.", "Окрема арктична історія у всесвіті Subnautica.", 2_400_000_000, 30, "/storage/games/subnautica-bz.zip", 21000, 4.7, 5, new List<string> { "Adventure", "SciFi", "Simulation", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1517824806704-9040b037703b?w=800&auto=format&fit=crop&q=80");
+                GetOrAddDlc(subnautica.Id, "Subnautica: Deep Sea Pack", "Додаткові креслення підводних модулів та екзокостюмів для глибоководних занурень.", "Набір глибоководного спорядження та креслень.", 900_000_000, 0, "/storage/games/subnautica-deepsea.zip", 14000, 4.8, 3, new List<string> { "Adventure", "SciFi", "DLC" }, new List<string> { "Windows", "MacOS" }, "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80");
+
+                if (reviewsToSave.Count > 0)
+                {
+                    await context.Reviews.AddRangeAsync(reviewsToSave);
+                }
+
+                await context.SaveChangesAsync();
+                _logger?.LogInformation($"[InitData] Seeded/verified {gamesByTitle.Count} games and DLCs with recalculated recommendation vectors.");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error ensuring seeded games and DLCs.");
+            }
+        }
     }
 }
-

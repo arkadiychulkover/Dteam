@@ -85,7 +85,6 @@
       type: 'error'
     });
   }
-
 </script>
 
 <aside class="w-80 h-full bg-[#061820]/95 border-l border-cyan-500/20 flex flex-col shrink-0 overflow-hidden relative backdrop-blur-xl">
@@ -232,4 +231,3 @@
     </div>
   {/if}
 </aside>
-

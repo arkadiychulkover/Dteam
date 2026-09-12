@@ -165,7 +165,6 @@
   );
 
   const openedGame = $derived<Game | undefined>(openedItem?.game);
-
 </script>
 
 <div class="flex h-full min-h-[calc(100vh-56px)]">
@@ -181,7 +180,6 @@
       </button>
     </div>
 
-    <!-- Quick collection filters in sidebar -->
     <div class="p-2 space-y-0.5 border-b border-cyan-500/10">
       <button
         type="button"
@@ -236,7 +234,6 @@
       {/each}
     </div>
 
-    <!-- Games list in sidebar -->
     <ul class="flex-1 overflow-y-auto px-2 space-y-0.5 py-2">
       {#each filteredItems as item (item.gameId)}
         {#if item.game}
@@ -261,7 +258,7 @@
 
   <main class="flex-1 min-w-0">
     <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8 animate-in fade-in">
-      <!-- Primary Switcher: Games vs My Feed -->
+
       <div class="flex items-center gap-3 border-b border-cyan-500/10 pb-4">
         <button
           onclick={() => libraryStore.setActivePrimaryTab('games')}
@@ -516,7 +513,6 @@
               {#if $libraryStore.activeCollectionId === 'favorites'}<span class="absolute -bottom-px left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>{/if}
             </button>
 
-            <!-- Custom User Collections -->
             {#each $libraryStore.collections as col (col.id)}
               {@const isActive = $libraryStore.activeCollectionId === col.id}
               <div class="relative group/col flex items-center shrink-0">

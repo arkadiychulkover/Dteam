@@ -558,4 +558,3 @@ export const chatStore = createChatStore();
 export const totalChatUnreadCount = derived(chatStore, ($c) => {
   return $c.conversations.reduce((sum, item) => sum + item.unreadCount, 0);
 });
-

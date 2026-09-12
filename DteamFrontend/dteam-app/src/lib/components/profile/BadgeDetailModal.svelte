@@ -30,7 +30,6 @@
 
   const rarityInfo = $derived(gift ? getRarityInfo(gift.rarity) : null);
   const badgeNumber = $derived(gift ? formatBadgeNumber(gift.onChainTokenId !== undefined && gift.onChainTokenId !== null ? gift.onChainTokenId : gift.tokenId) : '');
-
 </script>
 
 {#if isOpen && gift && rarityInfo}
@@ -125,4 +124,3 @@
     </div>
   </div>
 {/if}
-

@@ -22,7 +22,6 @@
     await authStore.logout();
     window.location.reload();
   }
-
 </script>
 
 <div class="min-h-[85vh] flex items-center justify-center p-4">
@@ -90,4 +89,3 @@
     </div>
   </div>
 </div>
-

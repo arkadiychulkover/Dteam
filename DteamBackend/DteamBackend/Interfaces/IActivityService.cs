@@ -22,4 +22,3 @@ namespace DteamBackend.Interfaces
         Task<List<UserActivityDto>> GetGlobalFeedAsync(int limit = 50, int offset = 0);
     }
 }
-

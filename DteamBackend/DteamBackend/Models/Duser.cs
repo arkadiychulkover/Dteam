@@ -119,4 +119,3 @@ namespace DteamBackend.Models
         public DateTime? DeletedAt { get; set; }
     }
 }
-

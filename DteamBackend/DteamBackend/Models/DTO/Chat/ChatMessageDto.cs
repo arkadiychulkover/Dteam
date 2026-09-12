@@ -20,4 +20,3 @@ namespace DteamBackend.Models.DTO.Chat
         public DateTimeOffset? ReadAt { get; set; }
     }
 }
-

@@ -149,4 +149,3 @@ namespace DteamBackend.BackgroundServices
         private static long ActiveRewardIntervalSeconds => OnlineHub.ActiveRewardIntervalSeconds;
     }
 }
-

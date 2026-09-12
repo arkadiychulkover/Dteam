@@ -21,4 +21,3 @@ namespace DteamBackend.Interfaces
         Task<(bool isMatch, string? registeredAddress, string providedAddress)> VerifyWalletMatchAsync(Guid userId, string providedAddress);
     }
 }
-

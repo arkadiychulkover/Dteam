@@ -119,7 +119,6 @@
     successResult = null;
     txhHash = '';
   }
-
 </script>
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
@@ -338,4 +337,3 @@
     {/if}
   </div>
 </div>
-

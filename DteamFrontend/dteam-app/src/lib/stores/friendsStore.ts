@@ -354,4 +354,3 @@ function createFriendsStore() {
 }
 
 export const friendsStore = createFriendsStore();
-

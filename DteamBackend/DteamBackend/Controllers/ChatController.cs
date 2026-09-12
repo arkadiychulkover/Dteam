@@ -219,4 +219,3 @@ namespace DteamBackend.Controllers
         public bool IsTyping { get; set; }
     }
 }
-

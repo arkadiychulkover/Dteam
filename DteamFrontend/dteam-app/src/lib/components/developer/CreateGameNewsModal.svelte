@@ -126,7 +126,6 @@
       isSubmitting = false;
     }
   }
-
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape' && isOpen && !isSubmitting) handleClose(); }} />
@@ -291,4 +290,3 @@
     </div>
   </div>
 {/if}
-

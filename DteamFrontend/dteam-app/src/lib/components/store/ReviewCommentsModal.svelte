@@ -239,7 +239,6 @@
       isSubmitting = false;
     }
   }
-
 </script>
 
 {#if isOpen && review}
@@ -512,4 +511,3 @@
   }
 
 </style>
-

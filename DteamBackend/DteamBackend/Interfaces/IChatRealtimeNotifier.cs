@@ -11,4 +11,3 @@ namespace DteamBackend.Interfaces
         Task NotifyMessageDeletedAsync(Guid recipientUserId, Guid messageId, Guid peerId, CancellationToken cancellationToken = default);
     }
 }
-

@@ -382,7 +382,6 @@
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   }
-
 </script>
 
 {#if game}
@@ -1375,4 +1374,3 @@
   onClose={() => { isReviewCommentsModalOpen = false; selectedReviewForComments = null; }}
   onReviewUpdated={handleReviewUpdatedFromModal}
 />
-

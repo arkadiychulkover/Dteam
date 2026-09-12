@@ -126,20 +126,17 @@
     {config.bgGradient} {config.border} {config.glow}
     {isExiting ? 'toast-exit' : 'toast-enter'}"
 >
-  <!-- Ambient radial light highlight -->
+
   <div class="pointer-events-none absolute -left-12 -top-12 w-36 h-36 rounded-full bg-white/5 blur-2xl"></div>
 
-  <!-- Main Card Body -->
   <div class="relative p-4 flex items-start gap-3.5">
-    <!-- Left Accent Glowing Pill -->
+
     <div class="w-1 self-stretch rounded-full bg-gradient-to-b {config.pill} shrink-0 my-0.5"></div>
 
-    <!-- Icon Badge with glow -->
     <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border {config.iconBox} mt-0.5">
       <IconComponent class="w-5 h-5" />
     </div>
 
-    <!-- Content Area -->
     <div class="flex-1 min-w-0 pr-1">
       <div class="flex items-center gap-2 flex-wrap">
         <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border font-mono {config.tagColor}">
@@ -161,7 +158,6 @@
       </p>
     </div>
 
-    <!-- Close button -->
     <button
       type="button"
       onclick={triggerExit}
@@ -172,7 +168,6 @@
     </button>
   </div>
 
-  <!-- Countdown Progress Bar -->
   <div class="h-[2.5px] w-full bg-slate-800/60 overflow-hidden">
     <div
       class="h-full bg-gradient-to-r {config.progressBar} transition-all duration-75 ease-linear"

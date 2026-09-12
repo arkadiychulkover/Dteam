@@ -30,7 +30,6 @@
     subtitle="Переглядайте актуальний баланс, поповнюйте рахунок та відстежуйте історію операцій."
   />
 
-  <!-- Hero Balance Card -->
   <div class="mb-7 p-6 rounded-2xl bg-gradient-to-br from-[#022a38] via-[#011f2a] to-[#01141c] border border-cyan-500/20 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
     <div class="flex items-center gap-5">
       <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-400 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center shrink-0">
@@ -49,7 +48,6 @@
       </div>
     </div>
 
-    <!-- Quick Deposit action -->
     <div class="w-full sm:w-auto flex items-center gap-2.5">
       <input
         type="number"
@@ -68,7 +66,6 @@
     </div>
   </div>
 
-  <!-- Transactions History List -->
   <div>
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-black text-white font-display">
@@ -89,7 +86,7 @@
         У вас поки що немає фінансових операцій
       </div>
     {:else}
-      <!-- Transactions Table/List -->
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -126,7 +123,6 @@
         </table>
       </div>
 
-      <!-- Pagination -->
       {#if $uiState.txTotalPages > 1}
         <div class="mt-6 flex items-center justify-between text-xs font-mono text-slate-400 pt-3 border-t border-cyan-900/20">
           <div>

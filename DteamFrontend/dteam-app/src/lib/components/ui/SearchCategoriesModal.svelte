@@ -61,7 +61,6 @@
     { label: 'До 3 TON', filter: { priceFilter: 'under3' } },
     { label: 'До 6 TON', filter: { priceFilter: 'under6' } },
   ];
-
 </script>
 
 {#if isOpen}
@@ -206,4 +205,3 @@
   </div>
 </div>
 {/if}
-

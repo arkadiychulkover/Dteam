@@ -27,7 +27,6 @@
       return '';
     }
   }
-
 </script>
 
 <div class="h-full flex flex-col">
@@ -89,4 +88,3 @@
     {/if}
   </div>
 </div>
-

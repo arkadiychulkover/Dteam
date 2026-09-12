@@ -123,7 +123,6 @@ namespace DteamBackend.BackgroundServices
 
             LogDiagnostic($"Found blockchain directory at: {blockchainDir}");
 
-            // Ensure node_modules exists, if not run npm install
             var nodeModulesPath = Path.Combine(blockchainDir, "node_modules");
             if (!Directory.Exists(nodeModulesPath))
             {

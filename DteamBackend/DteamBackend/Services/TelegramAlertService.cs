@@ -6,9 +6,7 @@ using DteamBackend.Interfaces;
 
 namespace DteamBackend.Services
 {
-    /// <summary>
-    /// Статический класс для прямой отправки сообщений в Telegram Bot API
-    /// </summary>
+
     public static class TelegramSender
     {
         private static readonly HttpClient HttpClient = new HttpClient();
@@ -56,9 +54,6 @@ namespace DteamBackend.Services
         }
     }
 
-    /// <summary>
-    /// Сервис для централизованной отправки алертов и отчетов об ошибках
-    /// </summary>
     public class TelegramAlertService : ITelegramAlertService
     {
         private readonly IConfiguration _configuration;
@@ -158,7 +153,6 @@ namespace DteamBackend.Services
                       ?? Environment.GetEnvironmentVariable("TELEGRAM_CHAT_ID")
                       ?? _cachedChatId;
 
-            // Если ChatId не задан явно, пробуем автоматически обнаружить последний чат из getUpdates бота
             if (string.IsNullOrWhiteSpace(chatId) && !string.IsNullOrWhiteSpace(botToken))
             {
                 chatId = await TryAutoDiscoverChatIdAsync(botToken);

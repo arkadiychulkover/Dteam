@@ -22,4 +22,3 @@ export interface UserActivity {
   imageUrl?: string | null;
   createdAt: string;
 }
-

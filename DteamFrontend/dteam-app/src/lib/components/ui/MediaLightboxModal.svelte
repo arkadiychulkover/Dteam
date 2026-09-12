@@ -35,7 +35,7 @@
     if (e.target === e.currentTarget) onClose();
   }}
 >
-  <!-- Top bar -->
+
   <div
     class="absolute top-0 left-0 right-0 p-4 sm:p-5 flex items-center justify-between z-30 bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-auto"
     onclick={(e) => e.stopPropagation()}
@@ -95,7 +95,6 @@
     </div>
   </div>
 
-  <!-- Main Image container: clicking outside the image closes modal -->
   <div
     class="w-full h-full p-4 sm:p-10 flex items-center justify-center overflow-auto cursor-pointer"
     onclick={(e) => {
@@ -113,7 +112,6 @@
     />
   </div>
 
-  <!-- Hint at bottom -->
   <div
     class="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] text-slate-400 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 pointer-events-none"
   >

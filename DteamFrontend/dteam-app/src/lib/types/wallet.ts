@@ -14,4 +14,3 @@ export interface TonTransaction {
   timestamp: string;
   gameTitle?: string;
 }
-

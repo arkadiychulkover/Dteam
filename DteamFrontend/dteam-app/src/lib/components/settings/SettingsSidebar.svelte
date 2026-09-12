@@ -37,7 +37,7 @@
 </script>
 
 <aside class="w-full lg:w-72 shrink-0 bg-[#02222d]/80 border border-cyan-900/30 rounded-3xl p-4 backdrop-blur-xl shadow-xl space-y-4">
-  <!-- Search Input -->
+
   <div class="relative">
     <Search class="w-4 h-4 text-cyan-400/80 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
     <input
@@ -49,7 +49,6 @@
     />
   </div>
 
-  <!-- Dark / Light Theme Toggle Row -->
   <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-[#011c27]/60 border border-cyan-900/20">
     <div class="flex items-center gap-2.5 text-xs font-bold text-slate-200">
       {#if isDark}
@@ -69,7 +68,6 @@
 
   <div class="h-px bg-cyan-900/20 my-1"></div>
 
-  <!-- Navigation items -->
   <nav class="space-y-1">
     {#each filteredNavItems as item}
       {@const Icon = item.icon}

@@ -421,7 +421,6 @@
     }
     return list;
   });
-
 </script>
 
 <div
@@ -1435,4 +1434,3 @@
   createdAt={activeModalVideoPost?.createdAt || ''}
   onClose={() => (activeModalVideoPost = null)}
 />
-

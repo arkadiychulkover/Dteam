@@ -44,7 +44,6 @@
       closeModal();
     }
   }
-
 </script>
 
 {#if $uiStore.isLoginModalOpen}
@@ -179,4 +178,3 @@
     </div>
   </div>
 {/if}
-

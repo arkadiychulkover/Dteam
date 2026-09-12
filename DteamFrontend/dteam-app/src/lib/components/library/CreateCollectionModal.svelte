@@ -43,20 +43,19 @@
 
     try {
       if (collection) {
-        // Update collection details
+
         await libraryStore.updateCollection(collection.id, name.trim(), description.trim() || undefined);
-        // Sync items
+
         const colItems = collection.items ?? [];
         const currentIds = new Set(colItems.map((i) => i.gameId));
         const newIds = new Set(selectedGameIds);
 
-        // Add missing
         for (const gId of selectedGameIds) {
           if (!currentIds.has(gId)) {
             await libraryStore.toggleGameInCollection(collection.id, gId);
           }
         }
-        // Remove unselected
+
         for (const cItem of colItems) {
           if (!newIds.has(cItem.gameId)) {
             await libraryStore.toggleGameInCollection(collection.id, cItem.gameId);
@@ -102,7 +101,7 @@
   onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 >
   <div class="relative w-full max-w-lg bg-[#061820] border border-cyan-500/30 rounded-2xl shadow-2xl p-6 text-white space-y-5 overflow-hidden">
-    <!-- Close button -->
+
     <button
       type="button"
       onclick={onClose}
@@ -112,7 +111,6 @@
       <X class="w-5 h-5" />
     </button>
 
-    <!-- Header -->
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300">
         <FolderPlus class="w-5 h-5" />
@@ -160,7 +158,6 @@
         ></textarea>
       </div>
 
-      <!-- Games selector -->
       <div>
         <span class="block text-xs font-bold text-slate-300 mb-2">
           Додати ігри з бібліотеки ({selectedGameIds.length})
@@ -197,7 +194,6 @@
         </div>
       </div>
 
-      <!-- Buttons -->
       <div class="flex items-center justify-between pt-2">
         {#if collection}
           <button

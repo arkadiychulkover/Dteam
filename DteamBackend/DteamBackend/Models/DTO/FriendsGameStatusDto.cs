@@ -6,4 +6,3 @@ namespace DteamBackend.Models.DTO
         public List<FriendDto> FriendsWhoWishlist { get; set; } = new();
     }
 }
-

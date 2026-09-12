@@ -340,7 +340,6 @@
     }
     uiStore.setTab('store');
   }
-
 </script>
 
 <svelte:window onclick={handleClickOutside} onkeydown={handleKeydown} />
@@ -373,7 +372,6 @@
       </button>
     </div>
 
-    <!-- Center: Navigation Tabs + Search Bar directly underneath stretched to tab bar width -->
     <div class="hidden lg:flex flex-col items-stretch gap-1.5 shrink-0">
       <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative justify-between">
         {#each visibleTabs as tab}
@@ -450,7 +448,6 @@
       </div>
     </div>
 
-    <!-- Mobile compact search (visible only below lg) -->
     <div class="lg:hidden flex-1 max-w-xs mx-1">
       <form onsubmit={handleSearchSubmit} class="relative w-full">
         <input
@@ -500,7 +497,7 @@
       </button>
 
       {#if $currentUser}
-        <!-- Notifications Bell & Dropdown Popover -->
+
         <div class="relative">
           <button
             onclick={() => notificationStore.toggleDropdown()}
@@ -521,7 +518,7 @@
           {#if $notificationStore.isDropdownOpen}
             <button type="button" aria-label="Закрити меню" class="fixed inset-0 z-40 bg-transparent border-0 p-0 cursor-default" onclick={() => notificationStore.closeDropdown()}></button>
             <div class="absolute right-0 mt-2 w-80 sm:w-96 bg-[#081722]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-black/80 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <!-- Popover Header -->
+
               <div class="px-4 py-3 border-b border-cyan-500/20 flex items-center justify-between bg-[#040e15]/80">
                 <div class="flex items-center gap-2">
                   <Bell class="w-4 h-4 text-cyan-400" />
@@ -542,7 +539,6 @@
                 {/if}
               </div>
 
-              <!-- Notifications Feed -->
               <div class="max-h-[380px] overflow-y-auto divide-y divide-slate-800/40 custom-scrollbar">
                 {#if $notificationStore.notifications.length === 0}
                   <div class="py-10 px-4 text-center">
@@ -562,7 +558,7 @@
                         {item.isRead ? 'bg-transparent hover:bg-slate-800/30' : 'bg-cyan-950/20 hover:bg-cyan-900/30 border-l-2 border-cyan-400'}"
                       onclick={() => handleNotificationClick(item)}
                     >
-                      <!-- Type Icon / Avatar -->
+
                       <div class="relative shrink-0 mt-0.5">
                         {#if item.actor?.avatarUrl}
                           <BackendImage src={item.actor.avatarUrl} alt={item.actor.username} class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30" />
@@ -588,7 +584,6 @@
                         {/if}
                       </div>
 
-                      <!-- Text details -->
                       <div class="flex-1 min-w-0 pr-6">
                         <h5 class="text-xs font-bold text-white truncate {item.isRead ? 'font-medium' : 'font-black'}">
                           {item.title}
@@ -602,7 +597,6 @@
                         </div>
                       </div>
 
-                      <!-- Delete action -->
                       <div class="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                         <button
                           onclick={(e) => { e.stopPropagation(); notificationStore.deleteNotification(item.id); }}
@@ -617,7 +611,6 @@
                 {/if}
               </div>
 
-              <!-- Footer with Load More -->
               {#if $notificationStore.hasMore}
                 <div class="p-2 border-t border-slate-800/80 text-center bg-[#040e15]/40">
                   <button
@@ -633,7 +626,6 @@
           {/if}
         </div>
 
-        <!-- Settings Quick Button -->
         <button
           onclick={() => uiStore.setTab('settings')}
           class="w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md

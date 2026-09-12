@@ -13,7 +13,6 @@
   let showNew = $state(false);
   let showConfirm = $state(false);
 
-  // Dynamic checklist
   const hasMinLength = $derived(newPassword.length >= 7);
   const hasLetter = $derived(/[a-zA-Zа-яА-ЯіїєґІЇЄҐ]/.test(newPassword));
   const hasDigit = $derived(/[0-9]/.test(newPassword));
@@ -56,9 +55,9 @@
   />
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-    <!-- Left Column: Form Inputs (7 cols) -->
+
     <form onsubmit={handleSubmit} class="lg:col-span-7 space-y-4">
-      <!-- Old Password -->
+
       <div>
         <label for="old-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Старий пароль
@@ -82,7 +81,6 @@
         </div>
       </div>
 
-      <!-- New Password -->
       <div>
         <label for="new-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Новий пароль
@@ -106,7 +104,6 @@
         </div>
       </div>
 
-      <!-- Confirm New Password -->
       <div>
         <label for="confirm-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Підтвердження нового пароля
@@ -130,7 +127,6 @@
         </div>
       </div>
 
-      <!-- Save Button -->
       <div class="pt-4 flex justify-start">
         <button
           type="submit"
@@ -145,9 +141,8 @@
       </div>
     </form>
 
-    <!-- Right Column: Live checklist & Advice (5 cols) -->
     <div class="lg:col-span-5 space-y-4">
-      <!-- Security rules info box -->
+
       <div class="p-5 rounded-2xl bg-[#011c27] border border-cyan-800/40 text-xs text-slate-300 space-y-2 font-medium leading-relaxed shadow-lg">
         <div class="flex items-center justify-between mb-2">
           <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 font-mono">
@@ -196,7 +191,6 @@
         </div>
       </div>
 
-      <!-- Security advice info -->
       <div class="p-4 rounded-2xl bg-[#01141c]/80 border border-cyan-900/30 text-xs text-slate-400 space-y-2 leading-relaxed">
         <div class="flex items-center gap-2 text-cyan-400 font-bold text-xs">
           <Shield class="w-4 h-4 shrink-0" />

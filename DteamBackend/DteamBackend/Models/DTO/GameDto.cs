@@ -37,4 +37,3 @@ namespace DteamBackend.Models.DTO
         public DateTime? UpdatedAt { get; set; }
     }
 }
-

@@ -441,10 +441,9 @@
   function statusLabel(status?: number) {
     if (status === UserStatus.InGame) return { text: 'у грі', color: 'text-cyan-400' };
     if (status === UserStatus.Away) return { text: 'відійшов', color: 'text-amber-400' };
-    // Current user is actively logged in and viewing their profile
+
     return { text: 'у мережі', color: 'text-emerald-400' };
   }
-
 </script>
 
 {#if $currentUser}
@@ -1186,4 +1185,3 @@
   isOpen={isBadgeModalOpen}
   onClose={() => (isBadgeModalOpen = false)}
 />
-

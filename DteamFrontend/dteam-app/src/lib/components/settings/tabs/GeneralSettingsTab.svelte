@@ -36,9 +36,8 @@
     subtitle="Керуйте персональною інформацією, аватаром та налаштуваннями мови вашого профілю."
   />
 
-  <!-- Profile Banner & Avatar Hero Header -->
   <div class="relative mb-8">
-    <!-- Banner -->
+
     <div class="w-full h-48 sm:h-56 rounded-2xl overflow-hidden relative bg-gradient-to-r from-cyan-950 via-[#032b38] to-[#011a24] border border-cyan-900/30 shadow-inner group">
       {#if $draftState.bannerUrl}
         <BackendImage
@@ -52,7 +51,6 @@
         </div>
       {/if}
 
-      <!-- Banner Upload Button -->
       <button
         type="button"
         onclick={() => bannerFileInput?.click()}
@@ -76,7 +74,6 @@
       />
     </div>
 
-    <!-- Avatar overlapping banner -->
     <div class="absolute -bottom-6 left-6 flex items-end gap-4">
       <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#021822] bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 p-0.5 shadow-2xl overflow-hidden group">
         <div class="w-full h-full rounded-full overflow-hidden bg-[#061820] flex items-center justify-center">
@@ -93,7 +90,6 @@
           {/if}
         </div>
 
-        <!-- Avatar Upload Button -->
         <button
           type="button"
           onclick={() => avatarFileInput?.click()}
@@ -118,10 +114,9 @@
     </div>
   </div>
 
-  <!-- Form Fields -->
   <div class="pt-8 space-y-5">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-      <!-- Username -->
+
       <div>
         <label for="settings-username" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Нікнейм
@@ -137,7 +132,6 @@
         />
       </div>
 
-      <!-- Email -->
       <div>
         <label for="settings-email" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Ел. пошта
@@ -154,7 +148,6 @@
       </div>
     </div>
 
-    <!-- Bio with character counter -->
     <div>
       <div class="flex items-center justify-between mb-2">
         <label for="settings-bio" class="block text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">
@@ -175,7 +168,6 @@
       ></textarea>
     </div>
 
-    <!-- Language -->
     <div>
       <label for="settings-lang" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono flex items-center gap-1.5">
         <Globe class="w-3.5 h-3.5 text-cyan-400" />
@@ -198,7 +190,6 @@
     </div>
   </div>
 
-  <!-- Action Bar -->
   <SettingsActionBar
     isSaving={$uiState.isSaving}
     isDirty={$draftState.isDirty}

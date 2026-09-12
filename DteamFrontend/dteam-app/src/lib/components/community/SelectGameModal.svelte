@@ -75,7 +75,6 @@
   onMount(() => {
     return () => clearTimeout(debounceTimeout);
   });
-
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -231,4 +230,3 @@
     </div>
   </div>
 {/if}
-

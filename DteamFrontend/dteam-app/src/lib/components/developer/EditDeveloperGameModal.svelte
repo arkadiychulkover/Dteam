@@ -199,7 +199,6 @@
 
     }
   }
-
 </script>
 
 {#if $uiStore.isEditGameModalOpen && $uiStore.editingGame}
@@ -456,4 +455,3 @@
     </div>
   </div>
 {/if}
-

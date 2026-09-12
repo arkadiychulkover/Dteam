@@ -568,4 +568,3 @@ export const DTEAM_NFT_ABI = [
     "type": "function"
   }
 ] as const;
-

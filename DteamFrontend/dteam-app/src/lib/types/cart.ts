@@ -24,4 +24,3 @@ export interface CheckoutResult {
   awardedTokens?: number;
   tokenTxHash?: string | null;
 }
-

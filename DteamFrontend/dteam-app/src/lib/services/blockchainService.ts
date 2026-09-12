@@ -27,4 +27,3 @@ export async function getBalanceDirectFromBlockchain(walletAddress: string): Pro
   const balanceWei = await contract.balanceOf(walletAddress);
   return Number(formatEther(balanceWei));
 }
-

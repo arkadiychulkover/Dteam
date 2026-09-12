@@ -34,7 +34,6 @@
       isSubmitting = false;
     }
   }
-
 </script>
 
 <div class="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -111,4 +110,3 @@
     </div>
   </div>
 </div>
-

@@ -198,4 +198,3 @@ export async function getUserGiftsByUserId(userId: string): Promise<NftGift[]> {
     return [];
   }
 }
-

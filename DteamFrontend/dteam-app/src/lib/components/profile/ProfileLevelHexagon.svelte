@@ -39,7 +39,6 @@
     if (len >= 3) return 'text-xs';
     return 'text-sm';
   });
-
 </script>
 
 <div
@@ -63,4 +62,3 @@
     {level}
   </span>
 </div>
-

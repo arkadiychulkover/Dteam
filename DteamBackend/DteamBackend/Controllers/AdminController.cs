@@ -297,26 +297,22 @@ namespace DteamBackend.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Refresh tokens
+
                 var refreshTokens = await _context.RefreshTokens.Where(rt => rt.UserId == id).ToListAsync();
                 if (refreshTokens.Count > 0) _context.RefreshTokens.RemoveRange(refreshTokens);
 
-                // 2. Chat messages and uploads
                 var uploads = await _context.ChatUploads.Where(u => u.UserId == id).ToListAsync();
                 if (uploads.Count > 0) _context.ChatUploads.RemoveRange(uploads);
 
                 var messages = await _context.ChatMessages.Where(m => m.SenderId == id || m.ReceiverId == id).ToListAsync();
                 if (messages.Count > 0) _context.ChatMessages.RemoveRange(messages);
 
-                // 3. Wallet transactions
                 var walletTx = await _context.WalletTransactions.Where(t => t.UserId == id).ToListAsync();
                 if (walletTx.Count > 0) _context.WalletTransactions.RemoveRange(walletTx);
 
-                // 4. Crypto transactions
                 var tranxactions = await _context.Tranxactions.Where(t => t.UserId == id).ToListAsync();
                 foreach (var tx in tranxactions) tx.UserId = null;
 
-                // 5. Social & Friends
                 var friendRequests = await _context.FriendRequests.Where(fr => fr.SenderId == id || fr.ReceiverId == id).ToListAsync();
                 if (friendRequests.Count > 0) _context.FriendRequests.RemoveRange(friendRequests);
 
@@ -326,7 +322,6 @@ namespace DteamBackend.Controllers
                 var userBlocks = await _context.UserBlocks.Where(ub => ub.UserId == id || ub.BlockedUserId == id).ToListAsync();
                 if (userBlocks.Count > 0) _context.UserBlocks.RemoveRange(userBlocks);
 
-                // 6. Library, Wishlist, Cart
                 var userGames = await _context.UserGames.Where(ug => ug.UserId == id).ToListAsync();
                 if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
 
@@ -336,11 +331,9 @@ namespace DteamBackend.Controllers
                 var cartItems = await _context.UserCartItems.Where(c => c.UserId == id).ToListAsync();
                 if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
 
-                // 7. Reviews
                 var reviews = await _context.Reviews.Where(r => r.UserId == id).ToListAsync();
                 if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
 
-                // 8. Activities, notifications, preferences
                 var activities = await _context.UserActivities.Where(a => a.UserId == id).ToListAsync();
                 if (activities.Count > 0) _context.UserActivities.RemoveRange(activities);
 
@@ -350,7 +343,6 @@ namespace DteamBackend.Controllers
                 var notifPrefs = await _context.UserNotificationPreferences.Where(p => p.UserId == id).ToListAsync();
                 if (notifPrefs.Count > 0) _context.UserNotificationPreferences.RemoveRange(notifPrefs);
 
-                // 9. NFTs & transfers
                 var nfts = await _context.NftItems.Where(n => n.UserId == id).ToListAsync();
                 foreach (var nft in nfts) nft.UserId = null;
 
@@ -361,11 +353,9 @@ namespace DteamBackend.Controllers
                     if (t.ToUserId == id) t.ToUserId = null;
                 }
 
-                // 10. Game collections
                 var collections = await _context.GameCollections.Include(c => c.Items).Where(c => c.UserId == id).ToListAsync();
                 if (collections.Count > 0) _context.GameCollections.RemoveRange(collections);
 
-                // 11. Family links
                 var familyMembers = await _context.Users.Where(u => u.FamilyOwnerId == id).ToListAsync();
                 foreach (var member in familyMembers)
                 {
@@ -373,7 +363,6 @@ namespace DteamBackend.Controllers
                     member.IsInFamily = false;
                 }
 
-                // 12. Created games
                 var createdGames = await _context.Games.Where(g => g.OwnerId == id).ToListAsync();
                 if (createdGames.Count > 0)
                 {
@@ -567,32 +556,27 @@ namespace DteamBackend.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. DLCs
+
                 foreach (var dlc in game.Dlcs)
                 {
                     dlc.ParentGameId = null;
                 }
 
-                // 2. User cart & wishlist
                 var cartItems = await _context.UserCartItems.Where(c => c.GameId == id).ToListAsync();
                 if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
 
                 var wishlists = await _context.UserWishlists.Where(w => w.GameId == id).ToListAsync();
                 if (wishlists.Count > 0) _context.UserWishlists.RemoveRange(wishlists);
 
-                // 3. User games (library)
                 var userGames = await _context.UserGames.Where(ug => ug.GameId == id).ToListAsync();
                 if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
 
-                // 4. Collection items
                 var colItems = await _context.GameCollectionItems.Where(ci => ci.GameId == id).ToListAsync();
                 if (colItems.Count > 0) _context.GameCollectionItems.RemoveRange(colItems);
 
-                // 5. Reviews
                 var reviews = await _context.Reviews.Where(r => r.GameId == id).ToListAsync();
                 if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
 
-                // 6. Community posts linking to this game
                 var posts = await _context.CommunityPosts.Where(p => p.GameGuidId == id).ToListAsync();
                 foreach (var p in posts) p.GameGuidId = null;
 

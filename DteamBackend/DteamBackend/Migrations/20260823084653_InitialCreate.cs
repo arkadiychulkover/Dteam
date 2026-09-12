@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace DteamBackend.Migrations
 {
-    /// <inheritdoc />
+
     public partial class InitialCreate : Migration
     {
-        /// <inheritdoc />
+
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -230,7 +230,6 @@ namespace DteamBackend.Migrations
                 column: "WalletAddress");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

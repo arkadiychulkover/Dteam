@@ -66,7 +66,6 @@
       c.friendUsername.toLowerCase().includes(searchQuery.toLowerCase().trim())
     )
   );
-
 </script>
 
 <aside class="w-80 h-full bg-[#05151c]/95 border-r border-cyan-500/20 flex flex-col shrink-0 overflow-hidden backdrop-blur-xl">
@@ -165,4 +164,3 @@
     {/if}
   </div>
 </aside>
-

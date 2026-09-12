@@ -26,7 +26,7 @@
   aria-label="Мобільна навігація"
 >
   <div class="flex items-center justify-around max-w-md mx-auto">
-    <!-- Store -->
+
     <button
       type="button"
       onclick={() => navigate('store')}
@@ -42,7 +42,6 @@
       {/if}
     </button>
 
-    <!-- Library -->
     <button
       type="button"
       onclick={() => navigate('library')}
@@ -58,7 +57,6 @@
       {/if}
     </button>
 
-    <!-- Community -->
     <button
       type="button"
       onclick={() => navigate('community')}
@@ -74,7 +72,6 @@
       {/if}
     </button>
 
-    <!-- Cart -->
     <button
       type="button"
       onclick={() => navigate('cart')}
@@ -97,7 +94,6 @@
       {/if}
     </button>
 
-    <!-- Friends / Profile -->
     <button
       type="button"
       onclick={() => navigate($currentUser ? 'my-profile' : 'friends')}

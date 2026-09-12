@@ -283,7 +283,6 @@
       default: return { text: 'не в мережі', color: 'text-slate-500' };
     }
   }
-
 </script>
 
 <div class="min-h-screen bg-[#05181e] text-slate-200 font-sans pb-12">
@@ -809,4 +808,3 @@
   isOpen={isGiftModalOpen}
   onClose={() => (isGiftModalOpen = false)}
 />
-

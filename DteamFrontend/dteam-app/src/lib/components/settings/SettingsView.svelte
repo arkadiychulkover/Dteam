@@ -18,10 +18,9 @@
 
 <div class="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-[#021822] via-[#02141c] to-[#010e14] py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-    <!-- Left Navigation Sidebar -->
+
     <SettingsSidebar />
 
-    <!-- Right Content Card: starts from the edge, consistent across all tabs -->
     <main class="flex-1 w-full min-w-0 bg-[#03212c]/90 border border-cyan-900/30 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative">
       {#if $uiState.isLoading}
         <div class="min-h-[30rem] flex flex-col items-center justify-center text-cyan-400 gap-3">

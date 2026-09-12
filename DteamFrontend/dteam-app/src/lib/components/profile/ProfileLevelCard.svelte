@@ -13,7 +13,6 @@
   } = $props();
 
   const levelInfo = $derived(calculateProfileLevel(tokens));
-
 </script>
 
 <div class="space-y-2.5 {className}">
@@ -44,4 +43,3 @@
     </div>
   </div>
 </div>
-

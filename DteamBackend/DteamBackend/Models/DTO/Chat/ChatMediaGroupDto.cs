@@ -31,4 +31,3 @@ namespace DteamBackend.Models.DTO.Chat
         public List<ChatMonthGroupDto> VoiceByMonth { get; set; } = new();
     }
 }
-

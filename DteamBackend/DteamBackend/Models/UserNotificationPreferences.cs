@@ -8,7 +8,6 @@ namespace DteamBackend.Models
         public Guid UserId { get; set; }
         public Duser User { get; set; } = null!;
 
-        // Беззвучні сповіщення
         public bool NotifyBigSales { get; set; } = true;
         public bool NotifyWishlistDiscounts { get; set; } = true;
         public bool NotifyProfileComments { get; set; } = true;
@@ -16,7 +15,6 @@ namespace DteamBackend.Models
         public bool NotifyFriendRequestAccepted { get; set; } = true;
         public bool NotifyFriendRequestDeclined { get; set; } = true;
 
-        // Чат
         public bool ChatNotificationsEnabled { get; set; } = true;
         public bool ChatSoundEnabled { get; set; } = true;
 

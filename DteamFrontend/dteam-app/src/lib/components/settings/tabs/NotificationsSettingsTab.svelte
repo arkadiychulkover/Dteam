@@ -8,7 +8,6 @@
 
   const { serverState } = settingsStore;
 
-  // Local reactive copy for instant UI toggle
   let prefs = $state<NotificationPreferences>({
     notifyBigSales: true,
     notifyWishlistDiscounts: true,
@@ -38,7 +37,6 @@
     subtitle="Оберіть, які події платформи надсилатимуть вам повідомлення та звукові сигнали."
   />
 
-  <!-- Section 1: Silent Notifications -->
   <SettingsSection title="Беззвучні сповіщення">
     <SettingsRow title="Великий розпродаж" description="Повідомлення про сезонні та святкові знижки в крамниці Dteam.">
       <SettingsToggle
@@ -89,7 +87,6 @@
     </SettingsRow>
   </SettingsSection>
 
-  <!-- Section 2: Chat Notifications -->
   <SettingsSection title="Чат">
     <div class="flex items-center justify-between px-3 pb-1 text-[11px] font-mono uppercase tracking-wider text-slate-400">
       <span>Подія</span>

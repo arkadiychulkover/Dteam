@@ -181,7 +181,6 @@
       gameToDelete = null;
     }
   }
-
 </script>
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
@@ -798,4 +797,3 @@
     </div>
   </div>
 {/if}
-

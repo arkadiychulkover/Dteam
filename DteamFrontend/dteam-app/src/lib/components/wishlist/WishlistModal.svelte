@@ -51,7 +51,6 @@
     wishlistStore.closeModal();
     gamesStore.selectGame(item.game);
   }
-
 </script>
 
 {#if $wishlistStore.isModalOpen}
@@ -220,4 +219,3 @@
     </div>
   </div>
 {/if}
-

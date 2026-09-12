@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace DteamBackend.Migrations
 {
-    /// <inheritdoc />
+
     public partial class AddGameGenresAndAttributes : Migration
     {
-        /// <inheritdoc />
+
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
@@ -47,7 +47,6 @@ namespace DteamBackend.Migrations
                 defaultValue: new List<string>());
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(

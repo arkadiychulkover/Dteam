@@ -162,7 +162,6 @@
 
     return groups;
   });
-
 </script>
 
 <div
@@ -401,4 +400,3 @@
     </div>
   </div>
 {/if}
-

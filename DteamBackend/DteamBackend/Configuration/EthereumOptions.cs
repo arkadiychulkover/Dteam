@@ -10,4 +10,3 @@ namespace DteamBackend.Configuration
         public string ContractAddress { get; set; } = string.Empty;
     }
 }
-

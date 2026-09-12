@@ -13,4 +13,3 @@ namespace DteamBackend.Models.DTO.Chat
         public DateTimeOffset? LastActivityAt { get; set; }
     }
 }
-

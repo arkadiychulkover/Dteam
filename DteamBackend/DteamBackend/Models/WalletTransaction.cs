@@ -27,7 +27,6 @@ namespace DteamBackend.Models
         public WalletTransactionType Type { get; set; }
         public WalletTransactionStatus Status { get; set; } = WalletTransactionStatus.Completed;
 
-        // Positive amount in nanoTONs (1 TON = 1_000_000_000 nanoTONs)
         public long AmountInNanoTons { get; set; }
 
         [MaxLength(200)]

@@ -8,4 +8,3 @@ namespace DteamBackend.Models.Enums
         Voice = 3
     }
 }
-

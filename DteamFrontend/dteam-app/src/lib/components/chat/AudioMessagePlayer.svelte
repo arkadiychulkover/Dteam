@@ -157,7 +157,6 @@
   const progressPercent = $derived(
     totalDuration > 0 ? Math.min(100, Math.max(0, (currentTime / totalDuration) * 100)) : 0
   );
-
 </script>
 
 <div class="flex items-center gap-3 w-full {compact ? 'max-w-xs' : 'max-w-sm'} select-none">
@@ -210,4 +209,3 @@
     </div>
   </div>
 </div>
-

@@ -44,32 +44,27 @@ namespace DteamBackend.Services
                 return (false, "Користувача не знайдено.");
             }
 
-            // 1. Verify old password
             if (!_passwordHasher.VerifyPasswordHash(dto.OldPassword, user.PasswordHash, user.PasswordSalt))
             {
                 return (false, "Невірний поточний пароль.");
             }
 
-            // 2. Verify new password does not match current password (business rule requiring database hash)
             var newPass = dto.NewPassword.Trim();
             if (_passwordHasher.VerifyPasswordHash(newPass, user.PasswordHash, user.PasswordSalt))
             {
                 return (false, "Новий пароль не повинен співпадати з поточним паролем.");
             }
 
-            // 3. Create new hash & salt
             _passwordHasher.CreatePasswordHash(newPass, out string newHash, out string newSalt);
             user.PasswordHash = newHash;
             user.PasswordSalt = newSalt;
             user.UpdatedAt = DateTime.UtcNow;
 
-            // 4. Revoke active refresh tokens for all sessions (security)
             await _jwtTokenService.RevokeUserTokensAsync(userId);
 
             await _db.SaveChangesAsync();
             _logger.LogInformation($"[AccountService] User {userId} changed password successfully. All refresh tokens revoked.");
 
-            // 5. Send security alert notification
             try
             {
                 await _notificationService.NotifyAsync(new CreateNotificationCommand
@@ -96,27 +91,22 @@ namespace DteamBackend.Services
                 return (false, "Користувача не знайдено.");
             }
 
-            // 1. Check nickname confirmation
             if (!string.Equals(user.Username.Trim(), dto.UsernameConfirmation.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 return (false, "Введений нікнейм не співпадає з вашим поточним нікнеймом.");
             }
 
-            // 2. Verify password
             if (!_passwordHasher.VerifyPasswordHash(dto.Password, user.PasswordHash, user.PasswordSalt))
             {
                 return (false, "Невірний пароль для підтвердження видалення.");
             }
 
-            // 3. Revoke all user tokens immediately
             await _jwtTokenService.RevokeUserTokensAsync(userId);
 
-            // 4. Soft-delete and RFC-compliant anonymization
             user.IsDeleted = true;
             user.DeletedAt = DateTime.UtcNow;
             user.Status = UserStatus.Offline;
 
-            // Free original email and username for future registration without breaking RFC / indices
             user.Email = $"deleted_{user.Id:N}@deleted.local";
             user.Username = $"deleted_{user.Id:N}"[..16];
             user.Bio = null;

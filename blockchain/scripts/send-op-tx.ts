@@ -20,4 +20,3 @@ const tx = await sender.sendTransaction({
 await tx.wait();
 
 console.log("Transaction sent successfully");
-

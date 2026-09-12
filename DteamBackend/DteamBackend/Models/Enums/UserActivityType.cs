@@ -11,4 +11,3 @@ namespace DteamBackend.Models.Enums
         WishlistAdded = 7
     }
 }
-

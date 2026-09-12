@@ -29,7 +29,7 @@ namespace DteamBackend.Services
         {
             try
             {
-                // 1. Проверка идемпотентности (если передан EventId, например хеш транзакции)
+
                 if (!string.IsNullOrWhiteSpace(command.EventId))
                 {
                     var exists = await _context.Notifications
@@ -44,7 +44,6 @@ namespace DteamBackend.Services
                     }
                 }
 
-                // 2. Проверка настроек приватности пользователя (Policy)
                 var preferences = await _context.UserNotificationPreferences
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.UserId == command.UserId);
@@ -57,7 +56,6 @@ namespace DteamBackend.Services
                     return null;
                 }
 
-                // 3. Сохранение уведомления в БД
                 var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
@@ -77,7 +75,6 @@ namespace DteamBackend.Services
                 await _context.Notifications.AddAsync(notification);
                 await _context.SaveChangesAsync();
 
-                // 4. Загрузка данных инициатора (Actor)
                 ActorDto? actorDto = null;
                 if (command.ActorUserId.HasValue)
                 {
@@ -109,7 +106,6 @@ namespace DteamBackend.Services
                     ReadAt = notification.ReadAt
                 };
 
-                // 5. Отправка в реальном времени через SignalR
                 try
                 {
                     await _hubContext.Clients.User(command.UserId.ToString()).SendAsync("ReceiveNotification", dto);

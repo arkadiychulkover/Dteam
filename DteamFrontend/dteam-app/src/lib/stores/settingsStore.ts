@@ -13,14 +13,12 @@ import type {
   SettingsTabId,
 } from '../types/settings';
 
-// 1. Server State
 interface SettingsServerState {
   profile: UserProfileSettings | null;
   preferences: NotificationPreferences | null;
   walletSummary: WalletSummary | null;
 }
 
-// 2. Draft State for General Tab
 export interface GeneralDraftState {
   username: string;
   email: string;
@@ -31,7 +29,6 @@ export interface GeneralDraftState {
   isDirty: boolean;
 }
 
-// 3. UI State
 interface SettingsUiState {
   activeTab: SettingsTabId;
   isLoading: boolean;
@@ -91,7 +88,6 @@ function createSettingsStore() {
         walletSummary: res.walletSummary,
       });
 
-      // Populate draft with fresh server data
       draftState.set({
         username: res.profile.username || '',
         email: res.profile.email || '',
@@ -103,7 +99,7 @@ function createSettingsStore() {
       });
 
       uiState.update((s) => ({ ...s, isLoading: false }));
-      // Pre-load transactions history
+
       loadTransactions(1);
     } catch (err: any) {
       const msg = err.message || 'Помилка завантаження налаштувань';
@@ -161,7 +157,6 @@ function createSettingsStore() {
         preferredLanguage: draft.preferredLanguage,
       });
 
-      // Update server state & sync with authStore
       serverState.update((s) => ({ ...s, profile: updatedProfile }));
       draftState.update((d) => ({ ...d, isDirty: false }));
 

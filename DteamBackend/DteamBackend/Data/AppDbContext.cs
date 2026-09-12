@@ -41,7 +41,6 @@ namespace DteamBackend.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Global Query Filter for soft delete
             modelBuilder.Entity<Duser>().HasQueryFilter(u => !u.IsDeleted);
 
             modelBuilder.Entity<UserNotificationPreferences>(entity =>
@@ -492,4 +491,3 @@ namespace DteamBackend.Data
         }
     }
 }
-

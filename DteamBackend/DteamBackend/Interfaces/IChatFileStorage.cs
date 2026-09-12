@@ -7,4 +7,3 @@ namespace DteamBackend.Interfaces
         Task<bool> DeleteFileAsync(string storageKey, CancellationToken cancellationToken = default);
     }
 }
-

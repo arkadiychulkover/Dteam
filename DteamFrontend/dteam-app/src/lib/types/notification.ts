@@ -34,9 +34,6 @@ export interface NotificationFeedResponse {
   hasMore: boolean;
 }
 
-/**
- * Helper to determine client-side navigation route for a notification
- */
 export function getNotificationUrl(notification: AppNotification): { tab: string; subTab?: string; param?: string } {
   switch (notification.type) {
     case 'friend_request':

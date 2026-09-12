@@ -74,4 +74,3 @@ export interface CursorHistoryResponse {
   hasMore: boolean;
   totalCount: number;
 }
-

@@ -19,4 +19,3 @@ namespace DteamBackend.Models
         public bool IsFavorite { get; set; } = false;
     }
 }
-

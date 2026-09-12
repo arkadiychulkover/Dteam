@@ -210,7 +210,6 @@
       document.body.style.overflow = '';
     };
   });
-
 </script>
 
 {#if isOpen}
@@ -439,4 +438,3 @@
     </div>
   </div>
 {/if}
-

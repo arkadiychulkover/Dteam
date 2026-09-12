@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Gamepad2, Heart } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
-
 </script>
 
 <footer class="mt-20 border-t border-[#0b2834] bg-[#030d12] pt-8 pb-20 lg:pb-10 px-4 lg:px-8 relative z-20 shadow-2xl">
@@ -43,4 +42,3 @@
     </div>
   </div>
 </footer>
-

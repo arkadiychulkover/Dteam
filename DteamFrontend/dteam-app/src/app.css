@@ -150,9 +150,9 @@ code, kbd, samp, pre, .font-mono {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
 
-/* ==========================================================================
-   Custom Cursor (NULLSPREAD style)
-   ========================================================================== */
+
+
+
 body.hidecur,
 body.hidecur * {
   cursor: none !important;
@@ -212,9 +212,9 @@ body.hidecur * {
   opacity: 0;
 }
 
-/* ==========================================================================
-   Light Theme System
-   ========================================================================== */
+
+
+
 html.light,
 html.light-theme,
 body.light-theme {
@@ -230,7 +230,7 @@ body.light-theme {
   color: #0f172a !important;
 }
 
-/* Dark teal surfaces converted to clean white cards with crisp borders */
+
 html.light .bg-\[\#040e14\],
 html.light .bg-\[\#0a0c14\],
 html.light .bg-\[\#030d12\],
@@ -292,7 +292,7 @@ html.light .glass-panel-glow,
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Light text contrast */
+
 html.light .text-white,
 .light-theme .text-white {
   color: #0f172a !important;
@@ -312,7 +312,7 @@ html.light .text-slate-400,
   color: #475569 !important;
 }
 
-/* Borders in light mode */
+
 html.light .border-cyan-500\/20,
 html.light .border-cyan-500\/30,
 html.light .border-cyan-900\/20,
@@ -332,7 +332,7 @@ html.light .border-slate-800\/80,
   border-color: #cbd5e1 !important;
 }
 
-/* Inputs and controls in light mode */
+
 html.light input,
 html.light textarea,
 html.light select,
@@ -351,7 +351,7 @@ html.light textarea::placeholder,
   color: #94a3b8 !important;
 }
 
-/* Scrollbar */
+
 html.light ::-webkit-scrollbar-track,
 .light-theme ::-webkit-scrollbar-track {
   background: #f1f5f9;

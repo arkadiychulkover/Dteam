@@ -47,7 +47,7 @@ function createNotificationStore() {
       const notification = sanitizeNotification(rawNotification);
 
       update(state => {
-        // Защита от дубликатов в массиве
+
         if (state.notifications.some(n => n.id === notification.id)) {
           return state;
         }
@@ -62,10 +62,9 @@ function createNotificationStore() {
         };
       });
 
-      // Умная проверка: если открыт чат именно с отправителем, не спамим тостом
       const chatState = get(chatStore);
       const uiState = get(uiStore);
-      const isChattingWithActor = 
+      const isChattingWithActor =
         notification.type === 'chat_message' &&
         uiState.activeTab === 'chat' &&
         chatState.activeFriendId === notification.actor?.id;

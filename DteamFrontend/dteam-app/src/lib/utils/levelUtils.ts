@@ -56,4 +56,3 @@ export function calculateProfileLevel(rawTokens: number | null | undefined): Pro
     progressPercent
   };
 }
-

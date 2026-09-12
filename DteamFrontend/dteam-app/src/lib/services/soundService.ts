@@ -1,7 +1,4 @@
-/**
- * Web Audio API based notification sound synthesizer.
- * Creates clean, gentle, crystal-clear UI notification chimes without external media files.
- */
+
 class SoundService {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
@@ -44,9 +41,6 @@ class SoundService {
     return this.isMuted;
   }
 
-  /**
-   * Plays a refined, pleasant UI notification chime depending on the toast category.
-   */
   public playNotification(type: 'success' | 'info' | 'warning' | 'error' = 'info') {
     if (this.isMuted || typeof window === 'undefined') return;
 
@@ -55,31 +49,31 @@ class SoundService {
       if (!ctx) return;
 
       const now = ctx.currentTime;
-      // Master gain node - keep soft and polite (gain: ~0.09)
+
       const masterGain = ctx.createGain();
       masterGain.gain.setValueAtTime(0.09, now);
       masterGain.connect(ctx.destination);
 
       if (type === 'success') {
-        // Warm harmonic ascending bell (C6: 1046.5Hz -> E6: 1318.5Hz -> G6: 1567.98Hz)
+
         this.playTone(ctx, masterGain, 1046.5, now, 0.22, 'sine', 0.6);
         this.playTone(ctx, masterGain, 1318.5, now + 0.05, 0.24, 'sine', 0.5);
         this.playTone(ctx, masterGain, 1567.98, now + 0.10, 0.38, 'sine', 0.7);
       } else if (type === 'warning') {
-        // Gentle warm double prompt
+
         this.playTone(ctx, masterGain, 587.33, now, 0.18, 'triangle', 0.5);
         this.playTone(ctx, masterGain, 493.88, now + 0.08, 0.26, 'triangle', 0.45);
       } else if (type === 'error') {
-        // Soft muted reminder
+
         this.playTone(ctx, masterGain, 440.0, now, 0.16, 'triangle', 0.5);
         this.playTone(ctx, masterGain, 392.0, now + 0.07, 0.24, 'triangle', 0.4);
       } else {
-        // Info / Default: sleek glass pop (A5: 880Hz -> E6: 1318.5Hz)
+
         this.playTone(ctx, masterGain, 880.0, now, 0.18, 'sine', 0.55);
         this.playTone(ctx, masterGain, 1318.5, now + 0.06, 0.32, 'sine', 0.65);
       }
     } catch (e) {
-      // Gracefully ignore if audio context is blocked or unavailable
+
     }
   }
 
@@ -98,7 +92,6 @@ class SoundService {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, startTime);
 
-    // Fast smooth attack and gentle exponential decay
     gain.gain.setValueAtTime(0.0001, startTime);
     gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);

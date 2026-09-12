@@ -2,10 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Validation
 {
-    /// <summary>
-    /// Validates that a string is neither null, empty, nor consisting solely of whitespace.
-    /// Replaces imperative string.IsNullOrWhiteSpace(dto.Field) checks with declarative attribute validation.
-    /// </summary>
+
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
     public class RequiredNonWhiteSpaceAttribute : ValidationAttribute
     {

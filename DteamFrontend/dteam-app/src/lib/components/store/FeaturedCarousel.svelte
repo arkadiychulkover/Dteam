@@ -28,7 +28,6 @@
       wishlistStore.toggleWishlist(activeGame);
     }
   }
-
 </script>
 
 {#if activeGame}
@@ -82,6 +81,7 @@
       <img
         src={activeGame.headerImageUrl || activeGame.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'}
         alt={activeGame.title}
+        onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'; }}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
       />
 
@@ -172,6 +172,7 @@
             <img
               src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'}
               alt={game.title}
+              onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'; }}
               class="w-full h-full object-cover"
             />
           </button>
@@ -180,4 +181,3 @@
     {/if}
   </div>
 {/if}
-

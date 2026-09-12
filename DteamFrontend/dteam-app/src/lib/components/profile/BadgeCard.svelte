@@ -14,7 +14,6 @@
 
   const rarityInfo = $derived(getRarityInfo(gift.rarity));
   const badgeNumber = $derived(formatBadgeNumber(gift.onChainTokenId !== undefined && gift.onChainTokenId !== null ? gift.onChainTokenId : gift.tokenId));
-
 </script>
 
 <div
@@ -64,4 +63,3 @@
     {/if}
   </div>
 </div>
-

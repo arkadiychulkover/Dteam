@@ -268,7 +268,6 @@
       URL.revokeObjectURL(filePreviewUrl);
     }
   });
-
 </script>
 
 <div class="p-3 sm:p-4 bg-[#061820]/90 border-t border-cyan-500/20 backdrop-blur-xl relative">
@@ -394,4 +393,3 @@
     </div>
   {/if}
 </div>
-

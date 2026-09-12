@@ -137,7 +137,6 @@
       console.warn('Copy failed', e);
     }
   }
-
 </script>
 
 <svelte:window onclick={closeMenu} />
@@ -596,4 +595,3 @@
 </div>
 
 <AddFriendModal bind:isOpen={isAddFriendOpen} />
-

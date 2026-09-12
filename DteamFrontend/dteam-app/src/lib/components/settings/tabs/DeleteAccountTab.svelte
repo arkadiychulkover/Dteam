@@ -39,9 +39,9 @@
   />
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-    <!-- Left Column: Confirmation Form (7 cols) -->
+
     <form onsubmit={(e) => { e.preventDefault(); if (canDelete) showConfirmModal = true; }} class="lg:col-span-7 space-y-4">
-      <!-- Username confirmation -->
+
       <div>
         <label for="del-username" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Нікнейм
@@ -61,7 +61,6 @@
         {/if}
       </div>
 
-      <!-- Password -->
       <div>
         <label for="del-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Пароль
@@ -76,7 +75,6 @@
         />
       </div>
 
-      <!-- Repeat Password -->
       <div>
         <label for="del-confirm-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 font-mono">
           Підтвердження пароля
@@ -91,7 +89,6 @@
         />
       </div>
 
-      <!-- Danger Button -->
       <div class="pt-4 flex justify-start">
         <button
           type="submit"
@@ -106,7 +103,6 @@
       </div>
     </form>
 
-    <!-- Right Column: Danger Warning Details (5 cols) -->
     <div class="lg:col-span-5 space-y-4">
       <div class="p-5 rounded-2xl bg-[#1f0a10] border border-rose-500/30 text-xs text-rose-200 leading-relaxed space-y-3 shadow-lg">
         <div class="flex items-center gap-2 text-rose-400 font-bold">
@@ -138,7 +134,6 @@
     </div>
   </div>
 
-  <!-- Final Confirmation Modal -->
   {#if showConfirmModal}
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div class="w-full max-w-md bg-[#09151e] border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-4">

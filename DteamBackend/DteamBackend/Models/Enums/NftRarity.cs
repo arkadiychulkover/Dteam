@@ -9,4 +9,3 @@ namespace DteamBackend.Models.Enums
         Legendary = 4
     }
 }
-

@@ -352,4 +352,3 @@ export const cartTotals = derived(cartStore, ($s) => {
     itemsCount: items.length,
   };
 });
-

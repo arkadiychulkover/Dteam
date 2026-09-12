@@ -39,9 +39,6 @@ export interface ToastMessage {
   createdAt?: number;
 }
 
-/**
- * Strips all emoji and symbol decorations from toast text to keep the UI clean and consistent.
- */
 function stripEmojis(text: string): string {
   if (!text) return '';
   return text
@@ -103,7 +100,6 @@ function createUiStore() {
       const cleanTitle = stripEmojis(toast.title || '');
       const cleanMessage = stripEmojis(toast.message || '');
 
-      // Generous reading duration: base 7500ms + scaling up to 14000ms based on length
       const textLen = cleanTitle.length + cleanMessage.length;
       const duration = toast.duration ?? Math.max(7500, Math.min(14000, 6500 + textLen * 50));
 
@@ -116,7 +112,6 @@ function createUiStore() {
         createdAt: Date.now(),
       };
 
-      // Play soft synthesized UI chime
       soundService.playNotification(toast.type);
 
       update((s) => ({
@@ -124,7 +119,6 @@ function createUiStore() {
         toasts: [...s.toasts, newToast],
       }));
 
-      // Safety fallback removal in case element unmounts unexpectedly
       setTimeout(() => {
         update((s) => ({
           ...s,
@@ -142,4 +136,3 @@ function createUiStore() {
 }
 
 export const uiStore = createUiStore();
-

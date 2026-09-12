@@ -490,7 +490,6 @@ namespace DteamBackend.Controllers
             var cleanUsername = dto.Username.Trim();
             var cleanEmail = dto.Email.Trim().ToLowerInvariant();
 
-            // Check username uniqueness (excluding current user)
             var usernameTaken = await _context.Users
                 .AnyAsync(u => u.Id != userId && u.Username.ToLower() == cleanUsername.ToLower());
             if (usernameTaken)
@@ -498,7 +497,6 @@ namespace DteamBackend.Controllers
                 return BadRequest(new { message = "Користувач з таким нікнеймом вже існує." });
             }
 
-            // Check email uniqueness (excluding current user)
             var emailTaken = await _context.Users
                 .AnyAsync(u => u.Id != userId && u.Email.ToLower() == cleanEmail);
             if (emailTaken)

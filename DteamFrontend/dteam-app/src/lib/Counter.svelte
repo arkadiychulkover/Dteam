@@ -3,10 +3,8 @@
   const increment = () => {
     count += 1
   }
-
 </script>
 
 <button type="button" class="counter" onclick={increment}>
   Count is {count}
 </button>
-

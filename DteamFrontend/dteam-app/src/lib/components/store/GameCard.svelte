@@ -31,7 +31,6 @@
     gamesStore.selectGame(game);
     uiStore.setTab('game');
   }
-
 </script>
 
 <div
@@ -109,4 +108,3 @@
     </div>
   </div>
 </div>
-

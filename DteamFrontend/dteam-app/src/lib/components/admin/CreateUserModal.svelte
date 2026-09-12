@@ -64,7 +64,6 @@
       isSubmitting = false;
     }
   }
-
 </script>
 
 {#if isOpen}
@@ -256,4 +255,3 @@
     </div>
   </div>
 {/if}
-

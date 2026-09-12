@@ -14,7 +14,6 @@ describe("Counter", function () {
     const counter = await ethers.deployContract("Counter");
     const deploymentBlockNumber = await ethers.provider.getBlockNumber();
 
-    // run a series of increments
     for (let i = 1; i <= 10; i++) {
       await counter.incBy(i);
     }
@@ -25,7 +24,6 @@ describe("Counter", function () {
       "latest",
     );
 
-    // check that the aggregated events match the current value
     let total = 0n;
     for (const event of events) {
       total += event.args.by;

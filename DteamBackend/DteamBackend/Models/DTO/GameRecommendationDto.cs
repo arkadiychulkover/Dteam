@@ -10,4 +10,3 @@ namespace DteamBackend.Models.DTO
         public string? CoverImageUrl { get; set; }
     }
 }
-

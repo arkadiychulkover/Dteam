@@ -132,7 +132,6 @@ namespace DteamBackend.Controllers
 
             _logger.LogInformation("[Collections] User {UserId} created collection {CollectionId} '{Name}'", userId, collection.Id, collection.Name);
 
-            // Reload with games
             var created = await _context.GameCollections
                 .AsNoTracking()
                 .Include(c => c.Items)
@@ -362,4 +361,3 @@ namespace DteamBackend.Controllers
         }
     }
 }
-

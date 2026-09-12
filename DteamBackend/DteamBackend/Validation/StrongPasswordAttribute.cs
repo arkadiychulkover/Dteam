@@ -2,10 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Validation
 {
-    /// <summary>
-    /// Declarative password complexity validation attribute.
-    /// Replaces imperative checks in services/controllers with standard DataAnnotations.
-    /// </summary>
+
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
     public class StrongPasswordAttribute : ValidationAttribute
     {
@@ -45,28 +42,24 @@ namespace DteamBackend.Validation
 
             var trimmed = password.Trim();
 
-            // 1. Length check
             if (trimmed.Length < MinLength)
             {
                 var msg = MinLengthErrorMessage ?? ErrorMessage ?? $"Новий пароль має містити щонайменше {MinLength} символів.";
                 return new ValidationResult(msg, memberNames);
             }
 
-            // 2. Letter check
             if (RequireLetter && !trimmed.Any(char.IsLetter))
             {
                 var msg = RequireLetterErrorMessage ?? ErrorMessage ?? "Пароль має містити щонайменше одну літеру.";
                 return new ValidationResult(msg, memberNames);
             }
 
-            // 3. Digit check
             if (RequireDigit && !trimmed.Any(char.IsDigit))
             {
                 var msg = RequireDigitErrorMessage ?? ErrorMessage ?? "Пароль має містити щонайменше одну цифру.";
                 return new ValidationResult(msg, memberNames);
             }
 
-            // 4. Whitespace check (no spaces allowed)
             if (DisallowSpaces && (password.Contains(' ') || password.Any(char.IsWhiteSpace)))
             {
                 var msg = DisallowSpacesErrorMessage ?? ErrorMessage ?? "Пароль не повинен містити пробілів.";
