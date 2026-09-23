@@ -147,7 +147,6 @@ namespace DteamBackend.Controllers
                 {
                     UserId = u.Id,
                     u.Username,
-                    u.Email,
                     u.IsBanned,
                     u.IsAdmin
                 })
@@ -162,7 +161,6 @@ namespace DteamBackend.Controllers
             {
                 userId = user.UserId,
                 username = user.Username,
-                email = user.Email,
                 isBanned = user.IsBanned,
                 isAdmin = user.IsAdmin
             });

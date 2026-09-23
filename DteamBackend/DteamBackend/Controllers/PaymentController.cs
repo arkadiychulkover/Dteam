@@ -89,7 +89,7 @@ namespace DteamBackend.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ваш акаунт заблоковано." });
             }
 
-            var cleanHash = dto.TxhHash.Trim();
+            var cleanHash = TonService.NormalizeTransactionHash(dto.TxhHash);
 
             var alreadyProcessed = await _context.Tranxactions
                 .AnyAsync(t => t.TxhHash.ToLower() == cleanHash.ToLower());

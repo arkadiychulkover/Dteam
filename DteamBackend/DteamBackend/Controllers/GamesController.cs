@@ -715,19 +715,18 @@ namespace DteamBackend.Controllers
             var safeTitle = string.Join("_", game.Title.Split(Path.GetInvalidFileNameChars()));
             if (string.IsNullOrWhiteSpace(safeTitle)) safeTitle = "game";
 
-            var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var webRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
             string? physicalPath = null;
 
             if (!string.IsNullOrWhiteSpace(game.ServerArchivePath))
             {
                 var cleanPath = game.ServerArchivePath.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar);
-                var candidate1 = Path.Combine(webRoot, cleanPath);
-                var candidate2 = Path.Combine(Directory.GetCurrentDirectory(), cleanPath);
-                var candidate3 = game.ServerArchivePath;
+                var candidate = Path.GetFullPath(Path.Combine(webRoot, cleanPath));
 
-                if (System.IO.File.Exists(candidate1)) physicalPath = candidate1;
-                else if (System.IO.File.Exists(candidate2)) physicalPath = candidate2;
-                else if (System.IO.File.Exists(candidate3)) physicalPath = candidate3;
+                if (candidate.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(candidate))
+                {
+                    physicalPath = candidate;
+                }
             }
 
             if (physicalPath == null || !System.IO.File.Exists(physicalPath))

@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using DteamBackend.Interfaces;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DteamBackend.Middlewares
 {
@@ -52,12 +54,15 @@ namespace DteamBackend.Middlewares
             context.Response.ContentType = "application/json; charset=utf-8";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
+            var env = context.RequestServices.GetService<IHostEnvironment>();
+            var isDev = env?.IsDevelopment() == true;
+
             var response = new
             {
                 statusCode = context.Response.StatusCode,
                 error = "InternalServerError",
                 message = "Произошла непредвиденная ошибка на сервере. Команда поддержки уже уведомлена.",
-                detail = exception.Message,
+                detail = isDev ? exception.Message : null,
                 path = context.Request.Path.Value,
                 traceId = context.TraceIdentifier,
                 timestamp = DateTime.UtcNow

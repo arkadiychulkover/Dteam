@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DteamBackend.Services;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DteamBackend.Controllers
 {
@@ -296,6 +297,7 @@ namespace DteamBackend.Controllers
             return $"/community/{uniqueFileName}";
         }
 
+        [Authorize]
         [HttpPost("upload")]
         [HttpPost("media/upload")]
         [Consumes("multipart/form-data")]

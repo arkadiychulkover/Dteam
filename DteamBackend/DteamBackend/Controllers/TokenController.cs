@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using DteamBackend.Interfaces;
 using DteamBackend.Models.DTO.Token;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +22,7 @@ namespace DteamBackend.Controllers
             _logger = logger;
         }
 
+        [Authorize]
         [HttpPost("verify-wallet")]
         public async Task<ActionResult<VerifyWalletResponseDto>> VerifyWallet([FromBody] VerifyWalletDto dto)
         {
@@ -65,6 +67,7 @@ namespace DteamBackend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("award")]
         public async Task<ActionResult<TokenOperationResponseDto>> AwardTokens([FromBody] TokenOperationDto dto)
         {
@@ -104,6 +107,7 @@ namespace DteamBackend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("debit")]
         public async Task<ActionResult<TokenOperationResponseDto>> DebitTokens([FromBody] TokenOperationDto dto)
         {
@@ -158,6 +162,7 @@ namespace DteamBackend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("admin/sync-address")]
         public async Task<ActionResult> SyncAdminAddress()
         {

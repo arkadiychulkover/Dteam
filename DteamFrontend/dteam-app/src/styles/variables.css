@@ -1,0 +1,14 @@
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-ton-blue: #0098ea;
+  --color-cyan-glow: #00f2fe;
+  --color-emerald-glow: #0df2c9;
+  --bg-deep-teal: #030d12;
+  --bg-teal-surface: #061820;
+  --bg-teal-card: #0a232c;
+  --border-teal-glow: rgba(13, 242, 201, 0.25);
+}

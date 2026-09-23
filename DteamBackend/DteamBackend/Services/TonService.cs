@@ -59,6 +59,28 @@ namespace DteamBackend.Services
             return address.ToLowerInvariant();
         }
 
+        public static string NormalizeTransactionHash(string? txhHash)
+        {
+            if (string.IsNullOrWhiteSpace(txhHash)) return string.Empty;
+
+            txhHash = txhHash.Trim();
+
+            if (txhHash.Length == 64 && txhHash.All(c => "0123456789abcdefABCDEF".Contains(c)))
+            {
+                return txhHash.ToLowerInvariant();
+            }
+
+            try
+            {
+                var bocBytes = Convert.FromBase64String(txhHash.Replace('-', '+').Replace('_', '/'));
+                return Convert.ToHexString(SHA256.HashData(bocBytes)).ToLowerInvariant();
+            }
+            catch
+            {
+                return txhHash.ToLowerInvariant();
+            }
+        }
+
         public async Task<(bool IsValid, string? SenderAddress)> CheckTranzaction(string txhHash, decimal amount)
         {
             _logger.LogInformation($"[TonService] Starting transaction check. Input hash: {txhHash}, Expected amount: {amount}");
@@ -71,18 +93,8 @@ namespace DteamBackend.Services
                     return (false, null);
                 }
 
-                string expectedHashHex;
-                if (txhHash.Length == 64 && txhHash.All(c => "0123456789abcdefABCDEF".Contains(c)))
-                {
-                    expectedHashHex = txhHash.ToLower();
-                    _logger.LogInformation($"[TonService] Input identified as pure Hex TX ID: {expectedHashHex}");
-                }
-                else
-                {
-                    var bocBytes = Convert.FromBase64String(txhHash.Replace('-', '+').Replace('_', '/'));
-                    expectedHashHex = Convert.ToHexString(SHA256.Create().ComputeHash(bocBytes)).ToLower();
-                    _logger.LogInformation($"[TonService] Input identified as BOC. Computed Hex TX ID: {expectedHashHex}");
-                }
+                string expectedHashHex = NormalizeTransactionHash(txhHash);
+                _logger.LogInformation($"[TonService] Normalized Hex TX ID: {expectedHashHex}");
 
                 var expectedAddressNorm = NormalizeAddress(_address);
 
