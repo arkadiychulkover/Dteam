@@ -10,6 +10,7 @@
   import { profileStore } from "../../stores/profileStore";
   import { gamesStore } from "../../stores/gamesStore";
   import { renderDecoratedText, resolveMediaUrl } from "../../utils/textDecorator";
+  import BackendImage from "../ui/BackendImage.svelte";
   import {
     Users,
     Search,
@@ -513,19 +514,13 @@
                   }}
                   class="flex items-center gap-3 cursor-pointer text-left"
                 >
-                  <div
-                    class="w-8 h-8 rounded-full bg-[#041219] border border-cyan-500/30 overflow-hidden flex items-center justify-center text-cyan-300 font-bold text-xs"
-                  >
-                    {#if post.author.avatarUrl}
-                      <img
-                        src={post.author.avatarUrl}
-                        alt={post.author.username}
-                        class="w-full h-full object-cover"
-                      />
-                    {:else}
-                      {post.author.username.charAt(0).toUpperCase()}
-                    {/if}
-                  </div>
+                  <BackendImage
+                    src={post.author.avatarUrl}
+                    alt={post.author.username}
+                    avatar={true}
+                    initial={post.author.username?.charAt(0)?.toUpperCase()}
+                    class="w-8 h-8 rounded-full border border-cyan-500/30 shrink-0"
+                  />
                   <div>
                     <span
                       class="block text-xs font-bold text-white hover:text-cyan-300 transition-colors"
@@ -819,19 +814,13 @@
               onclick={() => selectedPost && profileStore.viewProfile(selectedPost.author.id)}
               class="flex items-center gap-3 cursor-pointer text-left"
             >
-              <div
-                class="w-10 h-10 rounded-full bg-[#041219] border border-cyan-500/30 overflow-hidden flex items-center justify-center text-cyan-300 font-bold"
-              >
-                {#if selectedPost.author.avatarUrl}
-                  <img
-                    src={selectedPost.author.avatarUrl}
-                    alt={selectedPost.author.username}
-                    class="w-full h-full object-cover"
-                  />
-                {:else}
-                  {selectedPost.author.username.charAt(0).toUpperCase()}
-                {/if}
-              </div>
+              <BackendImage
+                src={selectedPost.author.avatarUrl}
+                alt={selectedPost.author.username}
+                avatar={true}
+                initial={selectedPost.author.username?.charAt(0)?.toUpperCase()}
+                class="w-10 h-10 rounded-full border border-cyan-500/30 shrink-0"
+              />
               <div>
                 <span
                   class="block text-sm font-black text-white hover:text-cyan-300 transition-colors"
@@ -962,21 +951,13 @@
           </div>
 
           <div class="flex gap-3">
-            <div
-              class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden"
-            >
-              {#if $currentUser?.avatarUrl}
-                <img
-                  src={$currentUser.avatarUrl}
-                  alt={$currentUser.username}
-                  class="w-full h-full object-cover"
-                />
-              {:else if $currentUser}
-                {$currentUser.username.charAt(0).toUpperCase()}
-              {:else}
-                G
-              {/if}
-            </div>
+            <BackendImage
+              src={$currentUser?.avatarUrl}
+              alt={$currentUser?.username || 'User'}
+              avatar={true}
+              initial={$currentUser?.username ? $currentUser.username.charAt(0).toUpperCase() : 'G'}
+              class="w-8 h-8 rounded-full shrink-0 border border-cyan-500/30"
+            />
 
             <div class="flex-1 space-y-2">
               <textarea
@@ -1019,17 +1000,15 @@
                   <button
                     type="button"
                     onclick={() => profileStore.viewProfile(c.author.id)}
-                    class="w-8 h-8 rounded-full bg-[#041219] border border-cyan-500/25 overflow-hidden flex items-center justify-center text-cyan-300 font-black text-xs shrink-0 cursor-pointer"
+                    class="w-8 h-8 rounded-full border border-cyan-500/25 shrink-0 overflow-hidden cursor-pointer"
                   >
-                    {#if c.author.avatarUrl}
-                      <img
-                        src={c.author.avatarUrl}
-                        alt={c.author.username}
-                        class="w-full h-full object-cover"
-                      />
-                    {:else}
-                      {c.author.username.charAt(0).toUpperCase()}
-                    {/if}
+                    <BackendImage
+                      src={c.author.avatarUrl}
+                      alt={c.author.username}
+                      avatar={true}
+                      initial={c.author.username?.charAt(0)?.toUpperCase()}
+                      class="w-full h-full"
+                    />
                   </button>
 
                   <div class="flex-1 min-w-0 space-y-1">
@@ -1075,17 +1054,15 @@
                           type="button"
                           onclick={() =>
                             profileStore.viewProfile(reply.author.id)}
-                          class="w-6 h-6 rounded-full bg-[#041219] border border-cyan-500/20 overflow-hidden flex items-center justify-center text-cyan-300 font-bold text-[10px] shrink-0 cursor-pointer"
+                          class="w-6 h-6 rounded-full border border-cyan-500/20 shrink-0 overflow-hidden cursor-pointer"
                         >
-                          {#if reply.author.avatarUrl}
-                            <img
-                              src={reply.author.avatarUrl}
-                              alt={reply.author.username}
-                              class="w-full h-full object-cover"
-                            />
-                          {:else}
-                            {reply.author.username.charAt(0).toUpperCase()}
-                          {/if}
+                          <BackendImage
+                            src={reply.author.avatarUrl}
+                            alt={reply.author.username}
+                            avatar={true}
+                            initial={reply.author.username?.charAt(0)?.toUpperCase()}
+                            class="w-full h-full"
+                          />
                         </button>
                         <div class="flex-1 min-w-0">
                           <div

@@ -10,7 +10,7 @@
   import { userService } from '../../services/userService';
   import { mediaService, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
   import { tokenService, type VerifyWalletResponse } from '../../services/tokenService';
-  import { getBalanceDirectFromBlockchain, DTEAM_POINTS_CONTRACT_ADDRESS } from '../../services/blockchainService';
+  import { getBalanceDirectFromBlockchain, getTdpBalanceHybrid, DTEAM_POINTS_CONTRACT_ADDRESS } from '../../services/blockchainService';
   import { uiStore } from '../../stores/uiStore';
   import { formatDate } from '../../utils/formatters';
   import { renderDecoratedText } from '../../utils/textDecorator';
@@ -19,13 +19,13 @@
   import {
     Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
     Wallet, Coins, Award, CheckCircle2, AlertTriangle, RefreshCw, ExternalLink, ShieldCheck, ShieldAlert,
-    Copy, Check
+    Copy, Check, Trash2, Upload
   } from 'lucide-svelte';
   import SelectGameModal from '../community/SelectGameModal.svelte';
   import ActivityCard from '../activity/ActivityCard.svelte';
   import { activityStore } from '../../stores/activityStore';
   import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
-  import { getUserNftsFromContract, type NftGift } from '../../services/nftService';
+  import { getUserNftsFromContract, getUserNftsHybrid, type NftGift } from '../../services/nftService';
   import { onlineHubService } from '../../services/onlineHubService';
   import BadgeCard from './BadgeCard.svelte';
   import BadgeDetailModal from './BadgeDetailModal.svelte';
@@ -66,17 +66,13 @@
   let selectedBadgeForModal = $state<NftGift | null>(null);
   let isBadgeModalOpen = $state(false);
 
-  async function loadMyNfts() {
+  async function loadMyNfts(isWalletConnected = false) {
     const address = metaMaskAccount || $currentUser?.hardhatAddress || $currentUser?.walletAddress;
-    if (!address) {
-      myNfts = [];
-      return;
-    }
     isLoadingNfts = true;
     try {
-      myNfts = await getUserNftsFromContract(address, $currentUser?.id);
+      myNfts = await getUserNftsHybrid(address, $currentUser?.id, isWalletConnected);
     } catch (err) {
-      console.warn('[MyProfileView] Failed to fetch NFTs from contract:', err);
+      console.warn('[MyProfileView] Failed to fetch NFTs:', err);
     } finally {
       isLoadingNfts = false;
     }
@@ -91,6 +87,7 @@
       metaMaskAccount = null;
       walletVerification = null;
       await fetchFallbackTokenBalance();
+      await loadMyNfts(false);
       return;
     }
 
@@ -109,25 +106,29 @@
           if (verification.isMatch) {
             isLoadingBalance = true;
             try {
-              tokenBalance = await getBalanceDirectFromBlockchain(accounts[0]);
+              tokenBalance = await getTdpBalanceHybrid(accounts[0], true);
             } catch (err) {
-              console.warn('[Profile] Failed to fetch token balance direct from blockchain:', err);
+              console.warn('[Profile] Failed to fetch token balance from blockchain:', err);
               tokenBalance = null;
             } finally {
               isLoadingBalance = false;
             }
+            await loadMyNfts(true);
           } else {
             await fetchFallbackTokenBalance();
+            await loadMyNfts(false);
           }
         }
       } else {
         metaMaskAccount = null;
         walletVerification = null;
         await fetchFallbackTokenBalance();
+        await loadMyNfts(false);
       }
     } catch (err) {
       console.warn('[Profile] Error checking MetaMask accounts:', err);
       await fetchFallbackTokenBalance();
+      await loadMyNfts(false);
     } finally {
       isCheckingWallet = false;
     }
@@ -138,11 +139,7 @@
     if (fallbackAddr) {
       isLoadingBalance = true;
       try {
-        try {
-          tokenBalance = await getBalanceDirectFromBlockchain(fallbackAddr);
-        } catch {
-          tokenBalance = await tokenService.getBalance(fallbackAddr);
-        }
+        tokenBalance = await getTdpBalanceHybrid(fallbackAddr, false);
       } catch (err) {
         console.warn('[Profile] Failed to fetch fallback token balance:', err);
         tokenBalance = 0;
@@ -413,6 +410,55 @@
     }
   }
 
+  let isUploadingAvatar = $state(false);
+  let avatarFileInput: HTMLInputElement | undefined = $state();
+  let modalAvatarFileInput: HTMLInputElement | undefined = $state();
+
+  async function handleAvatarFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!file.type.startsWith('image/') && !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      uiStore.addToast({ title: 'Невірний формат', message: 'Аватар має бути зображенням (.jpg, .jpeg, .png, .webp, .gif).', type: 'error' });
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      uiStore.addToast({ title: 'Файл завеликий', message: 'Максимальний розмір аватара: 10 МБ.', type: 'error' });
+      input.value = '';
+      return;
+    }
+
+    isUploadingAvatar = true;
+    try {
+      const res = await userService.uploadAvatar(file);
+      authStore.patchUser({ avatarUrl: res.avatarUrl });
+      editAvatarUrl = res.avatarUrl;
+      uiStore.addToast({ title: 'Аватар оновлено', message: 'Новий аватар успішно збережено.', type: 'success' });
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося завантажити аватар.', type: 'error' });
+    } finally {
+      isUploadingAvatar = false;
+      input.value = '';
+    }
+  }
+
+  async function handleDeleteAvatar() {
+    isUploadingAvatar = true;
+    try {
+      await userService.deleteAvatar();
+      authStore.patchUser({ avatarUrl: null });
+      editAvatarUrl = '';
+      uiStore.addToast({ title: 'Аватар видалено', message: 'Аватар успішно видалено.', type: 'success' });
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося видалити аватар.', type: 'error' });
+    } finally {
+      isUploadingAvatar = false;
+    }
+  }
+
   let isEditingProfile = $state(false);
   let editBio = $state('');
   let editAvatarUrl = $state('');
@@ -477,14 +523,40 @@
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
-        <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
-          {#if $currentUser.avatarUrl}
-            <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
-          {:else}
-            <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
-              {$currentUser.username.charAt(0).toUpperCase()}
-            </div>
-          {/if}
+        <div class="relative group shrink-0">
+          <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shadow-2xl">
+            {#if $currentUser.avatarUrl}
+              <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
+            {:else}
+              <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
+                {$currentUser.username.charAt(0).toUpperCase()}
+              </div>
+            {/if}
+          </div>
+
+          <button
+            type="button"
+            onclick={() => avatarFileInput?.click()}
+            disabled={isUploadingAvatar}
+            class="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer"
+            title="Змінити аватар"
+          >
+            {#if isUploadingAvatar}
+              <Loader2 class="w-6 h-6 text-cyan-400 animate-spin" />
+              <span class="text-[10px] font-bold text-cyan-300 mt-1">Завантаження...</span>
+            {:else}
+              <Camera class="w-6 h-6 text-cyan-300" />
+              <span class="text-[10px] font-bold text-cyan-200 mt-1">Змінити фото</span>
+            {/if}
+          </button>
+
+          <input
+            bind:this={avatarFileInput}
+            type="file"
+            accept="image/*"
+            class="hidden"
+            onchange={handleAvatarFileChange}
+          />
         </div>
         <div class="pb-2">
           <div class="flex items-center gap-3 mb-1">
@@ -1130,7 +1202,53 @@
         <button onclick={() => isEditingProfile = false} class="text-slate-400 hover:text-white cursor-pointer"><X class="w-5 h-5" /></button>
       </div>
       <div>
-        <label for="edit-avatar" class="block text-xs text-slate-400 mb-1.5">URL аватара</label>
+        <label class="block text-xs text-slate-400 mb-1.5 font-medium">Аватар профілю</label>
+        <div class="flex items-center gap-4 p-3 bg-[#02171d] rounded-2xl border border-cyan-900/40">
+          <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500/40 shrink-0 bg-[#061820] flex items-center justify-center">
+            {#if editAvatarUrl || $currentUser.avatarUrl}
+              <BackendImage src={editAvatarUrl || $currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
+            {:else}
+              <span class="text-xl font-bold text-white">{$currentUser.username.charAt(0).toUpperCase()}</span>
+            {/if}
+          </div>
+          <div class="flex-1 flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              onclick={() => modalAvatarFileInput?.click()}
+              disabled={isUploadingAvatar}
+              class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {#if isUploadingAvatar}
+                <Loader2 class="w-3.5 h-3.5 animate-spin" />
+                <span>Завантаження...</span>
+              {:else}
+                <Upload class="w-3.5 h-3.5" />
+                <span>Завантажити фото</span>
+              {/if}
+            </button>
+            {#if editAvatarUrl || $currentUser.avatarUrl}
+              <button
+                type="button"
+                onclick={handleDeleteAvatar}
+                disabled={isUploadingAvatar}
+                class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 hover:text-white border border-rose-800/40 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>Видалити аватар</span>
+              </button>
+            {/if}
+          </div>
+          <input
+            bind:this={modalAvatarFileInput}
+            type="file"
+            accept="image/*"
+            class="hidden"
+            onchange={handleAvatarFileChange}
+          />
+        </div>
+      </div>
+      <div>
+        <label for="edit-avatar" class="block text-xs text-slate-400 mb-1.5">Або вкажіть URL аватара</label>
         <input
           id="edit-avatar"
           type="text"

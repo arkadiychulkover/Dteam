@@ -10,6 +10,7 @@
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
   import type { CommunityComment } from '../../services/communityService';
   import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props {
     gameId?: string | null;
@@ -835,10 +836,12 @@
                 onclick={() => profileStore.viewProfile(post.author.id)}
                 class="flex items-center gap-3 cursor-pointer text-left group"
               >
-                <img
+                <BackendImage
                   src={post.author.avatarUrl}
                   alt={post.author.username}
-                  class="w-9 h-9 rounded-full object-cover ring-1 ring-cyan-900/60"
+                  avatar={true}
+                  initial={post.author.username?.charAt(0)?.toUpperCase()}
+                  class="w-9 h-9 rounded-full shrink-0 ring-1 ring-cyan-900/60"
                 />
                 <div>
                   <span class="block text-sm font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
@@ -997,10 +1000,12 @@
                       <div class="p-3 rounded-xl bg-[#02171d]/80 border border-cyan-900/40 space-y-2">
                         <div class="flex items-center justify-between">
                           <div class="flex items-center gap-2">
-                            <img
-                              src={comment.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.username)}`}
+                            <BackendImage
+                              src={comment.author.avatarUrl}
                               alt={comment.author.username}
-                              class="w-6 h-6 rounded-full object-cover border border-cyan-500/20"
+                              avatar={true}
+                              initial={comment.author.username?.charAt(0)?.toUpperCase()}
+                              class="w-6 h-6 rounded-full shrink-0 border border-cyan-500/20"
                             />
                             <span class="text-xs font-bold text-slate-200">{comment.author.username}</span>
                             <span class="text-[10px] text-slate-500">{new Date(comment.createdAt).toLocaleDateString('uk-UA')}</span>
@@ -1026,10 +1031,12 @@
                             {#each comment.replies as reply (reply.id)}
                               <div class="p-2.5 rounded-lg bg-[#03232c]/60 border border-cyan-900/30 space-y-1">
                                 <div class="flex items-center gap-2">
-                                  <img
-                                    src={reply.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author.username)}`}
+                                  <BackendImage
+                                    src={reply.author.avatarUrl}
                                     alt={reply.author.username}
-                                    class="w-5 h-5 rounded-full object-cover border border-cyan-500/20"
+                                    avatar={true}
+                                    initial={reply.author.username?.charAt(0)?.toUpperCase()}
+                                    class="w-5 h-5 rounded-full shrink-0 border border-cyan-500/20"
                                   />
                                   <span class="text-[11px] font-bold text-slate-200">{reply.author.username}</span>
                                   <span class="text-[9px] text-slate-500">{new Date(reply.createdAt).toLocaleDateString('uk-UA')}</span>

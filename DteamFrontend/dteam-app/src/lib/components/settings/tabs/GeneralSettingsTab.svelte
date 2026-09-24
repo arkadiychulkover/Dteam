@@ -3,7 +3,7 @@
   import SettingsPageHeader from '../primitives/SettingsPageHeader.svelte';
   import SettingsActionBar from '../primitives/SettingsActionBar.svelte';
   import BackendImage from '../../ui/BackendImage.svelte';
-  import { Camera, Loader2, Globe } from 'lucide-svelte';
+  import { Camera, Loader2, Globe, Trash2 } from 'lucide-svelte';
 
   const { draftState, uiState } = settingsStore;
 
@@ -111,6 +111,21 @@
           onchange={handleAvatarChange}
         />
       </div>
+
+      {#if $draftState.avatarUrl}
+        <div class="pb-1">
+          <button
+            type="button"
+            onclick={() => settingsStore.removeAvatar()}
+            disabled={$uiState.isUploadingAvatar}
+            class="px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+            title="Видалити аватар"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Видалити аватар</span>
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 

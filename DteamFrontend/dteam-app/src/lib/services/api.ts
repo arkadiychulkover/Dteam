@@ -176,8 +176,19 @@ class ApiClient {
 
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
         let status = response.status;
+        let isBanned = false;
         try {
           const errorData = await response.json();
+          if (
+            errorData.isBanned === true ||
+            (errorData.message && (
+              errorData.message.toLowerCase().includes('заблокирован') ||
+              errorData.message.toLowerCase().includes('banned')
+            ))
+          ) {
+            isBanned = true;
+          }
+
           if (errorData.message) {
             errorMessage = errorData.message;
           } else if (errorData.errors && typeof errorData.errors === 'object') {
@@ -193,6 +204,10 @@ class ApiClient {
 
         const err: any = new Error(errorMessage);
         err.status = status;
+        err.isBanned = isBanned;
+        if (isBanned && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('dteam:user_banned'));
+        }
         throw err;
       }
 

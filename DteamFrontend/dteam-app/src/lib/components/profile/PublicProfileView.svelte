@@ -21,14 +21,14 @@
   import ActivityCard from '../activity/ActivityCard.svelte';
   import { activityStore } from '../../stores/activityStore';
   import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
-  import { getUserGiftsByUserId, type NftGift } from '../../services/nftService';
+  import { getUserGiftsByUserId, getUserNftsHybrid, type NftGift } from '../../services/nftService';
   import BadgeCard from './BadgeCard.svelte';
   import BadgeDetailModal from './BadgeDetailModal.svelte';
   import { calculateProfileLevel } from '../../utils/levelUtils';
   import ProfileLevelHexagon from './ProfileLevelHexagon.svelte';
   import ProfileLevelCard from './ProfileLevelCard.svelte';
   import { tokenService } from '../../services/tokenService';
-  import { getBalanceDirectFromBlockchain } from '../../services/blockchainService';
+  import { getBalanceDirectFromBlockchain, getTdpBalanceHybrid } from '../../services/blockchainService';
 
   type TabId = 'активність' | 'значки' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
   let activeTab = $state<TabId>('активність');
@@ -63,11 +63,7 @@
     }
     isLoadingPublicBalance = true;
     try {
-      try {
-        publicTokenBalance = await getBalanceDirectFromBlockchain(addr);
-      } catch {
-        publicTokenBalance = await tokenService.getBalance(addr);
-      }
+      publicTokenBalance = await getTdpBalanceHybrid(addr, false);
     } catch {
       publicTokenBalance = 0;
     } finally {
@@ -79,7 +75,7 @@
     if (!profile?.id) return;
     isLoadingGifts = true;
     try {
-      userGifts = await getUserGiftsByUserId(profile.id);
+      userGifts = await getUserNftsHybrid(profile?.hardhatAddress || profile?.walletAddress, profile.id, false);
     } catch (err) {
       console.warn('[PublicProfileView] Error loading user gifts:', err);
     } finally {

@@ -29,7 +29,7 @@ RUN dotnet publish "DteamBackend.csproj" -c Release -o /app/publish /p:UseAppHos
 
 FROM base AS final
 WORKDIR /app
-RUN mkdir -p /app/wwwroot/uploads /app/wwwroot/game_images /app/wwwroot/comunity /app/blockchain
+RUN mkdir -p /app/wwwroot/uploads /app/wwwroot/game_images /app/wwwroot/comunity /app/wwwroot/icons /app/blockchain
 COPY --from=publish /app/publish .
 COPY blockchain /app/blockchain
 RUN cd /app/blockchain && (npm ci || npm install)

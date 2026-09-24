@@ -8,22 +8,64 @@ export const HARDHAT_RPC_URL =
 
 export { DTEAM_POINTS_ABI };
 
-export async function getBalanceDirectFromBlockchain(walletAddress: string): Promise<number> {
+import { api } from './api';
+
+export async function getBalanceDirectFromBlockchain(walletAddress: string, useMetaMask: boolean = false): Promise<number> {
   if (!walletAddress) return 0;
 
-  if (typeof window !== 'undefined' && (window as any).ethereum) {
+  if (useMetaMask && typeof window !== 'undefined' && (window as any).ethereum) {
     try {
       const browserProvider = new BrowserProvider((window as any).ethereum);
       const contract = new Contract(DTEAM_POINTS_CONTRACT_ADDRESS, DTEAM_POINTS_ABI as any, browserProvider);
       const balanceWei = await contract.balanceOf(walletAddress);
       return Number(formatEther(balanceWei));
     } catch (err) {
-      console.warn('[Blockchain] MetaMask Provider call failed (possibly network mismatch), falling back to Hardhat RPC:', err);
+      console.warn('[Blockchain] MetaMask Provider call failed, falling back to Hardhat RPC:', err);
     }
   }
 
-  const rpcProvider = new JsonRpcProvider(HARDHAT_RPC_URL);
-  const contract = new Contract(DTEAM_POINTS_CONTRACT_ADDRESS, DTEAM_POINTS_ABI as any, rpcProvider);
-  const balanceWei = await contract.balanceOf(walletAddress);
-  return Number(formatEther(balanceWei));
+  try {
+    const rpcProvider = new JsonRpcProvider(HARDHAT_RPC_URL);
+    const contract = new Contract(DTEAM_POINTS_CONTRACT_ADDRESS, DTEAM_POINTS_ABI as any, rpcProvider);
+    const balanceWei = await contract.balanceOf(walletAddress);
+    return Number(formatEther(balanceWei));
+  } catch (err) {
+    console.warn('[Blockchain] Hardhat RPC call failed:', err);
+    throw err;
+  }
+}
+
+/**
+ * Hybrid TDP (Dteam Points) balance getter:
+ * 1. If MetaMask is connected and authorized, tries direct on-chain query.
+ * 2. Otherwise (or on failure), queries backend API (/api/token/balance/{address}) without requiring MetaMask.
+ */
+export async function getTdpBalanceHybrid(walletAddress?: string | null, isMetaMaskConnected: boolean = false): Promise<number> {
+  if (!walletAddress) return 0;
+
+  // 1. If MetaMask connected, try on-chain
+  if (isMetaMaskConnected) {
+    try {
+      return await getBalanceDirectFromBlockchain(walletAddress, true);
+    } catch (err) {
+      console.warn('[TDP Balance] On-chain via MetaMask failed, falling back to Backend API:', err);
+    }
+  }
+
+  // 2. Try Backend API first for fast, seamless response without wallet popups
+  try {
+    const res = await api.get<{ balance: number }>(`/token/balance/${walletAddress}`);
+    if (res && typeof res.balance === 'number') {
+      return res.balance;
+    }
+  } catch (err) {
+    console.warn('[TDP Balance] Backend API query failed, trying Hardhat RPC:', err);
+  }
+
+  // 3. Fallback to direct Hardhat RPC
+  try {
+    return await getBalanceDirectFromBlockchain(walletAddress, false);
+  } catch {
+    return 0;
+  }
 }

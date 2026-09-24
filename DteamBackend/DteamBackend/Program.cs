@@ -288,7 +288,7 @@ namespace DteamBackend
                 {
                     Directory.CreateDirectory(webRoot);
                 }
-                foreach (var subDir in new[] { "uploads", "game_images", "community", "comunity", "storage" })
+                foreach (var subDir in new[] { "uploads", "game_images", "community", "comunity", "storage", "icons" })
                 {
                     var dirPath = Path.Combine(webRoot, subDir);
                     if (!Directory.Exists(dirPath))

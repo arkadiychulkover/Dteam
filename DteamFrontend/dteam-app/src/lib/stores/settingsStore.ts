@@ -1,6 +1,7 @@
 import { writable, get } from 'svelte/store';
 import { settingsService } from '../services/settingsService';
 import { mediaService } from '../services/mediaService';
+import { userService } from '../services/userService';
 import { authStore } from './authStore';
 import { uiStore } from './uiStore';
 import type {
@@ -190,15 +191,16 @@ function createSettingsStore() {
   async function uploadAvatar(file: File): Promise<string | null> {
     uiState.update((s) => ({ ...s, isUploadingAvatar: true }));
     try {
-      const res = await mediaService.upload(file);
-      updateGeneralDraft({ avatarUrl: res.url });
+      const res = await userService.uploadAvatar(file);
+      updateGeneralDraft({ avatarUrl: res.avatarUrl });
+      authStore.patchUser({ avatarUrl: res.avatarUrl });
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
       uiStore.addToast({
-        title: 'Аватар завантажено',
-        message: 'Зображення готове. Натисніть "Зберегти" для підтвердження.',
-        type: 'info',
+        title: 'Аватар оновлено',
+        message: 'Новий аватар успішно збережено.',
+        type: 'success',
       });
-      return res.url;
+      return res.avatarUrl;
     } catch (err: any) {
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
       uiStore.addToast({
@@ -207,6 +209,30 @@ function createSettingsStore() {
         type: 'error',
       });
       return null;
+    }
+  }
+
+  async function removeAvatar(): Promise<boolean> {
+    uiState.update((s) => ({ ...s, isUploadingAvatar: true }));
+    try {
+      await userService.deleteAvatar();
+      updateGeneralDraft({ avatarUrl: '' });
+      authStore.patchUser({ avatarUrl: null });
+      uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
+      uiStore.addToast({
+        title: 'Аватар видалено',
+        message: 'Аватар успішно видалено.',
+        type: 'success',
+      });
+      return true;
+    } catch (err: any) {
+      uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
+      uiStore.addToast({
+        title: 'Помилка видалення',
+        message: err.message || 'Не вдалося видалити аватар',
+        type: 'error',
+      });
+      return false;
     }
   }
 
@@ -327,6 +353,7 @@ function createSettingsStore() {
     resetGeneralDraft,
     saveGeneralSettings,
     uploadAvatar,
+    removeAvatar,
     uploadBanner,
     saveNotificationPreferences,
     changePassword,

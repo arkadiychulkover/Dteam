@@ -1,7 +1,10 @@
+using System.IO;
 using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -18,11 +21,13 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IAccountService _accountService;
+        private readonly IWebHostEnvironment _environment;
 
-        public UserController(AppDbContext context, IAccountService accountService)
+        public UserController(AppDbContext context, IAccountService accountService, IWebHostEnvironment environment)
         {
             _context = context;
             _accountService = accountService;
+            _environment = environment;
         }
 
         public class UpdateProfileRequest
@@ -79,6 +84,220 @@ namespace DteamBackend.Controllers
                 avatarUrl = user.AvatarUrl,
                 bio = user.Bio,
                 bannerUrl = user.BannerUrl
+            });
+        }
+
+        private static readonly string[] AllowedAvatarExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        private const long MaxAvatarSizeBytes = 10L * 1024 * 1024; // 10MB
+
+        /// <summary>
+        /// Отримати аватар поточного авторизованого користувача
+        /// </summary>
+        [HttpGet("avatar")]
+        [HttpGet("me/avatar")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMyAvatar()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            return Ok(new
+            {
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl
+            });
+        }
+
+        /// <summary>
+        /// Отримати аватар користувача за його ID (публічний доступ)
+        /// </summary>
+        [HttpGet("{userId:guid}/avatar")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUserAvatar(Guid userId)
+        {
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            return Ok(new
+            {
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl
+            });
+        }
+
+        /// <summary>
+        /// Завантажити або оновити аватарку користувача (multipart/form-data)
+        /// Зберігає файл у wwwroot/icons та записує шлях у модель Duser в базі даних
+        /// </summary>
+        [HttpPost("avatar")]
+        [HttpPost("me/avatar")]
+        [HttpPut("avatar")]
+        [HttpPut("me/avatar")]
+        [Authorize]
+        [RequestSizeLimit(MaxAvatarSizeBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxAvatarSizeBytes)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadAvatar(IFormFile? file)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Файл аватара не передано або він порожній." });
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedAvatarExtensions.Contains(extension))
+            {
+                return BadRequest(new { message = "Дозволені лише формати зображень (.jpg, .jpeg, .png, .webp, .gif)." });
+            }
+
+            if (file.Length > MaxAvatarSizeBytes)
+            {
+                return BadRequest(new { message = $"Розмір файлу перевищує ліміт {MaxAvatarSizeBytes / (1024 * 1024)} МБ." });
+            }
+
+            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var iconsFolder = Path.Combine(webRoot, "icons");
+            if (!Directory.Exists(iconsFolder))
+            {
+                Directory.CreateDirectory(iconsFolder);
+            }
+
+            // Видаляємо попередній файл аватара з wwwroot/icons, якщо він там був
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var oldFileName = Path.GetFileName(user.AvatarUrl);
+                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+                catch
+                {
+                    // Ігноруємо помилки доступу до попереднього файлу
+                }
+            }
+
+            var fileName = $"avatar_{user.Id:N}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{extension}";
+            var filePath = Path.Combine(iconsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/icons/{fileName}";
+            user.AvatarUrl = relativeUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl,
+                message = "Аватар успішно оновлено."
+            });
+        }
+
+        /// <summary>
+        /// Видалити аватарку користувача (очистити поле в БД та видалити файл з wwwroot/icons)
+        /// </summary>
+        [HttpDelete("avatar")]
+        [HttpDelete("me/avatar")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteAvatar()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var iconsFolder = Path.Combine(webRoot, "icons");
+                    var oldFileName = Path.GetFileName(user.AvatarUrl);
+                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+                catch
+                {
+                    // Ігноруємо помилки видалення
+                }
+            }
+
+            user.AvatarUrl = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = (string?)null,
+                message = "Аватар успішно видалено."
             });
         }
 

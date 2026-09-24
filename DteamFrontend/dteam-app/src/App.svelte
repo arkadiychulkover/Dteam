@@ -57,15 +57,41 @@
   let isBanned = $state(false);
 
   async function checkUserBanStatus() {
-    if (!$currentUser?.id) return;
+    if (!$currentUser?.id) {
+      isBanned = false;
+      return;
+    }
     try {
       const res = await userService.checkIsBanned($currentUser.id);
-      isBanned = res.isBanned;
-      if (res.isBanned && $currentUser) {
-        authStore.setUser({ ...$currentUser, isBanned: true });
+      if (res?.isBanned) {
+        isBanned = true;
+        if ($currentUser) {
+          authStore.setUser({ ...$currentUser, isBanned: true });
+        }
+        friendsHubService.stop();
+        chatHubService.stop();
+        onlineHubService.stopConnection();
+      } else {
+        isBanned = false;
+        if ($currentUser?.isBanned) {
+          authStore.setUser({ ...$currentUser, isBanned: false });
+        }
       }
     } catch (e: any) {
-      if (e?.message?.includes('не найден') || e?.status === 404) {
+      if (
+        e?.isBanned ||
+        e?.status === 403 ||
+        e?.message?.toLowerCase()?.includes('заблокирован') ||
+        e?.message?.toLowerCase()?.includes('banned')
+      ) {
+        isBanned = true;
+        if ($currentUser) {
+          authStore.setUser({ ...$currentUser, isBanned: true });
+        }
+        friendsHubService.stop();
+        chatHubService.stop();
+        onlineHubService.stopConnection();
+      } else if (e?.message?.includes('не найден') || e?.status === 404) {
         authStore.logout();
       } else {
         console.warn('[App] Could not check ban status:', e);
@@ -76,14 +102,17 @@
   $effect(() => {
     if ($currentUser?.id) {
       checkUserBanStatus();
-      wishlistStore.loadWishlist();
-      cartStore.loadCart();
-      friendsStore.loadAll();
-      friendsHubService.start();
-      chatStore.loadConversations();
-      chatHubService.start();
-      notificationStore.init();
+      if (!isBanned) {
+        wishlistStore.loadWishlist();
+        cartStore.loadCart();
+        friendsStore.loadAll();
+        friendsHubService.start();
+        chatStore.loadConversations();
+        chatHubService.start();
+        notificationStore.init();
+      }
     } else {
+      isBanned = false;
       friendsHubService.stop();
       chatHubService.stop();
       notificationStore.reset();
@@ -100,15 +129,31 @@
     gamesStore.loadGames();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
-    if ($currentUser?.id) {
+    if ($currentUser?.id && !isBanned) {
       friendsStore.loadAll();
       friendsHubService.start();
       chatStore.loadConversations();
       chatHubService.start();
       notificationStore.init();
     }
+
+    const onUserBannedEvent = () => {
+      isBanned = true;
+      if ($currentUser) {
+        authStore.setUser({ ...$currentUser, isBanned: true });
+      }
+      friendsHubService.stop();
+      chatHubService.stop();
+      onlineHubService.stopConnection();
+    };
+
+    window.addEventListener('dteam:user_banned', onUserBannedEvent);
     const interval = setInterval(checkUserBanStatus, 5000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('dteam:user_banned', onUserBannedEvent);
+    };
   });
 
   onDestroy(() => {

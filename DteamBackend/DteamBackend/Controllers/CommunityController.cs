@@ -92,13 +92,29 @@ namespace DteamBackend.Controllers
                 .Select(g => new { PostId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.PostId, x => x.Count);
 
+            var authorGuids = posts
+                .Select(p => Guid.TryParse(p.Author?.Id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var authorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => authorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
+
             var postsDto = posts.Select(p => new
             {
                 id = p.Id,
                 gameId = p.GameId,
                 gameTitle = p.GameTitle ?? p.Game?.Title,
                 gameBannerUrl = p.GameBannerUrl ?? p.Game?.HeaderImageUrl ?? p.Game?.CoverImageUrl,
-                author = p.Author,
+                author = new
+                {
+                    id = p.Author?.Id ?? "",
+                    username = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u) && !string.IsNullOrWhiteSpace(u.Username)) ? u.Username : (p.Author?.Username ?? "Користувач"),
+                    avatarUrl = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u2) && !string.IsNullOrWhiteSpace(u2.AvatarUrl)) ? u2.AvatarUrl : (p.Author?.AvatarUrl ?? "")
+                },
                 createdAt = p.CreatedAt.ToString("o"),
                 category = p.Category,
                 title = p.Title,
@@ -164,13 +180,29 @@ namespace DteamBackend.Controllers
                 .Select(g => new { PostId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.PostId, x => x.Count);
 
+            var authorGuids = posts
+                .Select(p => Guid.TryParse(p.Author?.Id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var authorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => authorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
+
             var postsDto = posts.Select(p => new
             {
                 id = p.Id,
                 gameId = p.GameId,
                 gameTitle = p.GameTitle ?? p.Game?.Title,
                 gameBannerUrl = p.GameBannerUrl ?? p.Game?.HeaderImageUrl ?? p.Game?.CoverImageUrl,
-                author = p.Author,
+                author = new
+                {
+                    id = p.Author?.Id ?? "",
+                    username = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u) && !string.IsNullOrWhiteSpace(u.Username)) ? u.Username : (p.Author?.Username ?? "Користувач"),
+                    avatarUrl = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u2) && !string.IsNullOrWhiteSpace(u2.AvatarUrl)) ? u2.AvatarUrl : (p.Author?.AvatarUrl ?? "")
+                },
                 createdAt = p.CreatedAt.ToString("o"),
                 category = p.Category,
                 title = p.Title,
@@ -222,6 +254,18 @@ namespace DteamBackend.Controllers
                 .Where(c => !string.IsNullOrEmpty(c.ParentCommentId))
                 .ToLookup(c => c.ParentCommentId!);
 
+            var allCommentAuthorGuids = allComments
+                .Select(c => Guid.TryParse(c.Author?.Id, out var g) ? g : Guid.Empty)
+                .Concat(Guid.TryParse(post.Author?.Id, out var pg) ? new[] { pg } : Array.Empty<Guid>())
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var detailsAuthorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => allCommentAuthorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
+
             return Ok(new
             {
                 post = new
@@ -230,7 +274,12 @@ namespace DteamBackend.Controllers
                     gameId = post.GameId,
                     gameTitle = post.GameTitle ?? post.Game?.Title,
                     gameBannerUrl = post.GameBannerUrl ?? post.Game?.HeaderImageUrl ?? post.Game?.CoverImageUrl,
-                    author = post.Author,
+                    author = new
+                    {
+                        id = post.Author?.Id ?? "",
+                        username = (post.Author?.Id != null && detailsAuthorMap.TryGetValue(post.Author.Id, out var pu) && !string.IsNullOrWhiteSpace(pu.Username)) ? pu.Username : (post.Author?.Username ?? "Користувач"),
+                        avatarUrl = (post.Author?.Id != null && detailsAuthorMap.TryGetValue(post.Author.Id, out var pu2) && !string.IsNullOrWhiteSpace(pu2.AvatarUrl)) ? pu2.AvatarUrl : (post.Author?.AvatarUrl ?? "")
+                    },
                     createdAt = post.CreatedAt.ToString("o"),
                     category = post.Category,
                     title = post.Title,
@@ -247,7 +296,12 @@ namespace DteamBackend.Controllers
                 {
                     id = c.Id,
                     postId = c.PostId,
-                    author = c.Author,
+                    author = new
+                    {
+                        id = c.Author?.Id ?? "",
+                        username = (c.Author?.Id != null && detailsAuthorMap.TryGetValue(c.Author.Id, out var cu) && !string.IsNullOrWhiteSpace(cu.Username)) ? cu.Username : (c.Author?.Username ?? "Користувач"),
+                        avatarUrl = (c.Author?.Id != null && detailsAuthorMap.TryGetValue(c.Author.Id, out var cu2) && !string.IsNullOrWhiteSpace(cu2.AvatarUrl)) ? cu2.AvatarUrl : (c.Author?.AvatarUrl ?? "")
+                    },
                     createdAt = c.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
                     content = c.Content,
                     likesCount = c.LikesCount,
@@ -255,7 +309,12 @@ namespace DteamBackend.Controllers
                     replies = repliesLookup[c.Id].Select(r => new
                     {
                         id = r.Id,
-                        author = r.Author,
+                        author = new
+                        {
+                            id = r.Author?.Id ?? "",
+                            username = (r.Author?.Id != null && detailsAuthorMap.TryGetValue(r.Author.Id, out var ru) && !string.IsNullOrWhiteSpace(ru.Username)) ? ru.Username : (r.Author?.Username ?? "Користувач"),
+                            avatarUrl = (r.Author?.Id != null && detailsAuthorMap.TryGetValue(r.Author.Id, out var ru2) && !string.IsNullOrWhiteSpace(ru2.AvatarUrl)) ? ru2.AvatarUrl : (r.Author?.AvatarUrl ?? "")
+                        },
                         createdAt = r.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
                         content = r.Content,
                         likesCount = r.LikesCount,
