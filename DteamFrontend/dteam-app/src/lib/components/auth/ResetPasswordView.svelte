@@ -22,10 +22,26 @@
       return;
     }
 
-    if (newPassword.length < 6) {
-      errorMessage = 'Пароль має бути не менше 6 символів';
+    if (newPassword.length < 7) {
+      errorMessage = 'Новий пароль має містити щонайменше 7 символів';
       return;
     }
+
+    if (!/[a-zA-Z]/.test(newPassword)) {
+      errorMessage = 'Пароль має містити щонайменше одну літеру';
+      return;
+    }
+
+    if (!/\d/.test(newPassword)) {
+      errorMessage = 'Пароль має містити щонайменше одну цифру';
+      return;
+    }
+
+    if (/\s/.test(newPassword)) {
+      errorMessage = 'Пароль не повинен містити пробілів';
+      return;
+    }
+
 
     errorMessage = '';
     isSubmitting = true;

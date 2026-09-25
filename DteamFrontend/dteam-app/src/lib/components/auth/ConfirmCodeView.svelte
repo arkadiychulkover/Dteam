@@ -36,6 +36,12 @@
     const unsub = authStore.subscribe((s) => { currentEmail = s.resetEmail || ''; });
     unsub();
 
+    if (!currentEmail && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        currentEmail = sessionStorage.getItem('dteam_reset_email') || '';
+      } catch {}
+    }
+
     if (!currentEmail) {
       uiStore.setTab('forgot-password');
       return;

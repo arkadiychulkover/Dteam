@@ -137,14 +137,20 @@ function createAuthStore() {
         throw new Error(message);
       }
     },
-    requestPasswordReset: async (email: string) => {
+    requestPasswordReset: async (identifier: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const res = await authService.requestPasswordReset(email);
-        update((s) => ({ ...s, resetEmail: email, isLoading: false, error: null }));
+        const res = await authService.requestPasswordReset(identifier.trim());
+        const resolvedEmail = (res as any)?.userEmail || identifier.trim();
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            sessionStorage.setItem('dteam_reset_email', resolvedEmail);
+          } catch {}
+        }
+        update((s) => ({ ...s, resetEmail: resolvedEmail, isLoading: false, error: null }));
         return res;
       } catch (err: any) {
-        const message = err.message || 'Ошибка запроса сброса пароля';
+        const message = err.message || 'Помилка запиту скидання пароля';
         update((s) => ({ ...s, isLoading: false, error: message }));
         throw new Error(message);
       }
@@ -155,13 +161,28 @@ function createAuthStore() {
       const unsubscribe = subscribe((s) => { currentEmail = s.resetEmail || ''; });
       unsubscribe();
 
+      if (!currentEmail && typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          currentEmail = sessionStorage.getItem('dteam_reset_email') || '';
+        } catch {}
+      }
+
       try {
-        const res = await authService.verifyResetCode(currentEmail, code);
-        const token = res.resetToken || code;
-        update((s) => ({ ...s, resetToken: token, isLoading: false, error: null }));
+        const res = await authService.verifyResetCode(currentEmail, code.trim());
+        const token = res.resetToken || code.trim();
+        const resolvedEmail = (res as any)?.userEmail || currentEmail;
+
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            sessionStorage.setItem('dteam_reset_token', token);
+            sessionStorage.setItem('dteam_reset_email', resolvedEmail);
+          } catch {}
+        }
+
+        update((s) => ({ ...s, resetEmail: resolvedEmail, resetToken: token, isLoading: false, error: null }));
         return res;
       } catch (err: any) {
-        const message = err.message || 'Неверный код подтверждения';
+        const message = err.message || 'Невірний або прострочений код підтвердження';
         update((s) => ({ ...s, isLoading: false, error: message }));
         throw new Error(message);
       }
@@ -172,12 +193,24 @@ function createAuthStore() {
       const unsubscribe = subscribe((s) => { currentToken = s.resetToken || ''; });
       unsubscribe();
 
+      if (!currentToken && typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          currentToken = sessionStorage.getItem('dteam_reset_token') || '';
+        } catch {}
+      }
+
       try {
         const res = await authService.resetPassword(currentToken, newPassword);
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            sessionStorage.removeItem('dteam_reset_email');
+            sessionStorage.removeItem('dteam_reset_token');
+          } catch {}
+        }
         update((s) => ({ ...s, resetEmail: null, resetToken: null, isLoading: false, error: null }));
         return res;
       } catch (err: any) {
-        const message = err.message || 'Ошибка обновления пароля';
+        const message = err.message || 'Помилка оновлення пароля';
         update((s) => ({ ...s, isLoading: false, error: message }));
         throw new Error(message);
       }

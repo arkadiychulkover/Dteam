@@ -199,17 +199,11 @@ export async function getUserGiftsByUserId(userId: string): Promise<NftGift[]> {
   }
 }
 
-/**
- * Hybrid NFT (badges/gifts) loader:
- * 1. If MetaMask is actively connected, attempts direct on-chain query from Hardhat contract.
- * 2. If MetaMask is not connected or on-chain call fails/returns empty, immediately falls back to Backend API.
- */
 export async function getUserNftsHybrid(
   walletAddress?: string | null,
   userId?: string | null,
   isMetaMaskConnected: boolean = false
 ): Promise<NftGift[]> {
-  // If MetaMask is connected, try on-chain first
   if (isMetaMaskConnected && walletAddress) {
     try {
       const onChainGfts = await getUserNftsFromContract(walletAddress, userId ?? undefined);
@@ -221,7 +215,6 @@ export async function getUserNftsHybrid(
     }
   }
 
-  // Fast & seamless fallback directly from Backend database
   if (userId) {
     try {
       const backendGifts = await getUserGiftsByUserId(userId);

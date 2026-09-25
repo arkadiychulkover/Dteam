@@ -5,21 +5,21 @@ namespace DteamBackend.Models.DTO.Auth
 {
     public class ResetPasswordDto
     {
-        [Required(ErrorMessage = "Токен восстановления обязателен")]
+        [Required(ErrorMessage = "Токен відновлення обов'язковий")]
         public string Token { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Новый пароль обязателен")]
+        [Required(ErrorMessage = "Новий пароль обов'язковий")]
         [StrongPassword(MinLength = 7)]
         public string NewPassword { get; set; } = string.Empty;
     }
 
     public class VerifyCodeDto
     {
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Неверный формат Email")]
+        [Required(ErrorMessage = "Email або логін обов'язковий")]
+        [MinLength(3, ErrorMessage = "Введіть щонайменше 3 символи")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Код подтверждения обязателен")]
+        [Required(ErrorMessage = "Код підтвердження обов'язковий")]
         public string Code { get; set; } = string.Empty;
     }
 }

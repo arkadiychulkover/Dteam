@@ -35,15 +35,9 @@ export async function getBalanceDirectFromBlockchain(walletAddress: string, useM
   }
 }
 
-/**
- * Hybrid TDP (Dteam Points) balance getter:
- * 1. If MetaMask is connected and authorized, tries direct on-chain query.
- * 2. Otherwise (or on failure), queries backend API (/api/token/balance/{address}) without requiring MetaMask.
- */
 export async function getTdpBalanceHybrid(walletAddress?: string | null, isMetaMaskConnected: boolean = false): Promise<number> {
   if (!walletAddress) return 0;
 
-  // 1. If MetaMask connected, try on-chain
   if (isMetaMaskConnected) {
     try {
       return await getBalanceDirectFromBlockchain(walletAddress, true);
@@ -52,7 +46,6 @@ export async function getTdpBalanceHybrid(walletAddress?: string | null, isMetaM
     }
   }
 
-  // 2. Try Backend API first for fast, seamless response without wallet popups
   try {
     const res = await api.get<{ balance: number }>(`/token/balance/${walletAddress}`);
     if (res && typeof res.balance === 'number') {
@@ -62,7 +55,6 @@ export async function getTdpBalanceHybrid(walletAddress?: string | null, isMetaM
     console.warn('[TDP Balance] Backend API query failed, trying Hardhat RPC:', err);
   }
 
-  // 3. Fallback to direct Hardhat RPC
   try {
     return await getBalanceDirectFromBlockchain(walletAddress, false);
   } catch {

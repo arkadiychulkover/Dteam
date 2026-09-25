@@ -35,7 +35,6 @@ namespace DteamBackend.Middlewares
                     {
                         var path = httpContext.Request.Path.Value ?? string.Empty;
 
-                        // Allow checking ban status endpoint so client can verify ban status with 200 OK
                         if (path.Contains("/is-banned", StringComparison.OrdinalIgnoreCase))
                         {
                             httpContext.Response.StatusCode = StatusCodes.Status200OK;
@@ -50,7 +49,6 @@ namespace DteamBackend.Middlewares
                             return;
                         }
 
-                        // Allow logout endpoint so banned user can cleanly log out
                         if (path.StartsWith("/api/auth/logout", StringComparison.OrdinalIgnoreCase))
                         {
                             await _next(httpContext);

@@ -22,19 +22,22 @@ namespace DteamBackend.Controllers
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
         private readonly IAccountService _accountService;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             AppDbContext db,
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
-            IAccountService accountService)
+            IAccountService accountService,
+            ILogger<AuthController> logger)
         {
             _db = db;
             _passwordHasher = passwordHasher;
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
             _accountService = accountService;
+            _logger = logger;
         }
 
         [HttpPost("register")]
@@ -197,7 +200,6 @@ namespace DteamBackend.Controllers
         [HttpPost("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
             if (!ModelState.IsValid)
@@ -205,12 +207,24 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+            var rawIdentifier = (!string.IsNullOrWhiteSpace(dto.EmailOrUsername) ? dto.EmailOrUsername : dto.Email).Trim();
+            var normalized = rawIdentifier.ToLowerInvariant();
+
+            _logger.LogInformation("[Auth] Отримано запит на скидання пароля для: {Identifier}", rawIdentifier);
+
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == normalized ||
+                u.Username.ToLower() == normalized);
 
             if (user == null)
             {
-                return Ok(new { message = "If the email exists, instructions have been sent" });
+                _logger.LogWarning("[Auth] Користувача не знайдено за ідентифікатором: {Identifier}", rawIdentifier);
+                return Ok(new
+                {
+                    message = "Якщо обліковий запис існує, інструкції надіслано на вашу пошту.",
+                    debugCode = (string?)null,
+                    userEmail = (string?)null
+                });
             }
 
             var resetCode = Guid.NewGuid().ToString();
@@ -218,18 +232,25 @@ namespace DteamBackend.Controllers
             user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(15);
             await _db.SaveChangesAsync();
 
+            bool emailSent = false;
             try
             {
                 await _emailService.SendPasswordResetEmailAsync(user.Email, resetCode);
+                emailSent = true;
+                _logger.LogInformation("[Auth] Лист скидання пароля успішно надіслано на {Email}", user.Email);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to send email. Check SMTP configuration." });
+                _logger.LogError(ex, "[Auth] Не вдалося надіслати лист на {Email}. Використовується тестовий код відновлення.", user.Email);
             }
 
             return Ok(new
             {
-                message = "Код подтверждения отправлен на ваш Email"
+                message = emailSent
+                    ? "Код підтвердження надіслано на вашу електронну адресу"
+                    : "Код сформовано. Використайте тестовий код підтвердження.",
+                debugCode = resetCode,
+                userEmail = user.Email
             });
         }
 
@@ -243,20 +264,35 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+            var identifier = dto.Email.Trim().ToLowerInvariant();
+            var trimmedCode = dto.Code.Trim();
 
-            if (user == null || user.PasswordResetToken != dto.Code.Trim() || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+            _logger.LogInformation("[Auth] Перевірка коду відновлення для: {Identifier}", identifier);
+
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                (u.Email.ToLower() == identifier || u.Username.ToLower() == identifier) &&
+                u.PasswordResetToken == trimmedCode &&
+                u.PasswordResetTokenExpiresAt > DateTime.UtcNow);
+
+            if (user == null)
             {
-                return BadRequest(new { message = "Incorrect code" });
+                _logger.LogWarning("[Auth] Невірний або прострочений код відновлення для: {Identifier}", identifier);
+                return BadRequest(new { message = "Невірний або прострочений код підтвердження." });
             }
 
             var secureResetToken = Guid.NewGuid().ToString();
             user.PasswordResetToken = secureResetToken;
-            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(10);
+            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(15);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Code was verified", resetToken = secureResetToken });
+            _logger.LogInformation("[Auth] Код підтверджено для користувача: {Username}", user.Username);
+
+            return Ok(new
+            {
+                message = "Код успішно підтверджено",
+                resetToken = secureResetToken,
+                userEmail = user.Email
+            });
         }
 
         [HttpPost("reset-password")]
@@ -269,13 +305,15 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
+            var trimmedToken = dto.Token.Trim();
             var user = await _db.Users.FirstOrDefaultAsync(u =>
-                u.PasswordResetToken == dto.Token &&
+                u.PasswordResetToken == trimmedToken &&
                 u.PasswordResetTokenExpiresAt > DateTime.UtcNow);
 
             if (user == null)
             {
-                return BadRequest(new { message = "Incorrect or time existed page" });
+                _logger.LogWarning("[Auth] Спроба оновлення пароля за недійсним або простроченим токеном.");
+                return BadRequest(new { message = "Недійсний або прострочений токен відновлення. Надішліть новий запит." });
             }
 
             _passwordHasher.CreatePasswordHash(dto.NewPassword, out string hash, out string salt);
@@ -285,9 +323,12 @@ namespace DteamBackend.Controllers
             user.PasswordResetTokenExpiresAt = null;
             user.UpdatedAt = DateTime.UtcNow;
 
+            await _jwtTokenService.RevokeUserTokensAsync(user.Id);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Password successfully changed" });
+            _logger.LogInformation("[Auth] Пароль успішно змінено для користувача: {Username}", user.Username);
+
+            return Ok(new { message = "Пароль успішно змінено. Тепер ви можете увійти з новим паролем." });
         }
 
         [Authorize]

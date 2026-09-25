@@ -88,11 +88,8 @@ namespace DteamBackend.Controllers
         }
 
         private static readonly string[] AllowedAvatarExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-        private const long MaxAvatarSizeBytes = 10L * 1024 * 1024; // 10MB
+        private const long MaxAvatarSizeBytes = 10L * 1024 * 1024;
 
-        /// <summary>
-        /// Отримати аватар поточного авторизованого користувача
-        /// </summary>
         [HttpGet("avatar")]
         [HttpGet("me/avatar")]
         [Authorize]
@@ -123,9 +120,6 @@ namespace DteamBackend.Controllers
             });
         }
 
-        /// <summary>
-        /// Отримати аватар користувача за його ID (публічний доступ)
-        /// </summary>
         [HttpGet("{userId:guid}/avatar")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -146,10 +140,6 @@ namespace DteamBackend.Controllers
             });
         }
 
-        /// <summary>
-        /// Завантажити або оновити аватарку користувача (multipart/form-data)
-        /// Зберігає файл у wwwroot/icons та записує шлях у модель Duser в базі даних
-        /// </summary>
         [HttpPost("avatar")]
         [HttpPost("me/avatar")]
         [HttpPut("avatar")]
@@ -200,7 +190,6 @@ namespace DteamBackend.Controllers
                 Directory.CreateDirectory(iconsFolder);
             }
 
-            // Видаляємо попередній файл аватара з wwwroot/icons, якщо він там був
             if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
             {
                 try
@@ -214,7 +203,6 @@ namespace DteamBackend.Controllers
                 }
                 catch
                 {
-                    // Ігноруємо помилки доступу до попереднього файлу
                 }
             }
 
@@ -242,9 +230,6 @@ namespace DteamBackend.Controllers
             });
         }
 
-        /// <summary>
-        /// Видалити аватарку користувача (очистити поле в БД та видалити файл з wwwroot/icons)
-        /// </summary>
         [HttpDelete("avatar")]
         [HttpDelete("me/avatar")]
         [Authorize]
@@ -282,7 +267,6 @@ namespace DteamBackend.Controllers
                 }
                 catch
                 {
-                    // Ігноруємо помилки видалення
                 }
             }
 

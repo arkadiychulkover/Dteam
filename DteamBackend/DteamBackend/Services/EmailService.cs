@@ -64,9 +64,11 @@ namespace DteamBackend.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[SMTP] Ошибка при отправке письма на {Email}", toEmail);
+                _logger.LogError(ex, "[SMTP] Помилка при відправці листа на {Email}", toEmail);
+                throw;
             }
         }
+
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
