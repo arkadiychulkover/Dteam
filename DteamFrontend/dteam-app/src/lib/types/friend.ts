@@ -42,3 +42,7 @@ export interface FriendActionResponseDto {
   message: string;
 }
 
+export interface FriendsGameStatusDto {
+  friendsWhoOwn: FriendDto[];
+  friendsWhoWishlist: FriendDto[];
+}

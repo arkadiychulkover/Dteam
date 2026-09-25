@@ -1,21 +1,33 @@
 <script lang="ts">
-import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import Header from './lib/components/layout/Header.svelte';
   import Footer from './lib/components/layout/Footer.svelte';
+  import MobileBottomNav from './lib/components/layout/MobileBottomNav.svelte';
   import StoreView from './lib/components/store/StoreView.svelte';
   import CatalogView from './lib/components/store/CatalogView.svelte';
   import GameDetailsView from './lib/components/store/GameDetailsView.svelte';
+  import AllDlcsView from './lib/components/store/AllDlcsView.svelte';
   import WishlistView from './lib/components/wishlist/WishlistView.svelte';
   import CartView from './lib/components/cart/CartView.svelte';
   import AdminView from './lib/components/admin/AdminView.svelte';
   import BannedView from './lib/components/banned/BannedView.svelte';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
+  import CustomCursor from './lib/components/ui/CustomCursor.svelte';
   import LiveBackground from './lib/components/ui/LiveBackground.svelte';
   import LibraryView from './lib/components/library/LibraryView.svelte';
   import CommunityView from './lib/components/community/CommunityView.svelte';
   import FriendsView from './lib/components/friends/FriendsView.svelte';
+  import ChatView from './lib/components/chat/ChatView.svelte';
   import PublicProfileView from './lib/components/profile/PublicProfileView.svelte';
   import MyProfileView from './lib/components/profile/MyProfileView.svelte';
+  import WalletView from './lib/components/wallet/WalletView.svelte';
+  import DeveloperView from './lib/components/developer/DeveloperView.svelte';
+  import SettingsView from './lib/components/settings/SettingsView.svelte';
+  import PublishGameModal from './lib/components/developer/PublishGameModal.svelte';
+  import EditDeveloperGameModal from './lib/components/developer/EditDeveloperGameModal.svelte';
+  import TermsOfUseView from './lib/components/legal/TermsOfUseView.svelte';
+  import PrivacyPolicyView from './lib/components/legal/PrivacyPolicyView.svelte';
+  import RefundPolicyView from './lib/components/legal/RefundPolicyView.svelte';
 
   import LoginView from './lib/components/auth/LoginView.svelte';
   import RegisterView from './lib/components/auth/RegisterView.svelte';
@@ -28,56 +40,127 @@ import { onMount, onDestroy } from 'svelte';
 
   import { uiStore } from './lib/stores/uiStore';
   import { authStore, currentUser } from './lib/stores/authStore';
+  import { gamesStore } from './lib/stores/gamesStore';
   import { wishlistStore } from './lib/stores/wishlistStore';
   import { cartStore } from './lib/stores/cartStore';
   import { friendsStore } from './lib/stores/friendsStore';
+  import { chatStore } from './lib/stores/chatStore';
+  import { notificationStore } from './lib/stores/notificationStore';
+  import { soundService } from './lib/services/soundService';
   import { friendsHubService } from './lib/services/friendsHubService';
+  import { chatHubService } from './lib/services/chatHubService';
   import { onlineHubService } from './lib/services/onlineHubService';
   import { userService } from './lib/services/userService';
+  import { router } from './lib/services/router';
+  import { themeStore } from './lib/stores/themeStore';
 
   let isBanned = $state(false);
 
   async function checkUserBanStatus() {
-    if (!$currentUser?.id) return;
+    if (!$currentUser?.id) {
+      isBanned = false;
+      return;
+    }
     try {
       const res = await userService.checkIsBanned($currentUser.id);
-      isBanned = res.isBanned;
-      if (res.isBanned && $currentUser) {
-        authStore.setUser({ ...$currentUser, isBanned: true });
+      if (res?.isBanned) {
+        isBanned = true;
+        if ($currentUser) {
+          authStore.setUser({ ...$currentUser, isBanned: true });
+        }
+        friendsHubService.stop();
+        chatHubService.stop();
+        onlineHubService.stopConnection();
+      } else {
+        isBanned = false;
+        if ($currentUser?.isBanned) {
+          authStore.setUser({ ...$currentUser, isBanned: false });
+        }
       }
-    } catch (e) {
-      console.warn('[App] Could not check ban status:', e);
+    } catch (e: any) {
+      if (
+        e?.isBanned ||
+        e?.status === 403 ||
+        e?.message?.toLowerCase()?.includes('заблокирован') ||
+        e?.message?.toLowerCase()?.includes('banned')
+      ) {
+        isBanned = true;
+        if ($currentUser) {
+          authStore.setUser({ ...$currentUser, isBanned: true });
+        }
+        friendsHubService.stop();
+        chatHubService.stop();
+        onlineHubService.stopConnection();
+      } else if (e?.message?.includes('не найден') || e?.status === 404) {
+        authStore.logout();
+      } else {
+        console.warn('[App] Could not check ban status:', e);
+      }
     }
   }
 
   $effect(() => {
     if ($currentUser?.id) {
       checkUserBanStatus();
-      wishlistStore.loadWishlist();
-      cartStore.loadCart();
-      friendsStore.loadAll();
-      friendsHubService.start();
+      if (!isBanned) {
+        wishlistStore.loadWishlist();
+        cartStore.loadCart();
+        friendsStore.loadAll();
+        friendsHubService.start();
+        chatStore.loadConversations();
+        chatHubService.start();
+        notificationStore.init();
+      }
     } else {
+      isBanned = false;
       friendsHubService.stop();
+      chatHubService.stop();
+      notificationStore.reset();
     }
   });
 
   onMount(() => {
+    themeStore.init();
+    soundService.registerUserGestureUnlock();
+    router.init();
+    onlineHubService.startConnection();
+
     checkUserBanStatus();
+    gamesStore.loadGames();
     wishlistStore.loadWishlist();
     cartStore.loadCart();
-    onlineHubService.startConnection();
-    if ($currentUser?.id) {
+    if ($currentUser?.id && !isBanned) {
       friendsStore.loadAll();
       friendsHubService.start();
+      chatStore.loadConversations();
+      chatHubService.start();
+      notificationStore.init();
     }
+
+    const onUserBannedEvent = () => {
+      isBanned = true;
+      if ($currentUser) {
+        authStore.setUser({ ...$currentUser, isBanned: true });
+      }
+      friendsHubService.stop();
+      chatHubService.stop();
+      onlineHubService.stopConnection();
+    };
+
+    window.addEventListener('dteam:user_banned', onUserBannedEvent);
     const interval = setInterval(checkUserBanStatus, 5000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('dteam:user_banned', onUserBannedEvent);
+    };
   });
 
   onDestroy(() => {
     friendsHubService.stop();
+    chatHubService.stop();
     onlineHubService.stopConnection();
+    notificationStore.reset();
   });
 </script>
 
@@ -88,13 +171,15 @@ import { onMount, onDestroy } from 'svelte';
     <Header />
   {/if}
 
-  <main class="flex-1 relative z-10">
+  <main class="flex-1 relative z-10 pb-16 md:pb-0">
     {#if isBanned}
       <BannedView onRetry={checkUserBanStatus} />
     {:else if $uiStore.activeTab === 'store'}
       <StoreView />
     {:else if $uiStore.activeTab === 'library'}
       <LibraryView />
+    {:else if $uiStore.activeTab === 'chat'}
+      <ChatView />
     {:else if $uiStore.activeTab === 'community'}
       <CommunityView />
     {:else if $uiStore.activeTab === 'friends'}
@@ -103,16 +188,28 @@ import { onMount, onDestroy } from 'svelte';
       <PublicProfileView />
     {:else if $uiStore.activeTab === 'my-profile'}
       <MyProfileView />
+    {:else if $uiStore.activeTab === 'wallet'}
+      <WalletView />
     {:else if $uiStore.activeTab === 'catalog'}
       <CatalogView />
     {:else if $uiStore.activeTab === 'game'}
       <GameDetailsView />
+    {:else if $uiStore.activeTab === 'all-dlcs'}
+      <AllDlcsView />
     {:else if $uiStore.activeTab === 'wishlist'}
       <WishlistView />
     {:else if $uiStore.activeTab === 'cart'}
       <CartView />
     {:else if $uiStore.activeTab === 'admin'}
       <AdminView />
+    {:else if $uiStore.activeTab === 'developer'}
+      <DeveloperView />
+    {:else if $uiStore.activeTab === 'terms'}
+      <TermsOfUseView />
+    {:else if $uiStore.activeTab === 'privacy'}
+      <PrivacyPolicyView />
+    {:else if $uiStore.activeTab === 'refund'}
+      <RefundPolicyView />
     {:else if $uiStore.activeTab === 'login'}
       <LoginView />
     {:else if $uiStore.activeTab === 'register'}
@@ -123,17 +220,23 @@ import { onMount, onDestroy } from 'svelte';
       <ConfirmCodeView />
     {:else if $uiStore.activeTab === 'reset-password'}
       <ResetPasswordView />
+    {:else if $uiStore.activeTab === 'settings'}
+      <SettingsView />
     {/if}
   </main>
 
   <LoginModal />
   <ConfirmCodeModal />
+  <PublishGameModal />
+  <EditDeveloperGameModal />
   {#if $uiStore.isDepositModalOpen}
     <DepositModal />
   {/if}
+  <CustomCursor />
   <ToastContainer />
 
   {#if !isBanned}
+    <MobileBottomNav />
     <Footer />
   {/if}
 </div>

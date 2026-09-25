@@ -21,8 +21,12 @@ namespace DteamBackend.Models.DTO
         [MaxLength(100)]
         public string? WalletAddress { get; set; }
 
+        [MaxLength(100)]
+        public string? HardhatAddress { get; set; }
+
         public bool IsAdmin { get; set; } = false;
 
+        [Range(0, long.MaxValue, ErrorMessage = "Balance must be non-negative")]
         public long BalanceInNanoTons { get; set; } = 0;
 
         public UserStatus Status { get; set; } = UserStatus.Offline;
@@ -34,4 +38,3 @@ namespace DteamBackend.Models.DTO
         public string? Bio { get; set; }
     }
 }
-

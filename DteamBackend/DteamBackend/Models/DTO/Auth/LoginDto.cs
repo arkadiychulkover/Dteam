@@ -11,4 +11,3 @@ namespace DteamBackend.Models.DTO.Auth
         public string Password { get; set; } = string.Empty;
     }
 }
-

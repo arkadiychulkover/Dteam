@@ -7,11 +7,13 @@ using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace DteamBackend.Controllers
 {
     [ApiController]
+    [EnableRateLimiting("AuthLimiter")]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
@@ -19,17 +21,20 @@ namespace DteamBackend.Controllers
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
+        private readonly IAccountService _accountService;
 
         public AuthController(
             AppDbContext db,
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IAccountService accountService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
+            _accountService = accountService;
         }
 
         [HttpPost("register")]
@@ -71,6 +76,7 @@ namespace DteamBackend.Controllers
                 PasswordHash = hash,
                 PasswordSalt = salt,
                 WalletAddress = string.IsNullOrWhiteSpace(dto.WalletAddress) ? null : dto.WalletAddress.Trim(),
+                HardhatAddress = string.IsNullOrWhiteSpace(dto.HardhatAddress) ? null : dto.HardhatAddress.Trim(),
                 CreatedAt = DateTime.UtcNow,
                 LastLoginAt = DateTime.UtcNow,
                 Status = UserStatus.Online,
@@ -191,7 +197,6 @@ namespace DteamBackend.Controllers
         [HttpPost("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
             if (!ModelState.IsValid)
@@ -199,12 +204,14 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+            var normalizedInput = dto.Email.Trim().ToLowerInvariant();
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == normalizedInput ||
+                u.Username.ToLower() == normalizedInput);
 
             if (user == null)
             {
-                return Ok(new { message = "If the email exists, instructions have been sent" });
+                return Ok(new { message = "Якщо вказаний обліковий запис існує, інструкції надіслано" });
             }
 
             var resetCode = Guid.NewGuid().ToString();
@@ -218,12 +225,14 @@ namespace DteamBackend.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to send email. Check SMTP configuration." });
+                // SMTP not configured or offline; debugCode will be returned in payload for testing
             }
 
             return Ok(new
             {
-                message = "Код подтверждения отправлен на ваш Email"
+                message = "Код підтвердження надіслано на ваш Email",
+                debugCode = resetCode,
+                userEmail = user.Email
             });
         }
 
@@ -237,20 +246,25 @@ namespace DteamBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+            var normalizedInput = dto.Email.Trim().ToLowerInvariant();
+            var code = dto.Code.Trim();
 
-            if (user == null || user.PasswordResetToken != dto.Code.Trim() || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+            var user = await _db.Users.FirstOrDefaultAsync(u =>
+                (u.Email.ToLower() == normalizedInput || u.Username.ToLower() == normalizedInput) &&
+                u.PasswordResetToken == code &&
+                u.PasswordResetTokenExpiresAt > DateTime.UtcNow);
+
+            if (user == null)
             {
-                return BadRequest(new { message = "Incorrect code" });
+                return BadRequest(new { message = "Невірний або застарілий код підтвердження" });
             }
 
             var secureResetToken = Guid.NewGuid().ToString();
             user.PasswordResetToken = secureResetToken;
-            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(10);
+            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(15);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Code was verified", resetToken = secureResetToken });
+            return Ok(new { message = "Код підтверджено", resetToken = secureResetToken });
         }
 
         [HttpPost("reset-password")]
@@ -264,12 +278,12 @@ namespace DteamBackend.Controllers
             }
 
             var user = await _db.Users.FirstOrDefaultAsync(u =>
-                u.PasswordResetToken == dto.Token &&
+                u.PasswordResetToken == dto.Token.Trim() &&
                 u.PasswordResetTokenExpiresAt > DateTime.UtcNow);
 
             if (user == null)
             {
-                return BadRequest(new { message = "Incorrect or time existed page" });
+                return BadRequest(new { message = "Недійсний токен скидання паролю або час дії вичерпано" });
             }
 
             _passwordHasher.CreatePasswordHash(dto.NewPassword, out string hash, out string salt);
@@ -281,7 +295,7 @@ namespace DteamBackend.Controllers
 
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Password successfully changed" });
+            return Ok(new { message = "Пароль успішно змінено" });
         }
 
         [Authorize]
@@ -304,6 +318,30 @@ namespace DteamBackend.Controllers
             }
 
             return Ok(new { message = "Success logout" });
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var (success, error) = await _accountService.ChangePasswordAsync(userId, dto);
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return Ok(new { message = "Пароль успішно змінено. Усі активні сесії оновлено." });
         }
     }
 }

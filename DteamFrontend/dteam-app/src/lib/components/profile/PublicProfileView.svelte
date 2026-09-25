@@ -1,21 +1,38 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { profileStore } from '../../stores/profileStore';
   import { currentUser } from '../../stores/authStore';
   import { friendsService } from '../../services/friendsService';
+  import { friendsStore } from '../../stores/friendsStore';
+  import { chatStore } from '../../stores/chatStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatDate } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { UserStatus } from '../../types';
   import {
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
-    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft
+    ThumbsUp, Loader2, Gamepad2, Users, ArrowLeft, Activity, Award, RefreshCw,
+    Check, X
   } from 'lucide-svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { gamesService } from '../../services/gamesService';
+  import ActivityCard from '../activity/ActivityCard.svelte';
+  import { activityStore } from '../../stores/activityStore';
+  import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
+  import { getUserGiftsByUserId, getUserNftsHybrid, type NftGift } from '../../services/nftService';
+  import BadgeCard from './BadgeCard.svelte';
+  import BadgeDetailModal from './BadgeDetailModal.svelte';
+  import { calculateProfileLevel } from '../../utils/levelUtils';
+  import ProfileLevelHexagon from './ProfileLevelHexagon.svelte';
+  import ProfileLevelCard from './ProfileLevelCard.svelte';
+  import { tokenService } from '../../services/tokenService';
+  import { getBalanceDirectFromBlockchain, getTdpBalanceHybrid } from '../../services/blockchainService';
 
-  type TabId = 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
-  let activeTab = $state<TabId>('обговорення');
+  type TabId = 'активність' | 'значки' | 'ігри' | 'друзі' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди';
+  let activeTab = $state<TabId>('активність');
+  let activeVideoPost = $state<CommunityPost | null>(null);
 
   const profile = $derived($profileStore.profile);
   const friends = $derived($profileStore.friends);
@@ -24,8 +41,59 @@ import { onMount } from 'svelte';
   );
   const isLoading = $derived($profileStore.isLoading);
   const error = $derived($profileStore.error);
+  const userActivities = $derived(
+    profile ? ($activityStore.userActivities[profile.id.toLowerCase()] || []) : []
+  );
+
+  let userGifts = $state<NftGift[]>([]);
+  let isLoadingGifts = $state(false);
+  let selectedGiftForModal = $state<NftGift | null>(null);
+  let isGiftModalOpen = $state(false);
+
+  let publicTokenBalance = $state<number | null>(null);
+  let isLoadingPublicBalance = $state(false);
+
+  const publicLevelInfo = $derived(calculateProfileLevel(publicTokenBalance));
+
+  async function loadPublicTokenBalance() {
+    const addr = profile?.hardhatAddress || profile?.walletAddress;
+    if (!addr) {
+      publicTokenBalance = 0;
+      return;
+    }
+    isLoadingPublicBalance = true;
+    try {
+      publicTokenBalance = await getTdpBalanceHybrid(addr, false);
+    } catch {
+      publicTokenBalance = 0;
+    } finally {
+      isLoadingPublicBalance = false;
+    }
+  }
+
+  async function loadUserGifts() {
+    if (!profile?.id) return;
+    isLoadingGifts = true;
+    try {
+      userGifts = await getUserNftsHybrid(profile?.hardhatAddress || profile?.walletAddress, profile.id, false);
+    } catch (err) {
+      console.warn('[PublicProfileView] Error loading user gifts:', err);
+    } finally {
+      isLoadingGifts = false;
+    }
+  }
+
+  $effect(() => {
+    if (profile?.id) {
+      activityStore.loadUserActivities(profile.id);
+      loadUserGifts();
+      loadPublicTokenBalance();
+    }
+  });
 
   const menuItems: { id: TabId; label: string; count: (() => number | null) }[] = [
+    { id: 'активність', label: 'Активність', count: () => userActivities.length || null },
+    { id: 'значки', label: 'Значки', count: () => userGifts.length || null },
     { id: 'ігри', label: 'Ігри', count: () => profile?.gamesCount ?? null },
     { id: 'друзі', label: 'Друзі', count: () => uniqueFriends.length },
     { id: 'обговорення', label: 'Обговорення', count: () => null },
@@ -88,12 +156,7 @@ import { onMount } from 'svelte';
     if (!profile || isSendingRequest) return;
     isSendingRequest = true;
     try {
-      await friendsService.sendFriendRequest(profile.username);
-      uiStore.addToast({
-        title: 'Запит надіслано',
-        message: `Запит у друзі надіслано користувачеві ${profile.username}.`,
-        type: 'success',
-      });
+      await friendsStore.sendRequest(profile.username);
       profileStore.reload();
     } catch (e: any) {
       uiStore.addToast({
@@ -106,12 +169,114 @@ import { onMount } from 'svelte';
     }
   }
 
+  async function handleAcceptRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.requests.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const incomings = await friendsService.getFriendRequests('incoming');
+        reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.acceptRequest(reqId, profile.username);
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося прийняти запит.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  async function handleRejectRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.requests.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const incomings = await friendsService.getFriendRequests('incoming');
+        reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.rejectRequest(reqId, profile.username);
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося відхилити запит.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  async function handleCancelRequest() {
+    if (!profile || isSendingRequest) return;
+    isSendingRequest = true;
+    try {
+      let reqId = $friendsStore.outgoingRequests.find(r => r.receiverId === profile.id || r.receiverUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      if (!reqId) {
+        const outgoings = await friendsService.getFriendRequests('outgoing');
+        reqId = outgoings.find(r => r.receiverId === profile.id || r.receiverUsername.toLowerCase() === profile.username.toLowerCase())?.id;
+      }
+      if (reqId) {
+        await friendsStore.cancelRequest(reqId, profile.username);
+      } else {
+        throw new Error('Запит не знайдено');
+      }
+      profileStore.reload();
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: e?.message || 'Не вдалося скасувати запит у друзі.',
+        type: 'error',
+      });
+    } finally {
+      isSendingRequest = false;
+    }
+  }
+
+  function handleOpenChat() {
+    if (!profile?.id) return;
+    chatStore.selectConversation(profile.id);
+    uiStore.setTab('chat');
+  }
+
+  async function handleCopyProfileLink() {
+    if (!profile?.username) return;
+    try {
+      const url = `${window.location.origin}/#profile-${encodeURIComponent(profile.username)}`;
+      await navigator.clipboard.writeText(url);
+      uiStore.addToast({
+        title: 'Посилання скопійовано',
+        message: `Посилання на профіль ${profile.username} скопійовано в буфер обміну!`,
+        type: 'success',
+      });
+    } catch {
+      uiStore.addToast({
+        title: 'Помилка',
+        message: 'Не вдалося скопіювати посилання.',
+        type: 'error',
+      });
+    }
+  }
+
   function statusLabel(status?: number) {
+    if (profile?.isOwnProfile || profile?.id === $currentUser?.id) {
+      return { text: 'у мережі', color: 'text-emerald-400' };
+    }
     switch (status) {
-      case UserStatus.Online: return { text: 'онлайн', color: 'text-emerald-400' };
+      case UserStatus.Online: return { text: 'у мережі', color: 'text-emerald-400' };
       case UserStatus.InGame: return { text: 'у грі', color: 'text-cyan-400' };
       case UserStatus.Away: return { text: 'відійшов', color: 'text-amber-400' };
-      default: return { text: 'офлайн', color: 'text-slate-500' };
+      default: return { text: 'не в мережі', color: 'text-slate-500' };
     }
   }
 </script>
@@ -146,7 +311,7 @@ import { onMount } from 'svelte';
 
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
             {#if profile.avatarUrl}
-              <img src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
+              <BackendImage src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
             {:else}
               <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
                 {profile.username.charAt(0).toUpperCase()}
@@ -157,6 +322,11 @@ import { onMount } from 'svelte';
           <div class="pb-2">
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <h1 class="text-2xl font-bold text-white">{profile.username}</h1>
+              <ProfileLevelHexagon
+                level={publicLevelInfo.level}
+                size="sm"
+                title="Рівень {publicLevelInfo.level} ({publicLevelInfo.currentXp.toLocaleString('uk-UA')} XP)"
+              />
               {#if profile.isAdmin}
                 <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold uppercase">
                   Admin
@@ -182,9 +352,36 @@ import { onMount } from 'svelte';
                 <UserCheck class="w-4 h-4" /> У друзях
               </span>
             {:else if profile.friendshipStatus === 'pending'}
-              <span class="flex items-center gap-2 bg-slate-800/80 text-slate-300 border border-slate-700 px-5 py-2.5 rounded-full text-sm font-medium">
-                <Clock class="w-4 h-4" /> {profile.isIncomingRequest ? 'Запит вам' : 'Запит надіслано'}
-              </span>
+              {#if profile.isIncomingRequest}
+                <button
+                  type="button"
+                  onclick={handleAcceptRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Прийняти запит у друзі"
+                >
+                  <Check class="w-4 h-4" /> Прийняти
+                </button>
+                <button
+                  type="button"
+                  onclick={handleRejectRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Відхилити запит у друзі"
+                >
+                  <X class="w-4 h-4" /> Відхилити
+                </button>
+              {:else}
+                <button
+                  type="button"
+                  onclick={handleCancelRequest}
+                  disabled={isSendingRequest}
+                  class="flex items-center gap-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 px-4 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+                  title="Скасувати запит у друзі"
+                >
+                  <X class="w-4 h-4" /> Скасувати запит
+                </button>
+              {/if}
             {:else}
               <button
                 onclick={handleAddFriend}
@@ -195,21 +392,123 @@ import { onMount } from 'svelte';
                 {isSendingRequest ? 'Надсилання...' : 'Додати в друзі'}
               </button>
             {/if}
-            <button class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer" title="Написати повідомлення">
+            <button
+              type="button"
+              onclick={handleOpenChat}
+              class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer"
+              title="Написати повідомлення"
+            >
               <MessageSquare class="w-5 h-5" />
             </button>
-            <button class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer" title="Ще">
+            <button
+              type="button"
+              onclick={handleCopyProfileLink}
+              class="bg-[#0b4e63] hover:bg-[#0d627a] text-white p-2.5 rounded-full transition-colors cursor-pointer"
+              title="Скопіювати посилання на профіль"
+            >
               <MoreHorizontal class="w-5 h-5" />
             </button>
           </div>
         {/if}
       </div>
 
+      <div class="lg:hidden bg-[#03232c] border border-cyan-900/40 rounded-2xl p-3.5 mb-4">
+        <ProfileLevelCard tokens={publicTokenBalance} compact={true} />
+      </div>
+
+      <div class="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {#each menuItems as item}
+          <button
+            type="button"
+            onclick={() => activeTab = item.id}
+            class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer {activeTab === item.id ? 'bg-[#0b4e63] text-white shadow-md' : 'bg-[#03232c] text-slate-300 hover:text-white border border-cyan-900/40'}"
+          >
+            <span>{item.label}</span>
+            {#if item.count() !== null}
+              <span class="bg-[#02171d] px-1.5 py-0.5 rounded-full text-[10px] text-cyan-300 font-mono">{item.count()}</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
 
         <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
 
-          {#if activeTab === 'ігри'}
+          {#if activeTab === 'активність'}
+            {#if userActivities.length === 0}
+              <div class="text-center py-16 text-slate-500 text-sm">
+                У користувача поки немає записів активності.
+              </div>
+            {:else}
+              <div class="space-y-3">
+                {#each userActivities as act (act.id)}
+                  <ActivityCard activity={act} />
+                {/each}
+              </div>
+            {/if}
+
+          {:else if activeTab === 'значки'}
+            <div class="space-y-6">
+              <div class="flex items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+                    <Award class="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-black text-white flex items-center gap-2">
+                      Значки {profile.username}
+                      <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/60">
+                        {userGifts.length} значків
+                      </span>
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                      Колекція значків та нагород користувача
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onclick={loadUserGifts}
+                  disabled={isLoadingGifts}
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
+                >
+                  <RefreshCw class="w-3.5 h-3.5 {isLoadingGifts ? 'animate-spin' : ''}" />
+                  Оновити
+                </button>
+              </div>
+
+              {#if isLoadingGifts}
+                <div class="flex flex-col items-center justify-center py-16 gap-3 text-cyan-400">
+                  <Loader2 class="w-8 h-8 animate-spin" />
+                  <span class="text-sm font-semibold">Завантаження значків користувача...</span>
+                </div>
+              {:else if userGifts.length === 0}
+                <div class="text-center py-14 p-6 rounded-2xl bg-[#02171d] border border-cyan-900/30 space-y-3">
+                  <div class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 mx-auto flex items-center justify-center">
+                    <Award class="w-7 h-7" />
+                  </div>
+                  <h3 class="text-base font-bold text-white">У користувача ще немає значків</h3>
+                  <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Користувач {profile.username} поки не отримав значків.
+                  </p>
+                </div>
+              {:else}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {#each userGifts as gift (gift.id || gift.tokenId)}
+                    <BadgeCard
+                      {gift}
+                      onclick={(g) => {
+                        selectedGiftForModal = g;
+                        isGiftModalOpen = true;
+                      }}
+                    />
+                  {/each}
+                </div>
+              {/if}
+            </div>
+
+          {:else if activeTab === 'ігри'}
             {#if profile.libraryGames.length === 0 && profile.publishedGames.length === 0}
               <div class="text-center py-16 text-slate-500 text-sm">
                 У користувача поки немає ігор.
@@ -227,7 +526,7 @@ import { onMount } from 'svelte';
                           class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
                         >
                           {#if game.coverImageUrl}
-                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                            <BackendImage src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
                           {:else}
                             <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
                               {game.title}
@@ -260,7 +559,7 @@ import { onMount } from 'svelte';
                           class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
                         >
                           {#if game.coverImageUrl}
-                            <img src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
+                            <BackendImage src={game.coverImageUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
                           {:else}
                             <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
                               {game.title}
@@ -293,7 +592,7 @@ import { onMount } from 'svelte';
                     onclick={() => profileStore.viewProfile(f.id)}
                     class="flex items-center gap-3 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-600/60 transition-colors text-left cursor-pointer"
                   >
-                    <img src={f.avatarUrl || undefined} alt={f.username} class="w-10 h-10 rounded-full object-cover bg-slate-800" />
+                    <BackendImage src={f.avatarUrl} alt={f.username} class="w-10 h-10 rounded-full object-cover bg-slate-800" />
                     <span class="text-sm font-bold text-slate-200 truncate">{f.username}</span>
                   </button>
                 {/each}
@@ -314,7 +613,7 @@ import { onMount } from 'svelte';
                       <span class="text-xs text-slate-500">{formatDate(post.createdAt)}</span>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                    <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{post.content}</p>
+                    <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                     {#if post.media?.type === 'image' && post.media.url}
                       <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                     {/if}
@@ -358,16 +657,33 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {#each videoPosts as post (post.id)}
-                  <div class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800">
+                  <button
+                    type="button"
+                    onclick={() => (activeVideoPost = post)}
+                    class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  >
                     {#if post.media?.thumbnailUrl || post.media?.url}
                       <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     {/if}
-                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-5 h-5 text-black ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
+                      <div class="self-end">
+                        <span class="text-[10px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded backdrop-blur-sm">
+                          HD
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-center my-auto">
+                        <div class="w-12 h-12 bg-cyan-400/90 text-black group-hover:bg-cyan-300 group-hover:scale-110 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all">
+                          <svg class="w-6 h-6 ml-0.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                      </div>
+                      <div class="truncate">
+                        <p class="text-xs font-bold text-white truncate drop-shadow-md">{post.title || 'Відео'}</p>
+                        {#if post.gameTitle}
+                          <p class="text-[10px] text-cyan-300/80 truncate">{post.gameTitle}</p>
+                        {/if}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
             {/if}
@@ -391,7 +707,7 @@ import { onMount } from 'svelte';
                       {/if}
                       <div>
                         <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                        <p class="text-sm text-slate-400 line-clamp-3 whitespace-pre-line">{post.content}</p>
+                        <p class="text-sm text-slate-400 line-clamp-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       </div>
                     </div>
                     <div class="flex gap-4 text-xs font-medium text-slate-400">
@@ -412,7 +728,12 @@ import { onMount } from 'svelte';
 
         <div class="space-y-6">
 
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+          <div class="hidden lg:block bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+
+            <div class="px-2 pb-3.5 mb-3 border-b border-cyan-900/40">
+              <ProfileLevelCard tokens={publicTokenBalance} />
+            </div>
+
             <div class="flex items-center gap-3 px-4 mb-4">
               <span class="text-base font-medium">Приєднався</span>
               <span class="text-xs text-slate-400 font-mono">{formatDate(profile.createdAt)}</span>
@@ -467,3 +788,19 @@ import { onMount } from 'svelte';
   {/if}
 </div>
 
+<VideoPlayerModal
+  isOpen={!!activeVideoPost}
+  videoUrl={activeVideoPost?.media?.url || ''}
+  title={activeVideoPost?.title || 'Відео'}
+  gameTitle={activeVideoPost?.gameTitle || ''}
+  authorUsername={profile?.username || ''}
+  authorAvatarUrl={profile?.avatarUrl || ''}
+  createdAt={activeVideoPost?.createdAt || ''}
+  onClose={() => (activeVideoPost = null)}
+/>
+
+<BadgeDetailModal
+  gift={selectedGiftForModal}
+  isOpen={isGiftModalOpen}
+  onClose={() => (isGiftModalOpen = false)}
+/>

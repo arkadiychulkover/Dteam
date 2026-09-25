@@ -52,9 +52,10 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+                Genres = d.Genres ?? new List<string>(),
+                Platforms = d.Platforms ?? new List<string>(),
+                Features = d.Features ?? new List<string>(),
+                SupportedLanguages = d.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -66,9 +67,10 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+            Genres = game.Genres ?? new List<string>(),
+            Platforms = game.Platforms ?? new List<string>(),
+            Features = game.Features ?? new List<string>(),
+            SupportedLanguages = game.SupportedLanguages ?? new List<GameLanguageSupport>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -111,13 +113,13 @@ namespace DteamBackend.Controllers
                     (g.ShortDescription != null && g.ShortDescription.ToLower().Contains(s)) ||
                     g.Description.ToLower().Contains(s) ||
                     g.Tags.Any(t => t.ToLower().Contains(s)) ||
-                    g.Genres.Any(gen => gen.ToString().ToLower().Contains(s)));
+                    g.Genres.Any(gen => gen.ToLower().Contains(s)));
             }
 
             if (!string.IsNullOrWhiteSpace(genre) && genre != "All Games" && genre != "Все")
             {
                 var gLower = genre.Trim().ToLower();
-                query = query.Where(g => g.Genres.Any(gen => gen.ToString().ToLower() == gLower) || g.Tags.Any(t => t.ToLower() == gLower));
+                query = query.Where(g => g.Genres.Any(gen => gen.ToLower() == gLower) || g.Tags.Any(t => t.ToLower() == gLower));
             }
 
             if (isDlc.HasValue)
@@ -147,13 +149,13 @@ namespace DteamBackend.Controllers
             if (!string.IsNullOrWhiteSpace(platform))
             {
                 var pLower = platform.Trim().ToLower();
-                query = query.Where(g => g.Platforms.Any(p => p.ToString().ToLower() == pLower));
+                query = query.Where(g => g.Platforms.Any(p => p.ToLower() == pLower));
             }
 
             if (!string.IsNullOrWhiteSpace(feature))
             {
                 var fLower = feature.Trim().ToLower();
-                query = query.Where(g => g.Features.Any(f => f.ToString().ToLower() == fLower));
+                query = query.Where(g => g.Features.Any(f => f.ToLower() == fLower));
             }
 
             if (!string.IsNullOrWhiteSpace(tag))
@@ -178,18 +180,78 @@ namespace DteamBackend.Controllers
             return Ok(games.Select(MapToGameDto));
         }
 
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(GameDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<GameDto>> GetGameById(Guid id)
+        {
+            var game = await _context.Games
+                .Include(g => g.Owner)
+                .Include(g => g.ParentGame)
+                .Include(g => g.Dlcs)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == id && g.IsPublished);
+
+            if (game == null)
+            {
+                return NotFound(new { message = $"Игра с ID '{id}' не найдена" });
+            }
+
+            return Ok(MapToGameDto(game));
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+        }
+
         [HttpGet("{id:guid}/reviews")]
         [ProducesResponseType(typeof(IEnumerable<ReviewDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ReviewDto>>> GetGameReviews(Guid id)
         {
-            var reviews = await _context.Reviews
+            var currentUserId = GetCurrentUserId();
+            var currentUserIdStr = currentUserId != Guid.Empty ? currentUserId.ToString() : null;
+
+            var allReviews = await _context.Reviews
                 .Include(r => r.User)
                 .AsNoTracking()
                 .Where(r => r.GameId == id)
-                .OrderByDescending(r => r.CreatedAt)
-                .Select(r => new ReviewDto
+                .OrderBy(r => r.CreatedAt)
+                .ToListAsync();
+
+            var reviewMap = allReviews.ToDictionary(r => r.Id);
+
+            var repliesByRootId = new Dictionary<Guid, List<Review>>();
+            var topLevelReviews = allReviews.Where(r => !r.ParentReviewId.HasValue).OrderByDescending(r => r.CreatedAt).ToList();
+
+            foreach (var top in topLevelReviews)
+            {
+                repliesByRootId[top.Id] = new List<Review>();
+            }
+
+            foreach (var reply in allReviews.Where(r => r.ParentReviewId.HasValue))
+            {
+                var curr = reply;
+                while (curr.ParentReviewId.HasValue && reviewMap.ContainsKey(curr.ParentReviewId.Value))
+                {
+                    curr = reviewMap[curr.ParentReviewId.Value];
+                }
+                if (repliesByRootId.ContainsKey(curr.Id))
+                {
+                    repliesByRootId[curr.Id].Add(reply);
+                }
+            }
+
+            var result = topLevelReviews.Select(r =>
+            {
+                var replies = repliesByRootId.GetValueOrDefault(r.Id, new List<Review>());
+                return new ReviewDto
                 {
                     Id = r.Id,
+                    ParentReviewId = r.ParentReviewId,
                     UserId = r.UserId,
                     Username = r.User != null ? r.User.Username : "Анонім",
                     UserAvatarUrl = r.User != null ? r.User.AvatarUrl : null,
@@ -198,12 +260,141 @@ namespace DteamBackend.Controllers
                     Content = r.Content,
                     IsRecommended = r.IsRecommended,
                     PlayTimeHoursAtReview = r.PlayTimeHoursAtReview,
+                    LikesCount = r.LikedByUsers?.Count ?? r.LikesCount,
+                    IsLiked = currentUserIdStr != null && (r.LikedByUsers?.Contains(currentUserIdStr) ?? false),
+                    RepliesCount = replies.Count,
+                    Replies = replies.OrderBy(rp => rp.CreatedAt).Select(rp =>
+                    {
+                        ReviewParentInfoDto? parentInfo = null;
+                        if (rp.ParentReviewId.HasValue && reviewMap.TryGetValue(rp.ParentReviewId.Value, out var pReview))
+                        {
+                            parentInfo = new ReviewParentInfoDto
+                            {
+                                Id = pReview.Id,
+                                UserId = pReview.UserId,
+                                Username = pReview.User != null ? pReview.User.Username : "Користувач",
+                                UserAvatarUrl = pReview.User?.AvatarUrl,
+                                Content = pReview.Content
+                            };
+                        }
+
+                        return new ReviewDto
+                        {
+                            Id = rp.Id,
+                            ParentReviewId = rp.ParentReviewId,
+                            UserId = rp.UserId,
+                            Username = rp.User != null ? rp.User.Username : "Анонім",
+                            UserAvatarUrl = rp.User != null ? rp.User.AvatarUrl : null,
+                            GameId = rp.GameId,
+                            Rating = rp.Rating,
+                            Content = rp.Content,
+                            IsRecommended = rp.IsRecommended,
+                            PlayTimeHoursAtReview = rp.PlayTimeHoursAtReview,
+                            LikesCount = rp.LikedByUsers?.Count ?? rp.LikesCount,
+                            IsLiked = currentUserIdStr != null && (rp.LikedByUsers?.Contains(currentUserIdStr) ?? false),
+                            ParentReview = parentInfo,
+                            CreatedAt = rp.CreatedAt,
+                            UpdatedAt = rp.UpdatedAt
+                        };
+                    }).ToList(),
                     CreatedAt = r.CreatedAt,
                     UpdatedAt = r.UpdatedAt
-                })
+                };
+            }).ToList();
+
+            return Ok(result);
+        }
+
+        [HttpGet("{id:guid}/reviews/{reviewId:guid}")]
+        [ProducesResponseType(typeof(ReviewDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ReviewDto>> GetReviewDetails(Guid id, Guid reviewId)
+        {
+            var currentUserId = GetCurrentUserId();
+            var currentUserIdStr = currentUserId != Guid.Empty ? currentUserId.ToString() : null;
+
+            var allReviews = await _context.Reviews
+                .Include(r => r.User)
+                .AsNoTracking()
+                .Where(r => r.GameId == id)
+                .OrderBy(r => r.CreatedAt)
                 .ToListAsync();
 
-            return Ok(reviews);
+            var reviewMap = allReviews.ToDictionary(r => r.Id);
+            if (!reviewMap.TryGetValue(reviewId, out var targetReview))
+            {
+                return NotFound(new { message = "Відгук не знайдено." });
+            }
+
+            var threadReplies = new List<Review>();
+            foreach (var r in allReviews.Where(r => r.ParentReviewId.HasValue))
+            {
+                var curr = r;
+                while (curr.ParentReviewId.HasValue && reviewMap.ContainsKey(curr.ParentReviewId.Value))
+                {
+                    if (curr.ParentReviewId.Value == reviewId)
+                    {
+                        threadReplies.Add(r);
+                        break;
+                    }
+                    curr = reviewMap[curr.ParentReviewId.Value];
+                }
+            }
+
+            var dto = new ReviewDto
+            {
+                Id = targetReview.Id,
+                ParentReviewId = targetReview.ParentReviewId,
+                UserId = targetReview.UserId,
+                Username = targetReview.User != null ? targetReview.User.Username : "Анонім",
+                UserAvatarUrl = targetReview.User != null ? targetReview.User.AvatarUrl : null,
+                GameId = targetReview.GameId,
+                Rating = targetReview.Rating,
+                Content = targetReview.Content,
+                IsRecommended = targetReview.IsRecommended,
+                PlayTimeHoursAtReview = targetReview.PlayTimeHoursAtReview,
+                LikesCount = targetReview.LikedByUsers?.Count ?? targetReview.LikesCount,
+                IsLiked = currentUserIdStr != null && (targetReview.LikedByUsers?.Contains(currentUserIdStr) ?? false),
+                RepliesCount = threadReplies.Count,
+                Replies = threadReplies.OrderBy(rp => rp.CreatedAt).Select(rp =>
+                {
+                    ReviewParentInfoDto? parentInfo = null;
+                    if (rp.ParentReviewId.HasValue && reviewMap.TryGetValue(rp.ParentReviewId.Value, out var pReview))
+                    {
+                        parentInfo = new ReviewParentInfoDto
+                        {
+                            Id = pReview.Id,
+                            UserId = pReview.UserId,
+                            Username = pReview.User != null ? pReview.User.Username : "Користувач",
+                            UserAvatarUrl = pReview.User?.AvatarUrl,
+                            Content = pReview.Content
+                        };
+                    }
+
+                    return new ReviewDto
+                    {
+                        Id = rp.Id,
+                        ParentReviewId = rp.ParentReviewId,
+                        UserId = rp.UserId,
+                        Username = rp.User != null ? rp.User.Username : "Анонім",
+                        UserAvatarUrl = rp.User != null ? rp.User.AvatarUrl : null,
+                        GameId = rp.GameId,
+                        Rating = rp.Rating,
+                        Content = rp.Content,
+                        IsRecommended = rp.IsRecommended,
+                        PlayTimeHoursAtReview = rp.PlayTimeHoursAtReview,
+                        LikesCount = rp.LikedByUsers?.Count ?? rp.LikesCount,
+                        IsLiked = currentUserIdStr != null && (rp.LikedByUsers?.Contains(currentUserIdStr) ?? false),
+                        ParentReview = parentInfo,
+                        CreatedAt = rp.CreatedAt,
+                        UpdatedAt = rp.UpdatedAt
+                    };
+                }).ToList(),
+                CreatedAt = targetReview.CreatedAt,
+                UpdatedAt = targetReview.UpdatedAt
+            };
+
+            return Ok(dto);
         }
 
         [Authorize]
@@ -213,12 +404,10 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ReviewDto>> PostReview(Guid id, [FromBody] CreateReviewDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                           ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
             {
-                return Unauthorized(new { message = "Потрібна авторизація для публікації рецензії." });
+                return Unauthorized(new { message = "Потрібна авторизація для публікації рецензії або коментаря." });
             }
 
             var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id && g.IsPublished);
@@ -227,13 +416,78 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Гру не знайдено." });
             }
 
-            var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id);
+            Review savedReview;
+
+            if (dto.ParentReviewId.HasValue && dto.ParentReviewId.Value != Guid.Empty)
+            {
+                var parentReview = await _context.Reviews
+                    .Include(r => r.User)
+                    .FirstOrDefaultAsync(r => r.Id == dto.ParentReviewId.Value && r.GameId == id);
+
+                if (parentReview == null)
+                {
+                    return NotFound(new { message = "Батьківський відгук або коментар не знайдено." });
+                }
+
+                var newReply = new Review
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    GameId = id,
+                    ParentReviewId = parentReview.Id,
+                    Rating = parentReview.Rating,
+                    Content = dto.Content.Trim(),
+                    IsRecommended = parentReview.IsRecommended,
+                    PlayTimeHoursAtReview = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    LikesCount = 0,
+                    LikedByUsers = new List<string>()
+                };
+
+                await _context.Reviews.AddAsync(newReply);
+                await _context.SaveChangesAsync();
+
+                savedReview = (await _context.Reviews
+                    .Include(r => r.User)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.Id == newReply.Id))!;
+
+                return Ok(new ReviewDto
+                {
+                    Id = savedReview.Id,
+                    ParentReviewId = savedReview.ParentReviewId,
+                    UserId = savedReview.UserId,
+                    Username = savedReview.User?.Username ?? "Користувач",
+                    UserAvatarUrl = savedReview.User?.AvatarUrl,
+                    GameId = savedReview.GameId,
+                    Rating = savedReview.Rating,
+                    Content = savedReview.Content,
+                    IsRecommended = savedReview.IsRecommended,
+                    PlayTimeHoursAtReview = savedReview.PlayTimeHoursAtReview,
+                    LikesCount = 0,
+                    IsLiked = false,
+                    RepliesCount = 0,
+                    ParentReview = new ReviewParentInfoDto
+                    {
+                        Id = parentReview.Id,
+                        UserId = parentReview.UserId,
+                        Username = parentReview.User?.Username ?? "Користувач",
+                        UserAvatarUrl = parentReview.User?.AvatarUrl,
+                        Content = parentReview.Content
+                    },
+                    CreatedAt = savedReview.CreatedAt,
+                    UpdatedAt = savedReview.UpdatedAt
+                });
+            }
+
+            var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id && !r.ParentReviewId.HasValue);
             if (existingReview != null)
             {
                 existingReview.Rating = Math.Clamp(dto.Rating, 1, 5);
                 existingReview.Content = dto.Content.Trim();
                 existingReview.IsRecommended = dto.IsRecommended;
                 existingReview.UpdatedAt = DateTime.UtcNow;
+                savedReview = existingReview;
             }
             else
             {
@@ -242,40 +496,107 @@ namespace DteamBackend.Controllers
                     Id = Guid.NewGuid(),
                     UserId = userId,
                     GameId = id,
+                    ParentReviewId = null,
                     Rating = Math.Clamp(dto.Rating, 1, 5),
                     Content = dto.Content.Trim(),
                     IsRecommended = dto.IsRecommended,
                     PlayTimeHoursAtReview = 0,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    LikesCount = 0,
+                    LikedByUsers = new List<string>()
                 };
                 await _context.Reviews.AddAsync(newReview);
+                savedReview = newReview;
             }
 
             await _context.SaveChangesAsync();
 
-            var allReviews = await _context.Reviews.Where(r => r.GameId == id).ToListAsync();
-            game.ReviewsCount = allReviews.Count;
-            game.AverageRating = allReviews.Count > 0 ? Math.Round(allReviews.Average(r => (double)r.Rating), 1) : 5.0;
+            var topReviews = await _context.Reviews.Where(r => r.GameId == id && !r.ParentReviewId.HasValue).ToListAsync();
+            game.ReviewsCount = topReviews.Count;
+            game.AverageRating = topReviews.Count > 0 ? Math.Round(topReviews.Average(r => (double)r.Rating), 1) : 5.0;
             await _context.SaveChangesAsync();
 
-            var savedReview = await _context.Reviews
+            var reloaded = await _context.Reviews
                 .Include(r => r.User)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == id);
+                .FirstOrDefaultAsync(r => r.Id == savedReview.Id);
 
+            var userIdStr = userId.ToString();
             return Ok(new ReviewDto
             {
-                Id = savedReview!.Id,
-                UserId = savedReview.UserId,
-                Username = savedReview.User.Username,
-                UserAvatarUrl = savedReview.User.AvatarUrl,
-                GameId = savedReview.GameId,
-                Rating = savedReview.Rating,
-                Content = savedReview.Content,
-                IsRecommended = savedReview.IsRecommended,
-                PlayTimeHoursAtReview = savedReview.PlayTimeHoursAtReview,
-                CreatedAt = savedReview.CreatedAt,
-                UpdatedAt = savedReview.UpdatedAt
+                Id = reloaded!.Id,
+                ParentReviewId = reloaded.ParentReviewId,
+                UserId = reloaded.UserId,
+                Username = reloaded.User?.Username ?? "Користувач",
+                UserAvatarUrl = reloaded.User?.AvatarUrl,
+                GameId = reloaded.GameId,
+                Rating = reloaded.Rating,
+                Content = reloaded.Content,
+                IsRecommended = reloaded.IsRecommended,
+                PlayTimeHoursAtReview = reloaded.PlayTimeHoursAtReview,
+                LikesCount = reloaded.LikedByUsers?.Count ?? reloaded.LikesCount,
+                IsLiked = reloaded.LikedByUsers?.Contains(userIdStr) ?? false,
+                RepliesCount = await _context.Reviews.CountAsync(r => r.ParentReviewId == reloaded.Id),
+                CreatedAt = reloaded.CreatedAt,
+                UpdatedAt = reloaded.UpdatedAt
+            });
+        }
+
+        [Authorize]
+        [HttpPost("{id:guid}/reviews/{reviewId:guid}/comments")]
+        [ProducesResponseType(typeof(ReviewDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ReviewDto>> PostReviewComment(Guid id, Guid reviewId, [FromBody] CreateReviewCommentDto dto)
+        {
+            return await PostReview(id, new CreateReviewDto
+            {
+                ParentReviewId = reviewId,
+                Content = dto.Content,
+                Rating = 5,
+                IsRecommended = true
+            });
+        }
+
+        [Authorize]
+        [HttpPost("{id:guid}/reviews/{reviewId:guid}/like")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ToggleLikeReview(Guid id, Guid reviewId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Потрібна авторизація." });
+            }
+
+            var review = await _context.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.GameId == id);
+            if (review == null)
+            {
+                return NotFound(new { message = "Відгук або коментар не знайдено." });
+            }
+
+            var userIdStr = userId.ToString();
+            bool liked;
+            if (review.LikedByUsers.Contains(userIdStr))
+            {
+                review.LikedByUsers.Remove(userIdStr);
+                liked = false;
+            }
+            else
+            {
+                review.LikedByUsers.Add(userIdStr);
+                liked = true;
+            }
+
+            review.LikesCount = review.LikedByUsers.Count;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                liked,
+                likesCount = review.LikesCount
             });
         }
 
@@ -319,12 +640,12 @@ namespace DteamBackend.Controllers
                 return BadRequest(new { message = "Размер файла превышает 20 МБ." });
             }
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
             if (!allowedExtensions.Contains(extension))
             {
-                return BadRequest(new { message = "Недопустимый формат файла. Разрешены форматы: .jpg, .jpeg, .png, .webp, .gif, .svg" });
+                return BadRequest(new { message = "Недопустимый формат файла. Разрешены форматы: .jpg, .jpeg, .png, .webp, .gif" });
             }
 
             var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -353,6 +674,70 @@ namespace DteamBackend.Controllers
                 message = "Изображение успешно загружено"
             });
         }
+
+        private bool IsCurrentUserAdmin()
+        {
+            return User.IsInRole("Admin") || User.HasClaim(ClaimTypes.Role, "Admin");
+        }
+
+        [HttpGet("{id:guid}/download")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DownloadGame(Guid id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var game = await _context.Games
+                .Include(g => g.Owner)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (game == null)
+            {
+                return NotFound(new { message = "Гру не знайдено." });
+            }
+
+            var isAdmin = IsCurrentUserAdmin();
+            var isOwner = game.OwnerId == userId;
+            var isOwned = await _context.UserGames.AnyAsync(ug => ug.UserId == userId && ug.GameId == id);
+
+            if (!isAdmin && !isOwner && !isOwned)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Для завантаження цієї гри необхідно її придбати." });
+            }
+
+            var safeTitle = string.Join("_", game.Title.Split(Path.GetInvalidFileNameChars()));
+            if (string.IsNullOrWhiteSpace(safeTitle)) safeTitle = "game";
+
+            var webRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
+            string? physicalPath = null;
+
+            if (!string.IsNullOrWhiteSpace(game.ServerArchivePath))
+            {
+                var cleanPath = game.ServerArchivePath.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar);
+                var candidate = Path.GetFullPath(Path.Combine(webRoot, cleanPath));
+
+                if (candidate.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(candidate))
+                {
+                    physicalPath = candidate;
+                }
+            }
+
+            if (physicalPath == null || !System.IO.File.Exists(physicalPath))
+            {
+                return NotFound(new { message = "Файл білду для цієї гри наразі відсутній або ще не завантажений розробником на сервер." });
+            }
+
+            game.DownloadCount += 1;
+            await _context.SaveChangesAsync();
+
+            return PhysicalFile(physicalPath, "application/zip", $"{safeTitle}.zip", enableRangeProcessing: true);
+        }
     }
 }
-

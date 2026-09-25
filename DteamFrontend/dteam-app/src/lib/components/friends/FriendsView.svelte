@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import {
     ArrowLeft,
     UserPlus,
@@ -13,23 +13,31 @@ import { onMount } from 'svelte';
     UserMinus,
     Ban,
     Users,
+    User,
+    Activity,
     MessageSquare,
     Loader2,
     Copy,
     Fingerprint
   } from 'lucide-svelte';
+  import { profileStore } from '../../stores/profileStore';
   import { uiStore } from '../../stores/uiStore';
   import { friendsStore } from '../../stores/friendsStore';
+  import { chatStore } from '../../stores/chatStore';
   import { currentUser } from '../../stores/authStore';
   import { UserStatus } from '../../types';
   import type { FriendDto, FriendRequestDto } from '../../types/friend';
   import AddFriendModal from './AddFriendModal.svelte';
+  import FriendsActivityFeed from '../activity/FriendsActivityFeed.svelte';
+  import { activityStore } from '../../stores/activityStore';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let isIdCopied = $state(false);
 
-  type ActiveFriendTab = 'all' | 'online' | 'blocked' | 'requests';
+  type ActiveFriendTab = 'all' | 'online' | 'activity' | 'blocked' | 'requests';
 
   let activeTab = $state<ActiveFriendTab>('all');
+  let requestSubTab = $state<'incoming' | 'outgoing'>('incoming');
   let searchQuery = $state('');
   let searchByGame = $state(false);
   let isAddFriendOpen = $state(false);
@@ -37,6 +45,7 @@ import { onMount } from 'svelte';
 
   const friends = $derived($friendsStore.friends);
   const requests = $derived($friendsStore.requests);
+  const outgoingRequests = $derived($friendsStore.outgoingRequests || []);
   const blocked = $derived($friendsStore.blocked);
   const isLoading = $derived($friendsStore.isLoading);
 
@@ -44,17 +53,27 @@ import { onMount } from 'svelte';
     friends.filter(f => f.status === UserStatus.Online || f.status === UserStatus.InGame)
   );
 
+  let selectedGameFilter = $state<string | 'all'>('all');
+
+  const distinctPlayingGames = $derived.by(() => {
+    const set = new Set<string>();
+    friends.forEach((f) => {
+      if (f.currentGame) set.add(f.currentGame);
+    });
+    return Array.from(set);
+  });
+
   const filteredFriends = $derived.by(() => {
     let list = activeTab === 'online' ? onlineFriends : friends;
+    if (selectedGameFilter !== 'all') {
+      list = list.filter((f) => f.currentGame === selectedGameFilter);
+    }
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter(f =>
         f.username.toLowerCase().includes(q) ||
-        (searchByGame && f.currentGame?.toLowerCase().includes(q))
+        (f.currentGame?.toLowerCase().includes(q) ?? false)
       );
-    }
-    if (searchByGame && !q) {
-      list = list.filter(f => Boolean(f.currentGame));
     }
     return list;
   });
@@ -71,14 +90,14 @@ import { onMount } from 'svelte';
     return requests.filter(r => r.senderUsername.toLowerCase().includes(q));
   });
 
-  onMount(() => {
-    friendsStore.loadAll();
+  const filteredOutgoingRequests = $derived.by(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return outgoingRequests;
+    return outgoingRequests.filter(r => r.receiverUsername.toLowerCase().includes(q));
   });
 
-  $effect(() => {
-    if ($currentUser?.id) {
-      friendsStore.loadAll();
-    }
+  onMount(() => {
+    friendsStore.loadAll();
   });
 
   function getStatusDotColor(status: UserStatus): string {
@@ -91,7 +110,6 @@ import { onMount } from 'svelte';
     if (status === UserStatus.InGame) return currentGame ? `Грає в ${currentGame}` : 'У грі';
     if (status === UserStatus.Online) return 'У мережі';
     if (status === UserStatus.Away) return 'Відійшов';
-    if (status === UserStatus.Busy) return 'Зайнятий';
     return 'Не в мережі';
   }
 
@@ -207,6 +225,23 @@ import { onMount } from 'svelte';
     </button>
 
     <button
+      onclick={() => activeTab = 'activity'}
+      class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
+        {activeTab === 'activity'
+          ? 'text-white border-b-2 border-[#0df2c9]'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'}"
+    >
+      <Activity class="w-3.5 h-3.5 {activeTab === 'activity' ? 'text-[#0df2c9]' : 'text-slate-400'}" />
+      <span>Активність</span>
+      {#if $activityStore.friendsActivities.length > 0}
+        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black
+          {activeTab === 'activity' ? 'bg-[#0a3542] text-[#0df2c9]' : 'bg-[#061d24] text-slate-400'}">
+          {$activityStore.friendsActivities.length}
+        </span>
+      {/if}
+    </button>
+
+    <button
       onclick={() => activeTab = 'blocked'}
       class="flex items-center gap-2 pb-2.5 transition-all cursor-pointer font-bold shrink-0 relative
         {activeTab === 'blocked'
@@ -230,66 +265,75 @@ import { onMount } from 'svelte';
       <span>Поточні запити</span>
       <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black
         {activeTab === 'requests' ? 'bg-[#0a3542] text-[#0df2c9]' : 'bg-[#061d24] text-slate-400'}">
-        {requests.length}
+        {requests.length + outgoingRequests.length}
       </span>
     </button>
   </div>
 
   <div class="space-y-3 mb-6">
     {#if activeTab === 'all' || activeTab === 'online'}
-      <div class="flex items-center gap-2">
-        <label class="flex items-center gap-2 text-xs font-semibold text-slate-400 cursor-pointer select-none">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div class="relative flex-1">
           <input
-            type="checkbox"
-            bind:checked={searchByGame}
-            class="w-4 h-4 rounded-md border-cyan-500/30 bg-[#062029] text-cyan-400 focus:ring-0 focus:outline-none accent-[#0df2c9]"
+            type="text"
+            placeholder="Пошук за нікнеймом або назвою гри..."
+            bind:value={searchQuery}
+            class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs sm:text-sm text-white focus:outline-none focus:border-[#0df2c9] transition-colors"
           />
-          <span class="flex items-center gap-1 hover:text-cyan-300 transition-colors">
-            Пошук за грою
-            <ChevronDown class="w-3.5 h-3.5 text-slate-500" />
-          </span>
-        </label>
+          <Search class="w-4 h-4 text-cyan-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {#if searchQuery}
+            <button
+              type="button"
+              onclick={() => searchQuery = ''}
+              class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          {/if}
+        </div>
+
+        {#if distinctPlayingGames.length > 0}
+          <div class="relative shrink-0">
+            <select
+              bind:value={selectedGameFilter}
+              class="px-3.5 py-2.5 rounded-2xl bg-[#04151b] border border-cyan-500/20 text-xs font-bold text-cyan-300 focus:outline-none focus:border-[#0df2c9] cursor-pointer"
+            >
+              <option value="all">Усі ігри ({friends.length})</option>
+              {#each distinctPlayingGames as gName}
+                <option value={gName}>Грає в: {gName}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
       </div>
     {/if}
-
-    <div class="relative">
-      <input
-        type="text"
-        bind:value={searchQuery}
-        placeholder="Пошук за нікнеймом"
-        class="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-[#062029] border border-cyan-500/20 focus:border-[#0df2c9] focus:shadow-[0_0_12px_rgba(13,242,201,0.2)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all"
-      />
-      {#if searchQuery}
-        <button
-          onclick={() => searchQuery = ''}
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
-        >
-          <X class="w-3.5 h-3.5" />
-        </button>
-      {/if}
-    </div>
   </div>
 
   {#if isLoading}
-    <div class="py-16 text-center text-slate-400 flex flex-col items-center gap-3">
-      <Loader2 class="w-6 h-6 animate-spin text-[#0df2c9]" />
-      <span class="text-xs">Завантаження друзів...</span>
+    <div class="p-12 text-center">
+      <Loader2 class="w-8 h-8 mx-auto text-cyan-400 animate-spin" />
     </div>
 
   {:else if activeTab === 'all' || activeTab === 'online'}
     <div class="space-y-2.5">
       {#each filteredFriends as friend (friend.id)}
         <div class="relative flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 hover:border-cyan-500/35 transition-all group">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="relative w-11 h-11 rounded-full shrink-0 select-none">
+
+          <button
+            type="button"
+            onclick={() => profileStore.viewProfile(friend.id)}
+            class="flex items-center gap-3 min-w-0 text-left cursor-pointer group/user flex-1"
+            title="Переглянути профіль {friend.username}"
+          >
+            <div class="relative w-11 h-11 rounded-full shrink-0 select-none group-hover/user:scale-105 transition-transform">
               {#if friend.avatarUrl}
-                <img
+                <BackendImage
                   src={friend.avatarUrl}
                   alt={friend.username}
-                  class="w-full h-full rounded-full object-cover border border-cyan-500/30"
+                  class="w-full h-full rounded-full object-cover border border-cyan-500/30 group-hover/user:border-cyan-400"
                 />
               {:else}
-                <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white font-black text-sm">
+                <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white font-black text-sm group-hover/user:border group-hover/user:border-cyan-400">
                   {friend.username.charAt(0).toUpperCase()}
                 </div>
               {/if}
@@ -298,16 +342,28 @@ import { onMount } from 'svelte';
             </div>
 
             <div class="min-w-0">
-              <span class="block text-sm font-bold text-white truncate max-w-[200px] sm:max-w-[280px]">
+              <span class="block text-sm font-bold text-white group-hover/user:text-cyan-300 transition-colors truncate max-w-[200px] sm:max-w-[280px]">
                 {friend.username}
               </span>
               <span class="block text-[10px] text-slate-400 truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
                 {getStatusLabel(friend.status, friend.currentGame)}
               </span>
             </div>
-          </div>
+          </button>
 
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onclick={() => {
+                chatStore.selectConversation(friend.id);
+                uiStore.setTab('chat');
+              }}
+              class="p-2 text-cyan-400 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition-all cursor-pointer shadow-sm"
+              title="Написати повідомлення"
+            >
+              <MessageSquare class="w-4 h-4" />
+            </button>
+
             <div class="relative w-7 h-7 flex items-center justify-center select-none" title="Рівень гравця: {friend.level ?? 0}">
               <svg viewBox="0 0 24 24" class="w-full h-full fill-[#041920] stroke-[#0df2c9] stroke-[2]">
                 <polygon points="12,2 22,7.5 22,17.5 12,23 2,17.5 2,7.5" />
@@ -329,6 +385,13 @@ import { onMount } from 'svelte';
 
               {#if activeMenuFriendId === friend.id}
                 <div class="absolute right-0 mt-2 w-48 bg-[#091f28] border border-cyan-500/30 rounded-2xl shadow-2xl p-1.5 z-30 animate-in fade-in zoom-in-95">
+                  <button
+                    onclick={() => { profileStore.viewProfile(friend.id); activeMenuFriendId = null; }}
+                    class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 font-semibold cursor-pointer mb-0.5"
+                  >
+                    <User class="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Переглянути профіль</span>
+                  </button>
                   <button
                     onclick={() => friendsStore.blockUser(friend)}
                     class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-amber-500/10 text-amber-300 font-semibold cursor-pointer"
@@ -361,6 +424,9 @@ import { onMount } from 'svelte';
       {/each}
     </div>
 
+  {:else if activeTab === 'activity'}
+    <FriendsActivityFeed />
+
   {:else if activeTab === 'blocked'}
     <div class="space-y-2.5">
       {#each filteredBlocked as b (b.id)}
@@ -368,7 +434,7 @@ import { onMount } from 'svelte';
           <div class="flex items-center gap-3">
             <div class="relative w-10 h-10 rounded-full shrink-0">
               {#if b.avatarUrl}
-                <img src={b.avatarUrl} alt={b.username} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                <BackendImage src={b.avatarUrl} alt={b.username} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
               {:else}
                 <div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">
                   {b.username.charAt(0).toUpperCase()}
@@ -398,61 +464,134 @@ import { onMount } from 'svelte';
     </div>
 
   {:else if activeTab === 'requests'}
-    <div class="space-y-2.5">
-      {#each filteredRequests as req (req.id)}
-        <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="relative w-10 h-10 rounded-full shrink-0">
-              {#if req.senderAvatarUrl}
-                <img src={req.senderAvatarUrl} alt={req.senderUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
-              {:else}
-                <div class="w-full h-full rounded-full bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
-                  {req.senderUsername.charAt(0).toUpperCase()}
+    <div class="space-y-4">
+      <div class="flex items-center gap-2 p-1 bg-[#041920] border border-cyan-500/20 rounded-2xl w-fit">
+        <button
+          type="button"
+          onclick={() => requestSubTab = 'incoming'}
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {requestSubTab === 'incoming' ? 'bg-cyan-500/20 text-[#0df2c9] border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}"
+        >
+          <span>Вхідні</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono {requestSubTab === 'incoming' ? 'bg-cyan-400/20 text-[#0df2c9]' : 'bg-slate-800 text-slate-400'}">
+            {requests.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => requestSubTab = 'outgoing'}
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {requestSubTab === 'outgoing' ? 'bg-cyan-500/20 text-[#0df2c9] border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}"
+        >
+          <span>Вихідні</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono {requestSubTab === 'outgoing' ? 'bg-cyan-400/20 text-[#0df2c9]' : 'bg-slate-800 text-slate-400'}">
+            {outgoingRequests.length}
+          </span>
+        </button>
+      </div>
+
+      {#if requestSubTab === 'incoming'}
+        <div class="space-y-2.5">
+          {#each filteredRequests as req (req.id)}
+            <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative w-10 h-10 rounded-full shrink-0">
+                  {#if req.senderAvatarUrl}
+                    <BackendImage src={req.senderAvatarUrl} alt={req.senderUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                  {:else}
+                    <div class="w-full h-full rounded-full bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
+                      {req.senderUsername.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-amber-400 border border-[#06242e]"></span>
                 </div>
-              {/if}
-              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-pink-500 border border-[#06242e]"></span>
+
+                <div class="min-w-0">
+                  <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
+                    {req.senderUsername}
+                  </span>
+                  <span class="block text-[10px] text-slate-400 mt-0.5">
+                    Вхідний запит у друзі
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onclick={() => friendsStore.acceptRequest(req.id, req.senderUsername)}
+                  class="w-9 h-9 rounded-xl bg-[#54e346] hover:bg-[#48ce3b] text-black font-black flex items-center justify-center shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                  title="Прийняти запит"
+                >
+                  <Check class="w-5 h-5 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onclick={() => friendsStore.rejectRequest(req.id, req.senderUsername)}
+                  class="w-9 h-9 rounded-xl bg-[#f87171] hover:bg-[#ef4444] text-white font-black flex items-center justify-center shadow-md shadow-rose-500/20 transition-all cursor-pointer"
+                  title="Відхилити запит"
+                >
+                  <X class="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </div>
             </div>
-
-            <div class="min-w-0">
-              <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
-                {req.senderUsername}
-              </span>
-              <span class="block text-[10px] text-slate-400 mt-0.5">
-                Запит у друзі
-              </span>
+          {:else}
+            <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
+              <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
+              <p class="text-sm font-bold text-slate-300">Немає вхідних запитів</p>
+              <p class="text-xs text-slate-500 mt-1">Нові запити в друзі будуть з'являтися тут.</p>
             </div>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onclick={() => friendsStore.acceptRequest(req.id, req.senderUsername)}
-              class="w-9 h-9 rounded-xl bg-[#54e346] hover:bg-[#48ce3b] text-black font-black flex items-center justify-center shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-              title="Прийняти запит"
-            >
-              <Check class="w-5 h-5 stroke-[2.5]" />
-            </button>
-
-            <button
-              type="button"
-              onclick={() => friendsStore.rejectRequest(req.id, req.senderUsername)}
-              class="w-9 h-9 rounded-xl bg-[#f87171] hover:bg-[#ef4444] text-white font-black flex items-center justify-center shadow-md shadow-rose-500/20 transition-all cursor-pointer"
-              title="Відхилити запит"
-            >
-              <X class="w-5 h-5 stroke-[2.5]" />
-            </button>
-          </div>
+          {/each}
         </div>
       {:else}
-        <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
-          <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
-          <p class="text-sm font-bold text-slate-300">Немає вхідних запитів</p>
-          <p class="text-xs text-slate-500 mt-1">Нові запити в друзі будуть з'являтися тут.</p>
+        <div class="space-y-2.5">
+          {#each filteredOutgoingRequests as req (req.id)}
+            <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#06242e]/90 hover:bg-[#08303d] border border-cyan-500/15 transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative w-10 h-10 rounded-full shrink-0">
+                  {#if req.receiverAvatarUrl}
+                    <BackendImage src={req.receiverAvatarUrl} alt={req.receiverUsername} class="w-full h-full rounded-full object-cover border border-cyan-500/30" />
+                  {:else}
+                    <div class="w-full h-full rounded-full bg-gradient-to-tr from-cyan-700 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                      {req.receiverUsername.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-[#06242e]"></span>
+                </div>
+
+                <div class="min-w-0">
+                  <span class="block text-sm font-bold text-white truncate max-w-[180px] sm:max-w-[280px]">
+                    {req.receiverUsername}
+                  </span>
+                  <span class="block text-[10px] text-slate-400 mt-0.5">
+                    Вихідний запит • Очікує на відповідь
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onclick={() => friendsStore.cancelRequest(req.id, req.receiverUsername)}
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  title="Скасувати запит"
+                >
+                  <X class="w-4 h-4 stroke-[2.5]" />
+                  <span class="hidden sm:inline">Скасувати</span>
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="p-12 rounded-3xl bg-[#062029]/40 border border-cyan-500/15 text-center text-slate-400">
+              <UserPlus class="w-10 h-10 mx-auto text-cyan-400/60 mb-3" />
+              <p class="text-sm font-bold text-slate-300">Немає вихідних запитів</p>
+              <p class="text-xs text-slate-500 mt-1">Ви ще не надсилали запитів у друзі або всі вони вже оброблені.</p>
+            </div>
+          {/each}
         </div>
-      {/each}
+      {/if}
     </div>
   {/if}
 </div>
 
 <AddFriendModal bind:isOpen={isAddFriendOpen} />
-

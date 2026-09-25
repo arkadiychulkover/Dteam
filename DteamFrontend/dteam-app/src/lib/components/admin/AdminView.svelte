@@ -1,14 +1,15 @@
 <script lang="ts">
-import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { adminService, activeAdminIdStore } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
-  import { formatPrice } from '../../utils/formatters';
+  import { formatPrice, formatBalance } from '../../utils/formatters';
   import type { Duser, Game } from '../../types';
   import CreateUserModal from './CreateUserModal.svelte';
   import EditUserModal from './EditUserModal.svelte';
   import CreateGameModal from './CreateGameModal.svelte';
   import EditGameModal from './EditGameModal.svelte';
   import AdminGuidModal from './AdminGuidModal.svelte';
+  import CreditBalanceModal from './CreditBalanceModal.svelte';
   import {
     Gamepad2,
     Users,
@@ -30,15 +31,62 @@ import { onMount, onDestroy } from 'svelte';
     Activity,
     AlertTriangle,
     Layers,
+    Wallet,
+    Gift,
+    Clock,
   } from 'lucide-svelte';
+  import type { RewardSettingsDto } from '../../services/adminService';
 
-  let activeSubTab = $state<'games' | 'users'>('games');
+  let activeSubTab = $state<'games' | 'users' | 'rewards'>('games');
   let users = $state<Duser[]>([]);
   let games = $state<Game[]>([]);
   let isLoading = $state(false);
   let searchQuery = $state('');
   let filterRole = $state<'all' | 'admin' | 'user' | 'banned'>('all');
   let filterGameType = $state<'all' | 'base' | 'dlc'>('all');
+
+  let rewardSettings = $state<RewardSettingsDto | null>(null);
+  let isSavingRewardSettings = $state(false);
+  let editRewardInterval = $state(60);
+  let editTokensPerHour = $state(50);
+  let editRewardEnabled = $state(true);
+
+  async function loadRewardSettings() {
+    try {
+      const s = await adminService.getRewardSettings();
+      rewardSettings = s;
+      editRewardInterval = s.rewardIntervalMinutes;
+      editTokensPerHour = s.tokensPerHour;
+      editRewardEnabled = s.isEnabled;
+    } catch (e) {
+      console.warn('Could not load reward settings:', e);
+    }
+  }
+
+  async function handleSaveRewardSettings() {
+    isSavingRewardSettings = true;
+    try {
+      const updated = await adminService.updateRewardSettings({
+        rewardIntervalMinutes: editRewardInterval,
+        tokensPerHour: editTokensPerHour,
+        isEnabled: editRewardEnabled
+      });
+      rewardSettings = updated;
+      uiStore.addToast({
+        title: 'Налаштування оновлено',
+        message: `Інтервал NFT подарунків встановлено: ${updated.rewardIntervalMinutes} хв.`,
+        type: 'success'
+      });
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка збереження',
+        message: e?.message || 'Не вдалося зберегти налаштування.',
+        type: 'error'
+      });
+    } finally {
+      isSavingRewardSettings = false;
+    }
+  }
 
   let isBackendOnline = $state<boolean | null>(null);
   let backendLatency = $state<number | null>(null);
@@ -50,6 +98,7 @@ import { onMount, onDestroy } from 'svelte';
   let isEditGameOpen = $state(false);
   let isGuidModalOpen = $state(false);
   let isDeleteConfirmOpen = $state(false);
+  let isCreditBalanceOpen = $state(false);
 
   let selectedUser = $state<Duser | null>(null);
   let selectedGame = $state<Game | null>(null);
@@ -142,6 +191,7 @@ import { onMount, onDestroy } from 'svelte';
 
   onMount(() => {
     loadData();
+    loadRewardSettings();
     pollHealth();
     healthPollTimer = setInterval(() => {
       pollHealth();
@@ -162,6 +212,11 @@ import { onMount, onDestroy } from 'svelte';
   function openEditGame(game: Game) {
     selectedGame = game;
     isEditGameOpen = true;
+  }
+
+  function openCreditBalance(user: Duser) {
+    selectedUser = user;
+    isCreditBalanceOpen = true;
   }
 
   function confirmDelete(type: 'user' | 'game', id: string, name: string) {
@@ -390,6 +445,17 @@ import { onMount, onDestroy } from 'svelte';
         <Users class="w-4 h-4" />
         <span>Users & Roles ({users.length})</span>
       </button>
+
+      <button
+        onclick={() => activeSubTab = 'rewards'}
+        class="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer
+          {activeSubTab === 'rewards'
+            ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-md shadow-cyan-500/30 font-black'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}"
+      >
+        <Gift class="w-4 h-4" />
+        <span>NFT & Нагороди</span>
+      </button>
     </div>
 
     <div class="relative max-w-md flex-1">
@@ -597,7 +663,7 @@ import { onMount, onDestroy } from 'svelte';
                 <td class="py-3.5 px-4 text-slate-300 font-mono">{user.email}</td>
 
                 <td class="py-3.5 px-4 font-mono font-bold text-cyan-300">
-                  {formatPrice(user.balanceInNanoTons)}
+                  {formatBalance(user.balanceInNanoTons)}
                 </td>
 
                 <td class="py-3.5 px-4">
@@ -627,6 +693,14 @@ import { onMount, onDestroy } from 'svelte';
 
                 <td class="py-3.5 px-4 text-right">
                   <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      onclick={() => openCreditBalance(user)}
+                      class="p-1.5 rounded-lg bg-slate-900 hover:bg-emerald-600 hover:text-white border border-slate-800 hover:border-emerald-500/40 text-emerald-400 transition-colors cursor-pointer"
+                      title="Нарахувати/списати кошти"
+                    >
+                      <Wallet class="w-3.5 h-3.5" />
+                    </button>
+
                     <button
                       onclick={() => toggleUserBan(user)}
                       class="p-1.5 rounded-lg border transition-colors cursor-pointer
@@ -659,6 +733,141 @@ import { onMount, onDestroy } from 'svelte';
             {/each}
           </tbody>
         </table>
+      </div>
+    </div>
+  {:else if activeSubTab === 'rewards'}
+    <div class="space-y-6">
+      <div class="p-6 rounded-3xl bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/30 shadow-2xl space-y-6">
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-black">
+              <Gift class="w-5 h-5" />
+            </div>
+            <div>
+              <h2 class="text-lg font-black text-white">Налаштування винагород та NFT подарунків</h2>
+              <p class="text-xs text-slate-400">Керування затримкою та інтервалом видачі випадкових NFT для активних користувачів платформи</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold {editRewardEnabled ? 'text-emerald-400' : 'text-slate-400'}">
+              {editRewardEnabled ? 'Увімкнено' : 'Вимкнено'}
+            </span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" bind:checked={editRewardEnabled} class="sr-only peer" />
+              <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-5 rounded-2xl bg-[#041219] border border-cyan-500/20 space-y-4">
+            <div class="flex items-center justify-between">
+              <label for="reward-interval-input" class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                <Clock class="w-4 h-4 text-cyan-400" />
+                <span>Інтервал видачі NFT (у хвилинах)</span>
+              </label>
+              <span class="font-mono font-black text-cyan-400 text-sm">
+                {editRewardInterval} хв ({Math.round(editRewardInterval / 60 * 10) / 10} год)
+              </span>
+            </div>
+
+            <input
+              id="reward-interval-input"
+              type="number"
+              min="1"
+              max="10080"
+              bind:value={editRewardInterval}
+              class="w-full px-4 py-2.5 rounded-xl bg-[#061e27] border border-cyan-500/30 text-white font-mono text-sm focus:border-cyan-400 focus:outline-none"
+            />
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <span class="text-[11px] text-slate-400 w-full mb-1">Швидкі пресети:</span>
+              <button
+                type="button"
+                onclick={() => editRewardInterval = 1}
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer {editRewardInterval === 1 ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400'}"
+              >
+                1 хв (Тест)
+              </button>
+              <button
+                type="button"
+                onclick={() => editRewardInterval = 15}
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer {editRewardInterval === 15 ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400'}"
+              >
+                15 хв
+              </button>
+              <button
+                type="button"
+                onclick={() => editRewardInterval = 60}
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer {editRewardInterval === 60 ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400'}"
+              >
+                1 год
+              </button>
+              <button
+                type="button"
+                onclick={() => editRewardInterval = 360}
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer {editRewardInterval === 360 ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400'}"
+              >
+                6 год
+              </button>
+              <button
+                type="button"
+                onclick={() => editRewardInterval = 600}
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer {editRewardInterval === 600 ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400'}"
+              >
+                10 год
+              </button>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-[#041219] border border-cyan-500/20 space-y-4">
+            <div class="flex items-center justify-between">
+              <label for="reward-tokens-input" class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                <Sparkles class="w-4 h-4 text-emerald-400" />
+                <span>Токени активності (на годину)</span>
+              </label>
+              <span class="font-mono font-black text-emerald-400 text-sm">
+                {editTokensPerHour} DTEAM
+              </span>
+            </div>
+
+            <input
+              id="reward-tokens-input"
+              type="number"
+              min="0"
+              max="1000000"
+              bind:value={editTokensPerHour}
+              class="w-full px-4 py-2.5 rounded-xl bg-[#061e27] border border-cyan-500/30 text-white font-mono text-sm focus:border-cyan-400 focus:outline-none"
+            />
+
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Користувачі, які перебувають на сайті у режимі онлайн, отримують токени активності та автоматично мінтять нагороди у вигляді NFT карток згідно з цим розкладом.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-cyan-500/20">
+          <div class="text-[11px] text-slate-400">
+            {#if rewardSettings?.updatedAt}
+              Останнє оновлення: <span class="text-cyan-300 font-mono">{new Date(rewardSettings.updatedAt).toLocaleString('uk-UA')}</span>
+            {/if}
+          </div>
+
+          <button
+            onclick={handleSaveRewardSettings}
+            disabled={isSavingRewardSettings}
+            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2"
+          >
+            {#if isSavingRewardSettings}
+              <span class="animate-spin">⟳</span>
+              <span>Збереження...</span>
+            {:else}
+              <CheckCircle2 class="w-4 h-4" />
+              <span>Зберегти налаштування</span>
+            {/if}
+          </button>
+        </div>
       </div>
     </div>
   {/if}
@@ -700,6 +909,13 @@ import { onMount, onDestroy } from 'svelte';
   onGuidChanged={loadData}
 />
 
+<CreditBalanceModal
+  user={selectedUser}
+  isOpen={isCreditBalanceOpen}
+  onClose={() => isCreditBalanceOpen = false}
+  onBalanceChanged={loadData}
+/>
+
 {#if isDeleteConfirmOpen && itemToDelete}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
     <div class="relative w-full max-w-md bg-[#061820] border border-rose-500/40 rounded-2xl shadow-2xl p-6">
@@ -728,4 +944,3 @@ import { onMount, onDestroy } from 'svelte';
     </div>
   </div>
 {/if}
-

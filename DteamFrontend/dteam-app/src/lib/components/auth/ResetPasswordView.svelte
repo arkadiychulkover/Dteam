@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore } from '../../stores/uiStore';
+  import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-svelte';
 
@@ -13,17 +13,17 @@ import { uiStore } from '../../stores/uiStore';
     e.preventDefault();
 
     if (!newPassword || !confirmPassword) {
-      errorMessage = 'Заполните оба поля';
+      errorMessage = 'Заповніть обидва поля';
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      errorMessage = 'Пароли не совпадают';
+      errorMessage = 'Паролі не співпадають';
       return;
     }
 
     if (newPassword.length < 6) {
-      errorMessage = 'Пароль должен быть не менее 6 символов';
+      errorMessage = 'Пароль має бути не менше 6 символів';
       return;
     }
 
@@ -33,13 +33,13 @@ import { uiStore } from '../../stores/uiStore';
     try {
       await authStore.resetPassword(newPassword);
       uiStore.addToast({
-        title: 'Пароль изменен',
-        message: 'Ваш пароль успешно обновлен. Войдите с новым паролем.',
+        title: 'Пароль змінено',
+        message: 'Ваш пароль успішно оновлено. Увійдіть з новим паролем.',
         type: 'success'
       });
       uiStore.setTab('login');
     } catch (err: any) {
-      errorMessage = err.message || 'Не удалось обновить пароль.';
+      errorMessage = err.message || 'Не вдалося оновити пароль.';
     } finally {
       isSubmitting = false;
     }
@@ -59,10 +59,10 @@ import { uiStore } from '../../stores/uiStore';
           <Lock class="w-7 h-7" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
-          Создание нового пароля
+          Створення нового пароля
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Придумайте надежный пароль для вашей учетной записи
+          Придумайте надійний пароль для вашого облікового запису
         </p>
       </div>
 
@@ -76,7 +76,7 @@ import { uiStore } from '../../stores/uiStore';
 
         <div>
           <label for="reset-new-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-            Новый пароль
+            Новий пароль
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -106,7 +106,7 @@ import { uiStore } from '../../stores/uiStore';
 
         <div>
           <label for="reset-confirm-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-            Подтвердите новый пароль
+            Підтвердіть новий пароль
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -130,10 +130,10 @@ import { uiStore } from '../../stores/uiStore';
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Сохранение...</span>
+            <span>Збереження...</span>
           {:else}
             <CheckCircle2 class="w-4 h-4 text-black" />
-            <span>Сохранить пароль</span>
+            <span>Зберегти пароль</span>
             <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
@@ -141,4 +141,3 @@ import { uiStore } from '../../stores/uiStore';
     </div>
   </div>
 </div>
-

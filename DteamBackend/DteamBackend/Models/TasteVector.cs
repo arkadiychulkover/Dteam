@@ -1,4 +1,4 @@
-﻿using DteamBackend.Models.Enums;
+using DteamBackend.Models.Enums;
 
 namespace DteamBackend.Models
 {
@@ -45,8 +45,12 @@ namespace DteamBackend.Models
             FillVector(tags);
             FillVector(features);
 
-            return Normalize(vector);
+            var normalized = Normalize(vector);
+            return IsZeroVector(normalized) ? Baseline() : normalized;
         }
+
+        public static bool IsZeroVector(float[]? v)
+            => v == null || v.Length == 0 || v.All(x => Math.Abs(x) < 1e-6f);
 
         public static float[] Normalize(float[] vector)
         {

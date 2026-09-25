@@ -1,9 +1,16 @@
+using System.IO;
 using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+
+using DteamBackend.Services;
+using DteamBackend.Models.DTO;
 
 namespace DteamBackend.Controllers
 {
@@ -13,16 +20,25 @@ namespace DteamBackend.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAccountService _accountService;
+        private readonly IWebHostEnvironment _environment;
 
-        public UserController(AppDbContext context)
+        public UserController(AppDbContext context, IAccountService accountService, IWebHostEnvironment environment)
         {
             _context = context;
+            _accountService = accountService;
+            _environment = environment;
         }
 
         public class UpdateProfileRequest
         {
+            [MaxLength(1000, ErrorMessage = "Біографія не може перевищувати 1000 символів.")]
             public string? Bio { get; set; }
+
+            [MaxLength(500, ErrorMessage = "URL аватарки не може перевищувати 500 символів.")]
             public string? AvatarUrl { get; set; }
+
+            [MaxLength(500, ErrorMessage = "URL банера не може перевищувати 500 символів.")]
             public string? BannerUrl { get; set; }
         }
 
@@ -68,6 +84,220 @@ namespace DteamBackend.Controllers
                 avatarUrl = user.AvatarUrl,
                 bio = user.Bio,
                 bannerUrl = user.BannerUrl
+            });
+        }
+
+        private static readonly string[] AllowedAvatarExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        private const long MaxAvatarSizeBytes = 10L * 1024 * 1024; // 10MB
+
+        /// <summary>
+        /// Отримати аватар поточного авторизованого користувача
+        /// </summary>
+        [HttpGet("avatar")]
+        [HttpGet("me/avatar")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMyAvatar()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            return Ok(new
+            {
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl
+            });
+        }
+
+        /// <summary>
+        /// Отримати аватар користувача за його ID (публічний доступ)
+        /// </summary>
+        [HttpGet("{userId:guid}/avatar")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUserAvatar(Guid userId)
+        {
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            return Ok(new
+            {
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl
+            });
+        }
+
+        /// <summary>
+        /// Завантажити або оновити аватарку користувача (multipart/form-data)
+        /// Зберігає файл у wwwroot/icons та записує шлях у модель Duser в базі даних
+        /// </summary>
+        [HttpPost("avatar")]
+        [HttpPost("me/avatar")]
+        [HttpPut("avatar")]
+        [HttpPut("me/avatar")]
+        [Authorize]
+        [RequestSizeLimit(MaxAvatarSizeBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxAvatarSizeBytes)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadAvatar(IFormFile? file)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Файл аватара не передано або він порожній." });
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedAvatarExtensions.Contains(extension))
+            {
+                return BadRequest(new { message = "Дозволені лише формати зображень (.jpg, .jpeg, .png, .webp, .gif)." });
+            }
+
+            if (file.Length > MaxAvatarSizeBytes)
+            {
+                return BadRequest(new { message = $"Розмір файлу перевищує ліміт {MaxAvatarSizeBytes / (1024 * 1024)} МБ." });
+            }
+
+            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var iconsFolder = Path.Combine(webRoot, "icons");
+            if (!Directory.Exists(iconsFolder))
+            {
+                Directory.CreateDirectory(iconsFolder);
+            }
+
+            // Видаляємо попередній файл аватара з wwwroot/icons, якщо він там був
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var oldFileName = Path.GetFileName(user.AvatarUrl);
+                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+                catch
+                {
+                    // Ігноруємо помилки доступу до попереднього файлу
+                }
+            }
+
+            var fileName = $"avatar_{user.Id:N}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{extension}";
+            var filePath = Path.Combine(iconsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/icons/{fileName}";
+            user.AvatarUrl = relativeUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = user.AvatarUrl,
+                message = "Аватар успішно оновлено."
+            });
+        }
+
+        /// <summary>
+        /// Видалити аватарку користувача (очистити поле в БД та видалити файл з wwwroot/icons)
+        /// </summary>
+        [HttpDelete("avatar")]
+        [HttpDelete("me/avatar")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteAvatar()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var iconsFolder = Path.Combine(webRoot, "icons");
+                    var oldFileName = Path.GetFileName(user.AvatarUrl);
+                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+                catch
+                {
+                    // Ігноруємо помилки видалення
+                }
+            }
+
+            user.AvatarUrl = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                userId = user.Id,
+                username = user.Username,
+                avatarUrl = (string?)null,
+                message = "Аватар успішно видалено."
             });
         }
 
@@ -136,7 +366,6 @@ namespace DteamBackend.Controllers
                 {
                     UserId = u.Id,
                     u.Username,
-                    u.Email,
                     u.IsBanned,
                     u.IsAdmin
                 })
@@ -151,7 +380,6 @@ namespace DteamBackend.Controllers
             {
                 userId = user.UserId,
                 username = user.Username,
-                email = user.Email,
                 isBanned = user.IsBanned,
                 isAdmin = user.IsAdmin
             });
@@ -175,7 +403,9 @@ namespace DteamBackend.Controllers
                     u.Status,
                     u.IsInFamily,
                     u.IsAdmin,
-                    u.CreatedAt
+                    u.CreatedAt,
+                    u.HardhatAddress,
+                    u.WalletAddress
                 })
                 .FirstOrDefaultAsync();
 
@@ -184,11 +414,10 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Користувача з ID '{userId}' не знайдено." });
             }
 
-            var friendsCount = await _context.UserFriends
-                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted)
-                .Select(uf => uf.FriendId)
-                .Distinct()
-                .CountAsync();
+            var friendsCount = await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Friends.Count)
+                .FirstOrDefaultAsync();
 
             var publishedGames = await _context.Games
                 .AsNoTracking()
@@ -234,18 +463,27 @@ namespace DteamBackend.Controllers
             bool isIncomingRequest = false;
             if (viewerId.HasValue && viewerId.Value != userId)
             {
-                var friendship = await _context.UserFriends
-                    .FirstOrDefaultAsync(uf =>
-                        (uf.UserId == viewerId.Value && uf.FriendId == userId) ||
-                        (uf.UserId == userId && uf.FriendId == viewerId.Value));
+                var areFriends = await _context.UserFriends
+                    .AnyAsync(uf => (uf.UserId == viewerId.Value && uf.FriendId == userId) ||
+                                   (uf.UserId == userId && uf.FriendId == viewerId.Value));
 
-                if (friendship != null)
+                if (areFriends)
                 {
-                    friendshipStatus = friendship.Status == FriendshipStatus.Accepted
-                        ? "friends"
-                        : "pending";
-                    isIncomingRequest = friendship.Status == FriendshipStatus.Pending
-                                     && friendship.UserId == userId;
+                    friendshipStatus = "friends";
+                }
+                else
+                {
+                    var pendingReq = await _context.FriendRequests
+                        .FirstOrDefaultAsync(fr =>
+                            ((fr.SenderId == viewerId.Value && fr.ReceiverId == userId) ||
+                             (fr.SenderId == userId && fr.ReceiverId == viewerId.Value)) &&
+                            fr.Status == FriendRequestStatus.Pending);
+
+                    if (pendingReq != null)
+                    {
+                        friendshipStatus = "pending";
+                        isIncomingRequest = pendingReq.ReceiverId == viewerId.Value;
+                    }
                 }
             }
 
@@ -266,7 +504,9 @@ namespace DteamBackend.Controllers
                 libraryGames,
                 isOwnProfile = viewerId.HasValue && viewerId.Value == userId,
                 friendshipStatus,
-                isIncomingRequest
+                isIncomingRequest,
+                hardhatAddress = user.HardhatAddress,
+                walletAddress = user.WalletAddress
             });
         }
 
@@ -274,18 +514,17 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPublicFriends(Guid userId)
         {
-            var friends = await _context.UserFriends
-                .Include(uf => uf.Friend)
+            var friends = await _context.Users
                 .AsNoTracking()
-                .Where(uf => uf.UserId == userId && uf.Status == FriendshipStatus.Accepted && uf.Friend != null)
-                .Select(uf => new
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Friends)
+                .Select(f => new
                 {
-                    id = uf.Friend.Id,
-                    username = uf.Friend.Username,
-                    avatarUrl = uf.Friend.AvatarUrl,
-                    status = (int)uf.Friend.Status
+                    id = f.Id,
+                    username = f.Username,
+                    avatarUrl = f.AvatarUrl,
+                    status = (int)f.Status
                 })
-                .Distinct()
                 .ToListAsync();
 
             return Ok(friends);
@@ -369,9 +608,9 @@ namespace DteamBackend.Controllers
             reviewsCount = game.ReviewsCount,
             isDlc = game.IsDlc,
             parentGameId = game.ParentGameId,
-            genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-            platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-            features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+            genres = game.Genres ?? new List<string>(),
+            platforms = game.Platforms ?? new List<string>(),
+            features = game.Features ?? new List<string>(),
             tags = game.Tags ?? new List<string>(),
             version = game.Version,
             sizeInBytes = game.SizeInBytes,
@@ -383,6 +622,191 @@ namespace DteamBackend.Controllers
             createdAt = game.CreatedAt,
             updatedAt = game.UpdatedAt
         };
+
+        [HttpGet("settings")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUserSettings()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.NotificationPreferences)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            var prefs = user.NotificationPreferences;
+            var response = new SettingsResponseDto
+            {
+                Profile = new UserProfileSettingsDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Bio = user.Bio,
+                    AvatarUrl = user.AvatarUrl,
+                    BannerUrl = user.BannerUrl,
+                    PreferredLanguage = user.PreferredLanguage ?? "uk",
+                    CreatedAt = user.CreatedAt
+                },
+                Preferences = new NotificationPreferencesDto
+                {
+                    NotifyBigSales = prefs?.NotifyBigSales ?? true,
+                    NotifyWishlistDiscounts = prefs?.NotifyWishlistDiscounts ?? true,
+                    NotifyProfileComments = prefs?.NotifyProfileComments ?? true,
+                    NotifyFriendRequests = prefs?.NotifyFriendRequests ?? true,
+                    NotifyFriendRequestAccepted = prefs?.NotifyFriendRequestAccepted ?? true,
+                    NotifyFriendRequestDeclined = prefs?.NotifyFriendRequestDeclined ?? true,
+                    ChatNotificationsEnabled = prefs?.ChatNotificationsEnabled ?? true,
+                    ChatSoundEnabled = prefs?.ChatSoundEnabled ?? true
+                },
+                WalletSummary = new WalletSummaryDto
+                {
+                    BalanceInNanoTons = user.BalanceInNanoTons,
+                    FormattedBalance = user.BalanceInNanoTons / 1_000_000_000m,
+                    Currency = "TON"
+                }
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPut("settings/general")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateGeneralSettings([FromBody] UpdateGeneralSettingsDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "Користувача не знайдено." });
+            }
+
+            var cleanUsername = dto.Username.Trim();
+            var cleanEmail = dto.Email.Trim().ToLowerInvariant();
+
+            var usernameTaken = await _context.Users
+                .AnyAsync(u => u.Id != userId && u.Username.ToLower() == cleanUsername.ToLower());
+            if (usernameTaken)
+            {
+                return BadRequest(new { message = "Користувач з таким нікнеймом вже існує." });
+            }
+
+            var emailTaken = await _context.Users
+                .AnyAsync(u => u.Id != userId && u.Email.ToLower() == cleanEmail);
+            if (emailTaken)
+            {
+                return BadRequest(new { message = "Користувач з такою електронною поштою вже існує." });
+            }
+
+            user.Username = cleanUsername;
+            user.Email = cleanEmail;
+            user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
+            user.AvatarUrl = string.IsNullOrWhiteSpace(dto.AvatarUrl) ? null : dto.AvatarUrl.Trim();
+            user.BannerUrl = string.IsNullOrWhiteSpace(dto.BannerUrl) ? null : dto.BannerUrl.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.PreferredLanguage))
+            {
+                user.PreferredLanguage = dto.PreferredLanguage.Trim();
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new UserProfileSettingsDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Bio = user.Bio,
+                AvatarUrl = user.AvatarUrl,
+                BannerUrl = user.BannerUrl,
+                PreferredLanguage = user.PreferredLanguage,
+                CreatedAt = user.CreatedAt
+            });
+        }
+
+        [HttpPut("settings/notifications")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateNotificationSettings([FromBody] NotificationPreferencesDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var prefs = await _context.UserNotificationPreferences.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (prefs == null)
+            {
+                prefs = new UserNotificationPreferences
+                {
+                    UserId = userId
+                };
+                await _context.UserNotificationPreferences.AddAsync(prefs);
+            }
+
+            prefs.NotifyBigSales = dto.NotifyBigSales;
+            prefs.NotifyWishlistDiscounts = dto.NotifyWishlistDiscounts;
+            prefs.NotifyProfileComments = dto.NotifyProfileComments;
+            prefs.NotifyFriendRequests = dto.NotifyFriendRequests;
+            prefs.NotifyFriendRequestAccepted = dto.NotifyFriendRequestAccepted;
+            prefs.NotifyFriendRequestDeclined = dto.NotifyFriendRequestDeclined;
+            prefs.ChatNotificationsEnabled = dto.ChatNotificationsEnabled;
+            prefs.ChatSoundEnabled = dto.ChatSoundEnabled;
+            prefs.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dto);
+        }
+
+        [HttpDelete("me")]
+        [HttpPost("delete-account")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var (success, error) = await _accountService.DeleteAccountAsync(userId, dto);
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return Ok(new { message = "Ваш акаунт було успішно видалено." });
+        }
     }
 }
-

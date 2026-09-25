@@ -1,0 +1,56 @@
+/* Global default scrollbars (WebKit) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030d12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0d3844;
+  border-radius: 3px;
+  border: 1px solid rgba(13, 242, 201, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0df2c9;
+  box-shadow: 0 0 10px rgba(13, 242, 201, 0.5);
+}
+
+/* Custom scrollbar utility for modal dialogs and dropdown containers */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.25);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.45);
+}
+
+/* Hide scrollbar utilities */
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;    /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari and Opera */
+}

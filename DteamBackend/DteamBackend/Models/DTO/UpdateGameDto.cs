@@ -12,6 +12,7 @@ namespace DteamBackend.Models.DTO
         [MaxLength(500)]
         public string? ShortDescription { get; set; }
 
+        [Range(0, long.MaxValue, ErrorMessage = "Price must be non-negative")]
         public long? PriceInNanoTons { get; set; }
 
         [Range(0, 100)]
@@ -31,6 +32,8 @@ namespace DteamBackend.Models.DTO
         public List<string>? Platforms { get; set; }
 
         public List<string>? Features { get; set; }
+
+        public List<GameLanguageSupport>? SupportedLanguages { get; set; }
 
         public List<string>? Tags { get; set; }
 
@@ -53,4 +56,3 @@ namespace DteamBackend.Models.DTO
         public string? TrailerUrl { get; set; }
     }
 }
-

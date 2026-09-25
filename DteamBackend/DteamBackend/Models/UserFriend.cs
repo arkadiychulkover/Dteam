@@ -1,6 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using DteamBackend.Models.Enums;
-
 namespace DteamBackend.Models
 {
     public class UserFriend
@@ -11,9 +8,6 @@ namespace DteamBackend.Models
         public Guid FriendId { get; set; }
         public Duser Friend { get; set; } = null!;
 
-        public FriendshipStatus Status { get; set; } = FriendshipStatus.Pending;
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
-

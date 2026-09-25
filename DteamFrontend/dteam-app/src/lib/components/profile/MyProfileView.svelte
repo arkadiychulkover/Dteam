@@ -1,34 +1,182 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { currentUser, authStore } from '../../stores/authStore';
   import { myProfileStore } from '../../stores/myProfileStore';
   import { libraryStore } from '../../stores/libraryStore';
-  import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { friendsStore } from '../../stores/friendsStore';
   import { profileStore } from '../../stores/profileStore';
   import { communityService } from '../../services/communityService';
   import { userService } from '../../services/userService';
   import { mediaService, MAX_IMAGE_SIZE_BYTES, MAX_VIDEO_SIZE_BYTES } from '../../services/mediaService';
+  import { tokenService, type VerifyWalletResponse } from '../../services/tokenService';
+  import { getBalanceDirectFromBlockchain, getTdpBalanceHybrid, DTEAM_POINTS_CONTRACT_ADDRESS } from '../../services/blockchainService';
   import { uiStore } from '../../stores/uiStore';
-  import { gamesService } from '../../services/gamesService';
   import { formatDate } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { UserStatus } from '../../types';
   import {
-    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus
+    Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
+    Wallet, Coins, Award, CheckCircle2, AlertTriangle, RefreshCw, ExternalLink, ShieldCheck, ShieldAlert,
+    Copy, Check, Trash2, Upload
   } from 'lucide-svelte';
+  import SelectGameModal from '../community/SelectGameModal.svelte';
+  import ActivityCard from '../activity/ActivityCard.svelte';
+  import { activityStore } from '../../stores/activityStore';
+  import VideoPlayerModal from '../ui/VideoPlayerModal.svelte';
+  import { getUserNftsFromContract, getUserNftsHybrid, type NftGift } from '../../services/nftService';
+  import { onlineHubService } from '../../services/onlineHubService';
+  import BadgeCard from './BadgeCard.svelte';
+  import BadgeDetailModal from './BadgeDetailModal.svelte';
+  import { calculateProfileLevel } from '../../utils/levelUtils';
+  import ProfileLevelHexagon from './ProfileLevelHexagon.svelte';
+  import ProfileLevelCard from './ProfileLevelCard.svelte';
 
   type TabId = 'головна' | 'значки' | 'ігри' | 'бажане' | 'обговорення' | 'скріншоти' | 'відео' | 'гайди' | 'рецензії';
   let activeTab = $state<TabId>('головна');
   let showCreateDropdown = $state(false);
+  let activeVideoPost = $state<any | null>(null);
 
-  const uniqueFriends = $derived(
-    Array.from(new Map($friendsStore.friends.map((f) => [f.friend?.id || (f as any).id, f])).values())
-  );
+  const uniqueFriends = $derived($friendsStore.friends);
 
-  const menuItems: { id: TabId; label: string; count: () => number | null }[] = [
+  let metaMaskAccount = $state<string | null>(null);
+  let isCheckingWallet = $state(false);
+  let walletVerification = $state<VerifyWalletResponse | null>(null);
+  let tokenBalance = $state<number | null>(null);
+  let isLoadingBalance = $state(false);
+  let metaMaskNotDetected = $state(false);
+  let copiedPointsAddress = $state(false);
+
+  const levelInfo = $derived(calculateProfileLevel(tokenBalance));
+
+  async function copyPointsContractAddress() {
+    try {
+      await navigator.clipboard.writeText(DTEAM_POINTS_CONTRACT_ADDRESS);
+      copiedPointsAddress = true;
+      setTimeout(() => {
+        copiedPointsAddress = false;
+      }, 2000);
+    } catch (err) {
+      console.warn('Failed to copy points contract address:', err);
+    }
+  }
+  let myNfts = $state<NftGift[]>([]);
+  let isLoadingNfts = $state(false);
+  let selectedBadgeForModal = $state<NftGift | null>(null);
+  let isBadgeModalOpen = $state(false);
+
+  async function loadMyNfts(isWalletConnected = false) {
+    const address = metaMaskAccount || $currentUser?.hardhatAddress || $currentUser?.walletAddress;
+    isLoadingNfts = true;
+    try {
+      myNfts = await getUserNftsHybrid(address, $currentUser?.id, isWalletConnected);
+    } catch (err) {
+      console.warn('[MyProfileView] Failed to fetch NFTs:', err);
+    } finally {
+      isLoadingNfts = false;
+    }
+  }
+
+  async function checkMetaMaskAndSync() {
+    if (typeof window === 'undefined') return;
+
+    const eth = (window as any).ethereum;
+    if (!eth) {
+      metaMaskNotDetected = true;
+      metaMaskAccount = null;
+      walletVerification = null;
+      await fetchFallbackTokenBalance();
+      await loadMyNfts(false);
+      return;
+    }
+
+    metaMaskNotDetected = false;
+
+    try {
+      isCheckingWallet = true;
+      const accounts = await eth.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        metaMaskAccount = accounts[0];
+
+        if ($currentUser) {
+          const verification = await tokenService.verifyWallet(accounts[0], $currentUser.id);
+          walletVerification = verification;
+
+          if (verification.isMatch) {
+            isLoadingBalance = true;
+            try {
+              tokenBalance = await getTdpBalanceHybrid(accounts[0], true);
+            } catch (err) {
+              console.warn('[Profile] Failed to fetch token balance from blockchain:', err);
+              tokenBalance = null;
+            } finally {
+              isLoadingBalance = false;
+            }
+            await loadMyNfts(true);
+          } else {
+            await fetchFallbackTokenBalance();
+            await loadMyNfts(false);
+          }
+        }
+      } else {
+        metaMaskAccount = null;
+        walletVerification = null;
+        await fetchFallbackTokenBalance();
+        await loadMyNfts(false);
+      }
+    } catch (err) {
+      console.warn('[Profile] Error checking MetaMask accounts:', err);
+      await fetchFallbackTokenBalance();
+      await loadMyNfts(false);
+    } finally {
+      isCheckingWallet = false;
+    }
+  }
+
+  async function fetchFallbackTokenBalance() {
+    const fallbackAddr = $currentUser?.hardhatAddress || $currentUser?.walletAddress;
+    if (fallbackAddr) {
+      isLoadingBalance = true;
+      try {
+        tokenBalance = await getTdpBalanceHybrid(fallbackAddr, false);
+      } catch (err) {
+        console.warn('[Profile] Failed to fetch fallback token balance:', err);
+        tokenBalance = 0;
+      } finally {
+        isLoadingBalance = false;
+      }
+    } else {
+      tokenBalance = 0;
+    }
+  }
+
+  async function connectMetaMask() {
+    if (typeof window === 'undefined') return;
+    const eth = (window as any).ethereum;
+    if (!eth) {
+      metaMaskNotDetected = true;
+      return;
+    }
+
+    try {
+      isCheckingWallet = true;
+      await eth.request({ method: 'eth_requestAccounts' });
+      await checkMetaMaskAndSync();
+    } catch (err: any) {
+      uiStore.addToast({
+        title: 'MetaMask',
+        message: err?.message || 'Не вдалося підключити MetaMask',
+        type: 'error'
+      });
+    } finally {
+      isCheckingWallet = false;
+    }
+  }
+
+  const menuItems: { id: TabId; label: string; count: () => number | string | null }[] = [
     { id: 'головна', label: 'Головна', count: () => null },
-    { id: 'значки', label: 'Значки', count: () => 0 },
+    { id: 'значки', label: 'Значки', count: () => (myNfts.length > 0 ? myNfts.length : null) },
     { id: 'ігри', label: 'Ігри', count: () => $libraryStore.items.length },
     { id: 'бажане', label: 'Бажане', count: () => $wishlistStore.items.length },
     { id: 'обговорення', label: 'Обговорення', count: () => myDiscussionPosts.length },
@@ -38,50 +186,65 @@ import { onMount } from 'svelte';
     { id: 'рецензії', label: 'Рецензії', count: () => $myProfileStore.reviews.length },
   ];
 
-  function getGameForItem(item: (typeof $libraryStore.items)[number]) {
-    return item.game || $gamesStore.games.find((g) => g.id === item.gameId);
-  }
-
-  async function navigateToGame(gameOrItem: any) {
-    if (!gameOrItem) return;
-    const id = gameOrItem.id || gameOrItem.gameId;
-    if (!id) return;
-    const existing = $gamesStore.games.find((g) => g.id === id);
-    if (existing) {
-      gamesStore.selectGame(existing);
-      uiStore.setTab('game');
-      return;
-    }
-    if (gameOrItem.title && gameOrItem.description) {
-      gamesStore.selectGame(gameOrItem);
-      uiStore.setTab('game');
-      return;
-    }
-    try {
-      const fullGame = await gamesService.getGameById(id);
-      gamesStore.selectGame(fullGame);
-      uiStore.setTab('game');
-    } catch {
-      gamesStore.selectGame(gameOrItem);
-      uiStore.setTab('game');
-    }
-  }
-
-  const dlcCount = $derived($libraryStore.items.filter((i) => getGameForItem(i)?.isDlc).length);
-  const gamesCount = $derived($libraryStore.items.filter((i) => !getGameForItem(i)?.isDlc).length);
+  const dlcCount = $derived($libraryStore.items.filter((i) => i.game?.isDlc).length);
+  const gamesCount = $derived($libraryStore.items.filter((i) => !i.game?.isDlc).length);
 
   const myDiscussionPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'forum'));
   const myScreenshotPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'screenshots'));
   const myVideoPosts = $derived($myProfileStore.posts.filter((p) => p.category === 'videos'));
   const myGuidePosts = $derived($myProfileStore.posts.filter((p) => p.category === 'guides'));
+  const myActivities = $derived(
+    $currentUser ? ($activityStore.userActivities[$currentUser.id.toLowerCase()] || []) : []
+  );
+
+  function handleAccountsChanged() {
+    checkMetaMaskAndSync();
+    loadMyNfts();
+  }
+
+  $effect(() => {
+    if (activeTab === 'значки') {
+      checkMetaMaskAndSync();
+      loadMyNfts();
+    }
+  });
+
+  let unsubReward: (() => void) | null = null;
 
   onMount(() => {
     myProfileStore.reload();
     libraryStore.loadLibrary();
     wishlistStore.loadWishlist();
+    loadMyNfts();
     friendsStore.loadFriends();
-    if ($gamesStore.games.length === 0) {
-      gamesStore.loadGames();
+    if ($currentUser) {
+      activityStore.loadUserActivities($currentUser.id);
+    }
+
+    checkMetaMaskAndSync();
+    if (tokenBalance === null) {
+      fetchFallbackTokenBalance();
+    }
+
+    unsubReward = onlineHubService.onRewardMinted(() => {
+      loadMyNfts();
+    });
+
+    if (typeof window !== 'undefined') {
+      const eth = (window as any).ethereum;
+      if (eth && eth.on) {
+        eth.on('accountsChanged', handleAccountsChanged);
+      }
+    }
+  });
+
+  onDestroy(() => {
+    unsubReward?.();
+    if (typeof window !== 'undefined') {
+      const eth = (window as any).ethereum;
+      if (eth && eth.removeListener) {
+        eth.removeListener('accountsChanged', handleAccountsChanged);
+      }
     }
   });
 
@@ -92,6 +255,8 @@ import { onMount } from 'svelte';
   let postMediaUrl = $state('');
   let postMediaThumbnailUrl = $state('');
   let postMediaPreviewUrl = $state('');
+  let selectedPostGame = $state<{ id: string; title: string; bannerUrl?: string } | null>(null);
+  let isSelectGameModalOpen = $state(false);
   let isUploadingMedia = $state(false);
   let selectedPostFile = $state<File | null>(null);
   let isSubmittingPost = $state(false);
@@ -114,10 +279,12 @@ import { onMount } from 'svelte';
   }
 
   function resetPostMedia() {
+    selectedPostGame = null;
     if (postMediaPreviewUrl) URL.revokeObjectURL(postMediaPreviewUrl);
     postMediaUrl = '';
     postMediaThumbnailUrl = '';
     postMediaPreviewUrl = '';
+    selectedPostFile = null;
     if (postFileInput) postFileInput.value = '';
   }
 
@@ -173,6 +340,11 @@ import { onMount } from 'svelte';
   }
 
   async function submitPost() {
+    if (!selectedPostGame?.id) {
+      uiStore.addToast({ title: 'Оберіть гру', message: 'Для створення публікації обов’язково оберіть гру.', type: 'warning' });
+      isSelectGameModalOpen = true;
+      return;
+    }
     if (!postTitle.trim() || !postContent.trim()) {
       uiStore.addToast({ title: 'Заповніть поля', message: 'Вкажіть заголовок і текст публікації.', type: 'error' });
       return;
@@ -183,10 +355,11 @@ import { onMount } from 'svelte';
     }
     isSubmittingPost = true;
     try {
-      await communityService.createPost(null, {
+      await communityService.createPost(selectedPostGame.id, {
         category: createPostType,
         title: postTitle.trim(),
         content: postContent.trim(),
+        gameId: selectedPostGame.id,
         mediaType: createPostType === 'videos' ? 'video' : (postMediaUrl ? 'image' : 'none'),
         mediaUrl: postMediaUrl,
         mediaThumbnailUrl: postMediaThumbnailUrl || undefined,
@@ -237,6 +410,55 @@ import { onMount } from 'svelte';
     }
   }
 
+  let isUploadingAvatar = $state(false);
+  let avatarFileInput: HTMLInputElement | undefined = $state();
+  let modalAvatarFileInput: HTMLInputElement | undefined = $state();
+
+  async function handleAvatarFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!file.type.startsWith('image/') && !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      uiStore.addToast({ title: 'Невірний формат', message: 'Аватар має бути зображенням (.jpg, .jpeg, .png, .webp, .gif).', type: 'error' });
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      uiStore.addToast({ title: 'Файл завеликий', message: 'Максимальний розмір аватара: 10 МБ.', type: 'error' });
+      input.value = '';
+      return;
+    }
+
+    isUploadingAvatar = true;
+    try {
+      const res = await userService.uploadAvatar(file);
+      authStore.patchUser({ avatarUrl: res.avatarUrl });
+      editAvatarUrl = res.avatarUrl;
+      uiStore.addToast({ title: 'Аватар оновлено', message: 'Новий аватар успішно збережено.', type: 'success' });
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося завантажити аватар.', type: 'error' });
+    } finally {
+      isUploadingAvatar = false;
+      input.value = '';
+    }
+  }
+
+  async function handleDeleteAvatar() {
+    isUploadingAvatar = true;
+    try {
+      await userService.deleteAvatar();
+      authStore.patchUser({ avatarUrl: null });
+      editAvatarUrl = '';
+      uiStore.addToast({ title: 'Аватар видалено', message: 'Аватар успішно видалено.', type: 'success' });
+    } catch (err: any) {
+      uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося видалити аватар.', type: 'error' });
+    } finally {
+      isUploadingAvatar = false;
+    }
+  }
+
   let isEditingProfile = $state(false);
   let editBio = $state('');
   let editAvatarUrl = $state('');
@@ -263,12 +485,10 @@ import { onMount } from 'svelte';
   }
 
   function statusLabel(status?: number) {
-    switch (status) {
-      case UserStatus.Online: return { text: 'онлайн', color: 'text-emerald-400' };
-      case UserStatus.InGame: return { text: 'у грі', color: 'text-cyan-400' };
-      case UserStatus.Away: return { text: 'відійшов', color: 'text-amber-400' };
-      default: return { text: 'офлайн', color: 'text-slate-500' };
-    }
+    if (status === UserStatus.InGame) return { text: 'у грі', color: 'text-cyan-400' };
+    if (status === UserStatus.Away) return { text: 'відійшов', color: 'text-amber-400' };
+
+    return { text: 'у мережі', color: 'text-emerald-400' };
   }
 </script>
 
@@ -303,17 +523,50 @@ import { onMount } from 'svelte';
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 md:-mt-20 mb-8 relative z-10 gap-4">
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
-        <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
-          {#if $currentUser.avatarUrl}
-            <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
-          {:else}
-            <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
-              {$currentUser.username.charAt(0).toUpperCase()}
-            </div>
-          {/if}
+        <div class="relative group shrink-0">
+          <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shadow-2xl">
+            {#if $currentUser.avatarUrl}
+              <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
+            {:else}
+              <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
+                {$currentUser.username.charAt(0).toUpperCase()}
+              </div>
+            {/if}
+          </div>
+
+          <button
+            type="button"
+            onclick={() => avatarFileInput?.click()}
+            disabled={isUploadingAvatar}
+            class="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer"
+            title="Змінити аватар"
+          >
+            {#if isUploadingAvatar}
+              <Loader2 class="w-6 h-6 text-cyan-400 animate-spin" />
+              <span class="text-[10px] font-bold text-cyan-300 mt-1">Завантаження...</span>
+            {:else}
+              <Camera class="w-6 h-6 text-cyan-300" />
+              <span class="text-[10px] font-bold text-cyan-200 mt-1">Змінити фото</span>
+            {/if}
+          </button>
+
+          <input
+            bind:this={avatarFileInput}
+            type="file"
+            accept="image/*"
+            class="hidden"
+            onchange={handleAvatarFileChange}
+          />
         </div>
         <div class="pb-2">
-          <h1 class="text-2xl font-bold text-white mb-1">{$currentUser.username}</h1>
+          <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-2xl font-bold text-white">{$currentUser.username}</h1>
+            <ProfileLevelHexagon
+              level={levelInfo.level}
+              size="sm"
+              title="Рівень {levelInfo.level} ({levelInfo.currentXp.toLocaleString('uk-UA')} XP)"
+            />
+          </div>
           <p class="text-sm mb-3 {statusLabel($currentUser.status).color}">{statusLabel($currentUser.status).text}</p>
           <p class="text-sm text-slate-400 max-w-2xl leading-relaxed">
             {$currentUser.bio || 'Розкажіть про себе — додайте опис у налаштуваннях профілю.'}
@@ -332,11 +585,31 @@ import { onMount } from 'svelte';
       </div>
     </div>
 
+    <div class="lg:hidden bg-[#03232c] border border-cyan-900/40 rounded-2xl p-3.5 mb-4">
+      <ProfileLevelCard tokens={tokenBalance} compact={true} />
+    </div>
+
+    <div class="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {#each menuItems as item}
+        <button
+          type="button"
+          onclick={() => { activeTab = item.id; showCreateDropdown = false; }}
+          class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer {activeTab === item.id ? 'bg-[#0b4e63] text-white shadow-md' : 'bg-[#03232c] text-slate-300 hover:text-white border border-cyan-900/40'}"
+        >
+          <span>{item.label}</span>
+          {#if item.count() !== null}
+            <span class="bg-[#02171d] px-1.5 py-0.5 rounded-full text-[10px] text-cyan-300 font-mono">{item.count()}</span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
 
       <div class="space-y-6">
 
         {#if activeTab === 'головна'}
+
           <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
             <h2 class="text-lg font-bold text-white mb-4">Колекція ігор</h2>
             <div class="grid grid-cols-3 gap-4 mb-4">
@@ -358,22 +631,29 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {#each $libraryStore.items.slice(0, 4) as item}
-                  {@const g = getGameForItem(item)}
-                  {#if g}
-                    <button
-                      type="button"
-                      onclick={() => navigateToGame(g)}
-                      class="relative group rounded-xl overflow-hidden bg-slate-800 border border-cyan-900/40 hover:border-cyan-500/60 transition-all cursor-pointer text-left w-full h-24"
-                    >
-                      {#if g.coverImageUrl || g.headerImageUrl}
-                        <img src={g.coverImageUrl || g.headerImageUrl} alt={g.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      {:else}
-                        <div class="w-full h-full flex items-center justify-center p-2 text-center bg-[#02171d] text-cyan-400 text-xs font-bold group-hover:text-cyan-300 transition-colors">
-                          {g.title}
-                        </div>
-                      {/if}
-                    </button>
+                  {#if item.game?.coverImageUrl}
+                    <img src={item.game.coverImageUrl} alt={item.game.title} class="rounded-xl object-cover w-full h-24" />
                   {/if}
+                {/each}
+              </div>
+            {/if}
+          </div>
+
+          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <Activity class="w-4 h-4 text-cyan-400" />
+                <h2 class="text-lg font-bold text-white">Нещодавня активність</h2>
+              </div>
+              <span class="text-xs text-slate-400 font-mono">{myActivities.length} подій</span>
+            </div>
+
+            {#if myActivities.length === 0}
+              <p class="text-sm text-slate-500 text-center py-6">У вас поки немає збережених активностей.</p>
+            {:else}
+              <div class="space-y-3">
+                {#each myActivities as act (act.id)}
+                  <ActivityCard activity={act} />
                 {/each}
               </div>
             {/if}
@@ -381,10 +661,166 @@ import { onMount } from 'svelte';
         {/if}
 
         {#if activeTab === 'значки'}
-          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6">
-            <div class="text-center py-16 text-slate-500 text-sm">
-              Список значків порожній.
+          <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-6 space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-900/30 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+                  <Award class="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 class="text-xl font-black text-white flex items-center gap-2">
+                    Значки та нагороди
+                    <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/60">
+                      {myNfts.length} значків
+                    </span>
+                  </h2>
+                  <p class="text-xs text-slate-400">
+                    Отримані значки безпосередньо зі смарт-контракту в блокчейні (DNFT)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onclick={loadMyNfts}
+                disabled={isLoadingNfts}
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
+              >
+                <RefreshCw class="w-3.5 h-3.5 {isLoadingNfts ? 'animate-spin' : ''}" />
+                Оновити значки
+              </button>
             </div>
+
+            {#if walletVerification?.isMatch || metaMaskAccount || $currentUser?.hardhatAddress}
+              <div class="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-cyan-950/60 to-[#02171d] border border-cyan-500/30 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                      <Coins class="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Баланс токенів (XP)</span>
+                        <span class="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">1 DTP = 1 XP</span>
+                      </div>
+                      {#if isLoadingBalance}
+                        <span class="text-sm text-cyan-300 font-mono animate-pulse">Завантаження...</span>
+                      {:else if tokenBalance !== null}
+                        <span class="text-lg font-black text-white">{tokenBalance.toLocaleString('uk-UA')} <span class="text-xs text-cyan-400 font-bold">DTP</span></span>
+                      {:else}
+                        <span class="text-sm text-slate-500 font-mono">0 DTP</span>
+                      {/if}
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 self-end sm:self-auto">
+                    <div class="flex items-center gap-2 bg-[#02171d]/80 px-3 py-1.5 rounded-xl border border-cyan-900/50">
+                      <span class="text-xs font-bold text-slate-300">Рівень</span>
+                      <ProfileLevelHexagon level={levelInfo.level} size="sm" />
+                    </div>
+                    {#if walletVerification?.isMatch}
+                      <div class="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                        <ShieldCheck class="w-3.5 h-3.5" />
+                        <span class="font-bold">Підтверджено</span>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+
+                <div class="pt-3 border-t border-cyan-900/40 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium">Рівень {levelInfo.level} ({levelInfo.currentXp.toLocaleString('uk-UA')} XP)</span>
+                    <span class="text-cyan-300 font-mono font-medium">
+                      До {levelInfo.nextLevel} рівня: залишилось {levelInfo.xpRemaining.toLocaleString('uk-UA')} DTP
+                    </span>
+                  </div>
+                  <div class="w-full h-2 bg-[#02171d] rounded-full overflow-hidden border border-cyan-900/50">
+                    <div
+                      class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full transition-all duration-500"
+                      style="width: {levelInfo.progressPercent}%"
+                    ></div>
+                  </div>
+                  <div class="flex items-center justify-between text-[10px] text-slate-500">
+                    <span>{levelInfo.xpForCurrentLevel.toLocaleString('uk-UA')} DTP</span>
+                    <span>{Math.round(levelInfo.progressPercent)}%</span>
+                    <span>{levelInfo.xpForNextLevel.toLocaleString('uk-UA')} DTP</span>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-cyan-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider shrink-0">Контракт DTP:</span>
+                    <span class="font-mono text-[11px] text-cyan-300 select-all break-all leading-relaxed" title={DTEAM_POINTS_CONTRACT_ADDRESS}>
+                      {DTEAM_POINTS_CONTRACT_ADDRESS}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onclick={copyPointsContractAddress}
+                    class="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
+                    title="Скопіювати повну адресу смарт-контракту токенів DTP"
+                  >
+                    {#if copiedPointsAddress}
+                      <Check class="w-3.5 h-3.5 text-emerald-400" />
+                      <span class="text-emerald-400 text-[10px]">Скопійовано</span>
+                    {:else}
+                      <Copy class="w-3.5 h-3.5 text-slate-400 hover:text-cyan-400" />
+                      <span class="text-[10px]">Копіювати</span>
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            {#if metaMaskNotDetected}
+              <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+                <div class="flex items-center gap-2">
+                  <AlertTriangle class="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>MetaMask не виявлено. Для перегляду значків зі смарт-контракту підключіть MetaMask.</span>
+                </div>
+                <button onclick={connectMetaMask} class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-amber-200 font-bold transition-all cursor-pointer">
+                  Підключити MetaMask
+                </button>
+              </div>
+            {:else if walletVerification && !walletVerification.isMatch}
+              <div class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between text-xs text-rose-300">
+                <div class="flex items-center gap-2">
+                  <ShieldAlert class="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>Активний акаунт MetaMask відрізняється від прив'язаної адреси профілю.</span>
+                </div>
+                <button onclick={checkMetaMaskAndSync} class="underline font-bold text-cyan-300">Оновити</button>
+              </div>
+            {/if}
+
+            {#if isLoadingNfts}
+              <div class="flex flex-col items-center justify-center py-16 gap-3 text-cyan-400">
+                <Loader2 class="w-8 h-8 animate-spin" />
+                <span class="text-sm font-semibold">Отримання посилань зі смарт-контракту та завантаження значків...</span>
+              </div>
+            {:else if myNfts.length === 0}
+              <div class="text-center py-14 p-6 rounded-2xl bg-[#02171d] border border-cyan-900/30 space-y-3">
+                <div class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 mx-auto flex items-center justify-center">
+                  <Award class="w-7 h-7" />
+                </div>
+                <h3 class="text-base font-bold text-white">У вас поки немає значків</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Проводьте час на платформі (кожні 10 годин активності нараховується новий значок на вашу адресу) або отримуйте подарунки від друзів!
+                </p>
+              </div>
+            {:else}
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {#each myNfts as nft (nft.id || nft.tokenId)}
+                  <BadgeCard
+                    gift={nft}
+                    onclick={(g) => {
+                      selectedBadgeForModal = g;
+                      isBadgeModalOpen = true;
+                    }}
+                  />
+                {/each}
+              </div>
+            {/if}
+
           </div>
         {/if}
 
@@ -395,27 +831,16 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each $libraryStore.items as item}
-                  {@const g = getGameForItem(item)}
-                  {#if g}
-                    <button
-                      type="button"
-                      onclick={() => navigateToGame(g)}
-                      class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
-                    >
-                      {#if g.coverImageUrl || g.headerImageUrl}
-                        <img src={g.coverImageUrl || g.headerImageUrl} alt={g.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
-                      {:else}
-                        <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
-                          {g.title}
-                        </div>
-                      {/if}
-                      <div class="min-w-0 flex-1">
-                        <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{g.title}</h4>
-                        {#if g.isDlc}
+                  {#if item.game}
+                    <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
+                      <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                      <div class="min-w-0">
+                        <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
+                        {#if item.game.isDlc}
                           <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase">DLC</span>
                         {/if}
                       </div>
-                    </button>
+                    </div>
                   {/if}
                 {/each}
               </div>
@@ -430,20 +855,10 @@ import { onMount } from 'svelte';
             {:else}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each $wishlistStore.items as item}
-                  <button
-                    type="button"
-                    onclick={() => navigateToGame(item.game)}
-                    class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30 hover:border-cyan-500/60 hover:bg-[#03232c] transition-all text-left cursor-pointer group w-full"
-                  >
-                    {#if item.game.coverImageUrl || item.game.headerImageUrl}
-                      <img src={item.game.coverImageUrl || item.game.headerImageUrl} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0 group-hover:scale-105 transition-transform" />
-                    {:else}
-                      <div class="w-16 h-20 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-cyan-400 text-[10px] font-bold p-1 text-center border border-cyan-900/50 group-hover:scale-105 transition-transform">
-                        {item.game.title}
-                      </div>
-                    {/if}
-                    <h4 class="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">{item.game.title}</h4>
-                  </button>
+                  <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
+                    <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                    <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
+                  </div>
                 {/each}
               </div>
             {/if}
@@ -487,10 +902,18 @@ import { onMount } from 'svelte';
                 <div class="space-y-4">
                   {#each myDiscussionPosts as post (post.id)}
                     <div class="bg-[#02171d] rounded-2xl p-5 border border-cyan-900/30">
-                      <span class="text-xs text-slate-500 block mb-2">{formatDate(post.createdAt)}</span>
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="text-xs text-slate-500">{formatDate(post.createdAt)}</span>
+                        {#if (post as any).gameTitle}
+                          <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 flex items-center gap-1">
+                            <Gamepad2 class="w-3 h-3 text-cyan-400" />
+                            {(post as any).gameTitle}
+                          </span>
+                        {/if}
+                      </div>
                       <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
-                      <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{post.content}</p>
-                      {#if post.media?.type === 'image' && post.media.url}
+                      <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
+                      {#if post.media?.url && post.media?.type !== 'video'}
                         <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                       {/if}
                       <div class="flex gap-4 text-xs font-medium text-slate-400">
@@ -525,16 +948,33 @@ import { onMount } from 'svelte';
               {:else}
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {#each myVideoPosts as post (post.id)}
-                    <div class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800">
+                    <button
+                      type="button"
+                      onclick={() => (activeVideoPost = post)}
+                      class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    >
                       {#if post.media?.thumbnailUrl || post.media?.url}
                         <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       {/if}
-                      <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
-                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                          <svg class="w-5 h-5 text-black ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
+                        <div class="self-end">
+                          <span class="text-[10px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded backdrop-blur-sm">
+                            HD
+                          </span>
+                        </div>
+                        <div class="flex items-center justify-center my-auto">
+                          <div class="w-12 h-12 bg-cyan-400/90 text-black group-hover:bg-cyan-300 group-hover:scale-110 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all">
+                            <svg class="w-6 h-6 ml-0.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          </div>
+                        </div>
+                        <div class="truncate">
+                          <p class="text-xs font-bold text-white truncate drop-shadow-md">{post.title || 'Відео'}</p>
+                          {#if post.gameTitle}
+                            <p class="text-[10px] text-cyan-300/80 truncate">{post.gameTitle}</p>
+                          {/if}
                         </div>
                       </div>
-                    </div>
+                    </button>
                   {/each}
                 </div>
               {/if}
@@ -550,7 +990,7 @@ import { onMount } from 'svelte';
                       {/if}
                       <div>
                         <h3 class="text-base font-bold text-white mb-2">{post.title}</h3>
-                        <p class="text-xs text-slate-400 line-clamp-3 whitespace-pre-line">{post.content}</p>
+                        <p class="text-xs text-slate-400 line-clamp-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       </div>
                     </div>
                   {/each}
@@ -574,7 +1014,7 @@ import { onMount } from 'svelte';
                           <Star class="w-4 h-4 {i < review.rating ? 'fill-rose-500' : 'text-slate-600'}" />
                         {/each}
                       </div>
-                      <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{review.content}</p>
+                      <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{@html renderDecoratedText(review.content)}</p>
                       <span class="block text-[11px] text-slate-500 mt-3">{formatDate(review.createdAt)}</span>
                     </div>
                   {/each}
@@ -588,7 +1028,12 @@ import { onMount } from 'svelte';
 
       <div class="space-y-6">
 
-        <div class="bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+        <div class="hidden lg:block bg-[#03232c] border border-cyan-900/40 rounded-2xl p-4">
+
+          <div class="px-2 pb-3.5 mb-3 border-b border-cyan-900/40">
+            <ProfileLevelCard tokens={tokenBalance} />
+          </div>
+
           <nav class="space-y-1">
             {#each menuItems as item}
               <button
@@ -613,14 +1058,20 @@ import { onMount } from 'svelte';
             <p class="text-xs text-slate-500 px-2 py-2">Список друзів порожній.</p>
           {:else}
             <div class="space-y-2">
-              {#each uniqueFriends as f}
+              {#each uniqueFriends as f (f.id)}
                 <button
-                  onclick={() => profileStore.viewProfile(f.friend?.id || (f as any).id)}
+                  onclick={() => profileStore.viewProfile(f.id)}
                   class="w-full flex items-center justify-between px-2 cursor-pointer hover:bg-cyan-900/20 p-2 rounded-xl transition-colors text-left"
                 >
                   <div class="flex items-center gap-3">
-                    <img src={f.friend?.avatarUrl || (f as any).avatarUrl || undefined} alt={f.friend?.username || (f as any).username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
-                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.friend?.username || (f as any).username}</span>
+                    {#if f.avatarUrl}
+                      <img src={f.avatarUrl} alt={f.username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
+                    {:else}
+                      <div class="w-8 h-8 rounded-full bg-cyan-950/80 text-cyan-300 font-bold flex items-center justify-center text-xs border border-cyan-500/30">
+                        {f.username.charAt(0).toUpperCase()}
+                      </div>
+                    {/if}
+                    <span class="text-xs font-medium text-slate-200 truncate max-w-[110px]">{f.username}</span>
                   </div>
                 </button>
               {/each}
@@ -639,6 +1090,43 @@ import { onMount } from 'svelte';
         <h3 class="text-lg font-black text-white">Створити: {createTypeLabels[createPostType]}</h3>
         <button onclick={() => { isCreatingPost = false; resetPostMedia(); }} class="text-slate-400 hover:text-white cursor-pointer"><X class="w-5 h-5" /></button>
       </div>
+
+      <div class="p-3 rounded-2xl bg-[#02171d] border border-cyan-900/60 flex items-center justify-between gap-3 shadow-inner">
+        <div class="flex items-center gap-3 min-w-0">
+          {#if selectedPostGame}
+            <div class="w-11 h-8 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
+              {#if selectedPostGame.bannerUrl}
+                <img src={selectedPostGame.bannerUrl} alt={selectedPostGame.title} class="w-full h-full object-cover" />
+              {:else}
+                <div class="w-full h-full bg-gradient-to-tr from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400">
+                  <Gamepad2 class="w-4 h-4" />
+                </div>
+              {/if}
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Підв'язано до гри</span>
+              <span class="text-xs font-bold text-white truncate block">{selectedPostGame.title}</span>
+            </div>
+          {:else}
+            <div class="w-8 h-8 rounded-lg bg-cyan-950/60 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+              <Gamepad2 class="w-4 h-4" />
+            </div>
+            <div>
+              <span class="text-xs font-bold text-amber-300 block">Гру не обрано *</span>
+              <span class="text-[10px] text-slate-400">Оберіть гру для створення допису</span>
+            </div>
+          {/if}
+        </div>
+
+        <button
+          type="button"
+          onclick={() => isSelectGameModalOpen = true}
+          class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+        >
+          {selectedPostGame ? 'Змінити' : 'Обрати'}
+        </button>
+      </div>
+
       <input
         type="text"
         bind:value={postTitle}
@@ -714,7 +1202,53 @@ import { onMount } from 'svelte';
         <button onclick={() => isEditingProfile = false} class="text-slate-400 hover:text-white cursor-pointer"><X class="w-5 h-5" /></button>
       </div>
       <div>
-        <label for="edit-avatar" class="block text-xs text-slate-400 mb-1.5">URL аватара</label>
+        <label class="block text-xs text-slate-400 mb-1.5 font-medium">Аватар профілю</label>
+        <div class="flex items-center gap-4 p-3 bg-[#02171d] rounded-2xl border border-cyan-900/40">
+          <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500/40 shrink-0 bg-[#061820] flex items-center justify-center">
+            {#if editAvatarUrl || $currentUser.avatarUrl}
+              <BackendImage src={editAvatarUrl || $currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
+            {:else}
+              <span class="text-xl font-bold text-white">{$currentUser.username.charAt(0).toUpperCase()}</span>
+            {/if}
+          </div>
+          <div class="flex-1 flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              onclick={() => modalAvatarFileInput?.click()}
+              disabled={isUploadingAvatar}
+              class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {#if isUploadingAvatar}
+                <Loader2 class="w-3.5 h-3.5 animate-spin" />
+                <span>Завантаження...</span>
+              {:else}
+                <Upload class="w-3.5 h-3.5" />
+                <span>Завантажити фото</span>
+              {/if}
+            </button>
+            {#if editAvatarUrl || $currentUser.avatarUrl}
+              <button
+                type="button"
+                onclick={handleDeleteAvatar}
+                disabled={isUploadingAvatar}
+                class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 hover:text-white border border-rose-800/40 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>Видалити аватар</span>
+              </button>
+            {/if}
+          </div>
+          <input
+            bind:this={modalAvatarFileInput}
+            type="file"
+            accept="image/*"
+            class="hidden"
+            onchange={handleAvatarFileChange}
+          />
+        </div>
+      </div>
+      <div>
+        <label for="edit-avatar" class="block text-xs text-slate-400 mb-1.5">Або вкажіть URL аватара</label>
         <input
           id="edit-avatar"
           type="text"
@@ -746,3 +1280,26 @@ import { onMount } from 'svelte';
 {/if}
 {/if}
 
+<SelectGameModal
+  isOpen={isSelectGameModalOpen}
+  selectedGameId={selectedPostGame?.id}
+  onSelect={(game) => selectedPostGame = game}
+  onClose={() => isSelectGameModalOpen = false}
+/>
+
+<VideoPlayerModal
+  isOpen={!!activeVideoPost}
+  videoUrl={activeVideoPost?.media?.url || ''}
+  title={activeVideoPost?.title || 'Відео'}
+  gameTitle={activeVideoPost?.gameTitle || ''}
+  authorUsername={$currentUser?.username || ''}
+  authorAvatarUrl={$currentUser?.avatarUrl || ''}
+  createdAt={activeVideoPost?.createdAt || ''}
+  onClose={() => (activeVideoPost = null)}
+/>
+
+<BadgeDetailModal
+  gift={selectedBadgeForModal}
+  isOpen={isBadgeModalOpen}
+  onClose={() => (isBadgeModalOpen = false)}
+/>

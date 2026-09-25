@@ -35,6 +35,7 @@ namespace DteamBackend.Models.DTO
         public long NewBalanceInNanoTons { get; set; }
         public long TotalSpentInNanoTons { get; set; }
         public int PurchasedGamesCount { get; set; }
+        public decimal AwardedTokens { get; set; }
+        public string? TokenTxHash { get; set; }
     }
 }
-

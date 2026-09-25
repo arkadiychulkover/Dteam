@@ -1,12 +1,12 @@
+using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
-using DteamBackend.Models.Enums;
 using DteamBackend.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace DteamBackend.Controllers
 {
@@ -16,11 +16,16 @@ namespace DteamBackend.Controllers
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IRewardSettingsService _rewardSettingsService;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(AppDbContext context, ILogger<AdminController> logger)
+        public AdminController(
+            AppDbContext context,
+            IRewardSettingsService rewardSettingsService,
+            ILogger<AdminController> logger)
         {
             _context = context;
+            _rewardSettingsService = rewardSettingsService;
             _logger = logger;
         }
 
@@ -76,9 +81,10 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+                Genres = d.Genres ?? new List<string>(),
+                Platforms = d.Platforms ?? new List<string>(),
+                Features = d.Features ?? new List<string>(),
+                SupportedLanguages = d.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -90,9 +96,10 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+            Genres = game.Genres ?? new List<string>(),
+            Platforms = game.Platforms ?? new List<string>(),
+            Features = game.Features ?? new List<string>(),
+            SupportedLanguages = game.SupportedLanguages ?? new List<GameLanguageSupport>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -227,10 +234,11 @@ namespace DteamBackend.Controllers
             return Ok(MapToUserDto(user));
         }
 
-        [HttpDelete("users/{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpPost("users/{id:guid}/credit-balance")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteUser(Guid id)
+        public async Task<ActionResult<UserDto>> CreditUserBalance(Guid id, [FromBody] CreditBalanceDto dto)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
@@ -238,10 +246,150 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
             }
 
-            _context.Users.Remove(user);
+            var newBalance = user.BalanceInNanoTons + dto.AmountInNanoTons;
+            if (newBalance < 0)
+            {
+                return BadRequest(new { message = "Недостаточно средств на балансе пользователя для списания такой суммы" });
+            }
+
+            user.BalanceInNanoTons = newBalance;
+            if (dto.AmountInNanoTons > 0)
+            {
+                user.TotalEarningsInNanoTons += dto.AmountInNanoTons;
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = $"Пользователь '{user.Username}' успешно удален" });
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            _logger.LogInformation(
+                "Admin {AdminId} {Action} {Amount} nanoTON {Direction} user {UserId} balance. Reason: {Reason}",
+                adminIdClaim,
+                dto.AmountInNanoTons > 0 ? "credited" : "debited",
+                Math.Abs(dto.AmountInNanoTons),
+                dto.AmountInNanoTons > 0 ? "to" : "from",
+                id,
+                dto.Reason ?? "—"
+            );
+
+            return Ok(MapToUserDto(user));
+        }
+
+        [HttpDelete("users/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                  ?? User.FindFirst("sub")?.Value;
+            if (Guid.TryParse(currentUserIdClaim, out var currentAdminId) && currentAdminId == id)
+            {
+                return BadRequest(new { message = "Нельзя удалить свой собственный аккаунт администратора." });
+            }
+
+            var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+            {
+                return NotFound(new { message = $"Пользователь с ID '{id}' не найден" });
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+
+                var refreshTokens = await _context.RefreshTokens.Where(rt => rt.UserId == id).ToListAsync();
+                if (refreshTokens.Count > 0) _context.RefreshTokens.RemoveRange(refreshTokens);
+
+                var uploads = await _context.ChatUploads.Where(u => u.UserId == id).ToListAsync();
+                if (uploads.Count > 0) _context.ChatUploads.RemoveRange(uploads);
+
+                var messages = await _context.ChatMessages.Where(m => m.SenderId == id || m.ReceiverId == id).ToListAsync();
+                if (messages.Count > 0) _context.ChatMessages.RemoveRange(messages);
+
+                var walletTx = await _context.WalletTransactions.Where(t => t.UserId == id).ToListAsync();
+                if (walletTx.Count > 0) _context.WalletTransactions.RemoveRange(walletTx);
+
+                var tranxactions = await _context.Tranxactions.Where(t => t.UserId == id).ToListAsync();
+                foreach (var tx in tranxactions) tx.UserId = null;
+
+                var friendRequests = await _context.FriendRequests.Where(fr => fr.SenderId == id || fr.ReceiverId == id).ToListAsync();
+                if (friendRequests.Count > 0) _context.FriendRequests.RemoveRange(friendRequests);
+
+                var userFriends = await _context.UserFriends.Where(uf => uf.UserId == id || uf.FriendId == id).ToListAsync();
+                if (userFriends.Count > 0) _context.UserFriends.RemoveRange(userFriends);
+
+                var userBlocks = await _context.UserBlocks.Where(ub => ub.UserId == id || ub.BlockedUserId == id).ToListAsync();
+                if (userBlocks.Count > 0) _context.UserBlocks.RemoveRange(userBlocks);
+
+                var userGames = await _context.UserGames.Where(ug => ug.UserId == id).ToListAsync();
+                if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
+
+                var wishlists = await _context.UserWishlists.Where(w => w.UserId == id).ToListAsync();
+                if (wishlists.Count > 0) _context.UserWishlists.RemoveRange(wishlists);
+
+                var cartItems = await _context.UserCartItems.Where(c => c.UserId == id).ToListAsync();
+                if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
+
+                var reviews = await _context.Reviews.Where(r => r.UserId == id).ToListAsync();
+                if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
+
+                var activities = await _context.UserActivities.Where(a => a.UserId == id).ToListAsync();
+                if (activities.Count > 0) _context.UserActivities.RemoveRange(activities);
+
+                var notifications = await _context.Notifications.Where(n => n.UserId == id || n.ActorUserId == id).ToListAsync();
+                if (notifications.Count > 0) _context.Notifications.RemoveRange(notifications);
+
+                var notifPrefs = await _context.UserNotificationPreferences.Where(p => p.UserId == id).ToListAsync();
+                if (notifPrefs.Count > 0) _context.UserNotificationPreferences.RemoveRange(notifPrefs);
+
+                var nfts = await _context.NftItems.Where(n => n.UserId == id).ToListAsync();
+                foreach (var nft in nfts) nft.UserId = null;
+
+                var transfers = await _context.NftTransfers.Where(t => t.FromUserId == id || t.ToUserId == id).ToListAsync();
+                foreach (var t in transfers)
+                {
+                    if (t.FromUserId == id) t.FromUserId = null;
+                    if (t.ToUserId == id) t.ToUserId = null;
+                }
+
+                var collections = await _context.GameCollections.Include(c => c.Items).Where(c => c.UserId == id).ToListAsync();
+                if (collections.Count > 0) _context.GameCollections.RemoveRange(collections);
+
+                var familyMembers = await _context.Users.Where(u => u.FamilyOwnerId == id).ToListAsync();
+                foreach (var member in familyMembers)
+                {
+                    member.FamilyOwnerId = null;
+                    member.IsInFamily = false;
+                }
+
+                var createdGames = await _context.Games.Where(g => g.OwnerId == id).ToListAsync();
+                if (createdGames.Count > 0)
+                {
+                    var otherAdmin = await _context.Users.FirstOrDefaultAsync(u => u.IsAdmin && u.Id != id);
+                    if (otherAdmin != null)
+                    {
+                        foreach (var g in createdGames) g.OwnerId = otherAdmin.Id;
+                    }
+                    else
+                    {
+                        _context.Games.RemoveRange(createdGames);
+                    }
+                }
+
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("[Admin] User '{Username}' (ID: {Id}) permanently deleted with all relations.", user.Username, id);
+                return Ok(new { message = $"Пользователь '{user.Username}' успешно удален" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "[Admin] Error permanently deleting user {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Ошибка при удалении пользователя: {ex.Message}" });
+            }
         }
 
         [HttpGet("games")]
@@ -304,16 +452,16 @@ namespace DteamBackend.Controllers
                 ShortDescription = dto.ShortDescription,
                 PriceInNanoTons = dto.PriceInNanoTons,
                 DiscountPercentage = dto.DiscountPercentage,
-                ServerArchivePath = dto.ServerArchivePath,
+                ServerArchivePath = dto.ServerArchivePath ?? string.Empty,
                 OwnerId = ownerId,
                 DownloadCount = 0,
                 AverageRating = 0.0,
                 ReviewsCount = 0,
                 IsDlc = dto.IsDlc,
                 ParentGameId = dto.ParentGameId,
-                Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, ignoreCase: true)).ToList() ?? new List<GameGenre>(),
-                Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, ignoreCase: true)).ToList() ?? new List<GamePlatform>(),
-                Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, ignoreCase: true)).ToList() ?? new List<GameFeature>(),
+                Genres = dto.Genres ?? new List<string>(),
+                Platforms = dto.Platforms ?? new List<string> { "Windows" },
+                Features = dto.Features ?? new List<string>(),
                 Tags = dto.Tags ?? new List<string>(),
                 Version = string.IsNullOrWhiteSpace(dto.Version) ? "1.0.0" : dto.Version,
                 SizeInBytes = dto.SizeInBytes,
@@ -371,9 +519,10 @@ namespace DteamBackend.Controllers
             }
             if (dto.IsDlc.HasValue) game.IsDlc = dto.IsDlc.Value;
             if (dto.ParentGameId.HasValue) game.ParentGameId = dto.ParentGameId.Value == Guid.Empty ? null : dto.ParentGameId.Value;
-            if (dto.Genres != null) game.Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, ignoreCase: true)).ToList() ?? new List<GameGenre>();
-            if (dto.Platforms != null) game.Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, ignoreCase: true)).ToList() ?? new List<GamePlatform>();
-            if (dto.Features != null) game.Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, ignoreCase: true)).ToList() ?? new List<GameFeature>();
+            if (dto.Genres != null) game.Genres = dto.Genres;
+            if (dto.Platforms != null) game.Platforms = dto.Platforms;
+            if (dto.Features != null) game.Features = dto.Features;
+            if (dto.SupportedLanguages != null) game.SupportedLanguages = dto.SupportedLanguages;
             if (dto.Tags != null) game.Tags = dto.Tags;
             if (!string.IsNullOrWhiteSpace(dto.Version)) game.Version = dto.Version;
             if (dto.SizeInBytes.HasValue) game.SizeInBytes = dto.SizeInBytes.Value;
@@ -395,17 +544,84 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteGame(Guid id)
         {
-            var game = await _context.Games.FindAsync(id);
+            var game = await _context.Games
+                .Include(g => g.Dlcs)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
             if (game == null)
             {
                 return NotFound(new { message = $"Игра с ID '{id}' не найдена" });
             }
 
-            _context.Games.Remove(game);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
 
-            return Ok(new { message = $"Игра '{game.Title}' успешно удалена" });
+                foreach (var dlc in game.Dlcs)
+                {
+                    dlc.ParentGameId = null;
+                }
+
+                var cartItems = await _context.UserCartItems.Where(c => c.GameId == id).ToListAsync();
+                if (cartItems.Count > 0) _context.UserCartItems.RemoveRange(cartItems);
+
+                var wishlists = await _context.UserWishlists.Where(w => w.GameId == id).ToListAsync();
+                if (wishlists.Count > 0) _context.UserWishlists.RemoveRange(wishlists);
+
+                var userGames = await _context.UserGames.Where(ug => ug.GameId == id).ToListAsync();
+                if (userGames.Count > 0) _context.UserGames.RemoveRange(userGames);
+
+                var colItems = await _context.GameCollectionItems.Where(ci => ci.GameId == id).ToListAsync();
+                if (colItems.Count > 0) _context.GameCollectionItems.RemoveRange(colItems);
+
+                var reviews = await _context.Reviews.Where(r => r.GameId == id).ToListAsync();
+                if (reviews.Count > 0) _context.Reviews.RemoveRange(reviews);
+
+                var posts = await _context.CommunityPosts.Where(p => p.GameGuidId == id).ToListAsync();
+                foreach (var p in posts) p.GameGuidId = null;
+
+                _context.Games.Remove(game);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("[Admin] Game '{Title}' (ID: {Id}) deleted by admin.", game.Title, id);
+                return Ok(new { message = $"Игра '{game.Title}' успешно удалена" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "[Admin] Error deleting game {GameId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Ошибка при удалении игры: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("reward-settings")]
+        [ProducesResponseType(typeof(RewardSettingsDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<RewardSettingsDto>> GetRewardSettings()
+        {
+            var settings = await _rewardSettingsService.GetSettingsAsync();
+            return Ok(new RewardSettingsDto
+            {
+                RewardIntervalMinutes = settings.RewardIntervalMinutes,
+                TokensPerHour = settings.TokensPerHour,
+                IsEnabled = settings.IsEnabled,
+                UpdatedAt = settings.UpdatedAt
+            });
+        }
+
+        [HttpPut("reward-settings")]
+        [ProducesResponseType(typeof(RewardSettingsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<RewardSettingsDto>> UpdateRewardSettings([FromBody] UpdateRewardSettingsDto dto)
+        {
+            var settings = await _rewardSettingsService.UpdateSettingsAsync(dto);
+            return Ok(new RewardSettingsDto
+            {
+                RewardIntervalMinutes = settings.RewardIntervalMinutes,
+                TokensPerHour = settings.TokensPerHour,
+                IsEnabled = settings.IsEnabled,
+                UpdatedAt = settings.UpdatedAt
+            });
         }
     }
 }
-

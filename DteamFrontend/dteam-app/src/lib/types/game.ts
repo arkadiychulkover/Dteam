@@ -1,7 +1,16 @@
 import type { Duser } from './user';
 
+export interface ReviewParentInfo {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatarUrl?: string | null;
+  content: string;
+}
+
 export interface Review {
   id: string;
+  parentReviewId?: string | null;
   userId: string;
   username?: string;
   userAvatarUrl?: string | null;
@@ -11,8 +20,20 @@ export interface Review {
   content: string;
   isRecommended: boolean;
   playTimeHoursAtReview?: number;
+  likesCount?: number;
+  isLiked?: boolean;
+  repliesCount?: number;
+  replies?: Review[];
+  parentReview?: ReviewParentInfo | null;
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export interface GameLanguageSupport {
+  language: string;
+  interface: boolean;
+  fullAudio: boolean;
+  subtitles: boolean;
 }
 
 export interface Game {
@@ -37,6 +58,7 @@ export interface Game {
   genres?: string[];
   platforms?: string[];
   features?: string[];
+  supportedLanguages?: GameLanguageSupport[];
   tags?: string[];
   version: string;
   sizeInBytes: number;
@@ -72,5 +94,3 @@ export interface GameRecommendation {
   headerImageUrl?: string | null;
   coverImageUrl?: string | null;
 }
-
-

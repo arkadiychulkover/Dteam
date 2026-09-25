@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore } from '../../stores/uiStore';
+  import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
   import { X, ShieldCheck, CheckCircle, Key } from 'lucide-svelte';
 
@@ -16,7 +16,7 @@ import { uiStore } from '../../stores/uiStore';
     const trimmedCode = resetCode.trim();
 
     if (!trimmedCode) {
-      errorMessage = 'Введите код подтверждения (GUID)';
+      errorMessage = 'Введіть код підтвердження (GUID)';
       return;
     }
 
@@ -26,14 +26,14 @@ import { uiStore } from '../../stores/uiStore';
     try {
       await authStore.verifyResetCode(trimmedCode);
       uiStore.addToast({
-        title: 'Код подтвержден',
-        message: 'Успешная верификация!',
+        title: 'Код підтверджено',
+        message: 'Успішна верифікація!',
         type: 'success'
       });
       closeModal();
       uiStore.setTab('reset-password');
     } catch (err: any) {
-      errorMessage = err.message || 'Неверный или истекший код.';
+      errorMessage = err.message || 'Невірний або застарілий код.';
     } finally {
       isSubmitting = false;
     }
@@ -52,7 +52,7 @@ import { uiStore } from '../../stores/uiStore';
     role="presentation"
     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
   >
-    <div class="relative w-full max-w-md bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
+    <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#09151e] border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 animate-in zoom-in-95 duration-200">
 
       <button
         onclick={closeModal}
@@ -66,7 +66,7 @@ import { uiStore } from '../../stores/uiStore';
           <ShieldCheck class="w-6 h-6" />
         </div>
         <h2 class="text-xl sm:text-2xl font-extrabold text-white font-display">
-          Введите код подтверждения
+          Введіть код підтвердження
         </h2>
       </div>
 
@@ -99,14 +99,13 @@ import { uiStore } from '../../stores/uiStore';
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Проверка...</span>
+            <span>Перевірка...</span>
           {:else}
             <CheckCircle class="w-4 h-4 text-black" />
-            <span>Подтвердить</span>
+            <span>Підтвердити</span>
           {/if}
         </button>
       </form>
     </div>
   </div>
 {/if}
-

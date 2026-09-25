@@ -1,7 +1,7 @@
-using DteamBackend.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using DteamBackend.Models.Enums;
 
 namespace DteamBackend.Models
 {
@@ -27,6 +27,9 @@ namespace DteamBackend.Models
         [MaxLength(100)]
         public string? WalletAddress { get; set; }
 
+        [MaxLength(100)]
+        public string? HardhatAddress { get; set; }
+
         public string? PasswordResetToken { get; set; }
 
         public DateTime? PasswordResetTokenExpiresAt { get; set; }
@@ -40,6 +43,14 @@ namespace DteamBackend.Models
         public DateTime? UpdatedAt { get; set; }
 
         public DateTime? LastLoginAt { get; set; }
+
+        public DateTime? LastConnectedAt { get; set; }
+
+        public DateTime? LastDisconnectedAt { get; set; }
+
+        public long TotalTimeSpentSeconds { get; set; } = 0;
+
+        public int TimeRewardNftsMintedCount { get; set; } = 0;
 
         public bool IsInFamily { get; set; } = false;
 
@@ -63,6 +74,10 @@ namespace DteamBackend.Models
 
         public string? BannerUrl { get; set; }
 
+        public ICollection<Duser> Friends { get; set; } = new List<Duser>();
+
+        public ICollection<Duser> BlockedUsers { get; set; } = new List<Duser>();
+
         public ICollection<UserFriend> Friendships { get; set; } = new List<UserFriend>();
 
         public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();
@@ -78,6 +93,13 @@ namespace DteamBackend.Models
         public ICollection<UserWishlist> Wishlist { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> CartItems { get; set; } = new List<UserCartItem>();
+
+        public ICollection<UserActivity> Activities { get; set; } = new List<UserActivity>();
+
+        public ICollection<NftItem> Gifts { get; set; } = new List<NftItem>();
+
+        public ICollection<GameCollection> Collections { get; set; } = new List<GameCollection>();
+
         public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Baseline());
 
         [NotMapped]
@@ -86,6 +108,14 @@ namespace DteamBackend.Models
             get => JsonSerializer.Deserialize<float[]>(TasteVectorJson) ?? TasteCategories.Empty();
             set => TasteVectorJson = JsonSerializer.Serialize(value);
         }
+
+        [MaxLength(10)]
+        public string PreferredLanguage { get; set; } = "uk";
+
+        public UserNotificationPreferences? NotificationPreferences { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
+
+        public DateTime? DeletedAt { get; set; }
     }
 }
-

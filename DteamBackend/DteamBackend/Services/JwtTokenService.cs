@@ -55,7 +55,7 @@ namespace DteamBackend.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15),
+                expires: DateTime.UtcNow.AddHours(4),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

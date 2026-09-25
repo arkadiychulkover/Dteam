@@ -1,14 +1,16 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice, getEffectivePrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import FeaturedCarousel from './FeaturedCarousel.svelte';
-  import { ChevronRight, ChevronLeft, Gift } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
+  import { ChevronRight, ChevronLeft, Gift, Loader2, RefreshCw } from 'lucide-svelte';
   import { recommendationService } from '../../services/recommendationService';
 
   const allGames = $derived($gamesStore.games);
+  const isLoading = $derived($gamesStore.isLoading);
 
   let specialOffersIndex = $state(0);
   const discountedGames = $derived(allGames.filter(g => (g.discountPercentage || 0) > 0));
@@ -18,7 +20,9 @@ import { onMount } from 'svelte';
   let recommendedGames = $state<Game[]>([]);
   let recommendedIndex = $state(0);
   let recommendedLoading = $state(true);
-  const visibleRecommended = $derived(recommendedGames.slice(recommendedIndex, recommendedIndex + 4));
+  const visibleRecommended = $derived(
+    (recommendedGames.length > 0 ? recommendedGames : allGames).slice(recommendedIndex, recommendedIndex + 4)
+  );
 
   let budgetIndex = $state(0);
   const budgetGames = $derived(allGames.filter(g => getEffectivePrice(g.priceInNanoTons, g.discountPercentage) <= 1.0));
@@ -49,7 +53,7 @@ import { onMount } from 'svelte';
     try {
       recommendedGames = await recommendationService.getRecommended(24, 0);
     } catch (e) {
-      console.error('Не вдалося завантажити рекомендації', e);
+      console.warn('Не вдалося завантажити рекомендації:', e);
       recommendedGames = [];
     } finally {
       recommendedLoading = false;
@@ -63,12 +67,31 @@ import { onMount } from 'svelte';
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-12 animate-in fade-in">
-  <FeaturedCarousel />
+  {#if isLoading && allGames.length === 0}
+    <div class="flex flex-col items-center justify-center py-24 space-y-4">
+      <Loader2 class="w-10 h-10 text-cyan-400 animate-spin" />
+      <p class="text-sm font-bold text-slate-300">Завантаження крамниці Dteam...</p>
+    </div>
+  {:else if allGames.length === 0}
+    <div class="flex flex-col items-center justify-center py-20 bg-[#061820]/60 rounded-3xl border border-cyan-500/20 text-center p-8 space-y-4 shadow-xl">
+      <Gift class="w-12 h-12 text-cyan-500/40" />
+      <h3 class="text-lg font-black text-white">Ігор поки що немає або сервер недоступний</h3>
+      <p class="text-xs text-slate-400 max-w-md">Перевірте з'єднання з бэкендом або натисніть кнопку нижче для повторного завантаження.</p>
+      <button
+        onclick={() => gamesStore.loadGames()}
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-black text-xs shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-emerald-400 transition-all cursor-pointer"
+      >
+        <RefreshCw class="w-4 h-4" />
+        <span>Оновити крамницю</span>
+      </button>
+    </div>
+  {:else}
+    <FeaturedCarousel />
 
-  {#if specialOffersList.length > 0}
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
-        <button
+    {#if specialOffersList.length > 0}
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <button
           onclick={() => goToCatalog({ isDiscounted: true })}
           class="group flex items-center gap-2 text-lg sm:text-xl font-display font-extrabold text-white hover:text-cyan-300 transition-colors cursor-pointer"
         >
@@ -144,11 +167,8 @@ import { onMount } from 'svelte';
     </section>
   {/if}
 
-  {#if recommendedLoading}
-  <div class="animate-pulse flex gap-4">
-    <div class="h-48 bg-slate-800 rounded-2xl w-full"></div>
-  </div>
-  {:else if recommendedGames.length > 0}
+  {#if recommendedGames.length > 0 || allGames.length > 0}
+    {@const listForRecommended = recommendedGames.length > 0 ? recommendedGames : allGames}
     <section class="space-y-4">
       <div class="flex items-center justify-between">
         <button
@@ -161,7 +181,7 @@ import { onMount } from 'svelte';
       </div>
 
       <div class="relative">
-        {#if recommendedGames.length > 4}
+        {#if listForRecommended.length > 4}
           <button
             onclick={() => recommendedIndex = Math.max(0, recommendedIndex - 1)}
             disabled={recommendedIndex === 0}
@@ -171,8 +191,8 @@ import { onMount } from 'svelte';
             <ChevronLeft class="w-4 h-4" />
           </button>
           <button
-            onclick={() => recommendedIndex = Math.min(recommendedGames.length - 4, recommendedIndex + 1)}
-            disabled={recommendedIndex >= recommendedGames.length - 4}
+            onclick={() => recommendedIndex = Math.min(listForRecommended.length - 4, recommendedIndex + 1)}
+            disabled={recommendedIndex >= listForRecommended.length - 4}
             class="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 hover:bg-cyan-500 hover:text-black text-white border border-white/20 items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
             aria-label="Next recommended"
           >
@@ -190,7 +210,7 @@ import { onMount } from 'svelte';
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-                <img
+                <BackendImage
                   src={game.coverImageUrl || game.headerImageUrl}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -201,7 +221,7 @@ import { onMount } from 'svelte';
                 <h3 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
                   {game.title}
                 </h3>
-                
+
                 <div class="flex items-center gap-2">
                   {#if (game.discountPercentage || 0) > 0}
                     <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[10px]">
@@ -459,5 +479,5 @@ import { onMount } from 'svelte';
       </div>
     </section>
   {/if}
+{/if}
 </div>
-

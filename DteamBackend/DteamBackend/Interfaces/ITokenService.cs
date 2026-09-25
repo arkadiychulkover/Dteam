@@ -1,4 +1,4 @@
-﻿using DteamBackend.Models;
+using DteamBackend.Models;
 using DteamBackend.Models.DTO.Auth;
 
 namespace DteamBackend.Interfaces
@@ -10,4 +10,3 @@ namespace DteamBackend.Interfaces
         Task<AuthResponseDto> RefreshTokensAsync(string refreshToken);
     }
 }
-

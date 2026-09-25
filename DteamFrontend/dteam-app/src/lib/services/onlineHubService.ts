@@ -1,16 +1,24 @@
 import * as signalR from '@microsoft/signalr';
+import { uiStore } from '../stores/uiStore';
+import { api } from './api';
+import { BACKEND_URL } from '../utils/constants';
 
 type OnlineCountCallback = (count: number) => void;
+type RewardMintedCallback = (reward: any) => void;
 
 class OnlineHubService {
   private connection: signalR.HubConnection | null = null;
   private listeners: Set<OnlineCountCallback> = new Set();
+  private rewardListeners: Set<RewardMintedCallback> = new Set();
   private currentCount: number = 0;
+  private heartbeatTimer: any = null;
 
   constructor() {
+    const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/online`;
+
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('/hubs/online', {
-        accessTokenFactory: () => localStorage.getItem('dteam_token') || '',
+      .withUrl(hubUrl, {
+        accessTokenFactory: async () => (await api.getValidToken()) || '',
       })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
@@ -21,6 +29,27 @@ class OnlineHubService {
       this.currentCount = count;
       this.notify();
     });
+
+    this.connection.on('NftRewardMinted', (reward: any) => {
+      console.log('[OnlineHub] 🎉 Отримано нагороду NFT за перебування на сайті:', reward);
+      const tokenStr = reward?.tokenId !== undefined ? `#${String(reward.tokenId).padStart(3, '0')}` : '';
+      uiStore.addToast({
+        title: 'Нагорода за активність!',
+        message: `Вам нараховано новий значок ${tokenStr} за час, проведений на сайті.`,
+        type: 'success'
+      });
+      this.rewardListeners.forEach(cb => cb(reward));
+    });
+
+    this.connection.onreconnected(() => {
+      console.log('🔄 [OnlineHub] З\'єднання відновлено, перезапуск heartbeat...');
+      this.startHeartbeat();
+    });
+
+    api.onTokenRefreshed(async () => {
+      console.log('[OnlineHub] Токен оновлено, перепідключаємо OnlineHub...');
+      await this.restartConnection();
+    });
   }
 
   async startConnection(): Promise<void> {
@@ -30,25 +59,30 @@ class OnlineHubService {
       try {
         await this.connection.start();
         console.log('✅ [OnlineHub] Соединение успешно установлено через Vite Proxy');
+        this.startHeartbeat();
       } catch (err) {
         console.error('❌ [OnlineHub] Ошибка при подключении:', err);
       }
     }
   }
+
   async restartConnection(): Promise<void> {
     if (!this.connection) return;
     try {
+      this.stopHeartbeat();
       if (this.connection.state !== signalR.HubConnectionState.Disconnected) {
         await this.connection.stop();
       }
       await this.connection.start();
       console.log('🔄 [OnlineHub] Перепідключення з новим токеном виконано');
+      this.startHeartbeat();
     } catch (err) {
       console.error('❌ [OnlineHub] Помилка при перепідключенні:', err);
     }
   }
 
   async stopConnection(): Promise<void> {
+    this.stopHeartbeat();
     if (this.connection && this.connection.state !== signalR.HubConnectionState.Disconnected) {
       try {
         await this.connection.stop();
@@ -59,12 +93,42 @@ class OnlineHubService {
     }
   }
 
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    this.sendHeartbeat();
+    this.heartbeatTimer = setInterval(() => this.sendHeartbeat(), 20000);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  private async sendHeartbeat() {
+    if (!this.connection || this.connection.state !== signalR.HubConnectionState.Connected) return;
+    try {
+      const token = await api.getValidToken();
+      await this.connection.invoke('Heartbeat', token);
+    } catch (e) {
+      console.debug('[OnlineHub] Heartbeat notice:', e);
+    }
+  }
+
   onOnlineCountChanged(callback: OnlineCountCallback): () => void {
     this.listeners.add(callback);
     callback(this.currentCount);
 
     return () => {
       this.listeners.delete(callback);
+    };
+  }
+
+  onRewardMinted(callback: RewardMintedCallback): () => void {
+    this.rewardListeners.add(callback);
+    return () => {
+      this.rewardListeners.delete(callback);
     };
   }
 

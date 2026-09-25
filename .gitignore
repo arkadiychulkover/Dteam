@@ -97,3 +97,16 @@ build/
 .vite/
 .turbo/
 .cache/
+
+# Local SQLite & Uploads
+*.db
+*.db-shm
+*.db-wal
+App_Data/
+
+# Teammate reference folder
+Dteam-lev/
+TZ/
+
+
+

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { adminService, type UpdateGameDto } from '../../services/adminService';
+  import { adminService, type UpdateGameDto } from '../../services/adminService';
   import { gamesService } from '../../services/gamesService';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
@@ -698,4 +698,3 @@ import { adminService, type UpdateGameDto } from '../../services/adminService';
     </div>
   </div>
 {/if}
-

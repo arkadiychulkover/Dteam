@@ -1,5 +1,5 @@
 <script lang="ts">
-import { wishlistStore } from '../../stores/wishlistStore';
+  import { wishlistStore } from '../../stores/wishlistStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
@@ -219,4 +219,3 @@ import { wishlistStore } from '../../stores/wishlistStore';
     </div>
   </div>
 {/if}
-

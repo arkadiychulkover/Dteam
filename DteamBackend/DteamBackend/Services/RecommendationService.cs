@@ -37,13 +37,13 @@ namespace DteamBackend.Services
 
             var lr = ActionWeights[action];
 
-            var userVec = (user.TasteVector != null && user.TasteVector.Length == TasteCategories.Length)
+            var userVec = (user.TasteVector != null && user.TasteVector.Length == TasteCategories.Length && !TasteCategories.IsZeroVector(user.TasteVector))
                 ? user.TasteVector
-                : TasteCategories.Empty();
+                : TasteCategories.Baseline();
 
-            var gameVec = (game.TasteVector != null && game.TasteVector.Length == TasteCategories.Length)
+            var gameVec = (game.TasteVector != null && game.TasteVector.Length == TasteCategories.Length && !TasteCategories.IsZeroVector(game.TasteVector))
                 ? game.TasteVector
-                : TasteCategories.Empty();
+                : TasteCategories.Baseline();
 
             var updated = new float[TasteCategories.Length];
             for (var i = 0; i < TasteCategories.Length; i++)
@@ -58,9 +58,9 @@ namespace DteamBackend.Services
         public async Task<List<Game>> GetRecommendedGamesAsync(Guid userId, int take = 24, int skip = 0)
         {
             var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-            var userVec = (user?.TasteVector != null && user.TasteVector.Length == TasteCategories.Length)
+            var userVec = (user?.TasteVector != null && user.TasteVector.Length == TasteCategories.Length && !TasteCategories.IsZeroVector(user.TasteVector))
                 ? user.TasteVector
-                : TasteCategories.Empty();
+                : TasteCategories.Baseline();
 
             var ownedGameIds = await _db.UserGames
                 .Where(ug => ug.UserId == userId)
@@ -79,13 +79,13 @@ namespace DteamBackend.Services
 
             var wishlistCandidates = candidates
                 .Where(g => wishlistGameIds.Contains(g.Id))
-                .OrderByDescending(g => DotProduct(userVec, g.TasteVector) + (g.DiscountPercentage > 0 ? 0.05 : 0))
+                .OrderByDescending(g => DotProduct(userVec, GetEffectiveGameVector(g)) + (g.DiscountPercentage > 0 ? 0.05 : 0))
                 .Take(3)
                 .ToList();
 
             var newDiscoveryCandidates = candidates
                 .Where(g => !wishlistGameIds.Contains(g.Id))
-                .OrderByDescending(g => DotProduct(userVec, g.TasteVector) + (g.AverageRating * 0.05))
+                .OrderByDescending(g => DotProduct(userVec, GetEffectiveGameVector(g)) + (g.AverageRating * 0.05))
                 .Take(take - wishlistCandidates.Count)
                 .ToList();
 
@@ -108,6 +108,15 @@ namespace DteamBackend.Services
             return scored;
         }
 
+        private static float[] GetEffectiveGameVector(Game g)
+        {
+            if (g.TasteVector != null && g.TasteVector.Length == TasteCategories.Length && !TasteCategories.IsZeroVector(g.TasteVector))
+            {
+                return g.TasteVector;
+            }
+            return TasteCategories.Baseline();
+        }
+
         private static double DotProduct(float[]? a, float[]? b)
         {
             if (a == null || b == null) return 0;
@@ -118,6 +127,6 @@ namespace DteamBackend.Services
         }
 
         private static bool IsZeroVector(float[]? v)
-            => v == null || v.All(x => Math.Abs(x) < 1e-6f);
+            => TasteCategories.IsZeroVector(v);
     }
 }

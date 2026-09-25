@@ -4,9 +4,7 @@ namespace DteamBackend.Models.DTO.Auth
 {
     public class ForgotPasswordDto
     {
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Неверный формат Email")]
+        [Required(ErrorMessage = "Email або логін обов'язковий")]
         public string Email { get; set; } = string.Empty;
     }
 }
-

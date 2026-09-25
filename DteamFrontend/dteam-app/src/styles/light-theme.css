@@ -1,0 +1,114 @@
+/* Light Theme Overrides & Deduplicated Styles */
+
+:is(html.light, html.light-theme, body.light-theme),
+:is(html.light, .light-theme) body {
+  color-scheme: light;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Background surface overrides in light mode */
+:is(.light, .light-theme) :is(
+  .bg-\[\#040e14\],
+  .bg-\[\#0a0c14\],
+  .bg-\[\#030d12\],
+  .bg-\[\#030d12\]\/90,
+  .bg-\[\#061820\],
+  .bg-\[\#061820\]\/90,
+  .bg-\[\#061820\]\/80,
+  .bg-\[\#061820\]\/70,
+  .bg-\[\#061820\]\/60,
+  .bg-\[\#081722\]\/95,
+  .bg-\[\#09151e\],
+  .bg-\[\#09222c\],
+  .bg-\[\#02222d\]\/80,
+  .bg-\[\#011c27\],
+  .bg-\[\#011c27\]\/60,
+  .bg-\[\#001824\],
+  .bg-\[\#05151e\],
+  .bg-slate-900,
+  .bg-slate-900\/60,
+  .bg-slate-900\/80,
+  .bg-slate-950
+) {
+  background-color: #ffffff !important;
+}
+
+/* Header in light mode */
+:is(.light, .light-theme) header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 4px 25px -4px rgba(0, 0, 0, 0.07);
+}
+
+/* Glass panels in light mode */
+:is(.light, .light-theme) :is(.glass-panel, .glass-panel-glow) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(6, 182, 212, 0.25) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Text colors in light mode */
+:is(.light, .light-theme) .text-white {
+  color: #0f172a !important;
+}
+
+:is(.light, .light-theme) :is(.text-slate-100, .text-slate-200) {
+  color: #1e293b !important;
+}
+
+:is(.light, .light-theme) :is(.text-slate-300, .text-slate-400) {
+  color: #475569 !important;
+}
+
+/* Borders in light mode */
+:is(.light, .light-theme) :is(
+  .border-cyan-500\/20,
+  .border-cyan-500\/30,
+  .border-cyan-900\/20,
+  .border-cyan-900\/30,
+  .border-cyan-800\/40,
+  .border-slate-800,
+  .border-slate-800\/40,
+  .border-slate-800\/80
+) {
+  border-color: #cbd5e1 !important;
+}
+
+/* Form inputs in light mode */
+:is(.light, .light-theme) :is(input, textarea, select) {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+:is(.light, .light-theme) :is(input, textarea)::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Scrollbar in light mode */
+:is(.light, .light-theme) ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+:is(.light, .light-theme) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+:is(.light, .light-theme) ::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
+}
+
+/* Custom scrollbars in light mode */
+:is(.light, .light-theme) .custom-scrollbar {
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+:is(.light, .light-theme) .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+:is(.light, .light-theme) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

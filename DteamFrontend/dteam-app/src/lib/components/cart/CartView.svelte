@@ -1,10 +1,12 @@
 <script lang="ts">
-import { cartStore, cartTotals } from '../../stores/cartStore';
+  import { cartStore, cartTotals } from '../../stores/cartStore';
   import { wishlistStore } from '../../stores/wishlistStore';
+  import { libraryStore } from '../../stores/libraryStore';
   import { uiStore } from '../../stores/uiStore';
   import { gamesStore } from '../../stores/gamesStore';
   import { currentUser } from '../../stores/authStore';
-  import { formatPrice, formatBasePrice, formatTon, nanoTonToTon } from '../../utils/formatters';
+  import { formatPrice, formatBasePrice, formatTon, nanoTonToTon, formatBalance } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
   import type { Game, CartItem } from '../../types';
   import {
     ShoppingCart,
@@ -19,11 +21,13 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
     CheckCircle2,
     Coins,
     Wallet,
-    Loader2
+    Loader2,
+    AlertTriangle
   } from 'lucide-svelte';
 
   const items = $derived($cartStore.items);
   const totals = $derived($cartTotals);
+  const ownedGameIds = $derived(new Set($libraryStore.items.map(i => i.gameId)));
 
   let isCheckingOut = $state(false);
 
@@ -51,7 +55,7 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
     if (currentBalance < requiredTotal) {
       uiStore.addToast({
         title: 'Недостатньо TON на балансі',
-        message: `Для покупки потрібно ${formatPrice(requiredTotal)}, а ваш баланс становить ${formatPrice(currentBalance)}. Будь ласка, поповніть рахунок.`,
+        message: `Для покупки потрібно ${formatPrice(requiredTotal)}, а ваш баланс становить ${formatBalance(currentBalance)}. Будь ласка, поповніть рахунок.`,
         type: 'warning',
       });
       uiStore.setDepositModal(true);
@@ -161,7 +165,7 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
 
             <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch">
               <div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onclick={() => openGame(item.game)}
@@ -169,6 +173,12 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
                   >
                     {item.game.title}
                   </button>
+                  {#if ownedGameIds.has(item.gameId)}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30">
+                      <AlertTriangle class="w-3 h-3 text-amber-400" />
+                      Вже у бібліотеці
+                    </span>
+                  {/if}
                 </div>
 
                 {#if item.game.genres && item.game.genres.length > 0}
@@ -241,8 +251,9 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
                 <span>Ваш баланс:</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="font-bold text-white font-mono text-[11px]">
-                  💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                <span class="font-bold text-white font-mono text-[11px] flex items-center gap-1">
+                  <TonIcon class="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
                 </span>
                 <button
                   type="button"
@@ -320,4 +331,3 @@ import { cartStore, cartTotals } from '../../stores/cartStore';
     </div>
   {/if}
 </div>
-

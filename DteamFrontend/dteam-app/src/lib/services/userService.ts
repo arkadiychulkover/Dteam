@@ -35,6 +35,8 @@ export interface PublicProfile {
   isOwnProfile: boolean;
   friendshipStatus: 'none' | 'pending' | 'friends';
   isIncomingRequest: boolean;
+  hardhatAddress?: string | null;
+  walletAddress?: string | null;
 }
 
 export interface PublicFriend {
@@ -97,5 +99,22 @@ export const userService = {
   async updateMyProfile(patch: { bio?: string; avatarUrl?: string; bannerUrl?: string }): Promise<{ id: string; username: string; avatarUrl?: string | null; bannerUrl?: string | null; bio?: string | null }> {
     return await api.put('/users/me', patch);
   },
-};
 
+  async uploadAvatar(file: File): Promise<{ success: boolean; userId: string; username: string; avatarUrl: string; message?: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await api.post<{ success: boolean; userId: string; username: string; avatarUrl: string; message?: string }>('/user/avatar', formData);
+  },
+
+  async deleteAvatar(): Promise<{ success: boolean; userId?: string; username?: string; avatarUrl: null; message?: string }> {
+    return await api.delete<{ success: boolean; userId?: string; username?: string; avatarUrl: null; message?: string }>('/user/avatar');
+  },
+
+  async getMyAvatar(): Promise<{ userId: string; username: string; avatarUrl: string | null }> {
+    return await api.get<{ userId: string; username: string; avatarUrl: string | null }>('/user/avatar');
+  },
+
+  async getUserAvatar(userId: string): Promise<{ userId: string; username: string; avatarUrl: string | null }> {
+    return await api.get<{ userId: string; username: string; avatarUrl: string | null }>(`/users/${userId}/avatar`);
+  },
+};

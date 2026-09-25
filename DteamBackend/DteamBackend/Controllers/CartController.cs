@@ -1,11 +1,13 @@
 using System.Security.Claims;
+using System.Text.Json;
 using DteamBackend.Data;
+using DteamBackend.Interfaces;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
+using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace DteamBackend.Controllers
 {
@@ -15,10 +17,20 @@ namespace DteamBackend.Controllers
     public class CartController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IActivityService _activityService;
+        private readonly IHardhatTokenService _tokenService;
+        private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context)
+        public CartController(
+            AppDbContext context,
+            IActivityService activityService,
+            IHardhatTokenService tokenService,
+            ILogger<CartController> logger)
         {
             _context = context;
+            _activityService = activityService;
+            _tokenService = tokenService;
+            _logger = logger;
         }
 
         private Guid GetCurrentUserId()
@@ -46,9 +58,9 @@ namespace DteamBackend.Controllers
             IsDlc = game.IsDlc,
             ParentGameId = game.ParentGameId,
             ParentGameTitle = game.ParentGame?.Title,
-            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+            Genres = game.Genres ?? new List<string>(),
+            Platforms = game.Platforms ?? new List<string>(),
+            Features = game.Features ?? new List<string>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -118,6 +130,12 @@ namespace DteamBackend.Controllers
             if (game == null)
             {
                 return NotFound(new { message = $"Гру з ID '{dto.GameId}' не знайдено." });
+            }
+
+            var isAlreadyOwned = await _context.UserGames.AnyAsync(ug => ug.UserId == userId && ug.GameId == dto.GameId);
+            if (isAlreadyOwned)
+            {
+                return BadRequest(new { message = "Ця гра вже придбана та є у вашій бібліотеці." });
             }
 
             var existingItem = await _context.UserCartItems
@@ -267,115 +285,219 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Користувач не авторизований." });
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return NotFound(new { message = "Користувача не знайдено." });
-            }
-
-            if (user.IsBanned)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ваш акаунт заблоковано." });
-            }
-
-            var cartItems = await _context.UserCartItems
-                .Include(c => c.Game)
-                    .ThenInclude(g => g.Owner)
-                .Where(c => c.UserId == userId)
-                .ToListAsync();
-
-            if (cartItems.Count == 0)
-            {
-                return BadRequest(new { message = "Кошик порожній." });
-            }
-
-            long totalRequiredNanoTons = 0;
-            var gamesToPurchase = new List<(Game game, long effectivePrice)>();
-
-            foreach (var item in cartItems)
-            {
-                var game = item.Game;
-                long effectivePrice = game.PriceInNanoTons;
-                if (game.DiscountPercentage > 0)
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
                 {
-                    effectivePrice = (long)Math.Round((double)game.PriceInNanoTons * (100.0 - game.DiscountPercentage) / 100.0);
+                    return NotFound(new { message = "Користувача не знайдено." });
                 }
-                if (effectivePrice < 0) effectivePrice = 0;
 
-                totalRequiredNanoTons += effectivePrice;
-                gamesToPurchase.Add((game, effectivePrice));
-            }
-
-            if (user.BalanceInNanoTons < totalRequiredNanoTons)
-            {
-                return BadRequest(new
+                if (user.IsBanned)
                 {
-                    message = "Недостатньо коштів на балансі для здійснення покупки.",
-                    requiredBalanceInNanoTons = totalRequiredNanoTons,
-                    currentBalanceInNanoTons = user.BalanceInNanoTons,
-                    missingNanoTons = totalRequiredNanoTons - user.BalanceInNanoTons
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ваш акаунт заблоковано." });
+                }
+
+                var cartItems = await _context.UserCartItems
+                    .Include(c => c.Game)
+                        .ThenInclude(g => g.Owner)
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
+
+                if (cartItems.Count == 0)
+                {
+                    return BadRequest(new { message = "Кошик порожній." });
+                }
+
+                var existingOwnedGameIds = await _context.UserGames
+                    .Where(ug => ug.UserId == userId)
+                    .Select(ug => ug.GameId)
+                    .ToListAsync();
+
+                var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
+
+                var eligibleItems = cartItems.Where(item => !ownedSet.Contains(item.GameId)).ToList();
+                if (eligibleItems.Count == 0)
+                {
+                    _context.UserCartItems.RemoveRange(cartItems);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return BadRequest(new { message = "Всі ігри з кошика вже є у вашій бібліотеці." });
+                }
+
+                long totalRequiredNanoTons = 0;
+                var gamesToPurchase = new List<(Game game, long effectivePrice)>();
+
+                foreach (var item in eligibleItems)
+                {
+                    var game = item.Game;
+                    long effectivePrice = game.PriceInNanoTons;
+                    if (game.DiscountPercentage > 0)
+                    {
+                        effectivePrice = (long)Math.Round((double)game.PriceInNanoTons * (100.0 - game.DiscountPercentage) / 100.0);
+                    }
+                    if (effectivePrice < 0) effectivePrice = 0;
+
+                    totalRequiredNanoTons += effectivePrice;
+                    gamesToPurchase.Add((game, effectivePrice));
+                }
+
+                if (user.BalanceInNanoTons < totalRequiredNanoTons)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Недостатньо коштів на балансі для здійснення покупки.",
+                        requiredBalanceInNanoTons = totalRequiredNanoTons,
+                        currentBalanceInNanoTons = user.BalanceInNanoTons,
+                        missingNanoTons = totalRequiredNanoTons - user.BalanceInNanoTons
+                    });
+                }
+
+                user.BalanceInNanoTons -= totalRequiredNanoTons;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                var addedCount = 0;
+                decimal totalTokensToAward = 0m;
+
+                foreach (var (game, effectivePrice) in gamesToPurchase)
+                {
+                    if (!ownedSet.Contains(game.Id))
+                    {
+                        await _context.UserGames.AddAsync(new UserGame
+                        {
+                            UserId = user.Id,
+                            GameId = game.Id,
+                            PurchasedAt = DateTime.UtcNow,
+                            PlayTimeMinutes = 0,
+                            IsFavorite = false
+                        });
+
+                        await _context.WalletTransactions.AddAsync(new WalletTransaction
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            Type = WalletTransactionType.Purchase,
+                            Status = WalletTransactionStatus.Completed,
+                            AmountInNanoTons = effectivePrice,
+                            Title = game.Title,
+                            Currency = "TON",
+                            ReferenceId = game.Id.ToString(),
+                            CreatedAt = DateTime.UtcNow
+                        });
+
+                        game.DownloadCount += 1;
+                        if (game.Owner != null && effectivePrice > 0)
+                        {
+                            game.Owner.TotalEarningsInNanoTons += effectivePrice;
+                        }
+
+                        if (effectivePrice > 0)
+                        {
+                            decimal priceInTon = (decimal)effectivePrice / 1_000_000_000m;
+                            decimal tokensForGame = priceInTon * 1000m;
+                            totalTokensToAward += tokensForGame;
+                        }
+
+                        addedCount++;
+
+                        try
+                        {
+                            await _activityService.LogActivityAsync(
+                                userId: user.Id,
+                                type: UserActivityType.GamePurchased,
+                                title: $"Придбав(ла) гру {game.Title}",
+                                description: game.ShortDescription ?? game.Description,
+                                details: JsonSerializer.Serialize(new { gameId = game.Id, gameTitle = game.Title, price = effectivePrice }),
+                                relatedEntityId: game.Id,
+                                imageUrl: game.CoverImageUrl ?? game.HeaderImageUrl
+                            );
+                        }
+                        catch {  }
+                    }
+                }
+
+                var purchasedGameIds = gamesToPurchase.Select(g => g.game.Id).ToList();
+                var wishlistsToRemove = await _context.UserWishlists
+                    .Where(w => w.UserId == userId && purchasedGameIds.Contains(w.GameId))
+                    .ToListAsync();
+
+                if (wishlistsToRemove.Count > 0)
+                {
+                    _context.UserWishlists.RemoveRange(wishlistsToRemove);
+                }
+
+                _context.UserCartItems.RemoveRange(cartItems);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                string? tokenTxHash = null;
+                var recipientAddress = !string.IsNullOrWhiteSpace(user.HardhatAddress)
+                    ? user.HardhatAddress.Trim()
+                    : (user.WalletAddress?.StartsWith("0x", StringComparison.OrdinalIgnoreCase) == true ? user.WalletAddress.Trim() : null);
+
+                if (totalTokensToAward > 0 && !string.IsNullOrWhiteSpace(recipientAddress))
+                {
+                    try
+                    {
+                        tokenTxHash = await _tokenService.AwardTokensByAddressAsync(recipientAddress, totalTokensToAward);
+                        _logger.LogInformation(
+                            "[CartController] Awarded {Tokens} DTP tokens to user {UserId} ({Address}) for game purchase (formula p*1000). TxHash: {TxHash}",
+                            totalTokensToAward, user.Id, recipientAddress, tokenTxHash
+                        );
+
+                        try
+                        {
+                            await _activityService.LogActivityAsync(
+                                userId: user.Id,
+                                type: UserActivityType.BalanceDeposited,
+                                title: $"Нараховано {totalTokensToAward:N0} DTP токенів",
+                                description: $"Бонус за покупку ігор (формула p*1000). TX: {tokenTxHash.Substring(0, Math.Min(12, tokenTxHash.Length))}...",
+                                details: JsonSerializer.Serialize(new { tokens = totalTokensToAward, txHash = tokenTxHash, formula = "p*1000" }),
+                                relatedEntityId: null,
+                                imageUrl: null
+                            );
+                        }
+                        catch {  }
+                    }
+                    catch (Exception tokenEx)
+                    {
+                        _logger.LogWarning(tokenEx, "[CartController] Could not award DTP tokens to {RecipientAddress} (Hardhat node might be offline)", recipientAddress);
+                    }
+                }
+                else if (totalTokensToAward > 0 && string.IsNullOrWhiteSpace(recipientAddress))
+                {
+                    _logger.LogWarning("[CartController] User {UserId} earned {Tokens} DTP tokens, but has no linked Hardhat/MetaMask address.", user.Id, totalTokensToAward);
+                }
+
+                var message = addedCount == 1
+                    ? "Гру успішно придбано та додано до вашої бібліотеки!"
+                    : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!";
+
+                if (totalTokensToAward > 0)
+                {
+                    message += $" Вам нараховано {totalTokensToAward:N0} DTP токенів!";
+                }
+
+                return Ok(new CheckoutResultDto
+                {
+                    Success = true,
+                    Message = message,
+                    NewBalanceInNanoTons = user.BalanceInNanoTons,
+                    TotalSpentInNanoTons = totalRequiredNanoTons,
+                    PurchasedGamesCount = addedCount,
+                    AwardedTokens = totalTokensToAward,
+                    TokenTxHash = tokenTxHash
                 });
             }
-
-            var existingOwnedGameIds = await _context.UserGames
-                .Where(ug => ug.UserId == userId)
-                .Select(ug => ug.GameId)
-                .ToListAsync();
-
-            var ownedSet = new HashSet<Guid>(existingOwnedGameIds);
-
-            user.BalanceInNanoTons -= totalRequiredNanoTons;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            var addedCount = 0;
-            foreach (var (game, effectivePrice) in gamesToPurchase)
+            catch (Exception ex)
             {
-                if (!ownedSet.Contains(game.Id))
-                {
-                    await _context.UserGames.AddAsync(new UserGame
-                    {
-                        UserId = user.Id,
-                        GameId = game.Id,
-                        PurchasedAt = DateTime.UtcNow,
-                        PlayTimeMinutes = 0,
-                        IsFavorite = false
-                    });
-
-                    game.DownloadCount += 1;
-                    if (game.Owner != null && effectivePrice > 0)
-                    {
-                        game.Owner.TotalEarningsInNanoTons += effectivePrice;
-                    }
-
-                    addedCount++;
-                }
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "[CartController] Checkout failed for User {UserId}", userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Помилка при обробці покупки. Спробуйте пізніше." });
             }
-
-            var purchasedGameIds = gamesToPurchase.Select(g => g.game.Id).ToList();
-            var wishlistsToRemove = await _context.UserWishlists
-                .Where(w => w.UserId == userId && purchasedGameIds.Contains(w.GameId))
-                .ToListAsync();
-
-            if (wishlistsToRemove.Count > 0)
-            {
-                _context.UserWishlists.RemoveRange(wishlistsToRemove);
-            }
-
-            _context.UserCartItems.RemoveRange(cartItems);
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new CheckoutResultDto
-            {
-                Success = true,
-                Message = addedCount == 1
-                    ? "Гру успішно придбано та додано до вашої бібліотеки!"
-                    : $"Успішно придбано {addedCount} ігор та додано до вашої бібліотеки!",
-                NewBalanceInNanoTons = user.BalanceInNanoTons,
-                TotalSpentInNanoTons = totalRequiredNanoTons,
-                PurchasedGamesCount = addedCount
-            });
         }
     }
 }
-

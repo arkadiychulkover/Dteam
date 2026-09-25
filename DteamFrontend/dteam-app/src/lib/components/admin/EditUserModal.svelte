@@ -1,5 +1,5 @@
 <script lang="ts">
-import { adminService, type UpdateUserDto } from '../../services/adminService';
+  import { adminService, type UpdateUserDto } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
   import type { Duser } from '../../types';
   import { X, Edit, Shield, Wallet, Mail, Lock, User, Ban, CheckCircle2 } from 'lucide-svelte';
@@ -263,4 +263,3 @@ import { adminService, type UpdateUserDto } from '../../services/adminService';
     </div>
   </div>
 {/if}
-

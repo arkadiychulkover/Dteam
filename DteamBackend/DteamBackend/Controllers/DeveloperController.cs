@@ -2,11 +2,11 @@ using System.Security.Claims;
 using DteamBackend.Data;
 using DteamBackend.Models;
 using DteamBackend.Models.DTO;
-using DteamBackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using DteamBackend.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace DteamBackend.Controllers
 {
@@ -64,9 +64,10 @@ namespace DteamBackend.Controllers
                 ReviewsCount = d.ReviewsCount,
                 IsDlc = d.IsDlc,
                 ParentGameId = d.ParentGameId,
-                Genres = d.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-                Platforms = d.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-                Features = d.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+                Genres = d.Genres ?? new List<string>(),
+                Platforms = d.Platforms ?? new List<string>(),
+                Features = d.Features ?? new List<string>(),
+                SupportedLanguages = d.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = d.Tags ?? new List<string>(),
                 Version = d.Version,
                 SizeInBytes = d.SizeInBytes,
@@ -78,9 +79,10 @@ namespace DteamBackend.Controllers
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt
             }).ToList() : new List<GameDto>(),
-            Genres = game.Genres?.Select(g => g.ToString()).ToList() ?? new List<string>(),
-            Platforms = game.Platforms?.Select(p => p.ToString()).ToList() ?? new List<string>(),
-            Features = game.Features?.Select(f => f.ToString()).ToList() ?? new List<string>(),
+            Genres = game.Genres ?? new List<string>(),
+            Platforms = game.Platforms ?? new List<string>(),
+            Features = game.Features ?? new List<string>(),
+            SupportedLanguages = game.SupportedLanguages ?? new List<GameLanguageSupport>(),
             Tags = game.Tags ?? new List<string>(),
             Version = game.Version,
             SizeInBytes = game.SizeInBytes,
@@ -147,16 +149,6 @@ namespace DteamBackend.Controllers
                 int downloadsCount = dayPurchases.Count;
                 long dayEarnings = dayPurchases.Sum(ug => (long)ug.Game.PriceInNanoTons);
 
-                if (userGames.Count == 0 && totalDownloads > 0)
-                {
-                    if (day.Day == 19 || day.Day == 26 || (day.Day == now.Day && day.Month == now.Month))
-                    {
-                        downloadsCount = day.Day == now.Day ? 2 : 1;
-                        var samplePrice = myGames.FirstOrDefault()?.PriceInNanoTons ?? 4_000_000_000;
-                        dayEarnings = downloadsCount * samplePrice;
-                    }
-                }
-
                 dailyPoints.Add(new DailyMetricPointDto
                 {
                     Date = day.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
@@ -178,12 +170,9 @@ namespace DteamBackend.Controllers
                 }
             }
 
-            if (earnings30d == 0 && user.TotalEarningsInNanoTons > 0) earnings30d = user.TotalEarningsInNanoTons;
-            if (downloads30d == 0 && totalDownloads > 0) downloads30d = totalDownloads;
-
             var stats = new DeveloperStatsDto
             {
-                TotalEarningsInNanoTons = Math.Max(user.TotalEarningsInNanoTons, earnings30d),
+                TotalEarningsInNanoTons = user.TotalEarningsInNanoTons,
                 TotalDownloads = totalDownloads,
                 TotalGames = myGames.Count,
                 AverageRating = avgRating,
@@ -198,6 +187,49 @@ namespace DteamBackend.Controllers
             };
 
             return Ok(stats);
+        }
+
+        [HttpGet("sales-dynamics")]
+        public async Task<ActionResult<List<DailyMetricPointDto>>> GetSalesDynamics([FromQuery] int days = 30)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var safeDays = Math.Clamp(days, 1, 90);
+            var now = DateTime.UtcNow;
+            var startDate = now.AddDays(-safeDays + 1).Date;
+
+            var myGameIds = await _context.Games
+                .AsNoTracking()
+                .Where(g => g.OwnerId == userId)
+                .Select(g => g.Id)
+                .ToListAsync();
+
+            var purchases = await _context.UserGames
+                .AsNoTracking()
+                .Include(ug => ug.Game)
+                .Where(ug => myGameIds.Contains(ug.GameId) && ug.PurchasedAt >= startDate)
+                .ToListAsync();
+
+            var dailyPoints = new List<DailyMetricPointDto>();
+            for (int i = 0; i < safeDays; i++)
+            {
+                var day = startDate.AddDays(i);
+                var nextDay = day.AddDays(1);
+                var dayPurchases = purchases.Where(ug => ug.PurchasedAt >= day && ug.PurchasedAt < nextDay).ToList();
+
+                dailyPoints.Add(new DailyMetricPointDto
+                {
+                    Date = day.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
+                    Downloads = dayPurchases.Count,
+                    EarningsInTon = (decimal)dayPurchases.Sum(ug => (long)ug.Game.PriceInNanoTons) / 1_000_000_000m
+                });
+            }
+
+            return Ok(dailyPoints);
         }
 
         [HttpGet("games")]
@@ -260,11 +292,6 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Title))
-            {
-                return BadRequest(new { message = "Назва гри обов'язкова." });
-            }
-
             if (dto.ParentGameId.HasValue)
             {
                 var parentExists = await _context.Games.AnyAsync(g => g.Id == dto.ParentGameId.Value && g.OwnerId == userId);
@@ -272,11 +299,6 @@ namespace DteamBackend.Controllers
                 {
                     return BadRequest(new { message = "Батьківську гру для DLC не знайдено серед ваших ігор." });
                 }
-            }
-
-            if (dto.IsPublished && string.IsNullOrWhiteSpace(dto.ServerArchivePath))
-            {
-                return BadRequest(new { message = "Для публікації гри в каталозі необхідно завантажити файл білду гри (.zip). Без файлу білду проект можна зберегти лише як чернетку." });
             }
 
             var archivePath = dto.ServerArchivePath?.Trim() ?? string.Empty;
@@ -296,9 +318,10 @@ namespace DteamBackend.Controllers
                 ReviewsCount = 0,
                 IsDlc = dto.IsDlc,
                 ParentGameId = dto.ParentGameId,
-                Genres = dto.Genres?.Select(g => Enum.Parse<GameGenre>(g, true)).ToList() ?? new List<GameGenre>(),
-                Platforms = dto.Platforms?.Select(p => Enum.Parse<GamePlatform>(p, true)).ToList() ?? new List<GamePlatform> { GamePlatform.Windows },
-                Features = dto.Features?.Select(f => Enum.Parse<GameFeature>(f, true)).ToList() ?? new List<GameFeature>(),
+                Genres = dto.Genres ?? new List<string>(),
+                Platforms = dto.Platforms ?? new List<string> { "Windows" },
+                Features = dto.Features ?? new List<string>(),
+                SupportedLanguages = dto.SupportedLanguages ?? new List<GameLanguageSupport>(),
                 Tags = dto.Tags ?? new List<string>(),
                 Version = string.IsNullOrWhiteSpace(dto.Version) ? "1.0.0" : dto.Version.Trim(),
                 SizeInBytes = dto.SizeInBytes,
@@ -309,7 +332,6 @@ namespace DteamBackend.Controllers
                 TrailerUrl = dto.TrailerUrl,
                 CreatedAt = DateTime.UtcNow
             };
-
 
             await _context.Games.AddAsync(game);
             await _context.SaveChangesAsync();
@@ -358,9 +380,10 @@ namespace DteamBackend.Controllers
             if (dto.PriceInNanoTons.HasValue) game.PriceInNanoTons = Math.Max(0, dto.PriceInNanoTons.Value);
             if (dto.DiscountPercentage.HasValue) game.DiscountPercentage = Math.Clamp(dto.DiscountPercentage.Value, 0, 100);
             if (dto.ServerArchivePath != null) game.ServerArchivePath = dto.ServerArchivePath.Trim();
-            if (dto.Genres != null) game.Genres = dto.Genres.Select(g => Enum.Parse<GameGenre>(g, true)).ToList();
-            if (dto.Platforms != null) game.Platforms = dto.Platforms.Select(p => Enum.Parse<GamePlatform>(p, true)).ToList();
-            if (dto.Features != null) game.Features = dto.Features.Select(f => Enum.Parse<GameFeature>(f, true)).ToList();
+            if (dto.Genres != null) game.Genres = dto.Genres;
+            if (dto.Platforms != null) game.Platforms = dto.Platforms;
+            if (dto.Features != null) game.Features = dto.Features;
+            if (dto.SupportedLanguages != null) game.SupportedLanguages = dto.SupportedLanguages;
             if (dto.Tags != null) game.Tags = dto.Tags;
             if (!string.IsNullOrWhiteSpace(dto.Version)) game.Version = dto.Version.Trim();
             if (dto.SizeInBytes.HasValue) game.SizeInBytes = dto.SizeInBytes.Value;
@@ -444,6 +467,206 @@ namespace DteamBackend.Controllers
             _logger.LogInformation($"[Developer] Game '{game.Title}' (ID: {id}) deleted by owner {userId}");
 
             return Ok(new { message = $"Гру '{game.Title}' успішно видалено.", gameId = id });
+        }
+
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        private static readonly string[] AllowedVideoExtensions = { ".mp4", ".webm", ".mov", ".m4v" };
+
+        private async Task<string?> SaveNewsFileAsync(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext) && !AllowedVideoExtensions.Contains(ext))
+            {
+                return null;
+            }
+
+            var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "community");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+
+            var filePath = Path.Combine(folder, uniqueFileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/community/{uniqueFileName}";
+        }
+
+        public class CreateGameNewsDto
+        {
+            [Required(ErrorMessage = "Заголовок новини обов'язковий.")]
+            [StringLength(200, MinimumLength = 3, ErrorMessage = "Заголовок має містити від 3 до 200 символів.")]
+            public string Title { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Текст новини обов'язковий.")]
+            [MinLength(5, ErrorMessage = "Текст новини має містити щонайменше 5 символів.")]
+            public string Content { get; set; } = string.Empty;
+
+            [MaxLength(1000)]
+            public string? MediaUrl { get; set; }
+
+            [MaxLength(1000)]
+            public string? MediaThumbnailUrl { get; set; }
+
+            [MaxLength(20)]
+            public string? MediaType { get; set; }
+
+            public IFormFile? File { get; set; }
+        }
+
+        [HttpPost("games/{id:guid}/news")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateGameNews(Guid id, [FromForm] CreateGameNewsDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id);
+            if (game == null)
+            {
+                return NotFound(new { message = $"Гру з ID '{id}' не знайдено." });
+            }
+
+            if (game.OwnerId != userId)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Ви можете публікувати новини лише для власних ігор." });
+            }
+
+            var mediaUrl = dto.MediaUrl;
+            var mediaType = dto.MediaType;
+
+            if (dto.File != null && dto.File.Length > 0)
+            {
+                var saved = await SaveNewsFileAsync(dto.File);
+                if (!string.IsNullOrEmpty(saved))
+                {
+                    mediaUrl = saved;
+                    var ext = Path.GetExtension(dto.File.FileName).ToLowerInvariant();
+                    mediaType = AllowedVideoExtensions.Contains(ext) ? "video" : "image";
+                }
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            var post = new CommunityPost
+            {
+                Id = $"news-{Guid.NewGuid():N}",
+                GameId = game.Id.ToString(),
+                GameGuidId = game.Id,
+                GameTitle = game.Title,
+                GameBannerUrl = game.HeaderImageUrl ?? game.CoverImageUrl,
+                Game = game,
+                Author = new AuthorDto
+                {
+                    Id = user?.Id.ToString() ?? userId.ToString(),
+                    Username = user?.Username ?? "Розробник",
+                    AvatarUrl = user?.AvatarUrl ?? ""
+                },
+                CreatedAt = DateTime.UtcNow,
+                Category = "news",
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                Media = new PostMedia
+                {
+                    Type = string.IsNullOrEmpty(mediaUrl) ? "none" : (mediaType ?? "image"),
+                    Url = mediaUrl ?? "",
+                    ThumbnailUrl = dto.MediaThumbnailUrl ?? mediaUrl ?? ""
+                },
+                LikedByUsers = new List<string>()
+            };
+
+            await _context.CommunityPosts.AddAsync(post);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"[Developer] News '{post.Title}' created for game '{game.Title}' by user {userId}");
+
+            return Created($"/api/developer/games/{id}/news", GameNews.FromCommunityPost(post));
+        }
+
+        [HttpGet("games/{id:guid}/news")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetGameNews(Guid id)
+        {
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id);
+            if (game == null)
+            {
+                return NotFound(new { message = $"Гру з ID '{id}' не знайдено." });
+            }
+
+            var posts = await _context.CommunityPosts
+                .Where(p => p.Category == "news" && (p.GameGuidId == id || p.GameId == id.ToString()))
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var newsList = posts.Select(GameNews.FromCommunityPost).ToList();
+            return Ok(newsList);
+        }
+
+        [HttpGet("news")]
+        public async Task<IActionResult> GetMyNews()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var myGameIds = await _context.Games
+                .Where(g => g.OwnerId == userId)
+                .Select(g => g.Id.ToString())
+                .ToListAsync();
+
+            var posts = await _context.CommunityPosts
+                .Where(p => p.Category == "news" &&
+                            (myGameIds.Contains(p.GameId) || p.Author.Id == userId.ToString()))
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var myNews = posts.Select(GameNews.FromCommunityPost).ToList();
+            return Ok(myNews);
+        }
+
+        [HttpDelete("news/{newsId}")]
+        public async Task<IActionResult> DeleteNews(string newsId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Користувач не авторизований." });
+            }
+
+            var post = await _context.CommunityPosts.FirstOrDefaultAsync(p => p.Id == newsId);
+            if (post == null)
+            {
+                return NotFound(new { message = "Новину не знайдено." });
+            }
+
+            var isAuthor = post.Author.Id.Equals(userId.ToString(), StringComparison.OrdinalIgnoreCase);
+            var isGameOwner = Guid.TryParse(post.GameId, out var gId) &&
+                              await _context.Games.AnyAsync(g => g.Id == gId && g.OwnerId == userId);
+
+            if (!isAuthor && !isGameOwner)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "У вас немає прав на видалення цієї новини." });
+            }
+
+            _context.CommunityPosts.Remove(post);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Новину успішно видалено.", newsId });
         }
     }
 }

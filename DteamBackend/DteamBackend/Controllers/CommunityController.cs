@@ -10,6 +10,9 @@ using DteamBackend.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using DteamBackend.Services;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DteamBackend.Controllers
 {
@@ -17,13 +20,13 @@ namespace DteamBackend.Controllers
     [Route("api/[controller]")]
     public class CommunityController : ControllerBase
     {
-        private static readonly string DataFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "community_data.json");
-        private static readonly object FileLock = new object();
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public CommunityController(AppDbContext context)
+        public CommunityController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         private Guid GetCurrentUserId()
@@ -33,163 +36,28 @@ namespace DteamBackend.Controllers
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
 
-        private class CommunityStore
-        {
-            public List<CommunityPost> Posts { get; set; } = new List<CommunityPost>();
-            public List<CommunityComment> Comments { get; set; } = new List<CommunityComment>();
-        }
-
-        private CommunityStore LoadStore()
-        {
-            lock (FileLock)
-            {
-                if (!System.IO.File.Exists(DataFilePath))
-                {
-                    var initialStore = CreateInitialStore();
-                    SaveStore(initialStore);
-                    return initialStore;
-                }
-
-                try
-                {
-                    var json = System.IO.File.ReadAllText(DataFilePath);
-                    return JsonSerializer.Deserialize<CommunityStore>(json) ?? new CommunityStore();
-                }
-                catch
-                {
-                    return new CommunityStore();
-                }
-            }
-        }
-
-        private void SaveStore(CommunityStore store)
-        {
-            lock (FileLock)
-            {
-                var json = JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = true });
-                System.IO.File.WriteAllText(DataFilePath, json);
-            }
-        }
-
-        private CommunityStore CreateInitialStore()
-        {
-            var store = new CommunityStore();
-
-            string[] gameIds = { "lib-1", "lib-2", "lib-3", "lib-4" };
-
-            var author1 = new AuthorDto { Id = "a1", Username = "GamerPro_UA", AvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" };
-            var author2 = new AuthorDto { Id = "a2", Username = "cyber_ukraine", AvatarUrl = "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150" };
-            var author3 = new AuthorDto { Id = "a3", Username = "SvelteDev", AvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" };
-
-            int postIndex = 1;
-            foreach (var gId in gameIds)
-            {
-                store.Posts.Add(new CommunityPost
-                {
-                    Id = $"post-{postIndex++}",
-                    GameId = gId,
-                    Author = author1,
-                    CreatedAt = DateTime.UtcNow.AddDays(-2),
-                    Category = "forum",
-                    Title = "Кращі білди для початківців",
-                    Content = "Всім привіт! Я зібрав кілька крутих збалансованих білдів для комфортного старту гри. Сподіваюся, це допоможе новачкам швидко розібратися.",
-                    Media = new PostMedia { Type = "none" },
-                    LikedByUsers = new List<string> { "a2" }
-                });
-
-                store.Posts.Add(new CommunityPost
-                {
-                    Id = $"post-{postIndex++}",
-                    GameId = gId,
-                    Author = author2,
-                    CreatedAt = DateTime.UtcNow.AddDays(-1),
-                    Category = "screenshots",
-                    Title = "Мій новий рекорд!",
-                    Content = "Неймовірні краєвиди та чудова графіка. Просто подивіться на це освітлення!",
-                    Media = new PostMedia { Type = "image", Url = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200" },
-                    LikedByUsers = new List<string> { "a1", "a3" }
-                });
-
-                store.Posts.Add(new CommunityPost
-                {
-                    Id = $"post-{postIndex++}",
-                    GameId = gId,
-                    Author = author3,
-                    CreatedAt = DateTime.UtcNow.AddHours(-12),
-                    Category = "videos",
-                    Title = "Детальний відеоогляд механік",
-                    Content = "Записав повний розбір бойової системи та крафту. Дивіться відео!",
-                    Media = new PostMedia { Type = "video", Url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-                    LikedByUsers = new List<string>()
-                });
-
-                store.Posts.Add(new CommunityPost
-                {
-                    Id = $"post-{postIndex++}",
-                    GameId = gId,
-                    Author = author1,
-                    CreatedAt = DateTime.UtcNow.AddHours(-4),
-                    Category = "guides",
-                    Title = "Гайд по секретних квестах та ачівках",
-                    Content = "Повний перелік прихованих завдань, які легко пропустити при першому проходженні. Читайте та зберігайте собі!",
-                    Media = new PostMedia { Type = "image", Url = "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200" },
-                    LikedByUsers = new List<string> { "a2" }
-                });
-
-                store.Posts.Add(new CommunityPost
-                {
-                    Id = $"post-{postIndex++}",
-                    GameId = gId,
-                    Author = new AuthorDto { Id = "admin", Username = "Розробники", AvatarUrl = "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=150" },
-                    CreatedAt = DateTime.UtcNow.AddHours(-2),
-                    Category = "news",
-                    Title = "Офіційне оновлення: Патч 1.2 вже доступний!",
-                    Content = "Ми раді представити велике оновлення гри. Виправлено баланс зброї, покращено продуктивність на слабких ПК та додано нові рівні складності.",
-                    Media = new PostMedia { Type = "image", Url = "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200" },
-                    LikedByUsers = new List<string> { "a1", "a2", "a3" }
-                });
-            }
-
-            store.Comments.Add(new CommunityComment
-            {
-                Id = "c-1",
-                PostId = "post-1",
-                Author = author2,
-                CreatedAt = DateTime.UtcNow.AddDays(-1),
-                Content = "Дуже дякую за корисні білди! Другий варіант підійшов ідеально.",
-                LikesCount = 5,
-                Replies = new List<CommunityComment>
-                {
-                    new CommunityComment
-                    {
-                        Id = "c-1-r1",
-                        PostId = "post-1",
-                        Author = author1,
-                        CreatedAt = DateTime.UtcNow.AddHours(-18),
-                        Content = "Радий, що це стало в пригоді! Звертайся, якщо виникнуть питання."
-                    }
-                }
-            });
-
-            return store;
-        }
-
         [HttpGet("{gameId}/posts")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPosts(
             string gameId,
             [FromQuery] string category = "all",
             [FromQuery] string search = "",
-            [FromQuery] string sortBy = "newest")
+            [FromQuery] string sortBy = "newest",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
         {
-            var store = LoadStore();
             var userId = GetCurrentUserId().ToString();
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
-            var query = store.Posts.Where(p => p.GameId.Equals(gameId, StringComparison.OrdinalIgnoreCase));
+            var query = _context.CommunityPosts
+                .Include(p => p.Game)
+                .AsNoTracking()
+                .Where(p => p.GameId.ToLower() == gameId.ToLower());
 
             if (!string.IsNullOrEmpty(category) && !category.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.Category.ToLower() == category.ToLower());
             }
 
             if (!string.IsNullOrEmpty(search))
@@ -198,22 +66,56 @@ namespace DteamBackend.Controllers
                 query = query.Where(p => p.Title.ToLower().Contains(s) || p.Content.ToLower().Contains(s));
             }
 
-            var list = query.ToList();
+            List<CommunityPost> posts;
             if (sortBy.Equals("popular", StringComparison.OrdinalIgnoreCase) || sortBy.Equals("rating", StringComparison.OrdinalIgnoreCase))
             {
-                list = list.OrderByDescending(p => p.LikedByUsers.Count).ToList();
+                var allForSort = await query.ToListAsync();
+                posts = allForSort
+                    .OrderByDescending(p => p.LikedByUsers.Count)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
             }
             else
             {
-                list = list.OrderByDescending(p => p.CreatedAt).ToList();
+                posts = await query
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
             }
 
-            var postsDto = list.Select(p => new
+            var postIds = posts.Select(p => p.Id).ToList();
+            var commentCounts = await _context.CommunityComments
+                .Where(c => postIds.Contains(c.PostId))
+                .GroupBy(c => c.PostId)
+                .Select(g => new { PostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.PostId, x => x.Count);
+
+            var authorGuids = posts
+                .Select(p => Guid.TryParse(p.Author?.Id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var authorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => authorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
+
+            var postsDto = posts.Select(p => new
             {
                 id = p.Id,
                 gameId = p.GameId,
-                author = p.Author,
-                createdAt = p.CreatedAt.ToString("dd.MM.yyyy"),
+                gameTitle = p.GameTitle ?? p.Game?.Title,
+                gameBannerUrl = p.GameBannerUrl ?? p.Game?.HeaderImageUrl ?? p.Game?.CoverImageUrl,
+                author = new
+                {
+                    id = p.Author?.Id ?? "",
+                    username = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u) && !string.IsNullOrWhiteSpace(u.Username)) ? u.Username : (p.Author?.Username ?? "Користувач"),
+                    avatarUrl = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u2) && !string.IsNullOrWhiteSpace(u2.AvatarUrl)) ? u2.AvatarUrl : (p.Author?.AvatarUrl ?? "")
+                },
+                createdAt = p.CreatedAt.ToString("o"),
                 category = p.Category,
                 title = p.Title,
                 content = p.Content,
@@ -221,7 +123,7 @@ namespace DteamBackend.Controllers
                 stats = new
                 {
                     likesCount = p.LikedByUsers.Count,
-                    commentsCount = store.Comments.Count(c => c.PostId == p.Id) + store.Comments.Where(c => c.PostId == p.Id).Sum(c => c.Replies.Count),
+                    commentsCount = commentCounts.GetValueOrDefault(p.Id, 0),
                     isLiked = p.LikedByUsers.Contains(userId)
                 }
             });
@@ -243,19 +145,19 @@ namespace DteamBackend.Controllers
 
         [HttpGet("posts")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult GetAllPosts(
+        public async Task<IActionResult> GetAllPosts(
             [FromQuery] string category = "all",
             [FromQuery] string search = "",
             [FromQuery] string sortBy = "newest")
         {
-            var store = LoadStore();
             var userId = GetCurrentUserId().ToString();
-
-            var query = store.Posts.AsQueryable();
+            var query = _context.CommunityPosts
+                .Include(p => p.Game)
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(category) && !category.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.Category.ToLower() == category.ToLower());
             }
 
             if (!string.IsNullOrEmpty(search))
@@ -264,18 +166,44 @@ namespace DteamBackend.Controllers
                 query = query.Where(p => p.Title.ToLower().Contains(s) || p.Content.ToLower().Contains(s));
             }
 
-            var list = query.ToList();
-            if (sortBy.Equals("popular", StringComparison.OrdinalIgnoreCase) || sortBy.Equals("rating", StringComparison.OrdinalIgnoreCase))
-                list = list.OrderByDescending(p => p.LikedByUsers.Count).ToList();
-            else
-                list = list.OrderByDescending(p => p.CreatedAt).ToList();
+            var posts = await query.ToListAsync();
 
-            var postsDto = list.Select(p => new
+            if (sortBy.Equals("popular", StringComparison.OrdinalIgnoreCase) || sortBy.Equals("rating", StringComparison.OrdinalIgnoreCase))
+                posts = posts.OrderByDescending(p => p.LikedByUsers.Count).ToList();
+            else
+                posts = posts.OrderByDescending(p => p.CreatedAt).ToList();
+
+            var postIds = posts.Select(p => p.Id).ToList();
+            var commentCounts = await _context.CommunityComments
+                .Where(c => postIds.Contains(c.PostId))
+                .GroupBy(c => c.PostId)
+                .Select(g => new { PostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.PostId, x => x.Count);
+
+            var authorGuids = posts
+                .Select(p => Guid.TryParse(p.Author?.Id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var authorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => authorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
+
+            var postsDto = posts.Select(p => new
             {
                 id = p.Id,
                 gameId = p.GameId,
-                author = p.Author,
-                createdAt = p.CreatedAt.ToString("dd.MM.yyyy"),
+                gameTitle = p.GameTitle ?? p.Game?.Title,
+                gameBannerUrl = p.GameBannerUrl ?? p.Game?.HeaderImageUrl ?? p.Game?.CoverImageUrl,
+                author = new
+                {
+                    id = p.Author?.Id ?? "",
+                    username = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u) && !string.IsNullOrWhiteSpace(u.Username)) ? u.Username : (p.Author?.Username ?? "Користувач"),
+                    avatarUrl = (p.Author?.Id != null && authorMap.TryGetValue(p.Author.Id, out var u2) && !string.IsNullOrWhiteSpace(u2.AvatarUrl)) ? u2.AvatarUrl : (p.Author?.AvatarUrl ?? "")
+                },
+                createdAt = p.CreatedAt.ToString("o"),
                 category = p.Category,
                 title = p.Title,
                 content = p.Content,
@@ -283,7 +211,7 @@ namespace DteamBackend.Controllers
                 stats = new
                 {
                     likesCount = p.LikedByUsers.Count,
-                    commentsCount = store.Comments.Count(c => c.PostId == p.Id) + store.Comments.Where(c => c.PostId == p.Id).Sum(c => c.Replies.Count),
+                    commentsCount = commentCounts.GetValueOrDefault(p.Id, 0),
                     isLiked = p.LikedByUsers.Contains(userId)
                 }
             });
@@ -300,21 +228,43 @@ namespace DteamBackend.Controllers
         [HttpGet("posts/{postId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetPostDetails(string postId)
+        public async Task<IActionResult> GetPostDetails(string postId)
         {
-            var store = LoadStore();
             var userId = GetCurrentUserId().ToString();
+            var post = await _context.CommunityPosts
+                .Include(p => p.Game)
+                .FirstOrDefaultAsync(p => p.Id == postId);
 
-            var post = store.Posts.FirstOrDefault(p => p.Id == postId);
             if (post == null)
             {
                 return NotFound(new { message = "Пост не знайдено." });
             }
 
-            var postComments = store.Comments
+            var allComments = await _context.CommunityComments
                 .Where(c => c.PostId == postId)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            var topLevelComments = allComments
+                .Where(c => string.IsNullOrEmpty(c.ParentCommentId))
                 .OrderByDescending(c => c.CreatedAt)
                 .ToList();
+
+            var repliesLookup = allComments
+                .Where(c => !string.IsNullOrEmpty(c.ParentCommentId))
+                .ToLookup(c => c.ParentCommentId!);
+
+            var allCommentAuthorGuids = allComments
+                .Select(c => Guid.TryParse(c.Author?.Id, out var g) ? g : Guid.Empty)
+                .Concat(Guid.TryParse(post.Author?.Id, out var pg) ? new[] { pg } : Array.Empty<Guid>())
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var detailsAuthorMap = await _context.Users
+                .AsNoTracking()
+                .Where(u => allCommentAuthorGuids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.Username, u.AvatarUrl });
 
             return Ok(new
             {
@@ -322,8 +272,15 @@ namespace DteamBackend.Controllers
                 {
                     id = post.Id,
                     gameId = post.GameId,
-                    author = post.Author,
-                    createdAt = post.CreatedAt.ToString("dd.MM.yyyy"),
+                    gameTitle = post.GameTitle ?? post.Game?.Title,
+                    gameBannerUrl = post.GameBannerUrl ?? post.Game?.HeaderImageUrl ?? post.Game?.CoverImageUrl,
+                    author = new
+                    {
+                        id = post.Author?.Id ?? "",
+                        username = (post.Author?.Id != null && detailsAuthorMap.TryGetValue(post.Author.Id, out var pu) && !string.IsNullOrWhiteSpace(pu.Username)) ? pu.Username : (post.Author?.Username ?? "Користувач"),
+                        avatarUrl = (post.Author?.Id != null && detailsAuthorMap.TryGetValue(post.Author.Id, out var pu2) && !string.IsNullOrWhiteSpace(pu2.AvatarUrl)) ? pu2.AvatarUrl : (post.Author?.AvatarUrl ?? "")
+                    },
+                    createdAt = post.CreatedAt.ToString("o"),
                     category = post.Category,
                     title = post.Title,
                     content = post.Content,
@@ -331,25 +288,37 @@ namespace DteamBackend.Controllers
                     stats = new
                     {
                         likesCount = post.LikedByUsers.Count,
-                        commentsCount = postComments.Count + postComments.Sum(c => c.Replies.Count),
+                        commentsCount = allComments.Count,
                         isLiked = post.LikedByUsers.Contains(userId)
                     }
                 },
-                comments = postComments.Select(c => new
+                comments = topLevelComments.Select(c => new
                 {
                     id = c.Id,
                     postId = c.PostId,
-                    author = c.Author,
+                    author = new
+                    {
+                        id = c.Author?.Id ?? "",
+                        username = (c.Author?.Id != null && detailsAuthorMap.TryGetValue(c.Author.Id, out var cu) && !string.IsNullOrWhiteSpace(cu.Username)) ? cu.Username : (c.Author?.Username ?? "Користувач"),
+                        avatarUrl = (c.Author?.Id != null && detailsAuthorMap.TryGetValue(c.Author.Id, out var cu2) && !string.IsNullOrWhiteSpace(cu2.AvatarUrl)) ? cu2.AvatarUrl : (c.Author?.AvatarUrl ?? "")
+                    },
                     createdAt = c.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
                     content = c.Content,
                     likesCount = c.LikesCount,
                     isLiked = c.LikedByUsers.Contains(userId),
-                    replies = c.Replies.Select(r => new
+                    replies = repliesLookup[c.Id].Select(r => new
                     {
                         id = r.Id,
-                        author = r.Author,
+                        author = new
+                        {
+                            id = r.Author?.Id ?? "",
+                            username = (r.Author?.Id != null && detailsAuthorMap.TryGetValue(r.Author.Id, out var ru) && !string.IsNullOrWhiteSpace(ru.Username)) ? ru.Username : (r.Author?.Username ?? "Користувач"),
+                            avatarUrl = (r.Author?.Id != null && detailsAuthorMap.TryGetValue(r.Author.Id, out var ru2) && !string.IsNullOrWhiteSpace(ru2.AvatarUrl)) ? ru2.AvatarUrl : (r.Author?.AvatarUrl ?? "")
+                        },
                         createdAt = r.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
-                        content = r.Content
+                        content = r.Content,
+                        likesCount = r.LikesCount,
+                        isLiked = r.LikedByUsers.Contains(userId)
                     })
                 })
             });
@@ -357,6 +326,8 @@ namespace DteamBackend.Controllers
 
         private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
         private static readonly string[] AllowedVideoExtensions = { ".mp4", ".webm", ".mov", ".m4v" };
+        private const long MaxImageSizeBytes = 20 * 1024 * 1024;
+        private const long MaxVideoSizeBytes = 150 * 1024 * 1024;
 
         private async Task<string?> SaveCommunityFileAsync(IFormFile? file)
         {
@@ -369,30 +340,26 @@ namespace DteamBackend.Controllers
             }
 
             var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
-            var folders = new HashSet<string>
+            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var folder = Path.Combine(webRoot, "community");
+            if (!Directory.Exists(folder))
             {
-                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "comunity"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "comunity")
-            };
-
-            foreach (var folder in folders)
-            {
-                if (!Directory.Exists(folder))
-                {
-                    Directory.CreateDirectory(folder);
-                }
-
-                var filePath = Path.Combine(folder, uniqueFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
+                Directory.CreateDirectory(folder);
             }
 
-            return $"/comunity/{uniqueFileName}";
+            var filePath = Path.Combine(folder, uniqueFileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/community/{uniqueFileName}";
         }
 
+        [Authorize]
         [HttpPost("upload")]
+        [HttpPost("media/upload")]
+        [Consumes("multipart/form-data")]
         [RequestSizeLimit(150L * 1024 * 1024)]
         [RequestFormLimits(MultipartBodyLengthLimit = 150L * 1024 * 1024)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -402,17 +369,33 @@ namespace DteamBackend.Controllers
             var uploadedFile = file ?? Request.Form.Files.FirstOrDefault();
             if (uploadedFile == null || uploadedFile.Length == 0)
             {
-                return BadRequest(new { message = "Файл не передано або він порожній." });
+                return BadRequest(new { message = "Файл не обрано або він порожній." });
+            }
+
+            var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
+            bool isImage = AllowedImageExtensions.Contains(ext);
+            bool isVideo = AllowedVideoExtensions.Contains(ext);
+
+            if (!isImage && !isVideo)
+            {
+                return BadRequest(new { message = "Непідтримуваний формат файлу." });
+            }
+
+            if (isImage && uploadedFile.Length > MaxImageSizeBytes)
+            {
+                return BadRequest(new { message = $"Розмір зображення не може перевищувати {MaxImageSizeBytes / (1024 * 1024)} МБ." });
+            }
+
+            if (isVideo && uploadedFile.Length > MaxVideoSizeBytes)
+            {
+                return BadRequest(new { message = $"Розмір відео не може перевищувати {MaxVideoSizeBytes / (1024 * 1024)} МБ." });
             }
 
             var savedUrl = await SaveCommunityFileAsync(uploadedFile);
             if (string.IsNullOrEmpty(savedUrl))
             {
-                return BadRequest(new { message = "Непідтримуваний формат файлу. Дозволені зображення та відео." });
+                return StatusCode(500, new { message = "Не вдалося зберегти файл." });
             }
-
-            var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
-            var isVideo = AllowedVideoExtensions.Contains(ext);
 
             return Ok(new
             {
@@ -424,12 +407,30 @@ namespace DteamBackend.Controllers
 
         public class CreatePostDto
         {
+            [MaxLength(100)]
+            public string? GameId { get; set; }
+
+            [Required(ErrorMessage = "Категорія обов'язкова.")]
+            [MaxLength(50)]
             public string Category { get; set; } = "forum";
+
+            [Required(ErrorMessage = "Заголовок допису обов'язковий.")]
+            [StringLength(200, MinimumLength = 3, ErrorMessage = "Заголовок має містити від 3 до 200 символів.")]
             public string Title { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Текст допису обов'язковий.")]
+            [MinLength(5, ErrorMessage = "Текст допису має містити щонайменше 5 символів.")]
             public string Content { get; set; } = string.Empty;
+
+            [MaxLength(20)]
             public string MediaType { get; set; } = "none";
+
+            [MaxLength(1000)]
             public string MediaUrl { get; set; } = string.Empty;
+
+            [MaxLength(1000)]
             public string? MediaThumbnailUrl { get; set; }
+
             public IFormFile? File { get; set; }
             public IFormFile? MediaFile { get; set; }
             public IFormFile? ThumbnailFile { get; set; }
@@ -459,7 +460,7 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProfilePostForm([FromForm] CreatePostDto dto)
         {
-            return await CreatePostInternal(string.Empty, dto);
+            return await CreatePostInternal(dto.GameId ?? string.Empty, dto);
         }
 
         [HttpPost("posts")]
@@ -468,11 +469,32 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProfilePostJson([FromBody] CreatePostDto dto)
         {
-            return await CreatePostInternal(string.Empty, dto);
+            return await CreatePostInternal(dto.GameId ?? string.Empty, dto);
         }
 
         private async Task<IActionResult> CreatePostInternal(string gameId, CreatePostDto dto)
         {
+            var targetGameId = !string.IsNullOrWhiteSpace(gameId) ? gameId : dto.GameId;
+            if (string.IsNullOrWhiteSpace(targetGameId))
+            {
+                return BadRequest(new { message = "Необхідно обрати гру для публікації допису." });
+            }
+
+            Game? game = null;
+            if (Guid.TryParse(targetGameId, out var parsedGuid))
+            {
+                game = await _context.Games.FirstOrDefaultAsync(g => g.Id == parsedGuid);
+            }
+            else
+            {
+                game = await _context.Games.FirstOrDefaultAsync(g => g.Id.ToString() == targetGameId || g.Title.ToLower() == targetGameId.ToLower());
+            }
+
+            if (game == null)
+            {
+                return BadRequest(new { message = "Вказану гру не знайдено в каталозі. Будь ласка, оберіть діючу гру." });
+            }
+
             var uploadedFile = dto.File ?? dto.MediaFile;
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
@@ -506,8 +528,6 @@ namespace DteamBackend.Controllers
             }
 
             var userId = GetCurrentUserId();
-            var store = LoadStore();
-
             Duser? user = null;
             if (userId != Guid.Empty)
             {
@@ -541,7 +561,11 @@ namespace DteamBackend.Controllers
             var newPost = new CommunityPost
             {
                 Id = $"post-{Guid.NewGuid():N}",
-                GameId = gameId,
+                GameId = game.Id.ToString(),
+                GameGuidId = game.Id,
+                GameTitle = game.Title,
+                GameBannerUrl = game.HeaderImageUrl ?? game.CoverImageUrl ?? string.Empty,
+                Game = game,
                 Author = author,
                 CreatedAt = DateTime.UtcNow,
                 Category = dto.Category,
@@ -556,8 +580,8 @@ namespace DteamBackend.Controllers
                 LikedByUsers = new List<string>()
             };
 
-            store.Posts.Add(newPost);
-            SaveStore(store);
+            await _context.CommunityPosts.AddAsync(newPost);
+            await _context.SaveChangesAsync();
 
             return Ok(newPost);
         }
@@ -566,7 +590,7 @@ namespace DteamBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult ToggleLikePost(string postId)
+        public async Task<IActionResult> ToggleLikePost(string postId)
         {
             var userId = GetCurrentUserId().ToString();
             if (userId == Guid.Empty.ToString())
@@ -574,8 +598,7 @@ namespace DteamBackend.Controllers
                 return Unauthorized(new { message = "Необхідно авторизуватися." });
             }
 
-            var store = LoadStore();
-            var post = store.Posts.FirstOrDefault(p => p.Id == postId);
+            var post = await _context.CommunityPosts.FirstOrDefaultAsync(p => p.Id == postId);
             if (post == null)
             {
                 return NotFound(new { message = "Пост не знайдено." });
@@ -593,7 +616,7 @@ namespace DteamBackend.Controllers
                 liked = true;
             }
 
-            SaveStore(store);
+            await _context.SaveChangesAsync();
 
             return Ok(new
             {
@@ -604,6 +627,8 @@ namespace DteamBackend.Controllers
 
         public class CreateCommentDto
         {
+            [Required(ErrorMessage = "Текст коментаря обов'язковий.")]
+            [StringLength(2000, MinimumLength = 1, ErrorMessage = "Коментар має містити від 1 до 2000 символів.")]
             public string Content { get; set; } = string.Empty;
         }
 
@@ -613,9 +638,7 @@ namespace DteamBackend.Controllers
         public async Task<IActionResult> AddComment(string postId, [FromBody] CreateCommentDto dto)
         {
             var userId = GetCurrentUserId();
-            var store = LoadStore();
-
-            var post = store.Posts.FirstOrDefault(p => p.Id == postId);
+            var post = await _context.CommunityPosts.FirstOrDefaultAsync(p => p.Id == postId);
             if (post == null)
             {
                 return NotFound(new { message = "Пост не знайдено." });
@@ -642,12 +665,11 @@ namespace DteamBackend.Controllers
                 CreatedAt = DateTime.UtcNow,
                 Content = dto.Content,
                 LikesCount = 0,
-                LikedByUsers = new List<string>(),
-                Replies = new List<CommunityComment>()
+                LikedByUsers = new List<string>()
             };
 
-            store.Comments.Add(newComment);
-            SaveStore(store);
+            await _context.CommunityComments.AddAsync(newComment);
+            await _context.SaveChangesAsync();
 
             return Ok(newComment);
         }
@@ -658,9 +680,7 @@ namespace DteamBackend.Controllers
         public async Task<IActionResult> AddReply(string commentId, [FromBody] CreateCommentDto dto)
         {
             var userId = GetCurrentUserId();
-            var store = LoadStore();
-
-            var comment = store.Comments.FirstOrDefault(c => c.Id == commentId);
+            var comment = await _context.CommunityComments.FirstOrDefaultAsync(c => c.Id == commentId);
             if (comment == null)
             {
                 return NotFound(new { message = "Коментар не знайдено." });
@@ -683,13 +703,14 @@ namespace DteamBackend.Controllers
             {
                 Id = $"r-{Guid.NewGuid():N}",
                 PostId = comment.PostId,
+                ParentCommentId = commentId,
                 Author = author,
                 CreatedAt = DateTime.UtcNow,
                 Content = dto.Content
             };
 
-            comment.Replies.Add(newReply);
-            SaveStore(store);
+            await _context.CommunityComments.AddAsync(newReply);
+            await _context.SaveChangesAsync();
 
             return Ok(newReply);
         }
@@ -709,51 +730,4 @@ namespace DteamBackend.Controllers
             }
         }
     }
-
-    public class CommunityPost
-    {
-        public string Id { get; set; } = string.Empty;
-        public string GameId { get; set; } = string.Empty;
-        public AuthorDto Author { get; set; } = new AuthorDto();
-        public DateTime CreatedAt { get; set; }
-        public string Category { get; set; } = "forum";
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public PostMedia Media { get; set; } = new PostMedia();
-        public List<string> LikedByUsers { get; set; } = new List<string>();
-    }
-
-    public class AuthorDto
-    {
-        public string Id { get; set; } = string.Empty;
-        public string Username { get; set; } = string.Empty;
-        public string AvatarUrl { get; set; } = string.Empty;
-    }
-
-    public class PostMedia
-    {
-        public string Type { get; set; } = "none";
-        public string Url { get; set; } = string.Empty;
-        public string ThumbnailUrl { get; set; } = string.Empty;
-    }
-
-    public class PostStats
-    {
-        public int LikesCount { get; set; }
-        public int CommentsCount { get; set; }
-        public bool IsLiked { get; set; }
-    }
-
-    public class CommunityComment
-    {
-        public string Id { get; set; } = string.Empty;
-        public string PostId { get; set; } = string.Empty;
-        public AuthorDto Author { get; set; } = new AuthorDto();
-        public DateTime CreatedAt { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public int LikesCount { get; set; }
-        public List<string> LikedByUsers { get; set; } = new List<string>();
-        public List<CommunityComment> Replies { get; set; } = new List<CommunityComment>();
-    }
 }
-

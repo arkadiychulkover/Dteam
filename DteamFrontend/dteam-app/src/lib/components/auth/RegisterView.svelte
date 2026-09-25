@@ -1,37 +1,107 @@
 <script lang="ts">
-import { uiStore } from '../../stores/uiStore';
+  import { onMount } from 'svelte';
+  import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
-  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight } from 'lucide-svelte';
+  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight, Wallet, Check } from 'lucide-svelte';
 
   let username = $state('');
   let email = $state('');
   let password = $state('');
   let confirmPassword = $state('');
+  let hardhatAddress = $state('');
+  let isConnectingWallet = $state(false);
   let acceptTerms = $state(false);
   let showPassword = $state(false);
   let isSubmitting = $state(false);
   let errorMessage = $state('');
 
+  function handleAccountsChanged(accounts: string[]) {
+    if (accounts && accounts.length > 0) {
+      hardhatAddress = accounts[0];
+      errorMessage = '';
+    } else {
+      hardhatAddress = '';
+    }
+  }
+
+  onMount(() => {
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      const eth = (window as any).ethereum;
+
+      eth.request({ method: 'eth_accounts' })
+        .then((accounts: string[]) => {
+          if (accounts && accounts.length > 0) {
+            hardhatAddress = accounts[0];
+          }
+        })
+        .catch(() => {});
+
+      eth.on('accountsChanged', handleAccountsChanged);
+
+      return () => {
+        if (eth.removeListener) {
+          eth.removeListener('accountsChanged', handleAccountsChanged);
+        }
+      };
+    }
+  });
+
+  async function connectMetaMask() {
+    errorMessage = '';
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      errorMessage = 'MetaMask не виявлено! Будь ласка, встановіть розширення MetaMask для браузера.';
+      return;
+    }
+
+    try {
+      isConnectingWallet = true;
+      const accounts = await (window as any).ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+      if (accounts && accounts.length > 0) {
+        hardhatAddress = accounts[0];
+      }
+    } catch (err: any) {
+      if (err.code === 4001) {
+        errorMessage = 'Підключення MetaMask було відхилено користувачем.';
+      } else {
+        errorMessage = err.message || 'Не вдалося підключитися до MetaMask.';
+      }
+    } finally {
+      isConnectingWallet = false;
+    }
+  }
+
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
-      errorMessage = 'Заполните все обязательные поля';
+      errorMessage = 'Заповніть усі обов\'язкові поля';
+      return;
+    }
+
+    if (!hardhatAddress.trim()) {
+      errorMessage = 'Будь ласка, підключіть гаманець MetaMask (Hardhat-адреса обов\'язкова для реєстрації)';
+      return;
+    }
+
+    if (!/^0x[a-fA-F0-9]{40}$/.test(hardhatAddress.trim())) {
+      errorMessage = 'Некоректний формат Ethereum/Hardhat адреси гаманця';
       return;
     }
 
     if (password !== confirmPassword) {
-      errorMessage = 'Пароли не совпадают';
+      errorMessage = 'Паролі не співпадають';
       return;
     }
 
     if (password.length < 6) {
-      errorMessage = 'Пароль должен быть не менее 6 символов';
+      errorMessage = 'Пароль має бути не менше 6 символів';
       return;
     }
 
     if (!acceptTerms) {
-      errorMessage = 'Необходимо согласиться с условиями использования';
+      errorMessage = 'Необхідно погодитися з умовами використання та політикою конфіденційності';
       return;
     }
 
@@ -39,15 +109,15 @@ import { uiStore } from '../../stores/uiStore';
     isSubmitting = true;
 
     try {
-      await authStore.register(email, username, password);
+      await authStore.register(email.trim(), username.trim(), password, hardhatAddress.trim());
       uiStore.addToast({
-        title: 'Регистрация успешна',
-        message: `Добро пожаловать в DTEAM, ${username}!`,
+        title: 'Реєстрація успішна',
+        message: `Ласкаво просимо до DTEAM, ${username}!`,
         type: 'success'
       });
       uiStore.setTab('store');
     } catch (err: any) {
-      errorMessage = err.message || 'Ошибка при создании аккаунта.';
+      errorMessage = err.message || 'Помилка під час створення акаунта.';
     } finally {
       isSubmitting = false;
     }
@@ -67,10 +137,10 @@ import { uiStore } from '../../stores/uiStore';
           <Gamepad2 class="w-7 h-7 text-black font-black" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-white font-display tracking-wide">
-          Создание аккаунта <span class="text-cyan-400">DTEAM</span>
+          Створення акаунта <span class="text-cyan-400">DTEAM</span>
         </h1>
         <p class="text-xs sm:text-sm text-slate-400 mt-2">
-          Присоединяйтесь к игровой платформе нового поколения
+          Приєднуйтесь до ігрової платформи нового покоління
         </p>
       </div>
 
@@ -84,7 +154,7 @@ import { uiStore } from '../../stores/uiStore';
 
         <div>
           <label for="reg-username" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-            Логин (Никнейм)
+            Логін (Нікнейм)
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -118,6 +188,55 @@ import { uiStore } from '../../stores/uiStore';
               class="w-full pl-10 pr-4 py-2.5 bg-[#030d12] border border-cyan-500/20 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#061820]/90 border border-cyan-500/30 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <Wallet class="w-3.5 h-3.5 text-cyan-400" />
+              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hardhat / Web3 Гаманець</span>
+              <span class="text-rose-400 text-xs font-bold">*</span>
+            </div>
+            {#if hardhatAddress}
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <Check class="w-3 h-3" /> Підключено
+              </span>
+            {/if}
+          </div>
+
+          {#if hardhatAddress}
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#030d12] border border-cyan-500/20">
+              <div class="min-w-0 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xs font-black text-white shrink-0 shadow-md">
+                  🦊
+                </div>
+                <div class="min-w-0">
+                  <p class="font-mono text-xs text-cyan-300 font-bold truncate">{hardhatAddress}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center text-[10px] font-medium text-slate-400 shrink-0 bg-slate-800/40 px-2 py-1 rounded-lg border border-slate-700/40">
+                Автосинхронізація
+              </span>
+            </div>
+          {:else}
+            <button
+              type="button"
+              onclick={connectMetaMask}
+              disabled={isConnectingWallet}
+              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {#if isConnectingWallet}
+                <div class="w-3.5 h-3.5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin"></div>
+                <span>Підключення до MetaMask...</span>
+              {:else}
+                <span class="text-base">🦊</span>
+                <span>Підключити гаманець MetaMask</span>
+              {/if}
+            </button>
+            <p class="text-[10px] text-slate-400 leading-tight">
+              Адреса гаманця буде прив'язана до вашого акаунта для нарахування та використання токенів DteamPoints.
+            </p>
+          {/if}
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -154,7 +273,7 @@ import { uiStore } from '../../stores/uiStore';
 
           <div>
             <label for="reg-confirm-password" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Подтверждение
+              Підтвердження
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -180,7 +299,7 @@ import { uiStore } from '../../stores/uiStore';
               class="mt-0.5 w-4 h-4 rounded bg-[#030d12] border-slate-700 text-cyan-500 focus:ring-cyan-500/20 focus:ring-offset-0 cursor-pointer"
             />
             <span class="text-xs text-slate-400 leading-snug group-hover:text-slate-300 transition-colors">
-              Я соглашаюсь с <a href="#terms" onclick={(e) => e.preventDefault()} class="text-cyan-400 hover:underline">Условиями использования</a> и <a href="#privacy" onclick={(e) => e.preventDefault()} class="text-cyan-400 hover:underline">Политикой конфиденциальности</a> DTEAM.
+              Я погоджуюся з <button type="button" onclick={() => uiStore.setTab('terms')} class="text-cyan-400 hover:underline font-semibold cursor-pointer">Умовами використання</button> та <button type="button" onclick={() => uiStore.setTab('privacy')} class="text-cyan-400 hover:underline font-semibold cursor-pointer">Політикою конфіденційності</button> DTEAM.
             </span>
           </label>
         </div>
@@ -192,10 +311,10 @@ import { uiStore } from '../../stores/uiStore';
         >
           {#if isSubmitting}
             <div class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-            <span>Создание...</span>
+            <span>Створення...</span>
           {:else}
             <UserPlus class="w-4 h-4 text-black" />
-            <span>Создать аккаунт</span>
+            <span>Створити акаунт</span>
             <ArrowRight class="w-4 h-4 ml-1 text-black" />
           {/if}
         </button>
@@ -203,16 +322,15 @@ import { uiStore } from '../../stores/uiStore';
 
       <div class="mt-6 pt-5 border-t border-cyan-950/80 text-center">
         <p class="text-xs text-slate-400">
-          Уже есть аккаунт?
+          Вже є акаунт?
           <button
             onclick={() => uiStore.setTab('login')}
             class="font-bold text-cyan-400 hover:text-cyan-300 ml-1 transition-colors cursor-pointer"
           >
-            Войти
+            Увійти
           </button>
         </p>
       </div>
     </div>
   </div>
 </div>
-

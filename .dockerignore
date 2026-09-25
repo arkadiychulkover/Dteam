@@ -1,0 +1,13 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.svelte-kit
+DteamFrontend/node_modules
+DteamFrontend/dteam-app/node_modules
+DteamFrontend/dteam-app/dist
+*.db-shm
+*.db-wal

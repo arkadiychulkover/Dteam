@@ -1,7 +1,7 @@
 <script lang="ts">
   import { adminService } from '../../services/adminService';
   import { uiStore } from '../../stores/uiStore';
-  import { formatPrice } from '../../utils/formatters';
+  import { formatBalance } from '../../utils/formatters';
   import type { Duser } from '../../types';
   import { X, Wallet, PlusCircle, MinusCircle, CheckCircle2 } from 'lucide-svelte';
 
@@ -31,7 +31,7 @@
     }
   });
 
-  const currentBalanceLabel = $derived(user ? formatPrice(user.balanceInNanoTons) : '');
+  const currentBalanceLabel = $derived(user ? formatBalance(user.balanceInNanoTons) : '');
 
   const previewNewBalanceLabel = $derived.by(() => {
     if (!user) return '';
@@ -42,7 +42,7 @@
     const signedAmount = direction === 'credit' ? amountNanoTons : -amountNanoTons;
     const current = Number(user.balanceInNanoTons) || 0;
     const next = Math.max(0, current + signedAmount);
-    return formatPrice(next);
+    return formatBalance(next);
   });
 
   async function handleSubmit(e: Event) {

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
 
   let canvas: HTMLCanvasElement;
   let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
@@ -273,4 +273,3 @@ import { onMount } from 'svelte';
 
   <div class="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#0df2c9_1px,transparent_1px)] [background-size:24px_24px]"></div>
 </div>
-

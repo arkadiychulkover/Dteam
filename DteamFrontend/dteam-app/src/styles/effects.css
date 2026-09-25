@@ -1,0 +1,35 @@
+/* Glassmorphic panels */
+.glass-panel {
+  background: rgba(6, 24, 32, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(13, 242, 201, 0.15);
+}
+
+.glass-panel-glow {
+  background: rgba(8, 30, 39, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(13, 242, 201, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.08), inset 0 0 20px rgba(13, 242, 201, 0.05);
+}
+
+/* Neon border hover effect */
+.neon-border-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neon-border-hover:hover {
+  border-color: rgba(13, 242, 201, 0.6);
+  box-shadow: 0 0 20px rgba(13, 242, 201, 0.25), inset 0 0 10px rgba(0, 242, 254, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Text glow effects */
+.cyan-text-glow {
+  text-shadow: 0 0 12px rgba(13, 242, 201, 0.6), 0 0 24px rgba(0, 242, 254, 0.3);
+}
+
+.emerald-text-glow {
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}

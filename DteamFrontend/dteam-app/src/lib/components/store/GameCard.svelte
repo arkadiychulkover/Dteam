@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Game } from '../../types';
+  import type { Game } from '../../types';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
@@ -108,4 +108,3 @@ import type { Game } from '../../types';
     </div>
   </div>
 </div>
-

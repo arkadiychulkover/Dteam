@@ -6,18 +6,18 @@ export const authService = {
   async login(payload: LoginRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/login', payload);
     api.setTokens(res.accessToken, res.refreshToken);
-    
+
     await onlineHubService.restartConnection();
-    
+
     return res;
   },
 
   async register(payload: RegisterRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>('/auth/register', payload);
     api.setTokens(res.accessToken, res.refreshToken);
-    
+
     await onlineHubService.restartConnection();
-    
+
     return res;
   },
 
@@ -25,9 +25,10 @@ export const authService = {
     try {
       await api.post('/auth/logout');
     } catch {
+
     } finally {
       api.setTokens(null, null);
-      
+
       await onlineHubService.restartConnection();
     }
   },

@@ -1,0 +1,85 @@
+<script lang="ts">
+  import { ImageOff, Loader2 } from 'lucide-svelte';
+  import { api } from '../../services/api';
+  import { BACKEND_URL } from '../../utils/constants';
+
+  let {
+    src,
+    alt = 'Зображення',
+    class: className = '',
+    fallbackIconSize = 'w-6 h-6',
+    fallbackText = 'Зображення недоступне',
+    avatar = false,
+    initial = '',
+    ...restProps
+  }: {
+    src?: string | null;
+    alt?: string;
+    class?: string;
+    fallbackIconSize?: string;
+    fallbackText?: string;
+    avatar?: boolean;
+    initial?: string;
+    [key: string]: any;
+  } = $props();
+
+  let isLoaded = $state(false);
+  let isError = $state(false);
+
+  const resolvedSrc = $derived.by(() => {
+    if (!src || !src.trim()) return null;
+    let url = src.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
+      const cleanPath = url.startsWith('/') ? url : `/${url}`;
+      url = BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
+    }
+
+    if (url.includes('/api/chat/media') || url.includes('/api/chat/uploads')) {
+      const token = api.getToken();
+      if (token && !url.includes('access_token=') && !url.includes('token=')) {
+        const separator = url.includes('?') ? '&' : '?';
+        url = `${url}${separator}access_token=${encodeURIComponent(token)}`;
+      }
+    }
+
+    return url;
+  });
+
+  const letterFallback = $derived(
+    initial || (alt && alt !== 'Зображення' ? alt.charAt(0).toUpperCase() : 'U')
+  );
+</script>
+
+<div class="relative overflow-hidden bg-slate-900/60 {className}">
+  {#if !isLoaded && !isError && resolvedSrc}
+    <div class="absolute inset-0 bg-slate-800/80 animate-pulse flex items-center justify-center z-10">
+      <Loader2 class="w-4 h-4 text-cyan-400/50 animate-spin" />
+    </div>
+  {/if}
+
+  {#if !resolvedSrc || isError}
+    {#if avatar || initial}
+      <div class="w-full h-full flex items-center justify-center bg-gradient-to-tr from-cyan-600 via-teal-600 to-blue-600 text-white font-bold select-none text-xs">
+        {letterFallback}
+      </div>
+    {:else}
+      <div class="w-full h-full min-h-[100px] flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-900/80 text-slate-400 border border-slate-800 rounded-xl">
+        <ImageOff class="{fallbackIconSize} text-slate-500" />
+        {#if fallbackText}
+          <span class="text-[10px] text-slate-400 text-center font-medium line-clamp-1">{fallbackText}</span>
+        {/if}
+      </div>
+    {/if}
+  {:else}
+    <img
+      src={resolvedSrc}
+      {alt}
+      loading="lazy"
+      decoding="async"
+      onload={() => (isLoaded = true)}
+      onerror={() => { isError = true; isLoaded = true; }}
+      class="w-full h-full object-cover transition-opacity duration-200 {isLoaded ? 'opacity-100' : 'opacity-0'}"
+      {...restProps}
+    />
+  {/if}
+</div>

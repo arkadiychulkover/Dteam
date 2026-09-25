@@ -1,5 +1,5 @@
 <script lang="ts">
-import { uiStore, type MainTab } from '../../stores/uiStore';
+  import { uiStore, type MainTab } from '../../stores/uiStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
   import { gamesStore } from '../../stores/gamesStore';
@@ -22,10 +22,25 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     Plus,
     Wallet,
     Library,
-    Users
+    Users,
+    Sparkles,
+    Menu,
+    X,
+    Code2,
+    MessageSquare,
+    Settings,
+    Bell,
+    Check,
+    Trash2,
+    Clock
   } from 'lucide-svelte';
-  import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
+  import { formatAddress, formatTon, nanoTonToTon } from '../../utils/formatters';
   import { friendsStore } from '../../stores/friendsStore';
+  import { chatStore, totalChatUnreadCount } from '../../stores/chatStore';
+  import { notificationStore } from '../../stores/notificationStore';
+  import { getNotificationUrl, type AppNotification } from '../../types/notification';
   import { gamesService } from '../../services/gamesService';
   import type { GameRecommendation } from '../../types';
   import type { CatalogFilterState } from '../../stores/gamesStore';
@@ -33,10 +48,13 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
   import SearchCategoriesModal from '../ui/SearchCategoriesModal.svelte';
 
   let isUserDropdownOpen = $state(false);
+  let isMobileMenuOpen = $state(false);
   let headerSearchQuery = $state('');
   let searchWrapperEl = $state<HTMLElement | null>(null);
   let categoriesModalEl = $state<HTMLElement | null>(null);
+  let catalogBtnEl = $state<HTMLElement | null>(null);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let closeCatalogTimer: ReturnType<typeof setTimeout> | null = null;
   let recommendations = $state<GameRecommendation[]>([]);
   let isLoadingRecommendations = $state(false);
   let isRecommendationsOpen = $state(false);
@@ -45,6 +63,7 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
   const baseTabs: { id: MainTab; label: string; icon: any; adminOnly?: boolean }[] = [
     { id: 'store', label: 'Крамниця', icon: Gamepad2 },
     { id: 'library', label: 'Бібліотека', icon: Library },
+    { id: 'chat', label: 'Чат', icon: MessageSquare },
     { id: 'community', label: 'Спільнота', icon: Newspaper },
     { id: 'friends', label: 'Друзі', icon: Users },
     { id: 'catalog', label: 'Каталог', icon: Compass },
@@ -55,6 +74,42 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin)
   );
 
+  function formatRelativeTime(dateStr: string): string {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+      if (diffSec < 60) return 'щойно';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin} хв тому`;
+      const diffHours = Math.floor(diffMin / 60);
+      if (diffHours < 24) return `${diffHours} год тому`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} дн тому`;
+    } catch {
+      return '';
+    }
+  }
+
+  function handleNotificationClick(item: AppNotification) {
+    if (!item.isRead) {
+      notificationStore.markAsRead(item.id);
+    }
+    notificationStore.closeDropdown();
+
+    const target = getNotificationUrl(item);
+    if (target.tab === 'settings') {
+      uiStore.setTab('settings');
+    } else if (target.tab === 'friends') {
+      uiStore.setTab('friends');
+    } else if (target.tab === 'chat') {
+      uiStore.setTab('chat');
+      if (target.param) {
+        chatStore.selectConversation(target.param);
+      }
+    }
+  }
+
   function handleLogout() {
     authStore.logout();
     isUserDropdownOpen = false;
@@ -64,11 +119,57 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
   function handleSearchSubmit(e?: SubmitEvent) {
     if (e) e.preventDefault();
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     if (headerSearchQuery.trim()) {
       gamesStore.setFilters({ search: headerSearchQuery.trim() });
       uiStore.setTab('catalog');
+    }
+  }
+
+  function handleCatalogMouseEnter() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+    isCategoriesModalOpen = true;
+  }
+
+  function handleCatalogMouseLeave() {
+    if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
+    closeCatalogTimer = setTimeout(() => {
+      isCategoriesModalOpen = false;
+    }, 250);
+  }
+
+  function handleModalMouseEnter() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+  }
+
+  function handleModalMouseLeave() {
+    if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
+    closeCatalogTimer = setTimeout(() => {
+      isCategoriesModalOpen = false;
+    }, 250);
+  }
+
+  function handleCatalogClick() {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
+    if ($uiStore.activeTab !== 'catalog') {
+      uiStore.setTab('catalog');
+      isCategoriesModalOpen = false;
+    } else {
+      isCategoriesModalOpen = !isCategoriesModalOpen;
     }
   }
 
@@ -130,10 +231,7 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     const query = (e.target as HTMLInputElement).value;
     headerSearchQuery = query;
 
-    if (query.trim().length > 0) {
-      isCategoriesModalOpen = false;
-    } else {
-      isCategoriesModalOpen = true;
+    if (query.trim().length === 0) {
       recommendations = [];
       isRecommendationsOpen = false;
       if (debounceTimer) clearTimeout(debounceTimer);
@@ -146,15 +244,11 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
 
     debounceTimer = setTimeout(() => {
       fetchRecommendations(query);
-    }, 500);
+    }, 400);
   }
 
   function handleSearchFocus() {
-    if (!headerSearchQuery.trim()) {
-      isCategoriesModalOpen = true;
-      isRecommendationsOpen = false;
-    } else {
-      isCategoriesModalOpen = false;
+    if (headerSearchQuery.trim()) {
       if (recommendations.length > 0) {
         isRecommendationsOpen = true;
       } else {
@@ -164,6 +258,10 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
   }
 
   function handleSelectCategoryFilter(filter: Partial<CatalogFilterState>) {
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     gamesStore.resetFilters();
     gamesStore.setFilters(filter);
     gamesStore.loadCatalogGames();
@@ -180,6 +278,10 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
 
   async function handleSelectRecommendation(rec: GameRecommendation) {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     headerSearchQuery = rec.title;
@@ -201,9 +303,18 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
 
   function handleClickOutside(e: MouseEvent) {
     const target = e.target as Node;
-    if (searchWrapperEl && !searchWrapperEl.contains(target) && (!categoriesModalEl || !categoriesModalEl.contains(target))) {
+    if (searchWrapperEl && !searchWrapperEl.contains(target)) {
       isRecommendationsOpen = false;
+    }
+    if (
+      categoriesModalEl && !categoriesModalEl.contains(target) &&
+      (!catalogBtnEl || !catalogBtnEl.contains(target))
+    ) {
       isCategoriesModalOpen = false;
+      if (closeCatalogTimer) {
+        clearTimeout(closeCatalogTimer);
+        closeCatalogTimer = null;
+      }
     }
   }
 
@@ -211,6 +322,10 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     if (e.key === 'Escape') {
       isRecommendationsOpen = false;
       isCategoriesModalOpen = false;
+      if (closeCatalogTimer) {
+        clearTimeout(closeCatalogTimer);
+        closeCatalogTimer = null;
+      }
     }
   }
 
@@ -219,81 +334,136 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     headerSearchQuery = '';
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
+    if (closeCatalogTimer) {
+      clearTimeout(closeCatalogTimer);
+      closeCatalogTimer = null;
+    }
     uiStore.setTab('store');
   }
 </script>
 
 <svelte:window onclick={handleClickOutside} onkeydown={handleKeydown} />
 
-<header class="sticky top-0 z-40 bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-4 lg:px-8 py-3 transition-all">
-  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+<header class="sticky top-0 z-40 relative bg-[#030d12]/90 backdrop-blur-xl border-b border-cyan-500/20 px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 transition-all">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
       <button
-        onclick={handleLogoClick}
-        class="flex items-center gap-2.5 group cursor-pointer text-left"
+        onclick={() => isMobileMenuOpen = true}
+        class="lg:hidden p-2 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 cursor-pointer transition-all shrink-0"
+        title="Меню навігації"
       >
-        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform">
-          <Gamepad2 class="w-5 h-5" />
-        </div>
-        <div>
-          <span class="font-black text-xl tracking-tighter text-white font-display flex items-center gap-1 leading-none">
-            DTEAM<span class="text-cyan-400">.</span>
-          </span>
-          <span class="block text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">GAMING HUB</span>
-        </div>
+        <Menu class="w-5 h-5" />
       </button>
 
-      <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner">
-        {#each visibleTabs as tab}
-          {@const Icon = tab.icon}
-          <button
-            onclick={() => uiStore.setTab(tab.id)}
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
-              {$uiStore.activeTab === tab.id
-                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
-          >
-            <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
-            <span>{tab.label}</span>
-            {#if tab.id === 'admin'}
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
-            {/if}
-          </button>
-        {/each}
-      </nav>
+      <button
+        onclick={handleLogoClick}
+        class="flex items-center gap-2 group cursor-pointer text-left shrink-0"
+      >
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-400 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform shrink-0">
+          <Gamepad2 class="w-4 h-4 sm:w-5 sm:h-5" />
+        </div>
+        <div class="hidden xs:block">
+          <span class="font-black text-lg sm:text-xl tracking-tighter text-white font-display flex items-center gap-1 leading-none">
+            DTEAM<span class="text-cyan-400">.</span>
+          </span>
+          <span class="block text-[7px] sm:text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">GAMING HUB</span>
+        </div>
+      </button>
     </div>
 
-    <div bind:this={searchWrapperEl} class="relative flex-1 max-w-md min-w-[200px] mx-1 sm:mx-2">
+    <div class="hidden lg:flex flex-col items-stretch gap-1.5 shrink-0">
+      <nav class="flex items-center gap-1 bg-[#061820]/90 p-1 rounded-2xl border border-cyan-500/20 shadow-inner relative justify-between">
+        {#each visibleTabs as tab}
+          {@const Icon = tab.icon}
+          {#if tab.id === 'catalog'}
+            <div class="relative" bind:this={catalogBtnEl}>
+              <button
+                onclick={handleCatalogClick}
+                onmouseenter={handleCatalogMouseEnter}
+                onmouseleave={handleCatalogMouseLeave}
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
+                  {$uiStore.activeTab === tab.id
+                    ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
+              >
+                <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : 'text-slate-400'}" />
+                <span>{tab.label}</span>
+                <ChevronDown class="w-3 h-3 text-cyan-400 transition-transform {isCategoriesModalOpen ? 'rotate-180' : ''}" />
+              </button>
+            </div>
+          {:else}
+            <button
+              onclick={() => { uiStore.setTab(tab.id); isCategoriesModalOpen = false; }}
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative
+                {$uiStore.activeTab === tab.id
+                  ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-lg shadow-cyan-500/25 font-black'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}"
+            >
+              <Icon class="w-3.5 h-3.5 {$uiStore.activeTab === tab.id ? 'text-black' : tab.id === 'admin' ? 'text-cyan-400' : 'text-slate-400'}" />
+              <span>{tab.label}</span>
+              {#if tab.id === 'admin'}
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping absolute top-1.5 right-1.5"></span>
+              {/if}
+              {#if tab.id === 'chat' && $totalChatUnreadCount > 0}
+                <span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
+                  {$totalChatUnreadCount > 99 ? '99+' : $totalChatUnreadCount}
+                </span>
+              {/if}
+              {#if tab.id === 'chat' && $uiStore.activeTab === 'chat'}
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-300 absolute -bottom-1 left-1/2 -translate-x-1/2 shadow-[0_0_8px_#0df2c9]"></span>
+              {/if}
+            </button>
+          {/if}
+        {/each}
+      </nav>
+
+      <div bind:this={searchWrapperEl} class="relative w-full">
+        <form onsubmit={handleSearchSubmit} class="relative w-full">
+          <input
+            type="text"
+            placeholder="Пошук у Крамниці..."
+            bind:value={headerSearchQuery}
+            oninput={handleSearchInput}
+            onfocus={handleSearchFocus}
+            class="w-full pl-3.5 pr-9 py-1.5 rounded-xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+          />
+          <button
+            type="submit"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
+            title="Пошук"
+          >
+            <Search class="w-3.5 h-3.5" />
+          </button>
+        </form>
+
+        <GameRecommendationsDropdown
+          {recommendations}
+          isOpen={isRecommendationsOpen}
+          isLoading={isLoadingRecommendations}
+          searchQuery={headerSearchQuery}
+          onSelect={handleSelectRecommendation}
+          onViewAll={handleSearchSubmit}
+        />
+      </div>
+    </div>
+
+    <div class="lg:hidden flex-1 max-w-xs mx-1">
       <form onsubmit={handleSearchSubmit} class="relative w-full">
         <input
           type="text"
-          placeholder="Пошук у Крамниці..."
+          placeholder="Пошук..."
           bind:value={headerSearchQuery}
           oninput={handleSearchInput}
-          onfocus={handleSearchFocus}
-          class="w-full pl-4 pr-10 py-2 rounded-2xl bg-[#061820]/90 hover:bg-[#07212b] border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 transition-all shadow-inner"
+          class="w-full pl-3 pr-8 py-1.5 rounded-xl bg-[#061820]/90 border border-cyan-500/30 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
         />
-        <button
-          type="submit"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 p-1 cursor-pointer transition-colors"
-          title="Пошук"
-        >
-          <Search class="w-4 h-4" />
+        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 p-1">
+          <Search class="w-3.5 h-3.5" />
         </button>
       </form>
-
-      <GameRecommendationsDropdown
-        {recommendations}
-        isOpen={isRecommendationsOpen}
-        isLoading={isLoadingRecommendations}
-        searchQuery={headerSearchQuery}
-        onSelect={handleSelectRecommendation}
-        onViewAll={handleSearchSubmit}
-      />
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
       <button
         onclick={() => uiStore.setTab('wishlist')}
         class="relative p-2 rounded-xl border transition-all cursor-pointer group
@@ -328,33 +498,178 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
 
       {#if $currentUser}
 
+        <div class="relative">
+          <button
+            onclick={() => notificationStore.toggleDropdown()}
+            class="relative w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md
+              {$notificationStore.isDropdownOpen
+                ? 'bg-cyan-500 text-black shadow-cyan-500/30 scale-105'
+                : 'bg-[#061820] text-slate-300 hover:text-white hover:bg-cyan-950/60 border border-cyan-500/30'}"
+            title="Сповіщення"
+          >
+            <Bell class="w-4 h-4" />
+            {#if $notificationStore.unreadCount > 0}
+              <span class="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-lg shadow-rose-500/50 animate-pulse">
+                {$notificationStore.unreadCount > 99 ? '99+' : $notificationStore.unreadCount}
+              </span>
+            {/if}
+          </button>
+
+          {#if $notificationStore.isDropdownOpen}
+            <button type="button" aria-label="Закрити меню" class="fixed inset-0 z-40 bg-transparent border-0 p-0 cursor-default" onclick={() => notificationStore.closeDropdown()}></button>
+            <div class="absolute right-0 mt-2 w-80 sm:w-96 bg-[#081722]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl shadow-black/80 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+
+              <div class="px-4 py-3 border-b border-cyan-500/20 flex items-center justify-between bg-[#040e15]/80">
+                <div class="flex items-center gap-2">
+                  <Bell class="w-4 h-4 text-cyan-400" />
+                  <span class="text-xs font-black text-white tracking-wide uppercase font-display">Сповіщення</span>
+                  {#if $notificationStore.unreadCount > 0}
+                    <span class="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[10px] font-mono font-bold">
+                      +{$notificationStore.unreadCount} нових
+                    </span>
+                  {/if}
+                </div>
+                {#if $notificationStore.notifications.some(n => !n.isRead)}
+                  <button
+                    onclick={() => notificationStore.markAllAsRead()}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Check class="w-3 h-3" /> Прочитати всі
+                  </button>
+                {/if}
+              </div>
+
+              <div class="max-h-[380px] overflow-y-auto divide-y divide-slate-800/40 custom-scrollbar">
+                {#if $notificationStore.notifications.length === 0}
+                  <div class="py-10 px-4 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-950/40 border border-cyan-500/20 mx-auto flex items-center justify-center text-cyan-400/60 mb-2">
+                      <Bell class="w-6 h-6" />
+                    </div>
+                    <p class="text-xs font-bold text-slate-300">Немає сповіщень</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Тут з'являтимуться важливі події та оновлення</p>
+                  </div>
+                {:else}
+                  {#each $notificationStore.notifications as item (item.id)}
+                    <div
+                      role="button"
+                      tabindex="0"
+                      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNotificationClick(item); }}
+                      class="p-3.5 flex items-start gap-3 transition-colors group relative cursor-pointer
+                        {item.isRead ? 'bg-transparent hover:bg-slate-800/30' : 'bg-cyan-950/20 hover:bg-cyan-900/30 border-l-2 border-cyan-400'}"
+                      onclick={() => handleNotificationClick(item)}
+                    >
+
+                      <div class="relative shrink-0 mt-0.5">
+                        {#if item.actor?.avatarUrl}
+                          <BackendImage src={item.actor.avatarUrl} alt={item.actor.username} class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30" />
+                        {:else if item.type === 'wallet_deposit'}
+                          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <TonIcon class="w-4 h-4" />
+                          </div>
+                        {:else if item.type === 'friend_request' || item.type === 'friend_accepted'}
+                          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            <UserPlus class="w-4 h-4" />
+                          </div>
+                        {:else if item.type === 'chat_message'}
+                          <div class="w-8 h-8 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                            <MessageSquare class="w-4 h-4" />
+                          </div>
+                        {:else}
+                          <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <Bell class="w-4 h-4" />
+                          </div>
+                        {/if}
+                        {#if !item.isRead}
+                          <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-[#081722]"></span>
+                        {/if}
+                      </div>
+
+                      <div class="flex-1 min-w-0 pr-6">
+                        <h5 class="text-xs font-bold text-white truncate {item.isRead ? 'font-medium' : 'font-black'}">
+                          {item.title}
+                        </h5>
+                        <p class="text-[11px] text-slate-400 leading-snug mt-0.5 break-words">
+                          {item.message}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500 font-mono">
+                          <Clock class="w-2.5 h-2.5" />
+                          <span>{formatRelativeTime(item.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div class="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        <button
+                          onclick={(e) => { e.stopPropagation(); notificationStore.deleteNotification(item.id); }}
+                          class="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          title="Видалити"
+                        >
+                          <Trash2 class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+
+              {#if $notificationStore.hasMore}
+                <div class="p-2 border-t border-slate-800/80 text-center bg-[#040e15]/40">
+                  <button
+                    onclick={() => notificationStore.loadMore()}
+                    disabled={$notificationStore.isLoading}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {$notificationStore.isLoading ? 'Завантаження...' : 'Показати давніші сповіщення'}
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
         <button
-          onclick={() => uiStore.setDepositModal(true)}
-          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] hover:from-cyan-950/80 hover:to-[#072836] border border-cyan-500/30 hover:border-cyan-400/80 text-xs transition-all cursor-pointer shadow-inner group"
-          title="Поповнити баланс (The Open Network)"
+          onclick={() => uiStore.setTab('settings')}
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md
+            {$uiStore.activeTab === 'settings'
+              ? 'bg-white text-black shadow-white/30 scale-105'
+              : 'bg-[#061820] text-slate-300 hover:text-white hover:bg-cyan-950/60 border border-cyan-500/30'}"
+          title="Налаштування"
         >
-          <span class="text-cyan-400 font-bold text-xs group-hover:scale-110 transition-transform">💎</span>
-          <span class="font-bold text-white font-mono text-xs tracking-tight">
-            {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
-          </span>
-          <span class="w-4 h-4 rounded-md bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-400 group-hover:text-black flex items-center justify-center text-[11px] font-black transition-all ml-0.5 shadow-sm">
-            +
-          </span>
+          <Settings class="w-4 h-4" />
         </button>
+
+        <div class="hidden sm:flex items-center rounded-xl bg-gradient-to-r from-[#07212b] to-[#061820] border border-cyan-500/30 hover:border-cyan-400/80 transition-all shadow-inner overflow-hidden">
+          <button
+            onclick={() => uiStore.setTab('wallet')}
+            class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-cyan-950/80 text-xs transition-colors cursor-pointer group"
+            title="Перейти до гаманця"
+          >
+            <TonIcon class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+            <span class="font-bold text-white font-mono text-xs tracking-tight">
+              {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+            </span>
+          </button>
+          <button
+            onclick={() => uiStore.setDepositModal(true)}
+            class="px-2 py-1.5 bg-cyan-500/20 hover:bg-cyan-400 text-cyan-300 hover:text-black text-[11px] font-black transition-all border-l border-cyan-500/30 cursor-pointer"
+            title="Швидке поповнення балансу (TON)"
+          >
+            +
+          </button>
+        </div>
 
         <div class="relative">
           <button
             onclick={() => isUserDropdownOpen = !isUserDropdownOpen}
-            class="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer"
+            class="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 sm:pl-2.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer"
           >
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden">
               {#if $currentUser.avatarUrl}
-                <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
+                <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
               {:else}
                 {$currentUser.username.charAt(0).toUpperCase()}
               {/if}
             </div>
-            <span class="hidden sm:block text-xs font-bold text-slate-200">
+            <span class="hidden md:block text-xs font-bold text-slate-200">
               {$currentUser.username}
             </span>
             <ChevronDown class="w-3.5 h-3.5 text-slate-400" />
@@ -365,19 +680,37 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
               <div class="px-3 py-2 border-b border-cyan-950/80 text-[11px] text-slate-400">
                 <p class="font-bold text-white truncate">{$currentUser.username}</p>
                 <p class="text-[10px] text-cyan-400/80 truncate">{$currentUser.email}</p>
-                <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80">
+                <button
+                  onclick={() => { uiStore.setTab('wallet'); isUserDropdownOpen = false; }}
+                  class="w-full flex items-center justify-between mt-2 pt-2 border-t border-slate-800/80 hover:text-cyan-300 cursor-pointer transition-colors"
+                >
                   <span class="text-slate-400 text-[10px]">Баланс:</span>
-                  <span class="text-cyan-300 font-bold font-mono text-[11px]">
-                    💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+                  <span class="text-cyan-300 font-bold font-mono text-[11px] flex items-center gap-1">
+                    <TonIcon class="w-3 h-3 text-cyan-400" />
+                    <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
                   </span>
-                </div>
+                </button>
               </div>
 
               <button
-                onclick={() => { myProfileStore.viewMyProfile(); isUserDropdownOpen = false; }}
+                onclick={async () => { uiStore.setTab('my-profile'); isUserDropdownOpen = false; }}
                 class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 cursor-pointer font-bold mt-1"
               >
                 <User class="w-3.5 h-3.5 text-cyan-400" /> Мій профіль
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('settings'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 hover:text-white cursor-pointer font-bold mt-1"
+              >
+                <Settings class="w-3.5 h-3.5 text-cyan-400" /> Налаштування
+              </button>
+
+              <button
+                onclick={() => { uiStore.setTab('wallet'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-cyan-300 hover:text-white cursor-pointer font-bold mt-1"
+              >
+                <Wallet class="w-3.5 h-3.5 text-cyan-400" /> Мій гаманець
               </button>
 
               <button
@@ -413,6 +746,18 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
                 {/if}
               </button>
 
+              <button
+                onclick={() => { uiStore.setTab('chat'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-slate-200 hover:text-white cursor-pointer font-bold mt-1"
+              >
+                <MessageSquare class="w-3.5 h-3.5 text-cyan-400" /> Чат
+                {#if $totalChatUnreadCount > 0}
+                  <span class="ml-auto px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black">
+                    {$totalChatUnreadCount}
+                  </span>
+                {/if}
+              </button>
+
               {#if $currentUser.isAdmin}
                 <button
                   onclick={() => { uiStore.setTab('admin'); isUserDropdownOpen = false; }}
@@ -421,6 +766,12 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
                   <Shield class="w-3.5 h-3.5" /> Панель Адміністратора
                 </button>
               {/if}
+              <button
+                onclick={() => { uiStore.setTab('developer'); isUserDropdownOpen = false; }}
+                class="w-full text-left px-3 py-2 text-xs rounded-xl flex items-center gap-2 hover:bg-cyan-500/10 text-emerald-400 hover:text-emerald-300 cursor-pointer font-bold mt-1"
+              >
+                <Code2 class="w-3.5 h-3.5 text-emerald-400" /> Кабінет розробника
+              </button>
 
               <button
                 onclick={handleLogout}
@@ -432,17 +783,17 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
           {/if}
         </div>
       {:else}
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 sm:gap-1.5">
           <button
             onclick={() => uiStore.setLoginModal(true)}
-            class="px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 text-xs font-bold text-slate-200 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#061820] hover:bg-cyan-950/60 text-xs font-bold text-slate-200 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <LogIn class="w-3.5 h-3.5 text-cyan-400" />
             <span class="hidden sm:inline">Увійти</span>
           </button>
           <button
             onclick={() => uiStore.setTab('register')}
-            class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-xs font-black text-black shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-xs font-black text-black shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <UserPlus class="w-3.5 h-3.5 text-black" />
             <span class="hidden sm:inline">Реєстрація</span>
@@ -452,12 +803,234 @@ import { uiStore, type MainTab } from '../../stores/uiStore';
     </div>
   </div>
 
-  <div bind:this={categoriesModalEl}>
+  <div
+    bind:this={categoriesModalEl}
+    role="region"
+    aria-label="Категорії каталогу"
+    onmouseenter={handleModalMouseEnter}
+    onmouseleave={handleModalMouseLeave}
+  >
     <SearchCategoriesModal
       isOpen={isCategoriesModalOpen}
       onSelectFilter={handleSelectCategoryFilter}
-      onClose={() => isCategoriesModalOpen = false}
+      onClose={() => {
+        isCategoriesModalOpen = false;
+        if (closeCatalogTimer) {
+          clearTimeout(closeCatalogTimer);
+          closeCatalogTimer = null;
+        }
+      }}
     />
   </div>
 </header>
 
+{#if isMobileMenuOpen}
+  <div class="fixed inset-0 z-50 lg:hidden flex">
+
+    <button
+      type="button"
+      onclick={() => isMobileMenuOpen = false}
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in"
+      aria-label="Закрити меню"
+    ></button>
+
+    <div class="relative w-4/5 max-w-sm bg-[#05151e] border-r border-cyan-500/30 p-5 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+      <div class="space-y-6 overflow-y-auto">
+
+        <div class="flex items-center justify-between border-b border-cyan-500/20 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-black font-black">
+              <Gamepad2 class="w-4 h-4" />
+            </div>
+            <div>
+              <span class="font-black text-base text-white tracking-tight font-display">DTEAM</span>
+              <span class="block text-[8px] font-bold text-cyan-400/90 tracking-widest uppercase">GAMING HUB</span>
+            </div>
+          </div>
+          <button
+            onclick={() => isMobileMenuOpen = false}
+            class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        {#if $currentUser}
+          <div class="p-3.5 rounded-2xl bg-[#09222c] border border-cyan-500/25 space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-sm shrink-0 overflow-hidden">
+                {#if $currentUser.avatarUrl}
+                  <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-xl object-cover" />
+                {:else}
+                  {$currentUser.username.charAt(0).toUpperCase()}
+                {/if}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-sm text-white truncate">{$currentUser.username}</p>
+                <p class="text-[11px] text-cyan-400/80 truncate">{$currentUser.email}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-cyan-950/80">
+              <div>
+                <span class="text-[10px] text-slate-400">Баланс TON:</span>
+                <p class="text-xs font-bold text-white font-mono flex items-center gap-1">
+                  <TonIcon class="w-3 h-3 text-cyan-400" />
+                  <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))} TON</span>
+                </p>
+              </div>
+              <button
+                onclick={() => { uiStore.setDepositModal(true); isMobileMenuOpen = false; }}
+                class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-[11px] font-black tracking-wider transition-all cursor-pointer"
+              >
+                + Поповнити
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        <div class="space-y-1">
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Навігація</p>
+          {#each visibleTabs as tab}
+            {@const Icon = tab.icon}
+            <button
+              onclick={() => { uiStore.setTab(tab.id); isMobileMenuOpen = false; }}
+              class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer
+                {$uiStore.activeTab === tab.id
+                  ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-md shadow-cyan-500/20 font-black'
+                  : 'text-slate-300 hover:bg-cyan-500/10 hover:text-white'}"
+            >
+              <div class="flex items-center gap-3">
+                <Icon class="w-4 h-4 {$uiStore.activeTab === tab.id ? 'text-black' : 'text-cyan-400'}" />
+                <span>{tab.label}</span>
+              </div>
+              {#if tab.id === 'chat' && $totalChatUnreadCount > 0}
+                <span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                  {$totalChatUnreadCount}
+                </span>
+              {/if}
+              {#if tab.id === 'friends' && $friendsStore.requests.length > 0}
+                <span class="px-1.5 py-0.5 rounded-full bg-[#0df2c9] text-black text-[10px] font-black">
+                  +{$friendsStore.requests.length}
+                </span>
+              {/if}
+            </button>
+          {/each}
+
+          {#if $currentUser}
+            <div class="pt-3 border-t border-cyan-950/80 space-y-1">
+              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Акаунт</p>
+              <button
+                onclick={() => { uiStore.setTab('wallet'); isMobileMenuOpen = false; }}
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-cyan-300 hover:bg-cyan-500/10 cursor-pointer"
+              >
+                <Wallet class="w-4 h-4 text-cyan-400" />
+                <span>Мій гаманець</span>
+              </button>
+              <button
+                onclick={() => { uiStore.setTab('my-profile'); isMobileMenuOpen = false; }}
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-cyan-500/10 cursor-pointer"
+              >
+                <User class="w-4 h-4 text-cyan-400" />
+                <span>Мій профіль</span>
+              </button>
+              <button
+                onclick={() => { uiStore.setTab('settings'); isMobileMenuOpen = false; }}
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-cyan-300 hover:bg-cyan-500/10 cursor-pointer"
+              >
+                <Settings class="w-4 h-4 text-cyan-400" />
+                <span>Налаштування</span>
+              </button>
+              <button
+                onclick={() => { uiStore.setTab('developer'); isMobileMenuOpen = false; }}
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-emerald-400 hover:bg-cyan-500/10 cursor-pointer"
+              >
+                <Code2 class="w-4 h-4 text-emerald-400" />
+                <span>Кабінет розробника</span>
+              </button>
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-cyan-500/20">
+        {#if $currentUser}
+          <button
+            onclick={handleLogout}
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all cursor-pointer"
+          >
+            <LogOut class="w-4 h-4" />
+            <span>Вийти з акаунту</span>
+          </button>
+        {:else}
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              onclick={() => { uiStore.setLoginModal(true); isMobileMenuOpen = false; }}
+              class="px-3 py-2 rounded-xl bg-[#09222c] text-xs font-bold text-slate-200 border border-cyan-500/30 text-center"
+            >
+              Увійти
+            </button>
+            <button
+              onclick={() => { uiStore.setTab('register'); isMobileMenuOpen = false; }}
+              class="px-3 py-2 rounded-xl bg-cyan-500 text-black text-xs font-bold text-center"
+            >
+              Реєстрація
+            </button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#030e14]/95 backdrop-blur-xl border-t border-cyan-500/20 px-2 py-1.5 flex lg:hidden items-center justify-around shadow-2xl safe-area-pb">
+  <button
+    onclick={() => uiStore.setTab('store')}
+    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-colors cursor-pointer
+      {$uiStore.activeTab === 'store' ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+  >
+    <Gamepad2 class="w-4 h-4" />
+    <span>Крамниця</span>
+  </button>
+
+  <button
+    onclick={() => uiStore.setTab('catalog')}
+    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-colors cursor-pointer
+      {$uiStore.activeTab === 'catalog' ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+  >
+    <Compass class="w-4 h-4" />
+    <span>Каталог</span>
+  </button>
+
+  <button
+    onclick={() => uiStore.setTab('chat')}
+    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-colors cursor-pointer relative
+      {$uiStore.activeTab === 'chat' ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+  >
+    <MessageSquare class="w-4 h-4" />
+    <span>Чат</span>
+    {#if $totalChatUnreadCount > 0}
+      <span class="absolute top-0 right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-rose-500 text-white text-[8px] font-black flex items-center justify-center shadow-sm">
+        {$totalChatUnreadCount > 99 ? '99+' : $totalChatUnreadCount}
+      </span>
+    {/if}
+  </button>
+
+  <button
+    onclick={() => uiStore.setTab('library')}
+    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-colors cursor-pointer
+      {$uiStore.activeTab === 'library' ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+  >
+    <Library class="w-4 h-4" />
+    <span>Бібліотека</span>
+  </button>
+
+  <button
+    onclick={() => uiStore.setTab('wallet')}
+    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-colors cursor-pointer
+      {$uiStore.activeTab === 'wallet' ? 'text-cyan-400' : 'text-slate-400 hover:text-white'}"
+  >
+    <Wallet class="w-4 h-4" />
+    <span>Гаманець</span>
+  </button>
+</nav>

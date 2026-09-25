@@ -76,11 +76,12 @@
       tabindex="0"
       onclick={() => { gamesStore.selectGame(activeGame); uiStore.setTab('game'); }}
       onkeydown={(e) => { if (e.key === 'Enter') { gamesStore.selectGame(activeGame); uiStore.setTab('game'); } }}
-      class="group relative w-full aspect-[16/7] min-h-[300px] rounded-3xl overflow-hidden border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 cursor-pointer text-left bg-slate-950"
+      class="group relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[16/7] min-h-[260px] sm:min-h-[320px] rounded-3xl overflow-hidden border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 cursor-pointer text-left bg-slate-950"
     >
       <img
         src={activeGame.headerImageUrl || activeGame.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'}
         alt={activeGame.title}
+        onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'; }}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
       />
 
@@ -171,6 +172,7 @@
             <img
               src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'}
               alt={game.title}
+              onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'; }}
               class="w-full h-full object-cover"
             />
           </button>
@@ -179,4 +181,3 @@
     {/if}
   </div>
 {/if}
-

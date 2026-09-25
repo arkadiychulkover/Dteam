@@ -71,7 +71,34 @@ class ApiClient {
     this.setRefreshToken(refreshToken);
   }
 
-  private async refreshAccessToken(): Promise<string | null> {
+  private tokenRefreshListeners: Set<(token: string) => void> = new Set();
+
+  public onTokenRefreshed(callback: (token: string) => void): () => void {
+    this.tokenRefreshListeners.add(callback);
+    return () => this.tokenRefreshListeners.delete(callback);
+  }
+
+  public async getValidToken(): Promise<string | null> {
+    const currentToken = this.getToken();
+    if (!currentToken) return null;
+
+    try {
+      const parts = currentToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const exp = payload.exp * 1000;
+        if (Date.now() > exp - 30000) {
+          const refreshed = await this.refreshAccessToken();
+          if (refreshed) return refreshed;
+        }
+      }
+    } catch {
+    }
+
+    return currentToken;
+  }
+
+  public async refreshAccessToken(): Promise<string | null> {
     const currentRefreshToken = this.getRefreshToken();
     if (!currentRefreshToken) {
       return null;
@@ -96,6 +123,9 @@ class ApiClient {
           const newAccessToken: string | null = data?.accessToken ?? null;
           const newRefreshToken: string | null = data?.refreshToken ?? null;
           this.setTokens(newAccessToken, newRefreshToken);
+          if (newAccessToken) {
+            this.tokenRefreshListeners.forEach(cb => cb(newAccessToken));
+          }
           return newAccessToken;
         } catch (e) {
           console.warn('[API] Failed to refresh access token:', e);
@@ -146,8 +176,19 @@ class ApiClient {
 
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
         let status = response.status;
+        let isBanned = false;
         try {
           const errorData = await response.json();
+          if (
+            errorData.isBanned === true ||
+            (errorData.message && (
+              errorData.message.toLowerCase().includes('заблокирован') ||
+              errorData.message.toLowerCase().includes('banned')
+            ))
+          ) {
+            isBanned = true;
+          }
+
           if (errorData.message) {
             errorMessage = errorData.message;
           } else if (errorData.errors && typeof errorData.errors === 'object') {
@@ -163,6 +204,10 @@ class ApiClient {
 
         const err: any = new Error(errorMessage);
         err.status = status;
+        err.isBanned = isBanned;
+        if (isBanned && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('dteam:user_banned'));
+        }
         throw err;
       }
 
@@ -203,4 +248,3 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
-

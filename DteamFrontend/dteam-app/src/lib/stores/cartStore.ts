@@ -20,6 +20,8 @@ function createCartStore() {
   return {
     subscribe,
 
+    isInCart: (gameId: string) => get({ subscribe }).cartGameIds.has(gameId),
+
     loadCart: async () => {
       const user = get(currentUser);
       if (!user?.id) {
@@ -53,6 +55,16 @@ function createCartStore() {
           type: 'warning',
         });
         uiStore.setLoginModal(true);
+        return false;
+      }
+
+      const library = get(libraryStore);
+      if (library.items.some((item) => item.gameId === game.id)) {
+        uiStore.addToast({
+          title: 'Вже придбано',
+          message: `Гра "${game.title}" вже є у вашій бібліотеці!`,
+          type: 'info',
+        });
         return false;
       }
 
@@ -120,6 +132,68 @@ function createCartStore() {
       }
     },
 
+    addMultipleToCart: async (games: Game[], redirectToCart: boolean = false, successMsg?: string) => {
+      const user = get(currentUser);
+      if (!user?.id) {
+        uiStore.addToast({
+          title: 'Увійдіть в акаунт',
+          message: 'Для додавання товарів до кошика потрібна авторизація.',
+          type: 'warning',
+        });
+        uiStore.setLoginModal(true);
+        return false;
+      }
+
+      const library = get(libraryStore);
+      const ownedSet = new Set(library.items.map(i => i.gameId));
+      const unownedGames = games.filter(g => !ownedSet.has(g.id));
+
+      if (unownedGames.length === 0) {
+        uiStore.addToast({
+          title: 'Вже придбано',
+          message: 'Всі обрані ігри вже є у вашій бібліотеці!',
+          type: 'info',
+        });
+        return true;
+      }
+
+      let addedCount = 0;
+      for (const game of unownedGames) {
+        const state = get({ subscribe });
+        if (!state.cartGameIds.has(game.id)) {
+          try {
+            await cartService.addToCart(game.id);
+            addedCount++;
+          } catch (e) {
+            console.warn('[cartStore] Error adding item to cart:', e);
+          }
+        }
+      }
+
+      try {
+        const summary = await cartService.getCart();
+        const items = summary.items || [];
+        const gameIds = new Set(items.map((i) => i.gameId));
+        update((s) => ({
+          ...s,
+          items,
+          cartGameIds: gameIds,
+          isLoading: false,
+        }));
+      } catch {}
+
+      uiStore.addToast({
+        title: 'Додано до кошика 🛒',
+        message: successMsg || `Додано ${addedCount} товарів до кошика!`,
+        type: 'success',
+      });
+
+      if (redirectToCart) {
+        uiStore.setTab('cart');
+      }
+      return true;
+    },
+
     removeFromCart: async (gameId: string, gameTitle?: string) => {
       const user = get(currentUser);
       if (!user?.id) return;
@@ -170,26 +244,29 @@ function createCartStore() {
       }
     },
 
-    moveToWishlist: async (game: Game) => {
+    moveToWishlist: async (gameOrId: Game | string, title?: string) => {
       const user = get(currentUser);
       if (!user?.id) return;
 
+      const gameId = typeof gameOrId === 'string' ? gameOrId : gameOrId.id;
+      const gameTitle = typeof gameOrId === 'string' ? (title || 'Гру') : gameOrId.title;
+
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
-        nextGameIds.delete(game.id);
+        nextGameIds.delete(gameId);
         return {
           ...s,
-          items: s.items.filter((i) => i.gameId !== game.id),
+          items: s.items.filter((i) => i.gameId !== gameId),
           cartGameIds: nextGameIds,
         };
       });
 
       try {
-        await cartService.moveToWishlist(game.id);
+        await cartService.moveToWishlist(gameId);
         wishlistStore.loadWishlist();
         uiStore.addToast({
           title: 'Переміщено до бажаного ♥',
-          message: `Гру '${game.title}' переміщено зі списку кошика до списку бажань!`,
+          message: `Гру '${gameTitle}' переміщено зі списку кошика до списку бажань!`,
           type: 'success',
         });
       } catch (err: any) {
@@ -275,4 +352,3 @@ export const cartTotals = derived(cartStore, ($s) => {
     itemsCount: items.length,
   };
 });
-

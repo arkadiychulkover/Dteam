@@ -13,7 +13,9 @@
   import { gamesService } from '../../services/gamesService';
   import type { Review } from '../../types';
   import { formatBytes, formatDate, formatPrice } from '../../utils/formatters';
-  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Users, Heart, ChevronRight } from 'lucide-svelte';
+  import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
+  import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Download, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
+  import CreateCollectionModal from './CreateCollectionModal.svelte';
 
   interface Props {
     game: Game;
@@ -46,6 +48,9 @@
 
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
+
+  let showCollectionsDropdown = $state(false);
+  let showCreateCollectionModal = $state(false);
 
   async function loadReviews(gameId: string) {
     isLoadingReviews = true;
@@ -84,7 +89,7 @@
     isLoadingNews = true;
     try {
       const res = await communityService.getPosts(game.id, 'news');
-      gameNews = res.posts.slice(0, 1);
+      gameNews = res.posts.slice(0, 3);
     } catch (e) {
       console.warn('[LibraryGameDetails] Не вдалося завантажити новини гри:', e);
       gameNews = [];
@@ -138,12 +143,56 @@
     }
   }
 
-  function handleDownload() {
+  let isDownloading = $state(false);
+
+  async function handleDownload() {
+    if (!game?.id || isDownloading) return;
+    isDownloading = true;
     uiStore.addToast({
-      title: 'Завантаження',
-      message: `Завантаження '${game.title}' розпочато.`,
-      type: 'success',
+      title: 'Завантаження розпочато',
+      message: `Підготовка архіву гри '${game.title}'...`,
+      type: 'info',
     });
+
+    try {
+      const token = localStorage.getItem('dteam_token') || sessionStorage.getItem('dteam_token');
+      const res = await fetch(`/api/games/${game.id}/download`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Помилка завантаження гри';
+        try {
+          const errData = await res.json();
+          if (errData.message) errMsg = errData.message;
+        } catch {}
+        throw new Error(errMsg);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${game.title.replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_')}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      uiStore.addToast({
+        title: 'Успішно завантажено',
+        message: `Архів '${game.title}' збережено на ваш пристрій!`,
+        type: 'success',
+      });
+    } catch (e: any) {
+      uiStore.addToast({
+        title: 'Помилка завантаження',
+        message: e?.message || 'Не вдалося завантажити гру.',
+        type: 'error',
+      });
+    } finally {
+      isDownloading = false;
+    }
   }
 
   function handleToggleFavorite() {
@@ -204,9 +253,16 @@
       <div class="flex flex-wrap items-center gap-4">
         <button
           onclick={handleDownload}
-          class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
+          disabled={isDownloading}
+          class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-50 text-black font-black text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center gap-2"
         >
-          Скачати
+          {#if isDownloading}
+            <Loader2 class="w-4 h-4 animate-spin" />
+            <span>Завантаження...</span>
+          {:else}
+            <Download class="w-4 h-4" />
+            <span>Завантажити</span>
+          {/if}
         </button>
 
         <div class="flex flex-col text-xs text-slate-300">
@@ -225,6 +281,61 @@
           >
             <Star class="w-4 h-4 {isFavorite ? 'fill-cyan-300' : ''}" />
           </button>
+          <div class="relative">
+            <button
+              onclick={() => (showCollectionsDropdown = !showCollectionsDropdown)}
+              title="Додати або прибрати з колекції"
+              class="w-10 h-10 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md
+                {showCollectionsDropdown || $libraryStore.collections.some(c => c.items.some(i => i.gameId === game.id))
+                  ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                  : 'bg-black/50 border-white/20 text-slate-300 hover:text-cyan-300 hover:border-cyan-400/60'}"
+            >
+              <FolderPlus class="w-4 h-4" />
+            </button>
+
+            {#if showCollectionsDropdown}
+              <div
+                class="absolute right-0 bottom-12 w-64 p-3 rounded-2xl bg-[#061820] border border-cyan-500/30 shadow-2xl z-30 space-y-2 animate-in fade-in"
+              >
+                <div class="flex items-center justify-between border-b border-cyan-500/15 pb-2">
+                  <span class="text-xs font-bold text-white">Колекції</span>
+                  <button
+                    type="button"
+                    onclick={() => { showCollectionsDropdown = false; showCreateCollectionModal = true; }}
+                    class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1"
+                  >
+                    + Нова
+                  </button>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto space-y-1">
+                  {#if $libraryStore.collections.length === 0}
+                    <p class="text-[11px] text-slate-500 py-2 text-center">Немає колекцій</p>
+                  {:else}
+                    {#each $libraryStore.collections as col (col.id)}
+                      {@const inCol = (col.items ?? []).some((i) => i.gameId === game.id)}
+                      <button
+                        type="button"
+                        onclick={() => libraryStore.toggleGameInCollection(col.id, game.id)}
+                        class="w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors cursor-pointer hover:bg-white/5 {inCol ? 'text-cyan-300 bg-cyan-950/40' : 'text-slate-300'}"
+                      >
+                        <div class="flex items-center gap-2 truncate">
+                          <Folder class="w-3.5 h-3.5 shrink-0 {inCol ? 'text-cyan-400' : 'text-slate-500'}" />
+                          <span class="truncate">{col.name}</span>
+                        </div>
+                        <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 {inCol ? 'bg-cyan-500 border-cyan-400 text-black' : 'border-slate-600'}">
+                          {#if inCol}
+                            <Check class="w-3 h-3" />
+                          {/if}
+                        </div>
+                      </button>
+                    {/each}
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </div>
+
           <button
             class="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 border border-white/20 text-slate-300 hover:text-white transition-all cursor-pointer backdrop-blur-md"
             title="Про гру"
@@ -352,11 +463,15 @@
           </div>
         {:else if gameNews.length > 0}
           {#each gameNews as post (post.id)}
-            <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg">
-              {#if post.media?.type === 'image' && post.media.url}
-                <img src={post.media.url} alt="" class="w-full max-h-72 object-cover" />
-              {:else if post.media?.type === 'video' && post.media.url}
-                <video src={post.media.url} class="w-full max-h-72" controls></video>
+            <article class="bg-[#061820]/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-lg mb-4">
+              {#if post.media?.url}
+                {#if post.media.type === 'video'}
+                  <video src={resolveMediaUrl(post.media.url)} class="w-full max-h-72" controls playsinline></video>
+                {:else}
+                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full max-h-72 object-cover" />
+                {/if}
+              {:else if post.gameBannerUrl}
+                <img src={resolveMediaUrl(post.gameBannerUrl)} alt="" class="w-full max-h-56 object-cover opacity-80" />
               {/if}
 
               <div class="p-5 space-y-3">
@@ -374,7 +489,7 @@
                 </button>
 
                 <h3 class="text-base font-bold text-white">{post.title}</h3>
-                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">{post.content}</p>
+                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">{@html renderDecoratedText(post.content)}</p>
 
                 <div class="flex items-center gap-4 pt-2">
                   <button
@@ -441,14 +556,14 @@
                 </div>
 
                 {#if post.media?.type === 'image' && post.media.url}
-                  <img src={post.media.url} alt="" class="w-full h-32 object-cover mt-3" />
+                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-32 object-cover mt-3" />
                 {:else if post.media?.type === 'video' && post.media.url}
-                  <video src={post.media.url} class="w-full h-32 object-cover mt-3" muted></video>
+                  <video src={resolveMediaUrl(post.media.url)} class="w-full h-32 object-cover mt-3" controls playsinline muted></video>
                 {/if}
 
                 <div class="p-4 space-y-2">
                   {#if post.title}<h4 class="text-sm font-bold text-white line-clamp-1">{post.title}</h4>{/if}
-                  <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{post.content}</p>
+                  <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{@html renderDecoratedText(post.content)}</p>
                   <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
                     <span class="flex items-center gap-1"><Heart class="w-3 h-3" />{post.stats.likesCount}</span>
                     <span class="flex items-center gap-1"><MessageSquare class="w-3 h-3" />{post.stats.commentsCount}</span>
@@ -550,3 +665,9 @@
     </aside>
   </div>
 </div>
+
+{#if showCreateCollectionModal}
+  <CreateCollectionModal
+    onClose={() => (showCreateCollectionModal = false)}
+  />
+{/if}

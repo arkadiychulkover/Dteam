@@ -1,5 +1,5 @@
 <script lang="ts">
-import { authStore, currentUser } from '../../stores/authStore';
+  import { authStore, currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
   import { Ban, ShieldAlert, AlertTriangle, LogOut, RefreshCw, Mail } from 'lucide-svelte';
 
@@ -89,4 +89,3 @@ import { authStore, currentUser } from '../../stores/authStore';
     </div>
   </div>
 </div>
-

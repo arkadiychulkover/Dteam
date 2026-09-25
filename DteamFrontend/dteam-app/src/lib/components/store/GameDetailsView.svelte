@@ -1,12 +1,14 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { gamesStore } from '../../stores/gamesStore';
   import { wishlistStore } from '../../stores/wishlistStore';
   import { cartStore } from '../../stores/cartStore';
+  import { libraryStore } from '../../stores/libraryStore';
   import { uiStore } from '../../stores/uiStore';
   import { currentUser } from '../../stores/authStore';
   import { gamesService } from '../../services/gamesService';
   import { formatPrice, formatBasePrice, formatBytes } from '../../utils/formatters';
+  import { renderDecoratedText } from '../../utils/textDecorator';
   import type { Game, Review } from '../../types';
   import {
     Star,
@@ -30,11 +32,30 @@ import { onMount } from 'svelte';
     Cpu,
     HardDrive,
     ShieldCheck,
-    Globe
+    Globe,
+    Newspaper,
+    X,
+    Users,
+    Gamepad2,
+    Cloud,
+    Trophy,
+    PackageOpen,
+    Sparkles,
   } from 'lucide-svelte';
+  import { communityService, type CommunityPost } from '../../services/communityService';
+  import { friendsService } from '../../services/friendsService';
+  import { profileStore } from '../../stores/profileStore';
+  import type { FriendsGameStatusDto } from '../../types/friend';
+  import { router } from '../../services/router';
+  import ReviewCommentsModal from './ReviewCommentsModal.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   const game = $derived($gamesStore.selectedGame || $gamesStore.games[0]);
   const isWishlisted = $derived(game ? $wishlistStore.wishlistGameIds.has(game.id) : false);
+  const isOwned = $derived(game ? $libraryStore.items.some(i => i.gameId === game.id) : false);
+
+  let selectedReviewForComments = $state<Review | null>(null);
+  let isReviewCommentsModalOpen = $state(false);
 
   let activeSubTab = $state<'about' | 'specs' | 'community'>('about');
   let selectedMediaIndex = $state(0);
@@ -50,6 +71,29 @@ import { onMount } from 'svelte';
 
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
+
+  let gameNews = $state<CommunityPost[]>([]);
+  let isLoadingNews = $state(false);
+  let selectedNewsModal = $state<CommunityPost | null>(null);
+
+  let friendsGameStatus = $state<FriendsGameStatusDto | null>(null);
+  let isLoadingFriendsStatus = $state(false);
+
+  async function loadFriendsGameStatus(gameId: string) {
+    if (!$currentUser) {
+      friendsGameStatus = null;
+      return;
+    }
+    isLoadingFriendsStatus = true;
+    try {
+      friendsGameStatus = await friendsService.getFriendsGameStatus(gameId);
+    } catch (e) {
+      console.warn('[GameDetails] Failed to load friends status:', e);
+      friendsGameStatus = null;
+    } finally {
+      isLoadingFriendsStatus = false;
+    }
+  }
 
   async function loadReviews(gameId: string) {
     isLoadingReviews = true;
@@ -75,11 +119,26 @@ import { onMount } from 'svelte';
     }
   }
 
+  async function loadGameNews(gameId: string) {
+    isLoadingNews = true;
+    try {
+      const res = await communityService.getPosts(gameId, 'news');
+      gameNews = res.posts || [];
+    } catch (e) {
+      console.warn('[GameDetails] Failed to load news:', e);
+      gameNews = [];
+    } finally {
+      isLoadingNews = false;
+    }
+  }
+
   $effect(() => {
     if (game?.id) {
       selectedMediaIndex = 0;
       loadReviews(game.id);
       loadDlcs(game.id);
+      loadGameNews(game.id);
+      loadFriendsGameStatus(game.id);
     }
   });
 
@@ -139,8 +198,12 @@ import { onMount } from 'svelte';
     return dlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0);
   });
 
+  const bundleDlcsDiscountedNanoTons = $derived.by(() => {
+    return Math.round(effectiveTotalDlcsNanoTons * 0.8);
+  });
+
   const completeEditionEffectiveNanoTons = $derived.by(() => {
-    return gameEffectivePriceNanoTons + effectiveTotalDlcsNanoTons;
+    return gameEffectivePriceNanoTons + bundleDlcsDiscountedNanoTons;
   });
 
   const completeEditionBaseNanoTons = $derived.by(() => {
@@ -163,12 +226,22 @@ import { onMount } from 'svelte';
     await cartStore.addToCart(game, redirectToCart);
   }
 
+  async function handleBuyCompleteEdition() {
+    if (!game) return;
+    await cartStore.addMultipleToCart(
+      [game, ...dlcs],
+      true,
+      `Комплект "${game.title}: Повне видання" (гра + усі DLC зі знижкою 20%) додано до кошика!`
+    );
+  }
+
   async function handleAddAllDLC() {
     if (dlcs.length === 0) return;
-    for (const dlc of dlcs) {
-      await cartStore.addToCart(dlc, false);
-    }
-    uiStore.setTab('cart');
+    await cartStore.addMultipleToCart(
+      dlcs,
+      true,
+      `Усі ${dlcs.length} DLC успішно додано до кошика зі знижкою 20%!`
+    );
   }
 
   async function handleAddReview() {
@@ -221,11 +294,72 @@ import { onMount } from 'svelte';
     }
   }
 
-  function openDlc(dlc: Game) {
-    gamesStore.selectGame(dlc);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  function openReviewComments(review: Review) {
+    selectedReviewForComments = review;
+    isReviewCommentsModalOpen = true;
+  }
+
+  async function handleToggleReviewCardLike(review: Review) {
+    if (!$currentUser) {
+      uiStore.addToast({
+        title: 'Потрібна авторизація',
+        message: 'Будь ласка, увійдіть в акаунт, щоб поставити вподобайку.',
+        type: 'warning'
+      });
+      uiStore.setLoginModal(true);
+      return;
     }
+
+    const wasLiked = review.isLiked ?? false;
+    const currentLikes = review.likesCount ?? 0;
+
+    reviews = reviews.map(r => {
+      if (r.id === review.id) {
+        return {
+          ...r,
+          isLiked: !wasLiked,
+          likesCount: wasLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1
+        };
+      }
+      return r;
+    });
+
+    try {
+      const res = await gamesService.toggleReviewLike(game.id, review.id);
+      reviews = reviews.map(r => {
+        if (r.id === review.id) {
+          return {
+            ...r,
+            isLiked: res.liked,
+            likesCount: res.likesCount
+          };
+        }
+        return r;
+      });
+    } catch {
+
+      reviews = reviews.map(r => {
+        if (r.id === review.id) {
+          return {
+            ...r,
+            isLiked: wasLiked,
+            likesCount: currentLikes
+          };
+        }
+        return r;
+      });
+    }
+  }
+
+  function handleReviewUpdatedFromModal(updated: Review) {
+    reviews = reviews.map(r => r.id === updated.id ? { ...r, ...updated } : r);
+    if (selectedReviewForComments?.id === updated.id) {
+      selectedReviewForComments = { ...selectedReviewForComments, ...updated };
+    }
+  }
+
+  function openDlc(dlc: Game) {
+    router.navigateToGame(dlc);
   }
 
   function formatReviewDate(dateStr?: string): string {
@@ -253,25 +387,54 @@ import { onMount } from 'svelte';
 {#if game}
   <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-8 animate-in fade-in duration-300">
 
-    <div class="sticky top-14 z-30 bg-[#030d12]/95 backdrop-blur-xl -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 border-b border-cyan-950/80 flex items-center justify-between shadow-lg">
-      <div class="flex items-center gap-8">
+    {#if game.isDlc}
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-950/70 via-cyan-950/50 to-[#061820] border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0">
+            <PackageOpen class="w-5 h-5" />
+          </div>
+          <div>
+            <div class="text-xs font-bold text-purple-300 uppercase tracking-wider">Завантажуваний вміст (DLC)</div>
+            <p class="text-xs text-slate-300">
+              Для запуску цього додаткового вмісту необхідна оригінальна гра
+              {#if game.parentGameTitle}
+                <strong class="text-white font-bold"> «{game.parentGameTitle}»</strong>.
+              {:else}
+                в бібліотеці Dteam.
+              {/if}
+            </p>
+          </div>
+        </div>
+        {#if game.parentGameId}
+          <button
+            onclick={() => uiStore.openGameDetails(game.parentGameId!)}
+            class="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-400/40 text-xs font-bold transition-all cursor-pointer shrink-0"
+          >
+            Перейти до базової гри →
+          </button>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="sticky top-14 z-30 bg-[#030d12]/95 backdrop-blur-xl -mx-4 lg:-mx-8 px-4 lg:px-8 py-2.5 sm:py-3 border-b border-cyan-950/80 flex items-center justify-between gap-3 shadow-lg overflow-x-auto no-scrollbar">
+      <div class="flex items-center gap-4 sm:gap-8 shrink-0">
         <button
           onclick={() => scrollToSection('section-about', 'about')}
-          class="text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative
+          class="text-xs sm:text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative whitespace-nowrap
             {activeSubTab === 'about' ? 'text-cyan-400 border-b-2 border-cyan-400 shadow-[0_4px_12px_rgba(13,242,201,0.3)]' : 'text-slate-400 hover:text-white'}"
         >
           Про гру
         </button>
         <button
           onclick={() => scrollToSection('section-specs', 'specs')}
-          class="text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative
+          class="text-xs sm:text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative whitespace-nowrap
             {activeSubTab === 'specs' ? 'text-cyan-400 border-b-2 border-cyan-400 shadow-[0_4px_12px_rgba(13,242,201,0.3)]' : 'text-slate-400 hover:text-white'}"
         >
           Характеристики
         </button>
         <button
           onclick={() => scrollToSection('section-community', 'community')}
-          class="text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative
+          class="text-xs sm:text-sm font-extrabold pb-3 -mb-3 transition-all cursor-pointer relative whitespace-nowrap
             {activeSubTab === 'community' ? 'text-cyan-400 border-b-2 border-cyan-400 shadow-[0_4px_12px_rgba(13,242,201,0.3)]' : 'text-slate-400 hover:text-white'}"
         >
           Спільнота
@@ -280,10 +443,11 @@ import { onMount } from 'svelte';
 
       <button
         onclick={() => uiStore.setTab('store')}
-        class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+        class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
       >
         <ArrowLeft class="w-3.5 h-3.5" />
-        <span>Назад до крамниці</span>
+        <span class="hidden sm:inline">Назад до крамниці</span>
+        <span class="sm:hidden">Назад</span>
       </button>
     </div>
 
@@ -440,33 +604,43 @@ import { onMount } from 'svelte';
               {/if}
             </div>
 
-            <button
-              onclick={() => handleBuy(game.title, true)}
-              class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-base tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Купити</span>
-            </button>
-
-            <div class="flex items-center gap-2">
+            {#if isOwned}
               <button
-                onclick={() => handleBuy(game.title, false)}
-                class="flex-1 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                onclick={() => { uiStore.setTab('library'); libraryStore.selectGame(game.id); }}
+                class="w-full py-3.5 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-cyan-300 font-black text-base tracking-wide shadow-lg shadow-cyan-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <ShoppingCart class="w-4 h-4 text-cyan-400" />
-                <span>Додати у кошик</span>
+                <Check class="w-5 h-5 text-cyan-400" />
+                <span>У вашій бібліотеці — Відкрити</span>
+              </button>
+            {:else}
+              <button
+                onclick={() => handleBuy(game.title, true)}
+                class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-black text-base tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-cyan-400/40 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Купити</span>
               </button>
 
-              <button
-                onclick={() => wishlistStore.toggleWishlist(game)}
-                class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-center
-                  {isWishlisted
-                    ? 'bg-rose-950/80 border-rose-500 text-rose-500 shadow-md shadow-rose-500/20'
-                    : 'bg-[#0b2834] hover:bg-[#0f3444] border-cyan-500/30 text-slate-300 hover:text-rose-400'}"
-                title={isWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}
-              >
-                <Heart class="w-4 h-4 {isWishlisted ? 'fill-rose-500 text-rose-500' : ''}" />
-              </button>
-            </div>
+              <div class="flex items-center gap-2">
+                <button
+                  onclick={() => handleBuy(game.title, false)}
+                  class="flex-1 py-3 rounded-2xl bg-[#0b2834] hover:bg-[#0f3444] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart class="w-4 h-4 text-cyan-400" />
+                  <span>Додати у кошик</span>
+                </button>
+
+                <button
+                  onclick={() => wishlistStore.toggleWishlist(game)}
+                  class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-center
+                    {isWishlisted
+                      ? 'bg-rose-950/80 border-rose-500 text-rose-500 shadow-md shadow-rose-500/20'
+                      : 'bg-[#0b2834] hover:bg-[#0f3444] border-cyan-500/30 text-slate-300 hover:text-rose-400'}"
+                  title={isWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}
+                >
+                  <Heart class="w-4 h-4 {isWishlisted ? 'fill-rose-500 text-rose-500' : ''}" />
+                </button>
+              </div>
+            {/if}
 
             <div class="flex items-center justify-between pt-2 border-t border-cyan-950/80 text-xs font-semibold text-slate-400">
               <button
@@ -522,6 +696,91 @@ import { onMount } from 'svelte';
             </div>
           </div>
 
+          {#if $currentUser}
+            <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-cyan-950/50 space-y-4">
+              <div class="flex items-center justify-between pb-2 border-b border-cyan-950/80">
+                <div class="flex items-center gap-2">
+                  <Users class="w-4 h-4 text-cyan-400" />
+                  <h3 class="text-sm font-black text-white uppercase tracking-wider">Друзі та ця гра</h3>
+                </div>
+                {#if isLoadingFriendsStatus}
+                  <Loader2 class="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                {/if}
+              </div>
+
+              {#if friendsGameStatus && (friendsGameStatus.friendsWhoOwn.length > 0 || friendsGameStatus.friendsWhoWishlist.length > 0)}
+                {#if friendsGameStatus.friendsWhoOwn.length > 0}
+                  <div class="space-y-2">
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Check class="w-3.5 h-3.5" />
+                      Мають у бібліотеці ({friendsGameStatus.friendsWhoOwn.length})
+                    </span>
+                    <div class="flex flex-wrap gap-2">
+                      {#each friendsGameStatus.friendsWhoOwn as friend}
+                        <button
+                          type="button"
+                          onclick={() => profileStore.viewProfile(friend.id)}
+                          class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#08222d] hover:bg-[#0b303f] border border-emerald-500/25 hover:border-emerald-400/50 transition-all cursor-pointer group"
+                          title="{friend.username} має цю гру"
+                        >
+                          <div class="w-6 h-6 rounded-full overflow-hidden bg-cyan-900 shrink-0">
+                            {#if friend.avatarUrl}
+                              <BackendImage src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                            {:else}
+                              <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-cyan-700">
+                                {friend.username.charAt(0).toUpperCase()}
+                              </div>
+                            {/if}
+                          </div>
+                          <span class="text-xs text-slate-200 group-hover:text-emerald-300 font-semibold truncate max-w-[100px]">
+                            {friend.username}
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+
+                {#if friendsGameStatus.friendsWhoWishlist.length > 0}
+                  <div class="space-y-2 pt-2 border-t border-cyan-950/80">
+                    <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                      <Heart class="w-3.5 h-3.5" />
+                      У списку бажаного ({friendsGameStatus.friendsWhoWishlist.length})
+                    </span>
+                    <div class="flex flex-wrap gap-2">
+                      {#each friendsGameStatus.friendsWhoWishlist as friend}
+                        <button
+                          type="button"
+                          onclick={() => profileStore.viewProfile(friend.id)}
+                          class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#08222d] hover:bg-[#0b303f] border border-rose-500/25 hover:border-rose-400/50 transition-all cursor-pointer group"
+                          title="{friend.username} бажає цю гру"
+                        >
+                          <div class="w-6 h-6 rounded-full overflow-hidden bg-rose-950 shrink-0">
+                            {#if friend.avatarUrl}
+                              <BackendImage src={friend.avatarUrl} alt={friend.username} class="w-full h-full object-cover" />
+                            {:else}
+                              <div class="w-full h-full flex items-center justify-center text-[10px] text-white font-bold bg-rose-700">
+                                {friend.username.charAt(0).toUpperCase()}
+                              </div>
+                            {/if}
+                          </div>
+                          <span class="text-xs text-slate-200 group-hover:text-rose-300 font-semibold truncate max-w-[100px]">
+                            {friend.username}
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+              {:else if !isLoadingFriendsStatus}
+                <div class="text-center py-3 text-xs text-slate-400 space-y-1">
+                  <p>Жоден із ваших друзів ще не має цієї гри.</p>
+                  <p class="text-cyan-400 font-semibold">Станьте першим серед друзів!</p>
+                </div>
+              {/if}
+            </div>
+          {/if}
+
         </div>
       </div>
 
@@ -573,11 +832,9 @@ import { onMount } from 'svelte';
               <div>
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-black text-white">{game.title}: Повне видання</h3>
-                  {#if (game.discountPercentage || 0) > 0}
-                    <span class="px-2 py-0.5 rounded-lg bg-rose-600 text-white font-extrabold text-[10px]">
-                      -{game.discountPercentage}%
-                    </span>
-                  {/if}
+                  <span class="px-2 py-0.5 rounded-lg bg-cyan-400 text-black font-black text-[10px]">
+                    -20% НА DLC
+                  </span>
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-cyan-950/80 text-xs text-slate-400 space-y-1.5">
@@ -591,7 +848,7 @@ import { onMount } from 'svelte';
                           onclick={() => openDlc(dlc)}
                           class="hover:text-cyan-300 transition-colors cursor-pointer text-left"
                         >
-                          {dlc.title} <span class="text-purple-400">(DLC)</span>
+                          {dlc.title} <span class="text-purple-400">(DLC зі знижкою 20%)</span>
                         </button>
                       </li>
                     {/each}
@@ -612,9 +869,10 @@ import { onMount } from 'svelte';
                 </div>
 
                 <button
-                  onclick={() => handleBuy(`${game.title}: Повне видання`)}
+                  onclick={handleBuyCompleteEdition}
                   class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs tracking-wide shadow-md transition-all cursor-pointer flex items-center gap-1.5"
                 >
+                  <ShoppingCart class="w-3.5 h-3.5" />
                   <span>У кошик</span>
                 </button>
               </div>
@@ -628,58 +886,99 @@ import { onMount } from 'svelte';
         <div class="space-y-4 pt-6">
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-black text-white font-display tracking-wide">
-              Інші DLC ({dlcs.length})
+              Інші DLC
             </h2>
+
+            <button
+              type="button"
+              onclick={() => router.navigateToAllDlcs(game)}
+              class="flex items-center gap-1 text-sm font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer group"
+            >
+              <span>Усі DLC</span>
+              <ChevronRight class="w-4 h-4 text-slate-400 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+            </button>
           </div>
 
-          <div class="bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-4 sm:p-6 shadow-xl space-y-3">
+          <div class="space-y-2.5">
             {#each dlcs as dlc}
               <div
                 role="button"
                 tabindex="0"
                 onclick={() => openDlc(dlc)}
                 onkeydown={(e) => e.key === 'Enter' && openDlc(dlc)}
-                class="group flex items-center justify-between p-3.5 rounded-2xl bg-[#08222d] hover:bg-[#0c3140] border border-cyan-500/15 hover:border-cyan-400/60 transition-all cursor-pointer shadow-md"
+                class="group flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#08222d] hover:bg-[#0c3140] border border-cyan-500/20 hover:border-cyan-400/60 transition-all cursor-pointer shadow-md"
               >
-                <div class="flex items-center gap-3 min-w-0">
-                  {#if dlc.coverImageUrl || dlc.headerImageUrl}
-                    <img
-                      src={dlc.coverImageUrl || dlc.headerImageUrl}
-                      alt={dlc.title}
-                      class="w-12 h-7 rounded-lg object-cover border border-cyan-500/20 shrink-0 group-hover:scale-105 transition-transform"
-                    />
-                  {/if}
-                  <span class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
-                    {dlc.title}
-                  </span>
+                <span class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
+                  {dlc.title}
+                </span>
+
+                <span class="text-xs font-bold {Number(dlc.priceInNanoTons) === 0 ? 'text-emerald-400' : 'text-cyan-300 font-mono'}">
+                  {Number(dlc.priceInNanoTons) === 0 ? 'Безкоштовно' : formatPrice(dlc.priceInNanoTons, dlc.discountPercentage)}
+                </span>
+              </div>
+            {/each}
+          </div>
+
+          <div class="pt-2 flex justify-end">
+            <button
+              type="button"
+              onclick={handleAddAllDLC}
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-black font-extrabold text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-2 cursor-pointer"
+            >
+              <ShoppingCart class="w-3.5 h-3.5" />
+              <span>Додати всі DLC до кошика зі знижкою 20% ({dlcs.length})</span>
+            </button>
+          </div>
+        </div>
+      {/if}
+
+      {#if gameNews.length > 0}
+        <div class="space-y-4 pt-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-black text-white font-display tracking-wide flex items-center gap-2.5">
+              <Newspaper class="w-6 h-6 text-cyan-400" />
+              <span>Офіційні новини та оновлення ({gameNews.length})</span>
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each gameNews as newsItem}
+              <div
+                role="button"
+                tabindex="0"
+                onclick={() => selectedNewsModal = newsItem}
+                onkeydown={(e) => e.key === 'Enter' && (selectedNewsModal = newsItem)}
+                class="group bg-[#061820]/90 border border-cyan-500/20 hover:border-cyan-400/50 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:shadow-cyan-950/40 transition-all cursor-pointer flex flex-col justify-between space-y-3"
+              >
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-800/40">
+                      Офіційний патч-ноут
+                    </span>
+                    <span class="font-mono">{new Date(newsItem.createdAt).toLocaleDateString('uk-UA')}</span>
+                  </div>
+
+                  <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                    {newsItem.title}
+                  </h3>
+
+                  <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">
+                    {@html renderDecoratedText(newsItem.content)}
+                  </p>
                 </div>
-                <div class="flex items-center gap-3 shrink-0">
-                  <span class="text-xs font-bold {Number(dlc.priceInNanoTons) === 0 ? 'text-emerald-400' : 'text-cyan-300 font-mono'}">
-                    {Number(dlc.priceInNanoTons) === 0 ? 'Безкоштовно' : formatPrice(dlc.priceInNanoTons, dlc.discountPercentage)}
-                  </span>
-                  <ChevronRight class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
+
+                {#if newsItem.media?.url}
+                  <div class="relative rounded-xl overflow-hidden max-h-36 bg-black/40 border border-cyan-950">
+                    <img src={newsItem.media.url} alt={newsItem.title} class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                {/if}
+
+                <div class="pt-2 border-t border-cyan-950/60 flex items-center justify-between text-xs text-cyan-400 font-semibold">
+                  <span>Читати детальніше</span>
+                  <ChevronRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             {/each}
-
-            <div class="flex items-center justify-end gap-4 pt-4 border-t border-cyan-950/80">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-black text-white font-mono">
-                  {formatPrice(effectiveTotalDlcsNanoTons)}
-                </span>
-                {#if baseTotalDlcsNanoTons > effectiveTotalDlcsNanoTons}
-                  <span class="text-xs text-slate-500 line-through font-mono">
-                    {formatBasePrice(baseTotalDlcsNanoTons)}
-                  </span>
-                {/if}
-              </div>
-              <button
-                onclick={handleAddAllDLC}
-                class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs tracking-wide shadow-md transition-all cursor-pointer"
-              >
-                Додати в кошик усі DLC
-              </button>
-            </div>
           </div>
         </div>
       {/if}
@@ -745,13 +1044,98 @@ import { onMount } from 'svelte';
               </span>
             </div>
             <div class="flex justify-between py-1 border-b border-cyan-950/60">
-              <span class="text-slate-400">Мови інтерфейсу:</span>
-              <span class="font-medium text-white">Українська, English, Deutsch, Polski</span>
+              <span class="text-slate-400">Мови:</span>
+              <span class="font-medium text-white">Українська, English, Deutsch, Polski та ін.</span>
             </div>
             <div class="flex justify-between py-1">
               <span class="text-slate-400">Платформа дистрибуції:</span>
               <span class="font-bold text-cyan-400 font-mono">Dteam Web3 Gaming</span>
             </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-2 bg-[#061820]/90 border border-cyan-500/25 rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center gap-2 pb-2 border-b border-cyan-950/80">
+            <Globe class="w-5 h-5 text-cyan-400" />
+            <h3 class="text-sm font-extrabold text-white uppercase tracking-wider">Мовна підтримка</h3>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-cyan-950 text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th class="py-2.5 px-3">Мова</th>
+                  <th class="py-2.5 px-3 text-center">Інтерфейс</th>
+                  <th class="py-2.5 px-3 text-center">Озвучення</th>
+                  <th class="py-2.5 px-3 text-center">Субтитри</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-cyan-950/40 text-slate-300">
+                {#if game.supportedLanguages && game.supportedLanguages.length > 0}
+                  {#each game.supportedLanguages as lang}
+                    <tr class="hover:bg-cyan-950/20 transition-colors">
+                      <td class="py-2.5 px-3 font-semibold text-white">{lang.language}</td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.interface}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.fullAudio}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.subtitles}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                {:else}
+                  {#each [
+                    { name: 'Українська', iface: true, audio: false, subs: true },
+                    { name: 'English', iface: true, audio: true, subs: true },
+                    { name: 'Deutsch', iface: true, audio: true, subs: true },
+                    { name: 'Français', iface: true, audio: true, subs: true },
+                    { name: 'Polski', iface: true, audio: true, subs: true },
+                    { name: 'Español', iface: true, audio: true, subs: true },
+                    { name: '日本語', iface: true, audio: true, subs: true }
+                  ] as lang}
+                    <tr class="hover:bg-cyan-950/20 transition-colors">
+                      <td class="py-2.5 px-3 font-semibold text-white">{lang.name}</td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.iface}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.audio}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        {#if lang.subs}
+                          <Check class="w-4 h-4 text-emerald-400 mx-auto" />
+                        {:else}
+                          <span class="text-slate-600">—</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                {/if}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -802,7 +1186,7 @@ import { onMount } from 'svelte';
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
                       {#if review.userAvatarUrl || review.user?.avatarUrl}
-                        <img
+                        <BackendImage
                           src={review.userAvatarUrl || review.user?.avatarUrl || ''}
                           alt={review.username || review.user?.username || 'User'}
                           class="w-full h-full object-cover"
@@ -837,6 +1221,28 @@ import { onMount } from 'svelte';
                 <span class="text-[11px] font-semibold {review.isRecommended ? 'text-emerald-400' : 'text-slate-500'}">
                   {review.isRecommended ? '✓ Рекомендує гру' : 'Не рекомендує'}
                 </span>
+
+                <div class="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onclick={(e) => { e.stopPropagation(); handleToggleReviewCardLike(review); }}
+                    class="flex items-center gap-1.5 text-xs transition-colors cursor-pointer {review.isLiked ? 'text-rose-400' : 'hover:text-rose-300'}"
+                    title="Поставити вподобайку"
+                  >
+                    <Heart class="w-3.5 h-3.5 {review.isLiked ? 'fill-rose-400' : ''}" />
+                    <span>{review.likesCount ?? 0}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onclick={() => openReviewComments(review)}
+                    class="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer bg-cyan-950/40 hover:bg-cyan-900/60 px-2.5 py-1 rounded-xl border border-cyan-500/20"
+                    title="Відкрити коментарі"
+                  >
+                    <MessageSquare class="w-3.5 h-3.5" />
+                    <span>{review.repliesCount ?? review.replies?.length ?? 0}</span>
+                  </button>
+                </div>
               </div>
             </div>
           {/each}
@@ -922,3 +1328,49 @@ import { onMount } from 'svelte';
   {/if}
 {/if}
 
+{#if selectedNewsModal}
+  <div
+    role="presentation"
+    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+    onclick={(e) => { if (e.target === e.currentTarget) selectedNewsModal = null; }}
+  >
+    <div
+      role="dialog"
+      aria-modal="true"
+      class="bg-[#061820] border border-cyan-500/30 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in fade-in"
+    >
+      <div class="flex items-start justify-between border-b border-cyan-900/40 pb-3">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Офіційна новина від розробника</span>
+          <h3 class="text-base font-bold text-white mt-1">{selectedNewsModal.title}</h3>
+          <span class="text-[11px] text-slate-400 font-mono">{new Date(selectedNewsModal.createdAt).toLocaleDateString('uk-UA')}</span>
+        </div>
+        <button
+          onclick={() => selectedNewsModal = null}
+          class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+        >
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1 text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+        {#if selectedNewsModal.media?.url}
+          {#if selectedNewsModal.media.type === 'video'}
+            <video src={selectedNewsModal.media.url} class="w-full rounded-2xl max-h-64 object-cover" controls></video>
+          {:else}
+            <img src={selectedNewsModal.media.url} alt="" class="w-full rounded-2xl max-h-64 object-cover" />
+          {/if}
+        {/if}
+        <p>{@html renderDecoratedText(selectedNewsModal.content)}</p>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<ReviewCommentsModal
+  isOpen={isReviewCommentsModalOpen}
+  gameId={game.id}
+  review={selectedReviewForComments}
+  onClose={() => { isReviewCommentsModalOpen = false; selectedReviewForComments = null; }}
+  onReviewUpdated={handleReviewUpdatedFromModal}
+/>

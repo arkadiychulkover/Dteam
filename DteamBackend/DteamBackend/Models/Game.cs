@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 using System.Text.Json;
-using DteamBackend.Models.Enums;
+using System.Text.Json.Serialization;
 
 namespace DteamBackend.Models
 {
@@ -45,11 +44,13 @@ namespace DteamBackend.Models
 
         public ICollection<Game> Dlcs { get; set; } = new List<Game>();
 
-        public List<GameGenre> Genres { get; set; } = new();
+        public List<string> Genres { get; set; } = new();
 
-        public List<GamePlatform> Platforms { get; set; } = new() { GamePlatform.Windows };
+        public List<string> Platforms { get; set; } = new() { "Windows" };
 
-        public List<GameFeature> Features { get; set; } = new();
+        public List<string> Features { get; set; } = new();
+
+        public List<GameLanguageSupport> SupportedLanguages { get; set; } = new();
 
         public List<string> Tags { get; set; } = new();
 
@@ -77,11 +78,21 @@ namespace DteamBackend.Models
 
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
+        [JsonIgnore]
+        public ICollection<CommunityPost> CommunityPosts { get; set; } = new List<CommunityPost>();
+
+        [NotMapped]
+        public ICollection<GameNews> News => CommunityPosts
+            .Where(p => p.Category == "news")
+            .Select(GameNews.FromCommunityPost)
+            .ToList();
+
         public ICollection<UserGame> Owners { get; set; } = new List<UserGame>();
 
         public ICollection<UserWishlist> WishlistedBy { get; set; } = new List<UserWishlist>();
 
         public ICollection<UserCartItem> InCartsOf { get; set; } = new List<UserCartItem>();
+
         public string TasteVectorJson { get; set; } = JsonSerializer.Serialize(TasteCategories.Empty());
 
         [NotMapped]
@@ -94,9 +105,9 @@ namespace DteamBackend.Models
         public void RecalculateTasteVector()
         {
             TasteVector = TasteCategories.BuildGameVector(
-                Genres.Select(g => g.ToString()).ToList(),
+                Genres,
                 Tags,
-                Features.Select(f => f.ToString()).ToList());
+                Features);
         }
     }
 }

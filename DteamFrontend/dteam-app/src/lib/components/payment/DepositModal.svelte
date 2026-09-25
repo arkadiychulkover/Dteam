@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import {
     X,
     Copy,
@@ -19,6 +19,7 @@ import { onMount } from 'svelte';
   import { authStore, currentUser } from '../../stores/authStore';
   import { paymentService } from '../../services/paymentService';
   import { formatTon, nanoTonToTon } from '../../utils/formatters';
+  import TonIcon from '../ui/TonIcon.svelte';
 
   let depositAddress = $state('Завантаження адреси...');
   let amount = $state<number>(1);
@@ -121,7 +122,7 @@ import { onMount } from 'svelte';
 </script>
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-  <div class="relative w-full max-w-lg bg-[#09151e]/95 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 overflow-hidden text-slate-200">
+  <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#09151e]/95 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-cyan-950/80 text-slate-200">
 
     <div class="absolute -top-24 -right-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -200,8 +201,9 @@ import { onMount } from 'svelte';
             <Wallet class="w-3.5 h-3.5 text-cyan-400" />
             <span>Ваш поточний баланс:</span>
           </div>
-          <span class="font-bold text-white font-mono flex items-center gap-1 text-sm">
-            💎 {formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}
+          <span class="font-bold text-white font-mono flex items-center gap-1.5 text-sm">
+            <TonIcon class="w-4 h-4 text-cyan-400" />
+            <span>{formatTon(nanoTonToTon($currentUser.balanceInNanoTons))}</span>
           </span>
         </div>
       {/if}
@@ -335,4 +337,3 @@ import { onMount } from 'svelte';
     {/if}
   </div>
 </div>
-

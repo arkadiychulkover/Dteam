@@ -98,10 +98,21 @@ function createAuthStore() {
         return { ...s, user: updated };
       });
     },
-    register: async (email: string, username: string, password: string, walletAddress?: string) => {
+    fetchProfile: async () => {
+      try {
+        const freshUser = await authService.getProfile();
+        saveStoredUser(freshUser);
+        update((s) => ({ ...s, user: freshUser }));
+        return freshUser;
+      } catch (e) {
+        console.warn('[authStore] Failed to fetch fresh profile:', e);
+        return null;
+      }
+    },
+    register: async (email: string, username: string, password: string, hardhatAddress?: string, walletAddress?: string) => {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const res = await authService.register({ email, username, password, walletAddress });
+        const res = await authService.register({ email, username, password, hardhatAddress, walletAddress });
         api.setTokens(res.accessToken, res.refreshToken);
         saveStoredUser(res.user);
         set({ user: res.user, token: res.accessToken, resetEmail: null, resetToken: null, isLoading: false, error: null });
@@ -184,4 +195,3 @@ export const authStore = createAuthStore();
 export const isAuthenticated = derived(authStore, ($auth) => !!$auth.user && !!$auth.token);
 export const currentUser = derived(authStore, ($auth) => $auth.user);
 export const isUserAdmin = derived(authStore, ($auth) => !!$auth.user?.isAdmin);
-

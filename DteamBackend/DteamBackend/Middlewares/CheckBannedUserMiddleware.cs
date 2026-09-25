@@ -33,6 +33,30 @@ namespace DteamBackend.Middlewares
 
                     if (isBanned)
                     {
+                        var path = httpContext.Request.Path.Value ?? string.Empty;
+
+                        // Allow checking ban status endpoint so client can verify ban status with 200 OK
+                        if (path.Contains("/is-banned", StringComparison.OrdinalIgnoreCase))
+                        {
+                            httpContext.Response.StatusCode = StatusCodes.Status200OK;
+                            httpContext.Response.ContentType = "application/json; charset=utf-8";
+                            var banStatusObj = new
+                            {
+                                userId,
+                                isBanned = true,
+                                message = "Пользователь заблокирован администратором платформы"
+                            };
+                            await httpContext.Response.WriteAsync(JsonSerializer.Serialize(banStatusObj));
+                            return;
+                        }
+
+                        // Allow logout endpoint so banned user can cleanly log out
+                        if (path.StartsWith("/api/auth/logout", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await _next(httpContext);
+                            return;
+                        }
+
                         _logger.LogWarning("Заблокированный пользователь {UserId} попытался выполнить запрос: {Path}", userId, httpContext.Request.Path);
 
                         httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -57,4 +81,3 @@ namespace DteamBackend.Middlewares
         }
     }
 }
-

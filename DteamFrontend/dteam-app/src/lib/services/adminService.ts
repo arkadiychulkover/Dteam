@@ -73,6 +73,11 @@ export interface UpdateGameDto {
   trailerUrl?: string;
 }
 
+export interface CreditBalanceDto {
+  amountInNanoTons: number;
+  reason?: string;
+}
+
 export interface HealthCheckResponse {
   status: string;
   timestamp: string;
@@ -124,6 +129,10 @@ class AdminService {
     return await api.delete<{ message: string }>(`/admin/users/${id}`);
   }
 
+  public async creditUserBalance(id: string, dto: CreditBalanceDto, _customAdminId?: string): Promise<Duser> {
+    return await api.post<Duser>(`/admin/users/${id}/credit-balance`, dto);
+  }
+
   public async getGames(_customAdminId?: string): Promise<Game[]> {
     return await api.get<Game[]>('/admin/games');
   }
@@ -143,7 +152,27 @@ class AdminService {
   public async deleteGame(id: string, _customAdminId?: string): Promise<{ message: string }> {
     return await api.delete<{ message: string }>(`/admin/games/${id}`);
   }
+
+  public async getRewardSettings(): Promise<RewardSettingsDto> {
+    return await api.get<RewardSettingsDto>('/admin/reward-settings');
+  }
+
+  public async updateRewardSettings(dto: UpdateRewardSettingsDto): Promise<RewardSettingsDto> {
+    return await api.put<RewardSettingsDto>('/admin/reward-settings', dto);
+  }
+}
+
+export interface RewardSettingsDto {
+  rewardIntervalMinutes: number;
+  tokensPerHour: number;
+  isEnabled: boolean;
+  updatedAt?: string;
+}
+
+export interface UpdateRewardSettingsDto {
+  rewardIntervalMinutes: number;
+  tokensPerHour: number;
+  isEnabled: boolean;
 }
 
 export const adminService = new AdminService();
-

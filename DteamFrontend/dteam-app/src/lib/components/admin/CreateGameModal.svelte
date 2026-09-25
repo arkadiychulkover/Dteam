@@ -1,5 +1,5 @@
 <script lang="ts">
-import { adminService, type CreateGameDto } from '../../services/adminService';
+  import { adminService, type CreateGameDto } from '../../services/adminService';
   import { gamesService } from '../../services/gamesService';
   import { uiStore } from '../../stores/uiStore';
   import type { Game } from '../../types';
@@ -607,4 +607,3 @@ import { adminService, type CreateGameDto } from '../../services/adminService';
     </div>
   </div>
 {/if}
-
