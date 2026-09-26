@@ -14,6 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { Game } from '../types';
 import { gamesService } from '../services/gamesService';
+import { wishlistService } from '../services/wishlistService';
+import { libraryService } from '../services/libraryService';
+import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { BackendImage } from '../components/BackendImage';
 import {
   formatPrice,
@@ -22,6 +26,7 @@ import {
   formatBytes,
 } from '../utils/formatters';
 import { theme } from '../styles/theme';
+import { colors } from '../theme/colors';
 
 interface GameDetailsScreenProps {
   game?: Game;
@@ -45,6 +50,9 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
     );
   }
 
+  const { isAuthenticated } = useAuthStore();
+  const { items: cartItems, isInCart, addToCart, loadCart } = useCartStore();
+
   const handleBack = () => {
     if (props.navigation?.canGoBack?.()) {
       props.navigation.goBack();
@@ -60,12 +68,17 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
       props.onSelectGame(g);
     }
   };
+
   const [game, setGame] = useState<Game>(initialGame);
   const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(
     initialGame.headerImageUrl || initialGame.coverImageUrl || null
   );
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isOwned, setIsOwned] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const inCart = isInCart(game.id);
 
   useEffect(() => {
     let isMounted = true;
@@ -88,10 +101,32 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
         if (isMounted) setIsLoadingDetails(false);
       });
 
+    if (isAuthenticated) {
+      loadCart();
+      libraryService
+        .getUserLibrary()
+        .then((userGames) => {
+          if (isMounted && Array.isArray(userGames)) {
+            const owned = userGames.some(
+              (ug) => ug.gameId === initialGame.id || ug.game?.id === initialGame.id
+            );
+            setIsOwned(owned);
+          }
+        })
+        .catch(() => {});
+
+      wishlistService
+        .isWishlisted(initialGame.id)
+        .then((wishlisted) => {
+          if (isMounted) setIsWishlisted(wishlisted);
+        })
+        .catch(() => {});
+    }
+
     return () => {
       isMounted = false;
     };
-  }, [initialGame.id]);
+  }, [initialGame.id, isAuthenticated, loadCart]);
 
   const hasDiscount = (game.discountPercentage || 0) > 0;
 
@@ -106,16 +141,69 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
     });
   }
 
-  const handleBuyPress = () => {
-    Alert.alert(
-      'Купівля гри',
-      `Оплата гри "${game.title}" буде доступна після підключення TON Wallet у наступному релізі.`,
-      [{ text: 'Зрозуміло', style: 'default' }]
-    );
+  // 1. Купити зараз: додає в кошик та одразу переводить на екран оформлення кошика
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      props.navigation?.navigate('Login');
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      if (!inCart) {
+        await addToCart(game.id);
+      }
+      props.navigation?.navigate('Cart');
+    } catch (err: any) {
+      console.warn('[GameDetailsScreen] Error in handleBuyNow:', err);
+      props.navigation?.navigate('Cart');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
-  const handleWishlistToggle = () => {
-    setIsWishlisted(!isWishlisted);
+  // 2. Додати в кошик: просто додає в кошик на бекенді
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      props.navigation?.navigate('Login');
+      return;
+    }
+
+    if (inCart) {
+      props.navigation?.navigate('Cart');
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      await addToCart(game.id);
+    } catch (err: any) {
+      console.warn('[GameDetailsScreen] Error in handleAddToCart:', err);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  // 3. Додати / видалити з бажаного
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      props.navigation?.navigate('Login');
+      return;
+    }
+
+    const nextState = !isWishlisted;
+    setIsWishlisted(nextState);
+
+    try {
+      if (nextState) {
+        await wishlistService.addToWishlist(game.id);
+      } else {
+        await wishlistService.removeFromWishlist(game.id);
+      }
+    } catch (err) {
+      console.warn('[GameDetailsScreen] Wishlist toggle error:', err);
+      setIsWishlisted(!nextState);
+    }
   };
 
   return (
@@ -136,17 +224,32 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
           {game.title}
         </Text>
 
-        <TouchableOpacity
-          style={styles.wishlistHeaderBtn}
-          onPress={handleWishlistToggle}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={isWishlisted ? 'heart' : 'heart-outline'}
-            size={22}
-            color={isWishlisted ? '#f43f5e' : theme.colors.textMuted}
-          />
-        </TouchableOpacity>
+        <View style={styles.navRightRow}>
+          <TouchableOpacity
+            style={styles.cartHeaderBtn}
+            onPress={() => props.navigation?.navigate('Cart')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cart-outline" size={22} color={theme.colors.text} />
+            {cartItems.length > 0 && (
+              <View style={styles.cartNavBadge}>
+                <Text style={styles.cartNavBadgeText}>{cartItems.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.wishlistHeaderBtn}
+            onPress={handleWishlistToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isWishlisted ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isWishlisted ? '#f43f5e' : theme.colors.textMuted}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -284,43 +387,90 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
           </View>
 
           <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={styles.buyButton}
-              onPress={handleBuyPress}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="cart" size={18} color="#000" />
-              <Text style={styles.buyButtonText}>Придбати гру</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.wishlistButton,
-                isWishlisted && styles.wishlistButtonActive,
-              ]}
-              onPress={handleWishlistToggle}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isWishlisted ? 'heart' : 'heart-outline'}
-                size={18}
-                color={isWishlisted ? '#f43f5e' : theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.wishlistButtonText,
-                  isWishlisted && styles.wishlistButtonTextActive,
-                ]}
+            {isOwned ? (
+              <TouchableOpacity
+                style={styles.ownedButton}
+                onPress={() => props.navigation?.navigate('LibraryGame', { game })}
+                activeOpacity={0.8}
               >
-                {isWishlisted ? 'У списку бажань' : 'До бажаного'}
-              </Text>
-            </TouchableOpacity>
+                <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                <Text style={styles.ownedButtonText}>У вашій бібліотеці • Відкрити</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                {/* 1. Купити зараз: додає в кошик та одразу переводить на екран кошика */}
+                <TouchableOpacity
+                  style={styles.buyNowButton}
+                  onPress={handleBuyNow}
+                  disabled={isAddingToCart}
+                  activeOpacity={0.8}
+                >
+                  {isAddingToCart ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <>
+                      <Ionicons name="flash" size={18} color="#000" />
+                      <Text style={styles.buyNowButtonText}>Купити зараз</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* 2. Додати в кошик: просто додає в кошик на бекенді */}
+                <TouchableOpacity
+                  style={[
+                    styles.addToCartButton,
+                    inCart && styles.addToCartButtonActive,
+                  ]}
+                  onPress={handleAddToCart}
+                  disabled={isAddingToCart}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={inCart ? 'checkmark-circle' : 'cart-outline'}
+                    size={18}
+                    color={inCart ? colors.accentEmerald : colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.addToCartButtonText,
+                      inCart && styles.addToCartButtonTextActive,
+                    ]}
+                  >
+                    {inCart ? 'У кошику (відкрити)' : 'Додати в кошик'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* 3. До бажаного */}
+                <TouchableOpacity
+                  style={[
+                    styles.wishlistButton,
+                    isWishlisted && styles.wishlistButtonActive,
+                  ]}
+                  onPress={handleWishlistToggle}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isWishlisted ? 'heart' : 'heart-outline'}
+                    size={18}
+                    color={isWishlisted ? '#f43f5e' : theme.colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.wishlistButtonText,
+                      isWishlisted && styles.wishlistButtonTextActive,
+                    ]}
+                  >
+                    {isWishlisted ? 'У списку бажань' : 'До бажаного'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           <View style={styles.blockchainNotice}>
-            <Ionicons name="information-circle-outline" size={14} color={theme.colors.textDim} />
+            <Ionicons name="shield-checkmark-outline" size={14} color={colors.accentEmerald} />
             <Text style={styles.blockchainNoticeText}>
-              Кнопки активні для демонстрації. Повна Web3 смарт-контракт оплата буде доступна незабаром.
+              Безпечна оплата з TON балансу. Після купівлі гра одразу з'явиться у вашій бібліотеці.
             </Text>
           </View>
         </View>
@@ -438,12 +588,38 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   navTitle: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 14,
     fontWeight: '800',
     color: theme.colors.text,
-    flex: 1,
     textAlign: 'center',
     marginHorizontal: 8,
+  },
+  navRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cartHeaderBtn: {
+    position: 'relative',
+    padding: 4,
+  },
+  cartNavBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -6,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  cartNavBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#000',
   },
   wishlistHeaderBtn: {
     padding: 4,
@@ -662,22 +838,38 @@ const styles = StyleSheet.create({
   actionsContainer: {
     gap: 10,
   },
-  buyButton: {
+  ownedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: theme.borderRadius.md,
+  },
+  ownedButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#10b981',
+  },
+  buyNowButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: theme.colors.primary,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
   },
-  buyButtonText: {
+  buyNowButtonText: {
     fontSize: 14,
     fontWeight: '900',
     color: '#000',
     letterSpacing: 0.5,
   },
-  wishlistButton: {
+  addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -685,6 +877,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 242, 254, 0.08)',
     borderWidth: 1,
     borderColor: theme.colors.primary,
+    paddingVertical: 13,
+    borderRadius: theme.borderRadius.md,
+  },
+  addToCartButtonActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: '#10b981',
+  },
+  addToCartButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.colors.primary,
+  },
+  addToCartButtonTextActive: {
+    color: '#10b981',
+  },
+  wishlistButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
     paddingVertical: 11,
     borderRadius: theme.borderRadius.md,
   },
@@ -695,7 +910,7 @@ const styles = StyleSheet.create({
   wishlistButtonText: {
     fontSize: 13,
     fontWeight: '700',
-    color: theme.colors.primary,
+    color: theme.colors.textMuted,
   },
   wishlistButtonTextActive: {
     color: '#f43f5e',

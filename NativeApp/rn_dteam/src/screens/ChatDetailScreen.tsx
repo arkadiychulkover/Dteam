@@ -1,18 +1,23 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { Dialog, ChatMessage } from '../types';
 import { MessageBubble } from '../components/chat/MessageBubble';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
+import { BackendImage } from '../components/BackendImage';
+import { useAuthStore } from '../store/useAuthStore';
+import { useChatStore } from '../store/useChatStore';
+import { usePresenceStore } from '../store/usePresenceStore';
+import { chatService } from '../services/chatService';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ChatDetailScreenProps {
@@ -26,6 +31,8 @@ interface ChatDetailScreenProps {
   onSendFile?: (dialogId: string, fileName: string, fileSize: string, fileUri?: string) => void;
 }
 
+const EMPTY_MESSAGES: ChatMessage[] = [];
+
 export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
   dialog: propDialog,
   route,
@@ -36,23 +43,46 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
   onSendImage,
   onSendFile,
 }) => {
+  const user = useAuthStore((s) => s.user);
   const currentDialog = propDialog || route?.params?.dialog;
   const flatListRef = useRef<FlatList>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(currentDialog?.messages || []);
+  const [isSending, setIsSending] = useState(false);
+
+  const friendId = currentDialog?.friendId || currentDialog?.id;
+  const peerKey = (friendId || '').toLowerCase();
+
+  const messages = useChatStore((s) => s.messages[peerKey] ?? EMPTY_MESSAGES);
+  const isLoadingHistory = useChatStore((s) => !!s.isLoadingHistory[peerKey]);
+  const isTyping = useChatStore((s) => !!s.typingUsers[peerKey]);
+  const isOnline = usePresenceStore((s) => !!(friendId && s.onlineUserIds.has(friendId.toLowerCase())));
+
+  const loadHistory = useChatStore((s) => s.loadHistory);
+  const sendMessage = useChatStore((s) => s.sendMessage);
+  const sendVoiceMessage = useChatStore((s) => s.sendVoiceMessage);
+  const sendImageMessage = useChatStore((s) => s.sendImageMessage);
+  const sendFileMessage = useChatStore((s) => s.sendFileMessage);
+  const sendOptimisticMessage = useChatStore((s) => s.sendOptimisticMessage);
+  const setActivePeerId = useChatStore((s) => s.setActivePeerId);
 
   useEffect(() => {
-    if (currentDialog?.messages) {
-      setMessages(currentDialog.messages);
+    if (friendId) {
+      setActivePeerId(friendId);
+      loadHistory(friendId);
     }
-  }, [currentDialog]);
+    return () => {
+      setActivePeerId(null);
+    };
+  }, [friendId, setActivePeerId, loadHistory]);
 
   useEffect(() => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   }, [messages.length]);
 
-  if (!currentDialog) {
+  if (!currentDialog || !friendId) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -84,28 +114,44 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
     return `${hours}:${minutes}`;
   };
 
-  const handleSend = (text: string) => {
-    const newMsg: ChatMessage = {
-      id: `m-${Date.now()}`,
-      dialogId: currentDialog.id,
-      senderId: 'usr-current',
-      text,
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isSending || !friendId) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      dialogId: friendId,
+      senderId: user?.id || 'usr-current',
+      text: text.trim(),
       type: 'text',
       timestamp: getCurrentTimeFormatted(),
       isMine: true,
       status: 'sent',
     };
-    setMessages((prev) => [...prev, newMsg]);
-    if (onSendMessage) {
-      onSendMessage(currentDialog.id, text);
+
+    sendOptimisticMessage(optimisticMsg);
+    setIsSending(true);
+
+    try {
+      await sendMessage(friendId, text);
+      if (onSendMessage) {
+        onSendMessage(friendId, text);
+      }
+    } catch (err) {
+      console.warn('[ChatDetailScreen] Error sending message to server:', err);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const handleVoice = (voiceUri?: string, duration?: number) => {
-    const newMsg: ChatMessage = {
-      id: `m-voice-${Date.now()}`,
-      dialogId: currentDialog.id,
-      senderId: 'usr-current',
+  const handleVoice = async (voiceUri?: string, duration?: number) => {
+    if (!friendId || !voiceUri) return;
+
+    const tempId = `temp-voice-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      dialogId: friendId,
+      senderId: user?.id || 'usr-current',
       text: 'Голосове повідомлення',
       type: 'voice',
       voiceDuration: duration || 10,
@@ -114,17 +160,26 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
       isMine: true,
       status: 'sent',
     };
-    setMessages((prev) => [...prev, newMsg]);
-    if (onSendVoice) {
-      onSendVoice(currentDialog.id, voiceUri, duration);
+    sendOptimisticMessage(optimisticMsg);
+
+    try {
+      await sendVoiceMessage(friendId, voiceUri, duration);
+      if (onSendVoice) {
+        onSendVoice(friendId, voiceUri, duration);
+      }
+    } catch (err) {
+      console.warn('[ChatDetailScreen] Error sending voice message:', err);
     }
   };
 
-  const handleImage = (imageUri: string, caption?: string) => {
-    const newMsg: ChatMessage = {
-      id: `m-img-${Date.now()}`,
-      dialogId: currentDialog.id,
-      senderId: 'usr-current',
+  const handleImage = async (imageUri: string, caption?: string) => {
+    if (!friendId || !imageUri) return;
+
+    const tempId = `temp-img-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      dialogId: friendId,
+      senderId: user?.id || 'usr-current',
       text: caption || '',
       type: 'image',
       imageUrl: imageUri,
@@ -132,17 +187,26 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
       isMine: true,
       status: 'sent',
     };
-    setMessages((prev) => [...prev, newMsg]);
-    if (onSendImage) {
-      onSendImage(currentDialog.id, imageUri, caption);
+    sendOptimisticMessage(optimisticMsg);
+
+    try {
+      await sendImageMessage(friendId, imageUri, caption);
+      if (onSendImage) {
+        onSendImage(friendId, imageUri, caption);
+      }
+    } catch (err) {
+      console.warn('[ChatDetailScreen] Error sending image:', err);
     }
   };
 
-  const handleFile = (fileName: string, fileSize: string, fileUri?: string) => {
-    const newMsg: ChatMessage = {
-      id: `m-file-${Date.now()}`,
-      dialogId: currentDialog.id,
-      senderId: 'usr-current',
+  const handleFile = async (fileName: string, fileSize: string, fileUri?: string) => {
+    if (!friendId || !fileUri) return;
+
+    const tempId = `temp-file-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      dialogId: friendId,
+      senderId: user?.id || 'usr-current',
       text: fileName,
       type: 'file',
       fileName,
@@ -151,16 +215,31 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
       isMine: true,
       status: 'sent',
     };
-    setMessages((prev) => [...prev, newMsg]);
-    if (onSendFile) {
-      onSendFile(currentDialog.id, fileName, fileSize, fileUri);
+    sendOptimisticMessage(optimisticMsg);
+
+    try {
+      await sendFileMessage(friendId, fileUri, fileName);
+      if (onSendFile) {
+        onSendFile(friendId, fileName, fileSize, fileUri);
+      }
+    } catch (err) {
+      console.warn('[ChatDetailScreen] Error sending file:', err);
     }
   };
 
+  const isFriendOnline = isOnline || currentDialog.friendStatus === 1;
+
   const getStatusColor = () => {
-    if (currentDialog.friendStatus === 1) return colors.accentEmerald;
+    if (isFriendOnline) return colors.accentEmerald;
     if (currentDialog.friendStatus === 2) return colors.accentPurple;
     return colors.offline;
+  };
+
+  const getStatusLabel = () => {
+    if (isTyping) return 'Друкує...';
+    if (isFriendOnline) return 'У мережі';
+    if (currentDialog.friendStatus === 2) return currentDialog.gameStatus || 'У грі';
+    return 'Не в мережі';
   };
 
   return (
@@ -175,7 +254,11 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
         </TouchableOpacity>
 
         <View style={styles.avatarWrapper}>
-          <Image source={{ uri: currentDialog.friendAvatarUrl }} style={styles.avatar} />
+          <BackendImage
+            src={currentDialog.friendAvatarUrl}
+            style={styles.avatar}
+            fallbackText={currentDialog.friendUsername.slice(0, 2).toUpperCase()}
+          />
           <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
         </View>
 
@@ -183,25 +266,42 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
           <Text style={styles.username} numberOfLines={1}>
             {currentDialog.friendUsername}
           </Text>
-          <Text style={[styles.statusText, { color: getStatusColor() }]} numberOfLines={1}>
-            {currentDialog.gameStatus || (currentDialog.friendStatus === 1 ? 'У мережі' : 'Офлайн')}
+          <Text style={[styles.statusText, { color: getStatusColor() }]}>
+            {getStatusLabel()}
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.infoButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.callButton} activeOpacity={0.7}>
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} />}
-        contentContainerStyle={styles.messagesContent}
-        style={styles.messagesList}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoadingHistory ? (
+        <View style={styles.centerLoading}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Завантаження історії повідомлень...</Text>
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          renderItem={({ item }) => <MessageBubble message={item} />}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Початок листування</Text>
+              <Text style={styles.emptySubtitle}>
+                Надішліть перше повідомлення користувачеві {currentDialog.friendUsername}!
+              </Text>
+            </View>
+          }
+        />
+      )}
 
       <ChatInputBar
         onSendMessage={handleSend}
@@ -219,65 +319,97 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    height: 58,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 12 : 16,
+    paddingBottom: 12,
+    backgroundColor: colors.surfaceCard,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: 10,
+    gap: 12,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: 6,
+    borderRadius: 8,
   },
   avatarWrapper: {
     position: 'relative',
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: colors.borderLight,
   },
   statusDot: {
     position: 'absolute',
-    bottom: -1,
-    right: -1,
+    bottom: 0,
+    right: 0,
     width: 10,
     height: 10,
     borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.surfaceCard,
   },
   headerInfo: {
     flex: 1,
   },
   username: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.text,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
-    fontFamily: 'monospace',
+    marginTop: 1,
   },
-  infoButton: {
-    padding: 6,
+  callButton: {
+    padding: 8,
   },
   messagesList: {
-    flex: 1,
+    paddingVertical: 16,
+    flexGrow: 1,
   },
-  messagesContent: {
-    paddingVertical: 14,
+  centerLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+    marginTop: 60,
+  },
+  emptyIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 240,
   },
 });

@@ -1,27 +1,48 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { colors } from '../../theme/colors';
-import { UserProfile, Transaction } from '../../types';
+import { useAuthStore } from '../../store/useAuthStore';
+import { nftService } from '../../services/nftService';
 import { Ionicons } from '@expo/vector-icons';
 
-interface WalletTabProps {
-  profile: UserProfile;
-  transactions: Transaction[];
-}
+interface WalletTabProps {}
 
-export const WalletTab: React.FC<WalletTabProps> = ({ profile, transactions }) => {
+export const WalletTab: React.FC<WalletTabProps> = () => {
+  const { user } = useAuthStore();
   const [copied, setCopied] = useState(false);
+  const [tdpBalance, setTdpBalance] = useState<number>(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
+  const walletAddress = user?.hardhatAddress || user?.walletAddress || '';
+  const tonBalance = user?.balanceInNanoTons
+    ? (user.balanceInNanoTons / 1e9).toFixed(2)
+    : '0.00';
+
+  useEffect(() => {
+    if (walletAddress) {
+      setIsLoadingBalance(true);
+      nftService
+        .getTdpBalance(walletAddress)
+        .then((b) => setTdpBalance(b))
+        .catch(() => setTdpBalance(0))
+        .finally(() => setIsLoadingBalance(false));
+    }
+  }, [walletAddress]);
 
   const handleCopy = () => {
+    if (!walletAddress) {
+      Alert.alert('Гаманець', 'У вашому профілі ще не прив\'язано Web3 гаманець.');
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    Alert.alert('Скопійовано', `Адресу гаманця збережено:\n${profile.walletAddress}`);
+    Alert.alert('Скопійовано', `Адресу гаманця збережено:\n${walletAddress}`);
   };
 
   const handleDeposit = () => {
     Alert.alert(
       'Поповнення TON',
-      'Для поповнення надішліть TON на вашу персональну адресу в мережі The Open Network або скористайтеся Tonkeeper.',
+      'Для поповнення балансу здійсніть платіж через мережу TON або зв\'яжіть ваш гаманець у веб-версії DTEAM.',
       [{ text: 'Зрозуміло' }]
     );
   };
@@ -40,33 +61,39 @@ export const WalletTab: React.FC<WalletTabProps> = ({ profile, transactions }) =
             <Text style={styles.chainText}>TON MAINNET</Text>
           </View>
 
-          <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
-            <Ionicons
-              name={copied ? 'checkmark-circle' : 'copy-outline'}
-              size={14}
-              color={copied ? colors.accentEmerald : colors.primary}
-            />
-            <Text style={[styles.copyBtnText, copied && { color: colors.accentEmerald }]}>
-              {copied ? 'Скопійовано' : 'Копіювати'}
-            </Text>
-          </TouchableOpacity>
+          {walletAddress ? (
+            <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.7}>
+              <Ionicons
+                name={copied ? 'checkmark-circle' : 'copy-outline'}
+                size={14}
+                color={copied ? colors.accentEmerald : colors.primary}
+              />
+              <Text style={[styles.copyBtnText, copied && { color: colors.accentEmerald }]}>
+                {copied ? 'Скопійовано' : 'Копіювати'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         <Text style={styles.addressText} numberOfLines={1}>
-          {profile.walletAddress}
+          {walletAddress || 'Гаманець не прив\'язано'}
         </Text>
 
         <View style={styles.balancesContainer}>
           <View style={styles.balanceBlock}>
-            <Text style={styles.balanceLabel}>Бали DTEAM (DTP)</Text>
-            <Text style={styles.balanceDtp}>{profile.tokensBalance} DTP</Text>
+            <Text style={styles.balanceLabel}>Бали DTEAM (TDP)</Text>
+            {isLoadingBalance ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={styles.balanceDtp}>{tdpBalance} TDP</Text>
+            )}
           </View>
 
           <View style={styles.balanceDivider} />
 
           <View style={styles.balanceBlock}>
-            <Text style={styles.balanceLabel}>Гривневий баланс</Text>
-            <Text style={styles.balanceUah}>₴ {profile.balanceUah.toFixed(2)}</Text>
+            <Text style={styles.balanceLabel}>Баланс TON</Text>
+            <Text style={styles.balanceUah}>{tonBalance} TON</Text>
           </View>
         </View>
 
@@ -79,35 +106,15 @@ export const WalletTab: React.FC<WalletTabProps> = ({ profile, transactions }) =
       <View style={styles.historySection}>
         <View style={styles.historyHeader}>
           <Text style={styles.historyTitle}>Історія операцій</Text>
-          <Text style={styles.historyCount}>{transactions.length} транзакцій</Text>
+          <Text style={styles.historyCount}>0 операцій</Text>
         </View>
 
-        <View style={styles.transactionsList}>
-          {transactions.map((tx) => (
-            <View key={tx.id} style={styles.txRow}>
-              <View style={styles.txIconBox}>
-                <Ionicons
-                  name={tx.isPositive ? 'arrow-down-outline' : 'arrow-up-outline'}
-                  size={16}
-                  color={tx.isPositive ? colors.accentEmerald : colors.accentRose}
-                />
-              </View>
-
-              <View style={styles.txInfo}>
-                <Text style={styles.txTitle}>{tx.title}</Text>
-                <Text style={styles.txDate}>{tx.date}</Text>
-              </View>
-
-              <Text
-                style={[
-                  styles.txAmount,
-                  { color: tx.isPositive ? colors.accentEmerald : colors.text },
-                ]}
-              >
-                {tx.amount}
-              </Text>
-            </View>
-          ))}
+        <View style={styles.emptyHistoryBox}>
+          <Ionicons name="receipt-outline" size={32} color={colors.textDim} />
+          <Text style={styles.emptyHistoryTitle}>Історія операцій порожня</Text>
+          <Text style={styles.emptyHistorySubtitle}>
+            Тут відображатимуться ваші транзакції поповнення та нарахування бонусів.
+          </Text>
         </View>
       </View>
     </View>
@@ -298,9 +305,26 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontFamily: 'monospace',
   },
-  txAmount: {
-    fontSize: 12,
+  emptyHistoryBox: {
+    backgroundColor: colors.surfaceCard,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 8,
+  },
+  emptyHistoryTitle: {
+    fontSize: 14,
     fontWeight: '800',
-    fontFamily: 'monospace',
+    color: colors.text,
+    marginTop: 4,
+  },
+  emptyHistorySubtitle: {
+    fontSize: 11,
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 16,
+    maxWidth: 260,
   },
 });

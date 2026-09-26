@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../theme/colors';
 import { ChatMessage } from '../../types';
 import { AudioPlayer } from './AudioPlayer';
+import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MessageBubbleProps {
@@ -17,13 +18,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
         {message.type === 'voice' ? (
           <AudioPlayer
-            duration={message.voiceDuration || 14}
+            duration={message.voiceDuration || 10}
             voiceUri={message.voiceUri}
             isMine={isMine}
           />
         ) : message.type === 'image' && message.imageUrl ? (
           <View style={styles.imageContainer}>
-            <Image source={{ uri: message.imageUrl }} style={styles.attachedImage} resizeMode="cover" />
+            <BackendImage
+              src={message.imageUrl}
+              style={styles.attachedImage}
+              resizeMode="cover"
+            />
             {message.text ? (
               <Text style={[styles.text, isMine ? styles.textMine : styles.textOther, { marginTop: 6 }]}>
                 {message.text}
@@ -41,11 +46,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             </View>
             <View style={styles.fileInfo}>
               <Text style={[styles.fileName, isMine ? styles.fileNameMine : styles.fileNameOther]} numberOfLines={1}>
-                {message.fileName || 'Документ.pdf'}
+                {message.fileName || 'Файл'}
               </Text>
-              <Text style={[styles.fileSize, isMine ? styles.fileSizeMine : styles.fileSizeOther]}>
-                {message.fileSize || '1.8 MB'}
-              </Text>
+              {message.fileSize ? (
+                <Text style={[styles.fileSize, isMine ? styles.fileSizeMine : styles.fileSizeOther]}>
+                  {message.fileSize}
+                </Text>
+              ) : null}
             </View>
           </View>
         ) : (

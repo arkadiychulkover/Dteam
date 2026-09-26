@@ -1,23 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { colors } from '../../theme/colors';
-import { UserProfile } from '../../types';
+import { BackendImage } from '../BackendImage';
+import { useAuthStore } from '../../store/useAuthStore';
+import { api } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 
 interface GeneralTabProps {
-  profile: UserProfile;
-  onUpdateProfile: (updated: Partial<UserProfile>) => void;
+  onSuccess?: () => void;
 }
 
-export const GeneralTab: React.FC<GeneralTabProps> = ({ profile, onUpdateProfile }) => {
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [bio, setBio] = useState(profile.bio);
+export const GeneralTab: React.FC<GeneralTabProps> = ({ onSuccess }) => {
+  const { user, checkAuth } = useAuthStore();
+  const [bio, setBio] = useState(user?.bio || '');
+  const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSave = () => {
-    onUpdateProfile({ displayName, bio });
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+  const username = user?.username || 'Користувач';
+  const email = user?.email || '';
+  const walletAddress = user?.hardhatAddress || user?.walletAddress || 'Не прив\'язано';
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await api.put('/users/me', { bio });
+      await checkAuth();
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2500);
+      if (onSuccess) onSuccess();
+    } catch (err: any) {
+      Alert.alert('Помилка', err.message || 'Не вдалося зберегти зміни профілю.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -29,30 +44,31 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ profile, onUpdateProfile
 
       <View style={styles.avatarSection}>
         <View style={styles.avatarWrapper}>
-          <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
-          <TouchableOpacity style={styles.changeAvatarBtn} activeOpacity={0.8}>
-            <Ionicons name="camera" size={14} color="#000000" />
-          </TouchableOpacity>
+          <BackendImage
+            src={user?.avatarUrl}
+            style={styles.avatar}
+            fallbackText={username.slice(0, 2).toUpperCase()}
+          />
         </View>
         <View style={styles.avatarInfo}>
-          <Text style={styles.avatarTitle}>Зображення профілю</Text>
-          <Text style={styles.avatarSubtitle}>PNG, JPG або WebP до 5MB</Text>
+          <Text style={styles.avatarTitle}>{username}</Text>
+          <Text style={styles.avatarSubtitle}>Справжній акаунт DTEAM</Text>
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>ВІДОБРАЖУВАНЕ ІМ'Я</Text>
+        <Text style={styles.inputLabel}>ВІДОБРАЖУВАНЕ ІМ'Я (USERNAME)</Text>
         <TextInput
-          style={styles.input}
-          value={displayName}
-          onChangeText={setDisplayName}
-          placeholder="Ваш псевдонім..."
+          style={[styles.input, { opacity: 0.7 }]}
+          value={username}
+          editable={false}
           placeholderTextColor={colors.textDim}
         />
+        <Text style={styles.inputHelper}>Логін синхронізовано з обліковим записом</Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>ПРО СЕБЕ</Text>
+        <Text style={styles.inputLabel}>ПРО СЕБЕ (БІОГРАФІЯ)</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={bio}
@@ -67,23 +83,30 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ profile, onUpdateProfile
       <View style={styles.infoCard}>
         <View style={styles.infoRow}>
           <Text style={styles.infoKey}>Email:</Text>
-          <Text style={styles.infoValue}>{profile.email}</Text>
+          <Text style={styles.infoValue}>{email || 'Не вказано'}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoKey}>Web3 адреса:</Text>
-          <Text style={styles.infoCode}>{profile.walletAddress}</Text>
+          <Text style={styles.infoCode} numberOfLines={1}>{walletAddress}</Text>
         </View>
       </View>
 
       <TouchableOpacity
         style={[styles.saveButton, isSaved && styles.saveButtonSuccess]}
         onPress={handleSave}
+        disabled={isSaving}
         activeOpacity={0.8}
       >
-        <Ionicons name={isSaved ? 'checkmark' : 'save-outline'} size={18} color="#000000" />
-        <Text style={styles.saveButtonText}>
-          {isSaved ? 'Збережено!' : 'Зберегти зміни'}
-        </Text>
+        {isSaving ? (
+          <ActivityIndicator size="small" color="#000000" />
+        ) : (
+          <>
+            <Ionicons name={isSaved ? 'checkmark' : 'save-outline'} size={18} color="#000000" />
+            <Text style={styles.saveButtonText}>
+              {isSaved ? 'Збережено на сервері!' : 'Зберегти зміни'}
+            </Text>
+          </>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -175,6 +198,12 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  inputHelper: {
+    fontSize: 11,
+    color: colors.textDim,
+    marginTop: 4,
+    marginLeft: 2,
   },
   infoCard: {
     backgroundColor: colors.background,

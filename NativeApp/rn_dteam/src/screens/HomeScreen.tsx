@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useGamesStore } from '../store/useGamesStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useCartStore } from '../store/useCartStore';
 import { FeaturedCarousel } from '../components/FeaturedCarousel';
 import { SpecialOfferCard } from '../components/SpecialOfferCard';
 import { GameCard } from '../components/GameCard';
@@ -45,12 +46,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     setSelectedGenre,
   } = useGamesStore();
 
-  const { user, isAuthenticated, logout, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const { items: cartItems, loadCart } = useCartStore();
 
   useEffect(() => {
     loadGames();
-    checkAuth();
-  }, [loadGames, checkAuth]);
+    if (isAuthenticated) {
+      loadCart();
+    }
+  }, [loadGames, loadCart, isAuthenticated]);
 
   const discountedGames = games.filter((g) => (g.discountPercentage || 0) > 0);
 
@@ -59,6 +63,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       onNavigateLibrary();
     } else if (navigation?.navigate) {
       navigation.navigate('Library');
+    }
+  };
+
+  const goToCart = () => {
+    if (navigation?.navigate) {
+      navigation.navigate('Cart');
     }
   };
 
@@ -101,6 +111,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
 
         <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.cartIconBtn}
+            onPress={goToCart}
+            activeOpacity={0.7}
+            accessibilityLabel="Кошик"
+          >
+            <Ionicons name="cart-outline" size={18} color={theme.colors.text} />
+            {cartItems.length > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>
+                  {cartItems.length > 99 ? '99+' : cartItems.length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.headerActionBtn}
             onPress={goToLibrary}
@@ -326,6 +352,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  cartIconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: theme.colors.secondary,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#000',
   },
   headerActionBtn: {
     flexDirection: 'row',

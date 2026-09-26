@@ -46,7 +46,9 @@ export const ProfileLevelCard: React.FC<ProfileLevelCardProps> = ({
 
       <View style={styles.bottomRow}>
         <Text style={styles.percentText}>{percent}% до наступного рівня</Text>
-        <Text style={styles.rewardText}>+100 DTP нагород</Text>
+        <Text style={styles.rewardText}>
+          Залишилось {Math.max(0, nextLevelXp - currentXp)} XP
+        </Text>
       </View>
     </View>
   );

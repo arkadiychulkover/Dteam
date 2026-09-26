@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { libraryService } from '../services/libraryService';
 import { useAuthStore } from '../store/useAuthStore';
 import { BackendImage } from '../components/BackendImage';
+import { AuthRequiredView } from '../components/common/AuthRequiredView';
 import { formatPlayTime } from '../utils/formatters';
 import { theme } from '../styles/theme';
 import type { UserGame, Game } from '../types';
@@ -25,6 +26,7 @@ interface LibraryScreenProps {
   navigation?: any;
   onSelectLibraryGame?: (game: Game, userGame: UserGame) => void;
   onNavigateCatalog?: () => void;
+  onNavigateLogin?: () => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,6 +36,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   navigation,
   onSelectLibraryGame,
   onNavigateCatalog,
+  onNavigateLogin,
 }) => {
   const { isAuthenticated } = useAuthStore();
   const [items, setItems] = useState<UserGame[]>([]);
@@ -46,6 +49,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const fetchLibrary = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
       setError('');
       setIsLoading(true);
@@ -58,11 +62,35 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchLibrary();
+    if (isAuthenticated) {
+      fetchLibrary();
+    } else {
+      setIsLoading(false);
+      setItems([]);
+    }
   }, [fetchLibrary, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <AuthRequiredView
+        screenTitle="МОЯ БІБЛІОТЕКА"
+        screenSubtitle="Колекція ваших куплених ігор"
+        icon="game-controller-outline"
+        title="Потрібна авторизація"
+        description="Увійдіть у ваш акаунт DTEAM, щоб переглядати, завантажувати та грати у придбані ігри."
+        onLogin={() => {
+          if (onNavigateLogin) {
+            onNavigateLogin();
+          } else if (navigation?.navigate) {
+            navigation.navigate('Login');
+          }
+        }}
+      />
+    );
+  }
 
   const handleRefresh = () => {
     setIsRefreshing(true);

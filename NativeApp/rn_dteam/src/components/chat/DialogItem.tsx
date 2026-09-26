@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../theme/colors';
 import { Dialog } from '../../types';
+import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
+import { usePresenceStore } from '../../store/usePresenceStore';
 
 interface DialogItemProps {
   dialog: Dialog;
@@ -10,8 +12,10 @@ interface DialogItemProps {
 }
 
 export const DialogItem: React.FC<DialogItemProps> = ({ dialog, onPress }) => {
+  const isOnline = usePresenceStore((s) => s.isOnline(dialog.friendId));
+
   const getStatusColor = () => {
-    if (dialog.friendStatus === 1) return colors.accentEmerald;
+    if (isOnline || dialog.friendStatus === 1) return colors.accentEmerald;
     if (dialog.friendStatus === 2) return colors.accentPurple;
     return colors.offline;
   };
@@ -27,7 +31,11 @@ export const DialogItem: React.FC<DialogItemProps> = ({ dialog, onPress }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.avatarWrapper}>
-        <Image source={{ uri: dialog.friendAvatarUrl }} style={styles.avatar} />
+        <BackendImage
+          src={dialog.friendAvatarUrl}
+          style={styles.avatar}
+          fallbackText={dialog.friendUsername.slice(0, 2).toUpperCase()}
+        />
         <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
       </View>
 

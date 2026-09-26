@@ -9,6 +9,7 @@ export interface UserDto {
   bio?: string | null;
   walletAddress?: string | null;
   hardhatAddress?: string | null;
+  balanceInNanoTons?: number;
   status?: number;
   isAdmin?: boolean;
 }

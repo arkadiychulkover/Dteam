@@ -6,16 +6,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthStore } from './src/store/useAuthStore';
+import { useChatStore } from './src/store/useChatStore';
 import { tokenStorage } from './src/services/tokenStorage';
+import { chatService } from './src/services/chatService';
 import { theme } from './src/styles/theme';
 import { colors } from './src/theme/colors';
 
-import type { Game, UserGame, Dialog, UserProfile, TabId } from './src/types';
-import {
-  initialProfile,
-  initialDialogs,
-  initialTransactions,
-} from './src/data/mockData';
+import type { Game, UserGame, Dialog, TabId } from './src/types';
 
 import { HomeScreen } from './src/screens/HomeScreen';
 import { GameDetailsScreen } from './src/screens/GameDetailsScreen';
@@ -25,6 +22,7 @@ import { ChatsScreen } from './src/screens/ChatsScreen';
 import { ChatDetailScreen } from './src/screens/ChatDetailScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { CartScreen } from './src/screens/CartScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { ForgotPasswordScreen } from './src/screens/ForgotPasswordScreen';
 import { VerifyCodeScreen } from './src/screens/VerifyCodeScreen';
@@ -37,6 +35,7 @@ export type RootStackParamList = {
   LibraryGame: { game: Game; userGame?: UserGame };
   ChatDetail: { dialog: Dialog };
   Settings: undefined;
+  Cart: undefined;
   Login: undefined;
   ForgotPassword: undefined;
   VerifyCode: { email?: string; code?: string };
@@ -59,20 +58,25 @@ const navigationTheme = {
 interface MainTabsScreenProps {
   navigation: any;
   route?: any;
-  profile: UserProfile;
-  dialogs: Dialog[];
-  onUpdateProfile: (updated: Partial<UserProfile>) => void;
 }
 
-function MainTabsScreen({
-  navigation,
-  route,
-  profile,
-  dialogs,
-}: MainTabsScreenProps) {
+function MainTabsScreen({ navigation, route }: MainTabsScreenProps) {
   const [activeTab, setActiveTab] = useState<TabId>(route?.params?.initialTab || 'store');
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const unreadTotal = useChatStore((s) => s.unreadTotal);
+  const startRealtime = useChatStore((s) => s.startRealtime);
+  const stopRealtime = useChatStore((s) => s.stopRealtime);
+  const loadConversations = useChatStore((s) => s.loadConversations);
 
-  const unreadCount = dialogs.reduce((sum, d) => sum + (d.unreadCount || 0), 0);
+  // Запускаємо реалтайм хаби SignalR (ChatHub + FriendsHub) при авторизації
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadConversations();
+      startRealtime();
+    } else {
+      stopRealtime();
+    }
+  }, [isAuthenticated]);
 
   return (
     <SafeAreaView style={styles.tabContainer} edges={['left', 'right', 'bottom']}>
@@ -93,19 +97,21 @@ function MainTabsScreen({
               navigation.navigate('LibraryGame', { game, userGame })
             }
             onNavigateCatalog={() => setActiveTab('store')}
+            onNavigateLogin={() => navigation.navigate('Login')}
           />
         )}
 
         {activeTab === 'chats' && (
           <ChatsScreen
-            dialogs={dialogs}
             onSelectDialog={(dialog) => navigation.navigate('ChatDetail', { dialog })}
+            navigation={navigation}
+            onNavigateLogin={() => navigation.navigate('Login')}
           />
         )}
 
         {activeTab === 'profile' && (
           <ProfileScreen
-            profile={profile}
+            navigation={navigation}
             onNavigateToSettings={() => navigation.navigate('Settings')}
             onNavigateToLibrary={() => setActiveTab('library')}
             onNavigateToLogin={() => navigation.navigate('Login')}
@@ -116,17 +122,13 @@ function MainTabsScreen({
       <BottomTabBar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        unreadCount={unreadCount}
+        unreadCount={unreadTotal}
       />
     </SafeAreaView>
   );
 }
 
 export default function App() {
-  const [profile, setProfile] = useState<UserProfile>(initialProfile);
-  const [dialogs, setDialogs] = useState<Dialog[]>(initialDialogs);
-  const [transactions] = useState(initialTransactions);
-
   useEffect(() => {
     tokenStorage.init().catch((err) => {
       console.warn('[App] Failed to initialize token storage:', err);
@@ -136,10 +138,6 @@ export default function App() {
       console.warn('[App] Failed to check auth session:', err);
     });
   }, []);
-
-  const handleUpdateProfile = (updated: Partial<UserProfile>) => {
-    setProfile((prev) => ({ ...prev, ...updated }));
-  };
 
   return (
     <SafeAreaProvider>
@@ -153,27 +151,16 @@ export default function App() {
             contentStyle: { backgroundColor: colors.background },
           }}
         >
-          <Stack.Screen name="MainTabs">
-            {(props) => (
-              <MainTabsScreen
-                {...props}
-                profile={profile}
-                dialogs={dialogs}
-                onUpdateProfile={handleUpdateProfile}
-              />
-            )}
-          </Stack.Screen>
-
+          <Stack.Screen name="MainTabs" component={MainTabsScreen} />
           <Stack.Screen name="GameDetails" component={GameDetailsScreen} />
           <Stack.Screen name="LibraryGame" component={LibraryGameScreen} />
           <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+          <Stack.Screen name="Cart" component={CartScreen} />
 
           <Stack.Screen name="Settings">
             {(props) => (
               <SettingsScreen
-                profile={profile}
-                transactions={transactions}
-                onUpdateProfile={handleUpdateProfile}
+                navigation={props.navigation}
                 onBack={() => props.navigation.goBack()}
               />
             )}

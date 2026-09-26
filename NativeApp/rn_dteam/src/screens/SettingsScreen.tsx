@@ -8,7 +8,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { colors } from '../theme/colors';
-import { UserProfile, Transaction } from '../types';
+import { useAuthStore } from '../store/useAuthStore';
+import { AuthRequiredView } from '../components/common/AuthRequiredView';
 import { SettingsTabSelector, SettingsTabType } from '../components/settings/SettingsTabSelector';
 import { GeneralTab } from '../components/settings/GeneralTab';
 import { PasswordTab } from '../components/settings/PasswordTab';
@@ -18,19 +19,33 @@ import { DeleteAccountTab } from '../components/settings/DeleteAccountTab';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsScreenProps {
-  profile: UserProfile;
-  transactions?: Transaction[];
-  onUpdateProfile: (updated: Partial<UserProfile>) => void;
   onBack?: () => void;
+  navigation?: any;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
-  profile,
-  transactions = [],
-  onUpdateProfile,
   onBack,
+  navigation,
 }) => {
+  const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SettingsTabType>('general');
+
+  if (!isAuthenticated) {
+    return (
+      <AuthRequiredView
+        screenTitle="Налаштування"
+        screenSubtitle="Керування обліковим записом"
+        icon="settings-outline"
+        title="Потрібна авторизація"
+        description="Увійдіть у ваш акаунт DTEAM, щоб переглядати та змінювати налаштування профілю."
+        onLogin={() => {
+          if (navigation?.navigate) {
+            navigation.navigate('Login');
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -54,17 +69,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {activeTab === 'general' && (
-          <GeneralTab profile={profile} onUpdateProfile={onUpdateProfile} />
-        )}
+        {activeTab === 'general' && <GeneralTab />}
 
         {activeTab === 'password' && <PasswordTab />}
 
         {activeTab === 'notifications' && <NotificationsTab />}
 
-        {activeTab === 'wallet' && (
-          <WalletTab profile={profile} transactions={transactions} />
-        )}
+        {activeTab === 'wallet' && <WalletTab />}
 
         {activeTab === 'delete' && <DeleteAccountTab />}
       </ScrollView>

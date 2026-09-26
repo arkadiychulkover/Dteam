@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../../theme/colors';
 import { Badge } from '../../types';
+import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
 interface BadgeCardProps {
@@ -75,7 +76,12 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ badge, onPress }) => {
 
       <View style={styles.imageContainer}>
         {badge.imageUrl ? (
-          <Image source={{ uri: badge.imageUrl }} style={styles.badgeImage} resizeMode="cover" />
+          <BackendImage
+            src={badge.imageUrl}
+            style={styles.badgeImage}
+            resizeMode="cover"
+            fallbackText={badge.title}
+          />
         ) : (
           <View style={styles.placeholderIcon}>
             <Ionicons name="sparkles" size={24} color={rarityCfg.textColor} />

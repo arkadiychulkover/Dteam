@@ -5,12 +5,12 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Image,
   Alert,
 } from 'react-native';
 import { colors } from '../../theme/colors';
 import { Badge } from '../../types';
 import { getRarityConfig } from './BadgeCard';
+import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
 interface BadgeDetailModalProps {
@@ -66,7 +66,12 @@ export const BadgeDetailModal: React.FC<BadgeDetailModalProps> = ({
 
           <View style={styles.imageBox}>
             {badge.imageUrl ? (
-              <Image source={{ uri: badge.imageUrl }} style={styles.badgeImage} resizeMode="cover" />
+              <BackendImage
+                src={badge.imageUrl}
+                style={styles.badgeImage}
+                resizeMode="cover"
+                fallbackText={badge.title}
+              />
             ) : (
               <Ionicons name="sparkles" size={48} color={rarityCfg.textColor} />
             )}

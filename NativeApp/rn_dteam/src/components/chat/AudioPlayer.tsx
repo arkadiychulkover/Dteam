@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { colors } from '../../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
+import { resolveMediaUrl } from '../../utils/constants';
 
 interface AudioPlayerProps {
   duration?: number;
@@ -19,6 +20,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
   const webAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (webAudioRef.current) {
+      webAudioRef.current.pause();
+      webAudioRef.current = null;
+    }
+    if (soundRef.current) {
+      soundRef.current.unloadAsync().catch(() => {});
+      soundRef.current = null;
+    }
+    setIsPlaying(false);
+    setCurrentSeconds(0);
+  }, [voiceUri]);
 
   useEffect(() => {
     return () => {
@@ -43,17 +57,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       return;
     }
 
-    if (voiceUri) {
+    const targetUri = resolveMediaUrl(voiceUri) || voiceUri;
+
+    if (targetUri) {
       try {
         if (Platform.OS === 'web') {
           if (!webAudioRef.current) {
-            const audio = new window.Audio(voiceUri);
+            const audio = new window.Audio(targetUri);
             audio.onended = () => {
               setIsPlaying(false);
               setCurrentSeconds(0);
             };
             audio.ontimeupdate = () => {
               setCurrentSeconds(Math.floor(audio.currentTime));
+            };
+            audio.onerror = (e) => {
+              console.warn('[AudioPlayer] Audio load error:', e);
+              setIsPlaying(false);
             };
             webAudioRef.current = audio;
           }
@@ -67,7 +87,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               allowsRecordingIOS: false,
             });
             const { sound } = await Audio.Sound.createAsync(
-              { uri: voiceUri },
+              { uri: targetUri },
               { shouldPlay: true },
               (status) => {
                 if (status.isLoaded) {
