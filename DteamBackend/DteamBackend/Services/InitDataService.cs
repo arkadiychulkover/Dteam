@@ -108,6 +108,15 @@ namespace DteamBackend.Services
             {
                 _logger?.LogError(ex, "[InitData] Error in EnsureGamesSeededAsync");
             }
+
+            try
+            {
+                await EnsureDefaultAdminsAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[InitData] Error in EnsureDefaultAdminsAsync");
+            }
         }
 
         public async Task InitializeAsync(AppDbContext context)
@@ -139,6 +148,27 @@ namespace DteamBackend.Services
             };
 
             await context.Users.AddAsync(adminUser);
+
+            var secondAdminUser = new Duser
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@gmail.com",
+                Username = "admin",
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt,
+                WalletAddress = "EQB_v2Admin_SampleTonWalletAddress_888",
+                HardhatAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                BalanceInNanoTons = 100_000_000_000,
+                TotalEarningsInNanoTons = 0,
+                CreatedAt = DateTime.UtcNow,
+                IsAdmin = true,
+                IsBanned = false,
+                Status = UserStatus.Online,
+                AvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=80",
+                Bio = "Dteam Lead Administrator"
+            };
+
+            await context.Users.AddAsync(secondAdminUser);
 
             await context.SaveChangesAsync();
 
@@ -1536,6 +1566,74 @@ namespace DteamBackend.Services
             {
                 _logger?.LogError(ex, "[InitData] Error ensuring seeded games and DLCs.");
             }
+        }
+
+        private async Task EnsureDefaultAdminsAsync(AppDbContext context)
+        {
+            PasswordHasher.CreatePasswordHash("admin123321", out string passwordHash, out string passwordSalt);
+            var adminEthAddress = _configuration?["Ethereum:PublicKey"] ?? "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+
+            // 1. Ensure 'adim'
+            var adim = await context.Users.FirstOrDefaultAsync(u => u.Email == "adim@gmail.com" || u.Username == "adim");
+            if (adim == null)
+            {
+                adim = new Duser
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "adim@gmail.com",
+                    Username = "adim",
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    WalletAddress = "EQB_v1zX3L1f2M9zX_SampleAdminTonWalletAddress_777",
+                    HardhatAddress = adminEthAddress,
+                    BalanceInNanoTons = 100_000_000_000,
+                    TotalEarningsInNanoTons = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    IsAdmin = true,
+                    IsBanned = false,
+                    Status = UserStatus.Online,
+                    AvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=60",
+                    Bio = "Dteam System Administrator"
+                };
+                await context.Users.AddAsync(adim);
+                _logger?.LogInformation("[InitData] Created default admin user 'adim'.");
+            }
+            else if (!adim.IsAdmin)
+            {
+                adim.IsAdmin = true;
+            }
+
+            // 2. Ensure 'admin'
+            var admin = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@gmail.com" || u.Username == "admin");
+            if (admin == null)
+            {
+                admin = new Duser
+                {
+                    Id = Guid.NewGuid(),
+                    Email = "admin@gmail.com",
+                    Username = "admin",
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    WalletAddress = "EQB_v2Admin_SampleTonWalletAddress_888",
+                    HardhatAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                    BalanceInNanoTons = 100_000_000_000,
+                    TotalEarningsInNanoTons = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    IsAdmin = true,
+                    IsBanned = false,
+                    Status = UserStatus.Online,
+                    AvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=80",
+                    Bio = "Dteam Lead Administrator"
+                };
+                await context.Users.AddAsync(admin);
+                _logger?.LogInformation("[InitData] Created default admin user 'admin'.");
+            }
+            else if (!admin.IsAdmin)
+            {
+                admin.IsAdmin = true;
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

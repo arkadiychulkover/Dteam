@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using DteamBackend.Services;
 using System.ComponentModel.DataAnnotations;
 
+using DteamBackend.Interfaces;
+
 namespace DteamBackend.Controllers
 {
     [Authorize]
@@ -17,11 +19,13 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<DeveloperController> _logger;
+        private readonly IS3StorageService _storageService;
 
-        public DeveloperController(AppDbContext context, ILogger<DeveloperController> logger)
+        public DeveloperController(AppDbContext context, ILogger<DeveloperController> logger, IS3StorageService storageService)
         {
             _context = context;
             _logger = logger;
+            _storageService = storageService;
         }
 
         private Guid GetCurrentUserId()
@@ -482,19 +486,12 @@ namespace DteamBackend.Controllers
             }
 
             var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "community");
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
+            var key = $"community/{uniqueFileName}";
 
-            var filePath = Path.Combine(folder, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            await using var stream = file.OpenReadStream();
+            await _storageService.UploadAsync(stream, key, file.ContentType);
 
-            return $"/community/{uniqueFileName}";
+            return $"/api/media/{key}";
         }
 
         public class CreateGameNewsDto
@@ -661,6 +658,12 @@ namespace DteamBackend.Controllers
             if (!isAuthor && !isGameOwner)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "У вас немає прав на видалення цієї новини." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(post.Media?.Url))
+            {
+                var mediaKey = post.Media.Url.TrimStart('/');
+                await _storageService.DeleteFileAsync(mediaKey);
             }
 
             _context.CommunityPosts.Remove(post);

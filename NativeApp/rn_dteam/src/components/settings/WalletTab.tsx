@@ -26,12 +26,14 @@ export const WalletTab: React.FC<WalletTabProps> = () => {
         .then((b) => setTdpBalance(b))
         .catch(() => setTdpBalance(0))
         .finally(() => setIsLoadingBalance(false));
+    } else {
+      setTdpBalance(0);
     }
   }, [walletAddress]);
 
   const handleCopy = () => {
     if (!walletAddress) {
-      Alert.alert('Гаманець', 'У вашому профілі ще не прив\'язано Web3 гаманець.');
+      Alert.alert('Гаманець', 'У вашому профілі ще не прив\'язано гаманець.');
       return;
     }
     setCopied(true);

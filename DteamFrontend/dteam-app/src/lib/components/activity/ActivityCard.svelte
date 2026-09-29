@@ -72,7 +72,13 @@
         title="Переглянути профіль"
       >
         {#if activity.userAvatarUrl}
-          <img src={activity.userAvatarUrl} alt={activity.username} class="w-full h-full object-cover" />
+          <BackendImage
+            src={activity.userAvatarUrl}
+            alt={activity.username}
+            avatar={true}
+            initial={activity.username.charAt(0).toUpperCase()}
+            class="w-full h-full object-cover"
+          />
         {:else}
           {activity.username.charAt(0).toUpperCase()}
         {/if}
@@ -142,7 +148,7 @@
       class="mt-2 rounded-2xl overflow-hidden bg-[#04121a] border border-cyan-500/20 hover:border-cyan-400/80 transition-all cursor-pointer group/game shadow-inner"
     >
       <div class="relative w-full aspect-[21/9] sm:aspect-[16/6] overflow-hidden bg-slate-950">
-        <img
+        <BackendImage
           src={activity.imageUrl}
           alt={activity.title}
           class="w-full h-full object-cover group-hover/game:scale-105 transition-transform duration-500"

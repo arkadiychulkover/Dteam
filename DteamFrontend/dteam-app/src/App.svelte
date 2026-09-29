@@ -167,12 +167,12 @@
 <div class="min-h-screen flex flex-col text-slate-100 font-sans selection:bg-cyan-400 selection:text-black relative">
   <LiveBackground />
 
-  {#if !isBanned}
+  {#if !isBanned || $uiStore.activeTab === 'admin'}
     <Header />
   {/if}
 
   <main class="flex-1 relative z-10 pb-16 md:pb-0">
-    {#if isBanned}
+    {#if isBanned && $uiStore.activeTab !== 'admin'}
       <BannedView onRetry={checkUserBanStatus} />
     {:else if $uiStore.activeTab === 'store'}
       <StoreView />

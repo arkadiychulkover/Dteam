@@ -16,6 +16,7 @@
   import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import { Star, Info, MoreHorizontal, ThumbsUp, MessageSquare, Share2, Loader2, Download, Users, Heart, ChevronRight, FolderPlus, Folder, Check } from 'lucide-svelte';
   import CreateCollectionModal from './CreateCollectionModal.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props {
     game: Game;
@@ -399,9 +400,11 @@
                     <div class="flex items-center gap-3">
                       <div class="w-10 h-10 rounded-full bg-[#0a232c] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden">
                         {#if review.userAvatarUrl || review.user?.avatarUrl}
-                          <img
-                            src={review.userAvatarUrl || review.user?.avatarUrl || ''}
+                          <BackendImage
+                            src={review.userAvatarUrl || review.user?.avatarUrl}
                             alt={review.username || review.user?.username || 'User'}
+                            avatar={true}
+                            initial={(review.username || review.user?.username || 'U').charAt(0).toUpperCase()}
                             class="w-full h-full object-cover"
                           />
                         {:else}
@@ -468,10 +471,10 @@
                 {#if post.media.type === 'video'}
                   <video src={resolveMediaUrl(post.media.url)} class="w-full max-h-72" controls playsinline></video>
                 {:else}
-                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full max-h-72 object-cover" />
+                  <BackendImage src={post.media.url} alt="" class="w-full max-h-72 object-cover" />
                 {/if}
               {:else if post.gameBannerUrl}
-                <img src={resolveMediaUrl(post.gameBannerUrl)} alt="" class="w-full max-h-56 object-cover opacity-80" />
+                <BackendImage src={post.gameBannerUrl} alt="" class="w-full max-h-56 object-cover opacity-80" />
               {/if}
 
               <div class="p-5 space-y-3">
@@ -479,9 +482,11 @@
                   onclick={() => profileStore.viewProfile(post.author.id)}
                   class="flex items-center gap-2 group cursor-pointer"
                 >
-                  <img
-                    src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                  <BackendImage
+                    src={post.author.avatarUrl}
                     alt={post.author.username}
+                    avatar={true}
+                    initial={post.author.username}
                     class="w-7 h-7 rounded-full object-cover border border-cyan-500/30"
                   />
                   <span class="text-sm font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
@@ -546,9 +551,11 @@
                     onclick={() => profileStore.viewProfile(post.author.id)}
                     class="flex items-center gap-2 group cursor-pointer"
                   >
-                    <img
-                      src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                    <BackendImage
+                      src={post.author.avatarUrl}
                       alt={post.author.username}
+                      avatar={true}
+                      initial={post.author.username}
                       class="w-6 h-6 rounded-full object-cover border border-cyan-500/30"
                     />
                     <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
@@ -556,7 +563,7 @@
                 </div>
 
                 {#if post.media?.type === 'image' && post.media.url}
-                  <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-32 object-cover mt-3" />
+                  <BackendImage src={post.media.url} alt="" class="w-full h-32 object-cover mt-3" />
                 {:else if post.media?.type === 'video' && post.media.url}
                   <video src={resolveMediaUrl(post.media.url)} class="w-full h-32 object-cover mt-3" controls playsinline muted></video>
                 {/if}
@@ -601,7 +608,7 @@
             >
               <div class="flex items-center gap-3 min-w-0">
                 {#if dlc.coverImageUrl || dlc.headerImageUrl}
-                  <img
+                  <BackendImage
                     src={dlc.coverImageUrl || dlc.headerImageUrl}
                     alt={dlc.title}
                     class="w-12 h-7 rounded-lg object-cover border border-cyan-500/20 shrink-0 group-hover:scale-105 transition-transform"
@@ -647,13 +654,13 @@
                 onclick={() => profileStore.viewProfile(friend.id)}
                 class="flex items-center gap-2 bg-[#0a2733] hover:bg-[#0d3344] pr-3 pl-1 py-1 rounded-full text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
               >
-                {#if friend.avatarUrl}
-                  <img src={friend.avatarUrl} alt={friend.username} class="w-6 h-6 rounded-full object-cover" />
-                {:else}
-                  <span class="w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-[10px] font-bold text-cyan-300">
-                    {friend.username.charAt(0).toUpperCase()}
-                  </span>
-                {/if}
+                <BackendImage
+                  src={friend.avatarUrl}
+                  alt={friend.username}
+                  avatar={true}
+                  initial={friend.username}
+                  class="w-6 h-6 rounded-full object-cover"
+                />
                 <span>{friend.username}</span>
               </button>
             {/each}

@@ -12,6 +12,8 @@ using System.ComponentModel.DataAnnotations;
 using DteamBackend.Services;
 using DteamBackend.Models.DTO;
 
+using DteamBackend.Interfaces;
+
 namespace DteamBackend.Controllers
 {
     [ApiController]
@@ -22,12 +24,18 @@ namespace DteamBackend.Controllers
         private readonly AppDbContext _context;
         private readonly IAccountService _accountService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IS3StorageService _storageService;
 
-        public UserController(AppDbContext context, IAccountService accountService, IWebHostEnvironment environment)
+        public UserController(
+            AppDbContext context,
+            IAccountService accountService,
+            IWebHostEnvironment environment,
+            IS3StorageService storageService)
         {
             _context = context;
             _accountService = accountService;
             _environment = environment;
+            _storageService = storageService;
         }
 
         public class UpdateProfileRequest
@@ -183,39 +191,25 @@ namespace DteamBackend.Controllers
                 return BadRequest(new { message = $"Розмір файлу перевищує ліміт {MaxAvatarSizeBytes / (1024 * 1024)} МБ." });
             }
 
-            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var iconsFolder = Path.Combine(webRoot, "icons");
-            if (!Directory.Exists(iconsFolder))
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
             {
-                Directory.CreateDirectory(iconsFolder);
-            }
-
-            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
-            {
-                try
+                var oldKey = user.AvatarUrl.TrimStart('/');
+                if (oldKey.StartsWith("api/media/", StringComparison.OrdinalIgnoreCase))
                 {
-                    var oldFileName = Path.GetFileName(user.AvatarUrl);
-                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
-                    if (System.IO.File.Exists(oldFilePath))
-                    {
-                        System.IO.File.Delete(oldFilePath);
-                    }
+                    oldKey = oldKey.Substring("api/media/".Length);
                 }
-                catch
-                {
-                }
+                await _storageService.DeleteFileAsync(oldKey);
             }
 
             var fileName = $"avatar_{user.Id:N}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{extension}";
-            var filePath = Path.Combine(iconsFolder, fileName);
+            var key = $"icons/{fileName}";
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using (var stream = file.OpenReadStream())
             {
-                await file.CopyToAsync(stream);
+                await _storageService.UploadAsync(stream, key, file.ContentType);
             }
 
-            var relativeUrl = $"/icons/{fileName}";
-            user.AvatarUrl = relativeUrl;
+            user.AvatarUrl = $"/api/media/{key}";
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -252,22 +246,10 @@ namespace DteamBackend.Controllers
                 return NotFound(new { message = "Користувача не знайдено." });
             }
 
-            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/icons/", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
             {
-                try
-                {
-                    var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                    var iconsFolder = Path.Combine(webRoot, "icons");
-                    var oldFileName = Path.GetFileName(user.AvatarUrl);
-                    var oldFilePath = Path.Combine(iconsFolder, oldFileName);
-                    if (System.IO.File.Exists(oldFilePath))
-                    {
-                        System.IO.File.Delete(oldFilePath);
-                    }
-                }
-                catch
-                {
-                }
+                var oldKey = user.AvatarUrl.TrimStart('/');
+                await _storageService.DeleteFileAsync(oldKey);
             }
 
             user.AvatarUrl = null;
@@ -366,6 +348,54 @@ namespace DteamBackend.Controllers
                 username = user.Username,
                 isBanned = user.IsBanned,
                 isAdmin = user.IsAdmin
+            });
+        }
+
+        [HttpGet("is-admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CheckIsAdmin([FromQuery] Guid? userId)
+        {
+            var targetId = userId;
+            if ((targetId == null || targetId == Guid.Empty) && User.Identity?.IsAuthenticated == true)
+            {
+                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+                if (Guid.TryParse(idClaim, out var parsedId))
+                {
+                    targetId = parsedId;
+                }
+            }
+
+            if (targetId == null || targetId == Guid.Empty)
+            {
+                return BadRequest(new { message = "Параметр userId обязателен или выполните вход" });
+            }
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == targetId.Value)
+                .Select(u => new
+                {
+                    UserId = u.Id,
+                    u.Username,
+                    u.IsBanned,
+                    u.IsAdmin
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return NotFound(new { message = $"Пользователь с ID '{userId}' не найден" });
+            }
+
+            return Ok(new
+            {
+                userId = user.UserId,
+                username = user.Username,
+                isAdmin = user.IsAdmin,
+                isBanned = user.IsBanned
             });
         }
 

@@ -19,9 +19,47 @@ namespace DteamBackend.Hubs
         private Guid GetCurrentUserId()
         {
             var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                           ?? Context.User?.FindFirst("sub")?.Value;
+                           ?? Context.User?.FindFirst("sub")?.Value
+                           ?? Context.User?.FindFirst("nameid")?.Value
+                           ?? Context.UserIdentifier;
 
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+            if (Guid.TryParse(userIdClaim, out var userId))
+            {
+                return userId;
+            }
+
+            try
+            {
+                var httpContext = Context.GetHttpContext();
+                var queryToken = httpContext?.Request.Query["access_token"].ToString();
+                if (string.IsNullOrEmpty(queryToken))
+                {
+                    queryToken = httpContext?.Request.Query["token"].ToString();
+                }
+
+                if (!string.IsNullOrEmpty(queryToken))
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    if (handler.CanReadToken(queryToken))
+                    {
+                        var jwt = handler.ReadJwtToken(queryToken);
+                        var sub = jwt.Claims.FirstOrDefault(c =>
+                            c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub ||
+                            c.Type == ClaimTypes.NameIdentifier ||
+                            c.Type == "nameid")?.Value;
+
+                        if (Guid.TryParse(sub, out var parsedGuid))
+                        {
+                            return parsedGuid;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return Guid.Empty;
         }
 
         public override async Task OnConnectedAsync()

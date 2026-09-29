@@ -37,7 +37,14 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
         }
 
         const user = await authService.getMe();
-        set({ user, isAuthenticated: true, isLoading: false });
+        const normalizedUser = user
+          ? {
+              ...user,
+              hardhatAddress: user.hardhatAddress || (user as any).HardhatAddress || null,
+              walletAddress: user.walletAddress || (user as any).WalletAddress || null,
+            }
+          : null;
+        set({ user: normalizedUser, isAuthenticated: !!normalizedUser, isLoading: false });
       } catch (err: any) {
         console.warn('[AuthStore] Failed to check current user session:', err);
         // Only clear user credentials if the token is rejected (401 Unauthorized)
@@ -57,11 +64,25 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 
   setUser: (user) => {
-    set({ user, isAuthenticated: !!user });
+    const normalizedUser = user
+      ? {
+          ...user,
+          hardhatAddress: user.hardhatAddress || (user as any).HardhatAddress || null,
+          walletAddress: user.walletAddress || (user as any).WalletAddress || null,
+        }
+      : null;
+    set({ user: normalizedUser, isAuthenticated: !!normalizedUser });
   },
 
   loginSuccess: (user) => {
-    set({ user, isAuthenticated: true, isLoading: false });
+    const normalizedUser = user
+      ? {
+          ...user,
+          hardhatAddress: user.hardhatAddress || (user as any).HardhatAddress || null,
+          walletAddress: user.walletAddress || (user as any).WalletAddress || null,
+        }
+      : null;
+    set({ user: normalizedUser, isAuthenticated: !!normalizedUser, isLoading: false });
   },
 
   logout: async () => {

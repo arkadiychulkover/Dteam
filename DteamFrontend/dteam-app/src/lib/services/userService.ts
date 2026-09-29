@@ -64,6 +64,11 @@ export const userService = {
     return await api.get<UserBanStatus>(`/users/is-banned?userId=${userId}`);
   },
 
+  async checkIsAdmin(userId?: string): Promise<{ userId: string; username: string; isAdmin: boolean; isBanned: boolean }> {
+    const q = userId ? `?userId=${userId}` : '';
+    return await api.get<{ userId: string; username: string; isAdmin: boolean; isBanned: boolean }>(`/users/is-admin${q}`);
+  },
+
   async getLibrary(): Promise<UserGame[]> {
     return await api.get<UserGame[]>('/users/library');
   },

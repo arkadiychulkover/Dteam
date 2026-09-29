@@ -87,15 +87,15 @@ export const nftService = {
   },
 
   /**
-   * Отримати баланс TDP токенів користувача з сервера (через API бекенду, без прямого RPC)
+   * Отримати баланс TDP токенів користувача з сервера (REST API)
    */
   async getTdpBalance(address?: string | null): Promise<number> {
     if (!address || !address.trim()) return 0;
     try {
       const res = await api.get<{ balance: number }>(`/token/balance/${address.trim()}`);
-      return typeof res.balance === 'number' ? res.balance : 0;
+      return typeof res?.balance === 'number' ? res.balance : 0;
     } catch (err) {
-      console.warn('[nftService] Failed to fetch token balance from backend:', err);
+      console.warn('[nftService] Failed to fetch token balance from server:', err);
       return 0;
     }
   },

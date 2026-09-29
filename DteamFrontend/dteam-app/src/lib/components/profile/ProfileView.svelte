@@ -17,6 +17,7 @@
     Check,
     Plus
   } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let copied = $state(false);
 
@@ -34,9 +35,15 @@
     <div class="p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl relative overflow-hidden mb-8">
       <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
         <div class="relative">
-          <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-1 flex items-center justify-center shadow-xl shadow-cyan-500/20">
+          <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-1 flex items-center justify-center shadow-xl shadow-cyan-500/20 overflow-hidden">
             {#if $currentUser.avatarUrl}
-              <img src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover rounded-[20px]" />
+              <BackendImage
+                src={$currentUser.avatarUrl}
+                alt={$currentUser.username}
+                avatar={true}
+                initial={$currentUser.username.charAt(0).toUpperCase()}
+                class="w-full h-full object-cover rounded-[20px]"
+              />
             {:else}
               <div class="w-full h-full bg-slate-900 rounded-[20px] flex items-center justify-center text-3xl font-black text-white">
                 {$currentUser.username.charAt(0).toUpperCase()}
@@ -135,7 +142,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {#each ($currentUser as any)?.createdGames || [] as game}
           <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex items-center gap-4">
-            <img src={game.coverUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl" />
+            <BackendImage src={game.coverUrl} alt={game.title} class="w-16 h-20 object-cover rounded-xl" />
             <div>
               <h4 class="font-bold text-white text-sm">{game.title}</h4>
               <span class="text-xs text-slate-400 font-mono">{formatPrice(game.priceInNanoTons)}</span>

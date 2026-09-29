@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { uiStore } from '../../stores/uiStore';
   import { authStore } from '../../stores/authStore';
-  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight, Wallet, Check } from 'lucide-svelte';
+  import { UserPlus, User, Mail, Lock, Eye, EyeOff, Gamepad2, ArrowRight, Wallet, Check, RefreshCw } from 'lucide-svelte';
 
   let username = $state('');
   let email = $state('');
@@ -10,12 +10,30 @@
   let confirmPassword = $state('');
   let hardhatAddress = $state('');
   let isConnectingWallet = $state(false);
+  let isSyncingWallet = $state(false);
   let acceptTerms = $state(false);
   let showPassword = $state(false);
   let isSubmitting = $state(false);
   let errorMessage = $state('');
 
+  function getProviders(): any[] {
+    if (typeof window === 'undefined') return [];
+    const eth = (window as any).ethereum;
+    if (!eth) return [];
+    if (Array.isArray(eth.providers) && eth.providers.length > 0) {
+      return eth.providers;
+    }
+    return [eth];
+  }
+
+  function getActiveMetaMaskProvider(): any {
+    const providers = getProviders();
+    if (providers.length === 0) return null;
+    return providers.find((p: any) => p.isMetaMask) || providers[0];
+  }
+
   function handleAccountsChanged(accounts: string[]) {
+    console.log('[RegisterView] accountsChanged event received:', accounts);
     if (accounts && accounts.length > 0) {
       hardhatAddress = accounts[0];
       errorMessage = '';
@@ -24,42 +42,114 @@
     }
   }
 
-  onMount(() => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      const eth = (window as any).ethereum;
+  async function syncAccounts() {
+    const provider = getActiveMetaMaskProvider();
+    if (!provider) return;
 
-      eth.request({ method: 'eth_accounts' })
-        .then((accounts: string[]) => {
-          if (accounts && accounts.length > 0) {
-            hardhatAddress = accounts[0];
-          }
-        })
-        .catch(() => {});
-
-      eth.on('accountsChanged', handleAccountsChanged);
-
-      return () => {
-        if (eth.removeListener) {
-          eth.removeListener('accountsChanged', handleAccountsChanged);
+    try {
+      isSyncingWallet = true;
+      const accounts = await provider.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        if (hardhatAddress !== accounts[0]) {
+          console.log('[RegisterView] Account changed to:', accounts[0]);
+          hardhatAddress = accounts[0];
+          errorMessage = '';
         }
-      };
+      }
+    } catch (err) {
+      console.warn('[RegisterView] Error syncing accounts:', err);
+    } finally {
+      setTimeout(() => {
+        isSyncingWallet = false;
+      }, 300);
     }
+  }
+
+  let cleanupListeners: (() => void)[] = [];
+
+  function attachProviderListeners() {
+    cleanupListeners.forEach(c => c());
+    cleanupListeners = [];
+
+    const providers = getProviders();
+    providers.forEach(p => {
+      if (p && typeof p.on === 'function') {
+        p.on('accountsChanged', handleAccountsChanged);
+        cleanupListeners.push(() => {
+          if (typeof p.removeListener === 'function') {
+            p.removeListener('accountsChanged', handleAccountsChanged);
+          } else if (typeof p.off === 'function') {
+            p.off('accountsChanged', handleAccountsChanged);
+          }
+        });
+      }
+    });
+  }
+
+  onMount(() => {
+    attachProviderListeners();
+    syncAccounts();
+
+    const handleWindowFocus = () => {
+      syncAccounts();
+    };
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        syncAccounts();
+      }
+    };
+
+    const handleInit = () => {
+      attachProviderListeners();
+      syncAccounts();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('ethereum#initialized', handleInit, { once: true });
+
+    // Fallback polling every 2s for instant UI feedback on MetaMask account changes
+    const interval = setInterval(syncAccounts, 2000);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      cleanupListeners.forEach(c => c());
+    };
   });
 
-  async function connectMetaMask() {
+  async function connectMetaMask(requestSwitch = false) {
     errorMessage = '';
-    if (typeof window === 'undefined' || !(window as any).ethereum) {
+    const provider = getActiveMetaMaskProvider();
+    if (!provider) {
       errorMessage = 'MetaMask не виявлено! Будь ласка, встановіть розширення MetaMask для браузера.';
       return;
     }
 
     try {
       isConnectingWallet = true;
-      const accounts = await (window as any).ethereum.request({
+      attachProviderListeners();
+
+      if (requestSwitch) {
+        try {
+          await provider.request({
+            method: 'wallet_requestPermissions',
+            params: [{ eth_accounts: {} }]
+          });
+        } catch (permErr: any) {
+          console.warn('[RegisterView] wallet_requestPermissions not accepted or supported:', permErr);
+        }
+      }
+
+      const accounts = await provider.request({
         method: 'eth_requestAccounts'
       });
+
       if (accounts && accounts.length > 0) {
         hardhatAddress = accounts[0];
+        errorMessage = '';
       }
     } catch (err: any) {
       if (err.code === 4001) {
@@ -205,23 +295,52 @@
           </div>
 
           {#if hardhatAddress}
-            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#030d12] border border-cyan-500/20">
-              <div class="min-w-0 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xs font-black text-white shrink-0 shadow-md">
-                  🦊
+            <div class="p-3 rounded-2xl bg-[#030d12] border border-cyan-500/30 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0 flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-sm font-black text-white shrink-0 shadow-md">
+                    🦊
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Активний гаманець MetaMask</p>
+                    <p class="font-mono text-xs text-cyan-300 font-bold truncate">{hardhatAddress}</p>
+                  </div>
                 </div>
-                <div class="min-w-0">
-                  <p class="font-mono text-xs text-cyan-300 font-bold truncate">{hardhatAddress}</p>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    title="Синхронізувати адресу"
+                    onclick={syncAccounts}
+                    disabled={isSyncingWallet}
+                    class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 border border-slate-700/60 transition-all cursor-pointer"
+                  >
+                    <RefreshCw class="w-3.5 h-3.5 {isSyncingWallet ? 'animate-spin text-cyan-400' : ''}" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Вибрати інший акаунт у MetaMask"
+                    onclick={() => connectMetaMask(true)}
+                    disabled={isConnectingWallet}
+                    class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Змінити
+                  </button>
                 </div>
               </div>
-              <span class="inline-flex items-center text-[10px] font-medium text-slate-400 shrink-0 bg-slate-800/40 px-2 py-1 rounded-lg border border-slate-700/40">
-                Автосинхронізація
-              </span>
+              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px] text-slate-400">
+                <span class="inline-flex items-center gap-1 text-emerald-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Автоматичне відстеження активного акаунта
+                </span>
+                <span class="font-mono text-slate-500">
+                  {hardhatAddress.slice(0, 6)}...{hardhatAddress.slice(-4)}
+                </span>
+              </div>
             </div>
           {:else}
             <button
               type="button"
-              onclick={connectMetaMask}
+              onclick={() => connectMetaMask(false)}
               disabled={isConnectingWallet}
               class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
             >

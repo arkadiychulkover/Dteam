@@ -45,7 +45,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigateToLogin,
   navigation,
 }) => {
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, checkAuth, setUser } = useAuthStore();
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
 
@@ -53,6 +53,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [userNfts, setUserNfts] = useState<Badge[]>([]);
   const [activities, setActivities] = useState<RealActivityItem[]>([]);
   const [isLoadingServerData, setIsLoadingServerData] = useState<boolean>(true);
+  const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [liveStats, setLiveStats] = useState<{ gamesCount: number; friendsCount: number }>({
     gamesCount: 0,
@@ -61,10 +62,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const username = user?.username || 'Користувач';
   const email = user?.email || '';
-  const walletAddress = user?.hardhatAddress || user?.walletAddress || '';
   const bio = user?.bio || '';
+  const walletAddress = user?.hardhatAddress || user?.walletAddress || '';
 
-  // Завантажуємо реальні дані профілю, балансу, значків та активності з сервера
+  // Завантажуємо реальні дані профілю, балансу, значків та активності виключно з сервера
   const loadRealServerData = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setIsLoadingServerData(false);
@@ -73,19 +74,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
 
     try {
-      const wallet = user.hardhatAddress || user.walletAddress;
-
-      // 1. Реальний баланс TDP з ендпоінту бекенду
-      if (wallet) {
-        const balance = await nftService.getTdpBalance(wallet);
-        setTdpBalance(balance);
-      }
-
-      // 2. Тільки РЕАЛЬНІ NFT-значки цього користувача з сервера
-      const nfts = await nftService.getUserNfts(user.id);
-      setUserNfts(nfts);
-
-      // 3. Реальна статистика ігор та друзів з профілю
+      // 1. Отримуємо актуальні дані профілю з сервера
+      let serverWallet: string | null = null;
       try {
         const publicProfile = await api.get<any>(`/users/${user.id}/profile`);
         if (publicProfile) {
@@ -93,10 +83,55 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             gamesCount: publicProfile.gamesCount ?? 0,
             friendsCount: publicProfile.friendsCount ?? 0,
           });
+
+          serverWallet =
+            publicProfile.hardhatAddress ||
+            publicProfile.HardhatAddress ||
+            publicProfile.walletAddress ||
+            publicProfile.WalletAddress ||
+            null;
+
+          // Якщо на сервері є прив'язаний гаманець, зберігаємо в стан користувача
+          if (
+            serverWallet &&
+            (!user.hardhatAddress || publicProfile.hardhatAddress !== user.hardhatAddress)
+          ) {
+            setUser({
+              ...user,
+              hardhatAddress: serverWallet,
+              walletAddress: publicProfile.walletAddress || (publicProfile as any).WalletAddress || user.walletAddress,
+            });
+          }
         }
       } catch (err) {
         console.warn('[ProfileScreen] Could not fetch profile stats:', err);
       }
+
+      // 2. Реальний баланс TDP з ендпоінту бекенду сервера
+      const queryWallet =
+        user.hardhatAddress ||
+        (user as any).HardhatAddress ||
+        user.walletAddress ||
+        (user as any).WalletAddress ||
+        serverWallet;
+
+      if (queryWallet) {
+        setIsLoadingBalance(true);
+        try {
+          const balance = await nftService.getTdpBalance(queryWallet);
+          setTdpBalance(balance);
+        } catch (err) {
+          console.warn('[ProfileScreen] Failed to fetch TDP balance from server:', err);
+        } finally {
+          setIsLoadingBalance(false);
+        }
+      } else {
+        setTdpBalance(0);
+      }
+
+      // 3. Тільки РЕАЛЬНІ NFT-значки цього користувача з сервера
+      const nfts = await nftService.getUserNfts(user.id);
+      setUserNfts(nfts);
 
       // 4. Реальна стрічка активності користувача
       try {
@@ -113,7 +148,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       setIsLoadingServerData(false);
       setIsRefreshing(false);
     }
-  }, [isAuthenticated, user?.id, user?.hardhatAddress, user?.walletAddress]);
+  }, [isAuthenticated, user?.id, user?.hardhatAddress, user?.walletAddress, setUser]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -289,16 +324,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           nextLevelXp={levelInfo.xpForNextLevel}
         />
 
-        {/* Картка балансу та кошелька */}
+        {/* Картка балансу та кошелька (дані тільки з сервера) */}
         <View style={styles.walletCard}>
           <View style={styles.walletHeader}>
             <View style={styles.walletTitleRow}>
               <Ionicons name="wallet-outline" size={18} color={colors.primary} />
-              <Text style={styles.walletTitle}>DTEAM Баланс</Text>
+              <Text style={styles.walletTitle}>DTEAM Баланс & Гаманець</Text>
             </View>
             {walletAddress ? (
-              <TouchableOpacity onPress={handleCopyWallet} activeOpacity={0.7}>
-                <Ionicons name="copy-outline" size={16} color={colors.textDim} />
+              <TouchableOpacity onPress={handleCopyWallet} activeOpacity={0.7} style={styles.copyWalletBtn}>
+                <Ionicons name="copy-outline" size={16} color={colors.primary} />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -306,7 +341,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <View style={styles.balanceRow}>
             <View style={styles.balanceItem}>
               <Text style={styles.balanceLabel}>Бали TDP</Text>
-              <Text style={styles.balanceValueDtp}>{tdpBalance} TDP</Text>
+              {isLoadingBalance ? (
+                <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 2 }} />
+              ) : (
+                <Text style={styles.balanceValueDtp}>{tdpBalance} TDP</Text>
+              )}
             </View>
             <View style={styles.balanceItem}>
               <Text style={styles.balanceLabel}>Баланс TON</Text>
@@ -315,7 +354,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
 
           <Text style={styles.walletAddressText} numberOfLines={1}>
-            {walletAddress || 'Гаманець не підключено'}
+            {walletAddress || 'Гаманець не прив\'язано в профілі'}
           </Text>
         </View>
 
@@ -647,6 +686,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 8,
     borderRadius: 8,
+  },
+  copyWalletBtn: {
+    padding: 4,
   },
   section: {
     marginHorizontal: 16,

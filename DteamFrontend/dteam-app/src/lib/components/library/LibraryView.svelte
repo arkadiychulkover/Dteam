@@ -8,6 +8,7 @@
   import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import type { Game, UserGame } from '../../types';
   import LibraryGameDetailsView from './LibraryGameDetailsView.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import {
     Search,
     LayoutGrid,
@@ -365,10 +366,10 @@
                       {#if post.media.type === 'video'}
                         <video src={resolveMediaUrl(post.media.url)} class="w-full h-32 object-cover" controls playsinline muted></video>
                       {:else}
-                        <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-32 object-cover" />
+                        <BackendImage src={post.media.url} alt="" class="w-full h-32 object-cover" />
                       {/if}
                     {:else if post.gameBannerUrl}
-                      <img src={resolveMediaUrl(post.gameBannerUrl)} alt="" class="w-full h-32 object-cover opacity-80" />
+                      <BackendImage src={post.gameBannerUrl} alt="" class="w-full h-32 object-cover opacity-80" />
                     {/if}
 
                     <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
@@ -378,9 +379,11 @@
                             onclick={() => profileStore.viewProfile(post.author.id)}
                             class="flex items-center gap-2 group cursor-pointer"
                           >
-                            <img
-                              src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                            <BackendImage
+                              src={post.author.avatarUrl}
                               alt={post.author.username}
+                              avatar={true}
+                              initial={post.author.username}
                               class="w-5 h-5 rounded-full object-cover border border-cyan-500/30"
                             />
                             <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors truncate max-w-[120px]">{post.author.username}</span>
@@ -450,9 +453,11 @@
                       onclick={() => profileStore.viewProfile(post.author.id)}
                       class="flex items-center gap-2 group cursor-pointer"
                     >
-                      <img
-                        src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                      <BackendImage
+                        src={post.author.avatarUrl}
                         alt={post.author.username}
+                        avatar={true}
+                        initial={post.author.username}
                         class="w-6 h-6 rounded-full object-cover border border-cyan-500/30"
                       />
                       <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{post.author.username}</span>
@@ -461,7 +466,7 @@
 
                   {#if post.media?.type === 'image' && post.media.url}
                     <div class="relative mt-3">
-                      <img src={resolveMediaUrl(post.media.url)} alt="" class="w-full h-40 object-cover" />
+                      <BackendImage src={post.media.url} alt="" class="w-full h-40 object-cover" />
                     </div>
                   {:else if post.media?.type === 'video' && post.media.url}
                     <div class="relative mt-3">
@@ -618,8 +623,8 @@
                     class="group relative flex flex-col rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 hover:border-cyan-400/80 shadow-lg hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer"
                   >
                     <div class="relative aspect-[3/4] w-full overflow-hidden">
-                      <img
-                        src={g.coverImageUrl || g.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'}
+                      <BackendImage
+                        src={g.coverImageUrl || g.headerImageUrl}
                         alt={g.title}
                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -651,8 +656,8 @@
                     onkeydown={(e) => e.key === 'Enter' && openGame(item)}
                     class="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 p-3 rounded-2xl bg-[#061820]/95 hover:bg-[#092530] border border-cyan-500/20 hover:border-cyan-400/60 shadow-lg transition-all duration-300 cursor-pointer"
                   >
-                    <img
-                      src={g.headerImageUrl || g.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600'}
+                    <BackendImage
+                      src={g.headerImageUrl || g.coverImageUrl}
                       alt={g.title}
                       class="w-full sm:w-44 h-32 sm:h-20 rounded-xl object-cover shrink-0"
                     />

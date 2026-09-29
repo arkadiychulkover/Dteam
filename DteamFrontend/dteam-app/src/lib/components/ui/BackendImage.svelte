@@ -25,39 +25,116 @@
 
   let isLoaded = $state(false);
   let isError = $state(false);
+  let blobUrl = $state<string | null>(null);
 
   const resolvedSrc = $derived.by(() => {
     if (!src || !src.trim()) return null;
     let url = src.trim();
     if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
-      const cleanPath = url.startsWith('/') ? url : `/${url}`;
+      let cleanPath = url.startsWith('/') ? url : `/${url}`;
+      if (
+        cleanPath.startsWith('/icons/') ||
+        cleanPath.startsWith('/community/') ||
+        cleanPath.startsWith('/comunity/') ||
+        cleanPath.startsWith('/uploads/') ||
+        cleanPath.startsWith('/storage/')
+      ) {
+        cleanPath = `/api/media${cleanPath}`;
+      }
       url = BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
-    }
-
-    if (url.includes('/api/chat/media') || url.includes('/api/chat/uploads')) {
-      const token = api.getToken();
-      if (token && !url.includes('access_token=') && !url.includes('token=')) {
-        const separator = url.includes('?') ? '&' : '?';
-        url = `${url}${separator}access_token=${encodeURIComponent(token)}`;
+    } else if (BACKEND_URL && url.startsWith(BACKEND_URL)) {
+      const path = url.slice(BACKEND_URL.length);
+      if (
+        path.startsWith('/icons/') ||
+        path.startsWith('/community/') ||
+        path.startsWith('/comunity/') ||
+        path.startsWith('/uploads/') ||
+        path.startsWith('/storage/')
+      ) {
+        url = `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
       }
     }
-
     return url;
   });
 
   const letterFallback = $derived(
     initial || (alt && alt !== 'Зображення' ? alt.charAt(0).toUpperCase() : 'U')
   );
+
+  $effect(() => {
+    let active = true;
+    let createdUrl: string | null = null;
+
+    async function fetchImageBlob(url: string | null) {
+      if (!url) {
+        blobUrl = null;
+        isLoaded = false;
+        isError = false;
+        return;
+      }
+
+      if (url.startsWith('blob:') || url.startsWith('data:')) {
+        blobUrl = url;
+        isLoaded = true;
+        isError = false;
+        return;
+      }
+
+      const isBackendUrl = url.includes('/api/') ||
+                           url.startsWith('/') ||
+                           (BACKEND_URL && url.startsWith(BACKEND_URL));
+
+      if (!isBackendUrl) {
+        blobUrl = url;
+        return;
+      }
+
+      isLoaded = false;
+      isError = false;
+
+      try {
+        const headers: Record<string, string> = {};
+        const token = api.getToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        if (!active) return;
+
+        createdUrl = URL.createObjectURL(blob);
+        blobUrl = createdUrl;
+      } catch (err) {
+        if (!active) return;
+        isError = true;
+        isLoaded = true;
+      }
+    }
+
+    fetchImageBlob(resolvedSrc);
+
+    return () => {
+      active = false;
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
+  });
 </script>
 
 <div class="relative overflow-hidden bg-slate-900/60 {className}">
-  {#if !isLoaded && !isError && resolvedSrc}
+  {#if !isLoaded && !isError && blobUrl}
     <div class="absolute inset-0 bg-slate-800/80 animate-pulse flex items-center justify-center z-10">
       <Loader2 class="w-4 h-4 text-cyan-400/50 animate-spin" />
     </div>
   {/if}
 
-  {#if !resolvedSrc || isError}
+  {#if !blobUrl || isError}
     {#if avatar || initial}
       <div class="w-full h-full flex items-center justify-center bg-gradient-to-tr from-cyan-600 via-teal-600 to-blue-600 text-white font-bold select-none text-xs">
         {letterFallback}
@@ -72,7 +149,7 @@
     {/if}
   {:else}
     <img
-      src={resolvedSrc}
+      src={blobUrl}
       {alt}
       loading="lazy"
       decoding="async"

@@ -632,7 +632,7 @@
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {#each $libraryStore.items.slice(0, 4) as item}
                   {#if item.game?.coverImageUrl}
-                    <img src={item.game.coverImageUrl} alt={item.game.title} class="rounded-xl object-cover w-full h-24" />
+                    <BackendImage src={item.game.coverImageUrl} alt={item.game.title} class="rounded-xl object-cover w-full h-24" />
                   {/if}
                 {/each}
               </div>
@@ -682,7 +682,7 @@
               </div>
 
               <button
-                onclick={loadMyNfts}
+                onclick={() => loadMyNfts()}
                 disabled={isLoadingNfts}
                 class="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-md"
               >
@@ -833,7 +833,7 @@
                 {#each $libraryStore.items as item}
                   {#if item.game}
                     <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
-                      <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                      <BackendImage src={item.game.coverImageUrl} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
                       <div class="min-w-0">
                         <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
                         {#if item.game.isDlc}
@@ -856,7 +856,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {#each $wishlistStore.items as item}
                   <div class="flex items-center gap-4 p-3 rounded-2xl bg-[#02171d] border border-cyan-900/30">
-                    <img src={item.game.coverImageUrl || undefined} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
+                    <BackendImage src={item.game.coverImageUrl} alt={item.game.title} class="w-16 h-20 object-cover rounded-xl bg-slate-800 shrink-0" />
                     <h4 class="font-bold text-white text-sm truncate">{item.game.title}</h4>
                   </div>
                 {/each}
@@ -914,7 +914,7 @@
                       <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
                       <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                       {#if post.media?.url && post.media?.type !== 'video'}
-                        <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
+                        <BackendImage src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                       {/if}
                       <div class="flex gap-4 text-xs font-medium text-slate-400">
                         <span class="flex items-center gap-1.5 bg-[#03232c] px-3 py-1.5 rounded-full border border-cyan-900/40">
@@ -936,7 +936,7 @@
                   {#each myScreenshotPosts as post (post.id)}
                     <div class="aspect-[16/10] rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-slate-800">
                       {#if post.media?.url}
-                        <img src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
+                        <BackendImage src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
                       {/if}
                     </div>
                   {/each}
@@ -954,7 +954,7 @@
                       class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
                     >
                       {#if post.media?.thumbnailUrl || post.media?.url}
-                        <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <BackendImage src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       {/if}
                       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
                         <div class="self-end">
@@ -986,7 +986,7 @@
                   {#each myGuidePosts as post (post.id)}
                     <div class="bg-[#02171d] rounded-2xl p-5 border border-cyan-900/30 flex gap-4">
                       {#if post.media?.url}
-                        <img src={post.media.url} alt={post.title} class="w-40 h-28 object-cover rounded-xl shrink-0 bg-slate-800" />
+                        <BackendImage src={post.media.url} alt={post.title} class="w-40 h-28 object-cover rounded-xl shrink-0 bg-slate-800" />
                       {/if}
                       <div>
                         <h3 class="text-base font-bold text-white mb-2">{post.title}</h3>
@@ -1006,7 +1006,7 @@
                   {#each $myProfileStore.reviews as review (review.id)}
                     <div class="bg-[#02171d] rounded-2xl p-5 border border-cyan-900/30">
                       {#if review.gameCoverImageUrl}
-                        <img src={review.gameCoverImageUrl} alt={review.gameTitle} class="w-full h-48 object-cover rounded-xl mb-4" />
+                        <BackendImage src={review.gameCoverImageUrl} alt={review.gameTitle} class="w-full h-48 object-cover rounded-xl mb-4" />
                       {/if}
                       <h3 class="text-lg font-bold text-white mb-1">{review.gameTitle}</h3>
                       <div class="flex gap-1 text-rose-500 mb-3">
@@ -1065,7 +1065,13 @@
                 >
                   <div class="flex items-center gap-3">
                     {#if f.avatarUrl}
-                      <img src={f.avatarUrl} alt={f.username} class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
+                      <BackendImage
+                        src={f.avatarUrl}
+                        alt={f.username}
+                        avatar={true}
+                        initial={f.username.charAt(0).toUpperCase()}
+                        class="w-8 h-8 rounded-full object-cover bg-slate-800 border border-cyan-900/60"
+                      />
                     {:else}
                       <div class="w-8 h-8 rounded-full bg-cyan-950/80 text-cyan-300 font-bold flex items-center justify-center text-xs border border-cyan-500/30">
                         {f.username.charAt(0).toUpperCase()}

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using DteamBackend.Interfaces;
+
 namespace DteamBackend.Controllers
 {
     [ApiController]
@@ -14,10 +16,12 @@ namespace DteamBackend.Controllers
     public class GamesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IS3StorageService _storageService;
 
-        public GamesController(AppDbContext context)
+        public GamesController(AppDbContext context, IS3StorageService storageService)
         {
             _context = context;
+            _storageService = storageService;
         }
 
         private static GameDto MapToGameDto(Game game) => new()
@@ -648,23 +652,13 @@ namespace DteamBackend.Controllers
                 return BadRequest(new { message = "Недопустимый формат файла. Разрешены форматы: .jpg, .jpeg, .png, .webp, .gif" });
             }
 
-            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var imagesFolder = Path.Combine(webRootPath, "game_images");
-
-            if (!Directory.Exists(imagesFolder))
-            {
-                Directory.CreateDirectory(imagesFolder);
-            }
-
             var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
-            var filePath = Path.Combine(imagesFolder, uniqueFileName);
+            var key = $"game_images/{uniqueFileName}";
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            await using var stream = file.OpenReadStream();
+            await _storageService.UploadAsync(stream, key, file.ContentType);
 
-            var relativeUrl = $"/game_images/{uniqueFileName}";
+            var relativeUrl = $"/api/media/{key}";
 
             return Ok(new
             {
@@ -720,8 +714,17 @@ namespace DteamBackend.Controllers
 
             if (!string.IsNullOrWhiteSpace(game.ServerArchivePath))
             {
-                var cleanPath = game.ServerArchivePath.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar);
-                var candidate = Path.GetFullPath(Path.Combine(webRoot, cleanPath));
+                var cleanPath = game.ServerArchivePath.TrimStart('/', '\\');
+                var s3File = await _storageService.GetFileAsync(cleanPath);
+                if (s3File != null)
+                {
+                    game.DownloadCount += 1;
+                    await _context.SaveChangesAsync();
+                    return File(s3File.Value.Stream, "application/zip", $"{safeTitle}.zip", enableRangeProcessing: true);
+                }
+
+                var diskPath = cleanPath.Replace('/', Path.DirectorySeparatorChar);
+                var candidate = Path.GetFullPath(Path.Combine(webRoot, diskPath));
 
                 if (candidate.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(candidate))
                 {

@@ -63,8 +63,11 @@ namespace DteamBackend
             builder.Services.AddHostedService<OnlineTimeRewardService>();
             builder.Services.AddHostedService<HardhatNodeManagerService>();
 
+            builder.Services.Configure<R2Options>(builder.Configuration.GetSection(R2Options.SectionName));
+            builder.Services.AddSingleton<IS3StorageService, S3StorageService>();
+
             builder.Services.Configure<ChatOptions>(builder.Configuration.GetSection(ChatOptions.SectionName));
-            builder.Services.AddSingleton<IChatFileStorage, LocalChatFileStorage>();
+            builder.Services.AddSingleton<IChatFileStorage, S3ChatFileStorage>();
             builder.Services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();

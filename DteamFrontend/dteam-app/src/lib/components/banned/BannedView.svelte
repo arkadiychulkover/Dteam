@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { authStore, currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
-  import { Ban, ShieldAlert, AlertTriangle, LogOut, RefreshCw, Mail } from 'lucide-svelte';
+  import { userService } from '../../services/userService';
+  import { Ban, ShieldAlert, ShieldCheck, LogOut, RefreshCw } from 'lucide-svelte';
 
   interface Props {
     onRetry?: () => void;
@@ -9,9 +11,34 @@
 
   let { onRetry }: Props = $props();
   let isChecking = $state(false);
+  let isAdmin = $state(false);
+
+  async function checkAdminStatus() {
+    try {
+      const res = await userService.checkIsAdmin($currentUser?.id);
+      if (res && res.isAdmin) {
+        isAdmin = true;
+      } else if ($currentUser?.isAdmin) {
+        isAdmin = true;
+      } else {
+        isAdmin = false;
+      }
+    } catch (e: any) {
+      if (e?.isAdmin || $currentUser?.isAdmin) {
+        isAdmin = true;
+      } else {
+        isAdmin = false;
+      }
+    }
+  }
+
+  onMount(() => {
+    checkAdminStatus();
+  });
 
   async function handleCheckAgain() {
     isChecking = true;
+    await checkAdminStatus();
     if (onRetry) {
       await onRetry();
     }
@@ -21,6 +48,10 @@
   async function handleLogout() {
     await authStore.logout();
     window.location.reload();
+  }
+
+  function handleGoToAdmin() {
+    uiStore.setTab('admin');
   }
 </script>
 
@@ -65,18 +96,37 @@
       {/if}
       <div class="flex justify-between text-rose-300/70">
         <span>Действие:</span>
-        <span class="text-rose-300 font-medium">Все запросы к API отклоняются</span>
+        <span class="text-rose-300 font-medium">Все клиентские запросы к платформе отклоняются</span>
       </div>
+      {#if isAdmin}
+        <div class="flex justify-between items-center text-amber-300 font-bold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/30 mt-2">
+          <span class="flex items-center gap-1.5 text-amber-300">
+            <ShieldCheck class="w-4 h-4 text-amber-400" />
+            Привилегии:
+          </span>
+          <span class="text-amber-400 uppercase text-[11px] font-mono">Администратор (доступ разрешен)</span>
+        </div>
+      {/if}
     </div>
 
     <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      {#if isAdmin}
+        <button
+          onclick={handleGoToAdmin}
+          class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/25 transition-all transform hover:scale-[1.02] cursor-pointer"
+        >
+          <ShieldCheck class="w-4 h-4 text-slate-950" />
+          <span>Перейти в админку</span>
+        </button>
+      {/if}
+
       <button
         onclick={handleCheckAgain}
         disabled={isChecking}
         class="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-all cursor-pointer"
       >
         <RefreshCw class="w-4 h-4 {isChecking ? 'animate-spin text-rose-400' : ''}" />
-        <span>Проверить статус разблокировки</span>
+        <span>Проверить статус</span>
       </button>
 
       <button

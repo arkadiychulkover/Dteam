@@ -25,34 +25,47 @@ namespace DteamBackend.Middlewares
 
                 if (!string.IsNullOrWhiteSpace(userIdStr) && Guid.TryParse(userIdStr, out Guid userId))
                 {
-                    var isBanned = await dbContext.Users
+                    var userRecord = await dbContext.Users
                         .AsNoTracking()
                         .Where(u => u.Id == userId)
-                        .Select(u => u.IsBanned)
+                        .Select(u => new { u.IsBanned, u.IsAdmin })
                         .FirstOrDefaultAsync();
 
-                    if (isBanned)
+                    if (userRecord != null && userRecord.IsBanned)
                     {
                         var path = httpContext.Request.Path.Value ?? string.Empty;
 
-                        if (path.Contains("/is-banned", StringComparison.OrdinalIgnoreCase))
-                        {
-                            httpContext.Response.StatusCode = StatusCodes.Status200OK;
-                            httpContext.Response.ContentType = "application/json; charset=utf-8";
-                            var banStatusObj = new
-                            {
-                                userId,
-                                isBanned = true,
-                                message = "Пользователь заблокирован администратором платформы"
-                            };
-                            await httpContext.Response.WriteAsync(JsonSerializer.Serialize(banStatusObj));
-                            return;
-                        }
-
+                        // 1. Never block logout
                         if (path.StartsWith("/api/auth/logout", StringComparison.OrdinalIgnoreCase))
                         {
                             await _next(httpContext);
                             return;
+                        }
+
+                        // 2. Never block ban or admin check queries
+                        if (path.Contains("/is-banned", StringComparison.OrdinalIgnoreCase) ||
+                            path.Contains("/is-admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await _next(httpContext);
+                            return;
+                        }
+
+                        // 3. If user is Admin, never block admin paths or essential dashboard data
+                        if (userRecord.IsAdmin)
+                        {
+                            bool isAdminPath =
+                                path.Contains("/admin", StringComparison.OrdinalIgnoreCase) ||
+                                path.Contains("/is-admin", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/auth/me", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/users/me", StringComparison.OrdinalIgnoreCase) ||
+                                path.StartsWith("/api/user/me", StringComparison.OrdinalIgnoreCase);
+
+                            if (isAdminPath)
+                            {
+                                await _next(httpContext);
+                                return;
+                            }
                         }
 
                         _logger.LogWarning("Заблокированный пользователь {UserId} попытался выполнить запрос: {Path}", userId, httpContext.Request.Path);
@@ -66,6 +79,7 @@ namespace DteamBackend.Middlewares
                             error = "Forbidden",
                             message = "Ваш аккаунт заблокирован администратором платформы / Your account has been banned by an administrator",
                             isBanned = true,
+                            isAdmin = userRecord.IsAdmin,
                             userId
                         };
 

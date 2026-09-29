@@ -14,6 +14,8 @@ using DteamBackend.Services;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 
+using DteamBackend.Interfaces;
+
 namespace DteamBackend.Controllers
 {
     [ApiController]
@@ -22,11 +24,13 @@ namespace DteamBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IS3StorageService _storageService;
 
-        public CommunityController(AppDbContext context, IWebHostEnvironment environment)
+        public CommunityController(AppDbContext context, IWebHostEnvironment environment, IS3StorageService storageService)
         {
             _context = context;
             _environment = environment;
+            _storageService = storageService;
         }
 
         private Guid GetCurrentUserId()
@@ -340,20 +344,12 @@ namespace DteamBackend.Controllers
             }
 
             var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
-            var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var folder = Path.Combine(webRoot, "community");
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
+            var key = $"community/{uniqueFileName}";
 
-            var filePath = Path.Combine(folder, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+            await using var stream = file.OpenReadStream();
+            await _storageService.UploadAsync(stream, key, file.ContentType);
 
-            return $"/community/{uniqueFileName}";
+            return $"/api/media/{key}";
         }
 
         [Authorize]

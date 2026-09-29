@@ -14,6 +14,7 @@
   import { currentUser } from '../../stores/authStore';
   import { uiStore } from '../../stores/uiStore';
   import { gamesService } from '../../services/gamesService';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { Review } from '../../types';
 
   interface Props {
@@ -273,9 +274,11 @@
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-[#030d12] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden shrink-0">
               {#if review.userAvatarUrl || review.user?.avatarUrl}
-                <img
-                  src={review.userAvatarUrl || review.user?.avatarUrl || ''}
+                <BackendImage
+                  src={review.userAvatarUrl || review.user?.avatarUrl}
                   alt={review.username || review.user?.username || 'User'}
+                  avatar={true}
+                  initial={(review.username || review.user?.username || 'U').charAt(0).toUpperCase()}
                   class="w-full h-full object-cover"
                 />
               {:else}
@@ -409,9 +412,11 @@
                   <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-full bg-[#030d12] border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold overflow-hidden shrink-0 text-xs">
                       {#if comment.userAvatarUrl || comment.user?.avatarUrl}
-                        <img
-                          src={comment.userAvatarUrl || comment.user?.avatarUrl || ''}
+                        <BackendImage
+                          src={comment.userAvatarUrl || comment.user?.avatarUrl}
                           alt={comment.username || 'User'}
+                          avatar={true}
+                          initial={(comment.username || 'U').charAt(0).toUpperCase()}
                           class="w-full h-full object-cover"
                         />
                       {:else}
@@ -443,7 +448,13 @@
                     <div class="flex items-center gap-1.5 text-cyan-300 font-semibold text-[11px]">
                       <div class="w-4 h-4 rounded-full bg-cyan-900/60 flex items-center justify-center text-[9px] overflow-hidden shrink-0">
                         {#if comment.parentReview.userAvatarUrl}
-                          <img src={comment.parentReview.userAvatarUrl} alt="" class="w-full h-full object-cover" />
+                          <BackendImage
+                            src={comment.parentReview.userAvatarUrl}
+                            alt=""
+                            avatar={true}
+                            initial={(comment.parentReview.username || 'U').charAt(0).toUpperCase()}
+                            class="w-full h-full object-cover"
+                          />
                         {:else}
                           {(comment.parentReview.username || 'U').charAt(0).toUpperCase()}
                         {/if}

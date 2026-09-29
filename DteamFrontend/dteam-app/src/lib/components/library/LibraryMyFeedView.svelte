@@ -5,6 +5,7 @@
   import { profileStore } from '../../stores/profileStore';
   import { communityService, type CommunityPost } from '../../services/communityService';
   import MediaLightboxModal from '../ui/MediaLightboxModal.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import {
     Rss,
@@ -148,9 +149,11 @@
                 onclick={() => profileStore.viewProfile(post.author.id)}
                 class="flex items-center gap-2.5 text-left group/author cursor-pointer"
               >
-                <img
-                  src={post.author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.username)}`}
+                <BackendImage
+                  src={post.author.avatarUrl}
                   alt={post.author.username}
+                  avatar={true}
+                  initial={post.author.username}
                   class="w-8 h-8 rounded-full object-cover border border-cyan-500/30 group-hover/author:border-cyan-400 transition-colors"
                 />
                 <div>
@@ -196,11 +199,10 @@
               onclick={() => (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
               onkeydown={(e) => e.key === 'Enter' && (lightboxMedia = { src: post.media.url, title: post.title, author: post.author })}
             >
-              <img
+              <BackendImage
                 src={post.media.url}
                 alt={post.title || 'Зображення'}
                 class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                loading="lazy"
               />
               <div class="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-md text-[10px] text-slate-300 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Image class="w-3 h-3" />
