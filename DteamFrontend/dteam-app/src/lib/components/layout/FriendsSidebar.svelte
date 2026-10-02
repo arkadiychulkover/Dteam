@@ -16,11 +16,7 @@
         newFriendInput = '';
         isAdding = false;
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err?.message || 'Не вдалося надіслати запит',
-          type: 'error'
-        });
+        uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося надіслати запит', type: 'error' });
       }
     }
   }

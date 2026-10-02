@@ -105,9 +105,7 @@
       const prevHeight = scrollHeight;
       chatStore.loadMoreHistory(conversation.friendId).then(() => {
         tick().then(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight - prevHeight;
-          }
+          if (scrollContainer) { scrollContainer.scrollTop = scrollContainer.scrollHeight - prevHeight; }
         });
       });
     }
@@ -115,27 +113,18 @@
 
   export function scrollToBottom(smooth = false) {
     if (!scrollContainer) return;
-    scrollContainer.scrollTo({
-      top: scrollContainer.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto'
-    });
+    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   }
 
   $effect(() => {
 
     if (messages.length) {
-      tick().then(() => {
-        if (isNearBottom) {
-          scrollToBottom(false);
-        }
-      });
+      tick().then(() => { if (isNearBottom) { scrollToBottom(false); } });
     }
   });
 
   onMount(() => {
-    tick().then(() => {
-      scrollToBottom(false);
-    });
+    tick().then(() => { scrollToBottom(false); });
   });
 
   const groupedMessages = $derived.by(() => {
@@ -146,9 +135,7 @@
     messages.forEach((msg) => {
       const label = formatDateDivider(msg.createdAt);
       if (label !== currentLabel) {
-        if (currentItems.length > 0) {
-          groups.push({ dateLabel: currentLabel, items: currentItems });
-        }
+        if (currentItems.length > 0) { groups.push({ dateLabel: currentLabel, items: currentItems }); }
         currentLabel = label;
         currentItems = [msg];
       } else {
@@ -156,9 +143,7 @@
       }
     });
 
-    if (currentItems.length > 0) {
-      groups.push({ dateLabel: currentLabel, items: currentItems });
-    }
+    if (currentItems.length > 0) { groups.push({ dateLabel: currentLabel, items: currentItems }); }
 
     return groups;
   });

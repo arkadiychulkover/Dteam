@@ -4,15 +4,11 @@
   import AudioMessagePlayer from './AudioMessagePlayer.svelte';
   import type { ChatMonthGroup } from '../../types/chat';
 
-  interface Props {
-    voiceByMonth?: ChatMonthGroup[];
-  }
+  interface Props { voiceByMonth?: ChatMonthGroup[]; }
 
   let { voiceByMonth = [] }: Props = $props();
 
-  function handleBack() {
-    chatStore.setRightSidebarTab('profile');
-  }
+  function handleBack() { chatStore.setRightSidebarTab('profile'); }
 
   function formatDate(isoString: string): string {
     try {

@@ -1,20 +1,12 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Game } from '../types';
 import { BackendImage } from './BackendImage';
 import { formatPrice, formatBasePrice } from '../utils/formatters';
 import { theme } from '../styles/theme';
 
-interface SpecialOfferCardProps {
-  game: Game;
-  onPress: (game: Game) => void;
-}
+interface SpecialOfferCardProps { game: Game; onPress: (game: Game) => void; }
 
 export const SpecialOfferCard: React.FC<SpecialOfferCardProps> = ({ game, onPress }) => {
   const hasDiscount = (game.discountPercentage || 0) > 0;
@@ -61,11 +53,7 @@ export const SpecialOfferCard: React.FC<SpecialOfferCardProps> = ({ game, onPres
         </View>
 
         <View style={styles.priceRow}>
-          {hasDiscount && (
-            <Text style={styles.originalPrice}>
-              {formatBasePrice(game.priceInNanoTons)}
-            </Text>
-          )}
+          {hasDiscount && ( <Text style={styles.originalPrice}> {formatBasePrice(game.priceInNanoTons)} </Text> )}
           <Text style={[styles.price, hasDiscount && styles.discountedPrice]}>
             {formatPrice(game.priceInNanoTons, game.discountPercentage)}
           </Text>
@@ -85,16 +73,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginRight: 14,
   },
-  imageContainer: {
-    width: '100%',
-    height: 135,
-    position: 'relative',
-    backgroundColor: theme.colors.surface,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
+  imageContainer: { width: '100%', height: 135, position: 'relative', backgroundColor: theme.colors.surface, },
+  image: { width: '100%', height: '100%', },
   discountBadge: {
     position: 'absolute',
     top: 8,
@@ -105,26 +85,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     zIndex: 2,
   },
-  discountText: {
-    color: '#000',
-    fontWeight: '900',
-    fontSize: 11,
-  },
-  infoContainer: {
-    padding: 12,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
+  discountText: { color: '#000', fontWeight: '900', fontSize: 11, },
+  infoContainer: { padding: 12, },
+  title: { fontSize: 14, fontWeight: '700', color: theme.colors.text, marginBottom: 6, },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -134,32 +98,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  ratingText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.star,
-  },
-  genreText: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    flex: 1,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-  },
-  originalPrice: {
-    fontSize: 11,
-    color: theme.colors.textDim,
-    textDecorationLine: 'line-through',
-  },
-  price: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  discountedPrice: {
-    color: theme.colors.secondary,
-  },
+  ratingText: { fontSize: 11, fontWeight: '700', color: theme.colors.star, },
+  genreText: { fontSize: 11, color: theme.colors.textMuted, flex: 1, },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, },
+  originalPrice: { fontSize: 11, color: theme.colors.textDim, textDecorationLine: 'line-through', },
+  price: { fontSize: 13, fontWeight: '800', color: theme.colors.text, },
+  discountedPrice: { color: theme.colors.secondary, },
 });

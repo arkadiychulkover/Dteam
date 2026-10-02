@@ -54,7 +54,6 @@ namespace DteamBackend.Services
                 return null;
             }
 
-            // 1. Спочатку перевіряємо в S3
             var s3Key = $"chat/{storageKey}";
             var s3Result = await _s3Storage.GetFileAsync(s3Key, cancellationToken);
             if (s3Result != null)
@@ -62,7 +61,6 @@ namespace DteamBackend.Services
                 return (s3Result.Value.Stream, s3Result.Value.ContentType);
             }
 
-            // 2. Фолбек на локальний диск для старих файлів (якщо такі існували)
             if (Directory.Exists(_legacyStorageDirectory))
             {
                 var localFilePath = Path.Combine(_legacyStorageDirectory, storageKey);
@@ -99,7 +97,6 @@ namespace DteamBackend.Services
             var s3Key = $"chat/{storageKey}";
             var deletedFromS3 = await _s3Storage.DeleteFileAsync(s3Key, cancellationToken);
 
-            // Також видаляємо з локального диску, якщо там залишився старий файл
             try
             {
                 if (Directory.Exists(_legacyStorageDirectory))

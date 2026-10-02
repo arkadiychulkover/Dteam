@@ -3,14 +3,7 @@
   import { developerStore } from '../../stores/developerStore';
   import { tonToNanoTon, nanoTonToTon } from '../../utils/formatters';
   import { mediaService } from '../../services/mediaService';
-  import {
-    X,
-    Upload,
-    Edit3,
-    Sparkles,
-    FileArchive,
-    Loader2
-  } from 'lucide-svelte';
+  import { X, Upload, Edit3, Sparkles, FileArchive, Loader2 } from 'lucide-svelte';
 
   let title = $state('');
   let description = $state('');
@@ -73,9 +66,7 @@
     }
   });
 
-  function close() {
-    uiStore.setEditGameModal(false);
-  }
+  function close() { uiStore.setEditGameModal(false); }
 
   function toggleGenre(genre: string) {
     if (selectedGenres.includes(genre)) {
@@ -87,9 +78,7 @@
 
   function togglePlatform(platform: string) {
     if (selectedPlatforms.includes(platform)) {
-      if (selectedPlatforms.length > 1) {
-        selectedPlatforms = selectedPlatforms.filter((p) => p !== platform);
-      }
+      if (selectedPlatforms.length > 1) { selectedPlatforms = selectedPlatforms.filter((p) => p !== platform); }
     } else {
       selectedPlatforms = [...selectedPlatforms, platform];
     }
@@ -148,9 +137,7 @@
     }
   }
 
-  function removeScreenshot(index: number) {
-    screenshotUrls = screenshotUrls.filter((_, i) => i !== index);
-  }
+  function removeScreenshot(index: number) { screenshotUrls = screenshotUrls.filter((_, i) => i !== index); }
 
   async function handleSave() {
     if (!$uiStore.editingGame) return;

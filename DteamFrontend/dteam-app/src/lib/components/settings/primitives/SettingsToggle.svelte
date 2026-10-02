@@ -1,17 +1,8 @@
 <script lang="ts">
-  interface Props {
-    checked: boolean;
-    disabled?: boolean;
-    ariaLabel?: string;
-    onchange?: (checked: boolean) => void;
-  }
+  interface Props { checked: boolean; disabled?: boolean; ariaLabel?: string; onchange?: (checked: boolean) => void; }
   let { checked = $bindable(false), disabled = false, ariaLabel = '', onchange }: Props = $props();
 
-  function toggle() {
-    if (disabled) return;
-    checked = !checked;
-    onchange?.(checked);
-  }
+  function toggle() { if (disabled) return; checked = !checked; onchange?.(checked); }
 </script>
 
 <button

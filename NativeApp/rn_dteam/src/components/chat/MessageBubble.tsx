@@ -6,9 +6,7 @@ import { AudioPlayer } from './AudioPlayer';
 import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
-interface MessageBubbleProps {
-  message: ChatMessage;
-}
+interface MessageBubbleProps { message: ChatMessage; }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const isMine = message.isMine;
@@ -65,11 +63,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           <Text style={[styles.timestamp, isMine ? styles.timestampMine : styles.timestampOther]}>
             {message.timestamp}
           </Text>
-          {isMine && (
-            <Text style={[styles.statusTicks, { color: isMine ? '#03212c' : colors.primary }]}>
-              ✓✓
-            </Text>
-          )}
+          {isMine && ( <Text style={[styles.statusTicks, { color: isMine ? '#03212c' : colors.primary }]}> ✓✓ </Text> )}
         </View>
       </View>
     </View>
@@ -82,12 +76,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
   },
-  wrapperMine: {
-    justifyContent: 'flex-end',
-  },
-  wrapperOther: {
-    justifyContent: 'flex-start',
-  },
+  wrapperMine: { justifyContent: 'flex-end', },
+  wrapperOther: { justifyContent: 'flex-start', },
   bubble: {
     maxWidth: '84%',
     borderRadius: 18,
@@ -99,38 +89,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  bubbleMine: {
-    backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
-  },
+  bubbleMine: { backgroundColor: colors.primary, borderBottomRightRadius: 4, },
   bubbleOther: {
     backgroundColor: colors.surfaceCardLight,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  text: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  textMine: {
-    color: '#021118',
-    fontWeight: '600',
-  },
-  textOther: {
-    color: colors.text,
-    fontWeight: '400',
-  },
-  imageContainer: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  attachedImage: {
-    width: 230,
-    height: 160,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceCard,
-  },
+  text: { fontSize: 14, lineHeight: 20, },
+  textMine: { color: '#021118', fontWeight: '600', },
+  textOther: { color: colors.text, fontWeight: '400', },
+  imageContainer: { borderRadius: 12, overflow: 'hidden', },
+  attachedImage: { width: 230, height: 160, borderRadius: 12, backgroundColor: colors.surfaceCard, },
   fileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,64 +109,19 @@ const styles = StyleSheet.create({
     maxWidth: 240,
     paddingVertical: 4,
   },
-  fileIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fileIconBoxMine: {
-    backgroundColor: 'rgba(3, 33, 44, 0.15)',
-  },
-  fileIconBoxOther: {
-    backgroundColor: 'rgba(34, 211, 238, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  fileInfo: {
-    flex: 1,
-  },
-  fileName: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  fileNameMine: {
-    color: '#021118',
-  },
-  fileNameOther: {
-    color: colors.text,
-  },
-  fileSize: {
-    fontSize: 10,
-    marginTop: 2,
-    fontFamily: 'monospace',
-  },
-  fileSizeMine: {
-    color: 'rgba(2, 17, 24, 0.7)',
-  },
-  fileSizeOther: {
-    color: colors.textDim,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-    marginTop: 4,
-  },
-  timestamp: {
-    fontSize: 10,
-    fontFamily: 'monospace',
-  },
-  timestampMine: {
-    color: 'rgba(2, 17, 24, 0.7)',
-  },
-  timestampOther: {
-    color: colors.textDim,
-  },
-  statusTicks: {
-    fontSize: 10,
-    fontWeight: '900',
-  },
+  fileIconBox: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', },
+  fileIconBoxMine: { backgroundColor: 'rgba(3, 33, 44, 0.15)', },
+  fileIconBoxOther: { backgroundColor: 'rgba(34, 211, 238, 0.15)', borderWidth: 1, borderColor: colors.primary, },
+  fileInfo: { flex: 1, },
+  fileName: { fontSize: 13, fontWeight: '700', },
+  fileNameMine: { color: '#021118', },
+  fileNameOther: { color: colors.text, },
+  fileSize: { fontSize: 10, marginTop: 2, fontFamily: 'monospace', },
+  fileSizeMine: { color: 'rgba(2, 17, 24, 0.7)', },
+  fileSizeOther: { color: colors.textDim, },
+  footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 4, },
+  timestamp: { fontSize: 10, fontFamily: 'monospace', },
+  timestampMine: { color: 'rgba(2, 17, 24, 0.7)', },
+  timestampOther: { color: colors.textDim, },
+  statusTicks: { fontSize: 10, fontWeight: '900', },
 });

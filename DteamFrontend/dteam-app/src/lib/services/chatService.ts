@@ -8,9 +8,7 @@ import type {
 } from '../types/chat';
 
 export const chatService = {
-  async getConversations(): Promise<ChatConversation[]> {
-    return api.get<ChatConversation[]>('/chat/conversations');
-  },
+  async getConversations(): Promise<ChatConversation[]> { return api.get<ChatConversation[]>('/chat/conversations'); },
 
   async getHistory(friendId: string, beforeCursor?: string, limit: number = 50): Promise<CursorHistoryResponse> {
     const params = new URLSearchParams();
@@ -58,9 +56,7 @@ export const chatService = {
     } else {
       formData.append('file', file, fileName || 'voice_message.webm');
     }
-    if (duration !== undefined && duration !== null) {
-      formData.append('duration', Math.round(duration).toString());
-    }
+    if (duration !== undefined && duration !== null) { formData.append('duration', Math.round(duration).toString()); }
 
     return api.post<ChatUploadResponse>('/chat/upload', formData);
   },

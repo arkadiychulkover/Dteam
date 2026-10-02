@@ -6,9 +6,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { api } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 
-interface GeneralTabProps {
-  onSuccess?: () => void;
-}
+interface GeneralTabProps { onSuccess?: () => void; }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({ onSuccess }) => {
   const { user, checkAuth } = useAuthStore();
@@ -116,19 +114,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  header: { marginBottom: 20, },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 4, },
+  subtitle: { fontSize: 12, color: colors.textMuted, },
   avatarSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -140,16 +128,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
+  avatarWrapper: { position: 'relative', },
+  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: colors.primary, },
   changeAvatarBtn: {
     position: 'absolute',
     bottom: -2,
@@ -161,22 +141,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInfo: {
-    flex: 1,
-  },
-  avatarTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  avatarSubtitle: {
-    fontSize: 11,
-    color: colors.textDim,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
+  avatarInfo: { flex: 1, },
+  avatarTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 2, },
+  avatarSubtitle: { fontSize: 11, color: colors.textDim, },
+  inputGroup: { marginBottom: 16, },
   inputLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -195,16 +163,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  inputHelper: {
-    fontSize: 11,
-    color: colors.textDim,
-    marginTop: 4,
-    marginLeft: 2,
-  },
+  textArea: { minHeight: 80, textAlignVertical: 'top', },
+  inputHelper: { fontSize: 11, color: colors.textDim, marginTop: 4, marginLeft: 2, },
   infoCard: {
     backgroundColor: colors.background,
     borderRadius: 14,
@@ -214,25 +174,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 8,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  infoKey: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  infoValue: {
-    fontSize: 12,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  infoCode: {
-    fontSize: 12,
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', },
+  infoKey: { fontSize: 12, color: colors.textMuted, },
+  infoValue: { fontSize: 12, color: colors.text, fontWeight: '600', },
+  infoCode: { fontSize: 12, color: colors.primary, fontFamily: 'monospace', },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: 14,
@@ -247,12 +192,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  saveButtonSuccess: {
-    backgroundColor: colors.accentEmerald,
-  },
-  saveButtonText: {
-    color: '#000000',
-    fontWeight: '800',
-    fontSize: 14,
-  },
+  saveButtonSuccess: { backgroundColor: colors.accentEmerald, },
+  saveButtonText: { color: '#000000', fontWeight: '800', fontSize: 14, },
 });

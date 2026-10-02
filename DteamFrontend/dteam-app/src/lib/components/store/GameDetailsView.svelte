@@ -80,10 +80,7 @@
   let isLoadingFriendsStatus = $state(false);
 
   async function loadFriendsGameStatus(gameId: string) {
-    if (!$currentUser) {
-      friendsGameStatus = null;
-      return;
-    }
+    if (!$currentUser) { friendsGameStatus = null; return; }
     isLoadingFriendsStatus = true;
     try {
       friendsGameStatus = await friendsService.getFriendsGameStatus(gameId);
@@ -145,16 +142,12 @@
   const mediaList = $derived.by(() => {
     if (!game) return [];
     const list: { type: 'image' | 'video'; url: string; thumb: string }[] = [];
-    if (game.headerImageUrl) {
-      list.push({ type: 'image', url: game.headerImageUrl, thumb: game.headerImageUrl });
-    }
+    if (game.headerImageUrl) { list.push({ type: 'image', url: game.headerImageUrl, thumb: game.headerImageUrl }); }
     if (game.coverImageUrl && game.coverImageUrl !== game.headerImageUrl) {
       list.push({ type: 'image', url: game.coverImageUrl, thumb: game.coverImageUrl });
     }
     if (game.screenshotUrls && game.screenshotUrls.length > 0) {
-      game.screenshotUrls.forEach(url => {
-        list.push({ type: 'image', url, thumb: url });
-      });
+      game.screenshotUrls.forEach(url => { list.push({ type: 'image', url, thumb: url }); });
     }
     if (list.length === 0) {
       list.push({
@@ -174,9 +167,7 @@
     return ['Ігри', 'Web3', 'Dteam'];
   });
 
-  const visibleTags = $derived(
-    isTagsExpanded ? allTags : allTags.slice(0, 6)
-  );
+  const visibleTags = $derived( isTagsExpanded ? allTags : allTags.slice(0, 6) );
 
   const gameEffectivePriceNanoTons = $derived.by(() => {
     if (!game) return 0;
@@ -198,9 +189,7 @@
     return dlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0);
   });
 
-  const bundleDlcsDiscountedNanoTons = $derived.by(() => {
-    return Math.round(effectiveTotalDlcsNanoTons * 0.8);
-  });
+  const bundleDlcsDiscountedNanoTons = $derived.by(() => { return Math.round(effectiveTotalDlcsNanoTons * 0.8); });
 
   const completeEditionEffectiveNanoTons = $derived.by(() => {
     return gameEffectivePriceNanoTons + bundleDlcsDiscountedNanoTons;
@@ -237,11 +226,7 @@
 
   async function handleAddAllDLC() {
     if (dlcs.length === 0) return;
-    await cartStore.addMultipleToCart(
-      dlcs,
-      true,
-      `Усі ${dlcs.length} DLC успішно додано до кошика зі знижкою 20%!`
-    );
+    await cartStore.addMultipleToCart( dlcs, true, `Усі ${dlcs.length} DLC успішно додано до кошика зі знижкою 20%!` );
   }
 
   async function handleAddReview() {
@@ -266,11 +251,7 @@
       });
 
       const existingIdx = reviews.findIndex(r => r.userId === $currentUser!.id);
-      if (existingIdx >= 0) {
-        reviews[existingIdx] = createdReview;
-      } else {
-        reviews = [createdReview, ...reviews];
-      }
+      if (existingIdx >= 0) { reviews[existingIdx] = createdReview; } else { reviews = [createdReview, ...reviews]; }
 
       newReviewText = '';
       isReviewModalOpen = false;
@@ -294,10 +275,7 @@
     }
   }
 
-  function openReviewComments(review: Review) {
-    selectedReviewForComments = review;
-    isReviewCommentsModalOpen = true;
-  }
+  function openReviewComments(review: Review) { selectedReviewForComments = review; isReviewCommentsModalOpen = true; }
 
   async function handleToggleReviewCardLike(review: Review) {
     if (!$currentUser) {
@@ -315,11 +293,7 @@
 
     reviews = reviews.map(r => {
       if (r.id === review.id) {
-        return {
-          ...r,
-          isLiked: !wasLiked,
-          likesCount: wasLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1
-        };
+        return { ...r, isLiked: !wasLiked, likesCount: wasLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1 };
       }
       return r;
     });
@@ -327,25 +301,13 @@
     try {
       const res = await gamesService.toggleReviewLike(game.id, review.id);
       reviews = reviews.map(r => {
-        if (r.id === review.id) {
-          return {
-            ...r,
-            isLiked: res.liked,
-            likesCount: res.likesCount
-          };
-        }
+        if (r.id === review.id) { return { ...r, isLiked: res.liked, likesCount: res.likesCount }; }
         return r;
       });
     } catch {
 
       reviews = reviews.map(r => {
-        if (r.id === review.id) {
-          return {
-            ...r,
-            isLiked: wasLiked,
-            likesCount: currentLikes
-          };
-        }
+        if (r.id === review.id) { return { ...r, isLiked: wasLiked, likesCount: currentLikes }; }
         return r;
       });
     }
@@ -358,9 +320,7 @@
     }
   }
 
-  function openDlc(dlc: Game) {
-    router.navigateToGame(dlc);
-  }
+  function openDlc(dlc: Game) { router.navigateToGame(dlc); }
 
   function formatReviewDate(dateStr?: string): string {
     if (!dateStr) return 'Нещодавно';

@@ -33,11 +33,7 @@
   let filterType = $state<'all' | 'free' | 'paid' | 'discounted'>('all');
   let isFilterBarOpen = $state(false);
 
-  $effect(() => {
-    if (game?.id) {
-      loadDlcs(game.id);
-    }
-  });
+  $effect(() => { if (game?.id) { loadDlcs(game.id); } });
 
   async function loadDlcs(gameId: string) {
     isLoading = true;
@@ -92,9 +88,7 @@
     return result;
   });
 
-  function openDlcDetails(dlc: Game) {
-    router.navigateToGame(dlc);
-  }
+  function openDlcDetails(dlc: Game) { router.navigateToGame(dlc); }
 
   async function handleAddToCart(dlc: Game, e: MouseEvent) {
     e.stopPropagation();
@@ -107,9 +101,7 @@
   }
 
   const paidDlcs = $derived(dlcs.filter((d) => Number(d.priceInNanoTons) > 0));
-  const totalDlcsPrice = $derived(
-    paidDlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0)
-  );
+  const totalDlcsPrice = $derived( paidDlcs.reduce((acc, d) => acc + (Number(d.priceInNanoTons) || 0), 0) );
   const bundleDiscountedPrice = $derived(Math.round(totalDlcsPrice * 0.8));
   const bundleSavings = $derived(totalDlcsPrice - bundleDiscountedPrice);
 
@@ -119,11 +111,7 @@
     if (dlcs.length === 0) return;
     isAddingAll = true;
     try {
-      await cartStore.addMultipleToCart(
-        dlcs,
-        false,
-        `Усі ${dlcs.length} DLC додано до кошика зі знижкою 20%!`
-      );
+      await cartStore.addMultipleToCart( dlcs, false, `Усі ${dlcs.length} DLC додано до кошика зі знижкою 20%!` );
     } finally {
       isAddingAll = false;
     }

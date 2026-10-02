@@ -34,10 +34,7 @@ function createFriendsStore() {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
         const [friendsList, incomingList, outgoingList, blockedList] = await Promise.all([
-          friendsService.getFriends().catch((err) => {
-            console.warn('Failed to load friends list:', err);
-            return [];
-          }),
+          friendsService.getFriends().catch((err) => { console.warn('Failed to load friends list:', err); return []; }),
           friendsService.getFriendRequests('incoming').catch((err) => {
             console.warn('Failed to load friend requests:', err);
             return [];
@@ -46,10 +43,7 @@ function createFriendsStore() {
             console.warn('Failed to load outgoing friend requests:', err);
             return [];
           }),
-          friendsService.getBlocked().catch((err) => {
-            console.warn('Failed to load blocked list:', err);
-            return [];
-          })
+          friendsService.getBlocked().catch((err) => { console.warn('Failed to load blocked list:', err); return []; })
         ]);
 
         const uniqueFriendsList = Array.from(new Map(friendsList.map((f) => [f.id, f])).values());
@@ -128,10 +122,7 @@ function createFriendsStore() {
     acceptRequest: async (requestId: string, username?: string) => {
       try {
         const res = await friendsService.acceptFriendRequest(requestId);
-        update((s) => ({
-          ...s,
-          requests: s.requests.filter((r) => r.id !== requestId)
-        }));
+        update((s) => ({ ...s, requests: s.requests.filter((r) => r.id !== requestId) }));
 
         const freshFriends = await friendsService.getFriends();
         update((s) => ({ ...s, friends: freshFriends }));
@@ -143,11 +134,7 @@ function createFriendsStore() {
         });
         return true;
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err.message || 'Не вдалося прийняти запит',
-          type: 'error'
-        });
+        uiStore.addToast({ title: 'Помилка', message: err.message || 'Не вдалося прийняти запит', type: 'error' });
         return false;
       }
     },
@@ -155,10 +142,7 @@ function createFriendsStore() {
     rejectRequest: async (requestId: string, username?: string) => {
       try {
         const res = await friendsService.rejectFriendRequest(requestId);
-        update((s) => ({
-          ...s,
-          requests: s.requests.filter((r) => r.id !== requestId)
-        }));
+        update((s) => ({ ...s, requests: s.requests.filter((r) => r.id !== requestId) }));
 
         uiStore.addToast({
           title: 'Запит відхилено',
@@ -167,11 +151,7 @@ function createFriendsStore() {
         });
         return true;
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err.message || 'Не вдалося відхилити запит',
-          type: 'error'
-        });
+        uiStore.addToast({ title: 'Помилка', message: err.message || 'Не вдалося відхилити запит', type: 'error' });
         return false;
       }
     },
@@ -192,11 +172,7 @@ function createFriendsStore() {
         });
         return true;
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err.message || 'Не вдалося скасувати запит',
-          type: 'error'
-        });
+        uiStore.addToast({ title: 'Помилка', message: err.message || 'Не вдалося скасувати запит', type: 'error' });
         return false;
       }
     },
@@ -204,10 +180,7 @@ function createFriendsStore() {
     removeFriend: async (friendId: string, username?: string) => {
       try {
         const res = await friendsService.removeFriend(friendId);
-        update((s) => ({
-          ...s,
-          friends: s.friends.filter((f) => f.id !== friendId)
-        }));
+        update((s) => ({ ...s, friends: s.friends.filter((f) => f.id !== friendId) }));
 
         uiStore.addToast({
           title: 'Видалено з друзів',
@@ -216,11 +189,7 @@ function createFriendsStore() {
         });
         return true;
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err.message || 'Не вдалося видалити з друзів',
-          type: 'error'
-        });
+        uiStore.addToast({ title: 'Помилка', message: err.message || 'Не вдалося видалити з друзів', type: 'error' });
         return false;
       }
     },
@@ -270,10 +239,7 @@ function createFriendsStore() {
             };
           }
 
-          return {
-            ...s,
-            blocked: newBlocked
-          };
+          return { ...s, blocked: newBlocked };
         });
 
         const freshFriends = await friendsService.getFriends().catch(() => null);

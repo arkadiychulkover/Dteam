@@ -69,11 +69,7 @@
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('uk-UA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      return date.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch {
       return dateStr;
     }
@@ -81,9 +77,7 @@
 
   function formatCount(num?: number): string {
     if (!num) return '0';
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    }
+    if (num >= 1000) { return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k'; }
     return num.toString();
   }
 
@@ -128,11 +122,7 @@
 
       rootReviewIsLiked = !rootReviewIsLiked;
       rootReviewLikes += rootReviewIsLiked ? 1 : -1;
-      uiStore.addToast({
-        title: 'Помилка',
-        message: e?.message || 'Не вдалося оновити вподобайку.',
-        type: 'error'
-      });
+      uiStore.addToast({ title: 'Помилка', message: e?.message || 'Не вдалося оновити вподобайку.', type: 'error' });
     }
   }
 
@@ -152,11 +142,7 @@
 
     comments = comments.map(c => {
       if (c.id === comment.id) {
-        return {
-          ...c,
-          isLiked: !wasLiked,
-          likesCount: wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1
-        };
+        return { ...c, isLiked: !wasLiked, likesCount: wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1 };
       }
       return c;
     });
@@ -164,32 +150,16 @@
     try {
       const res = await gamesService.toggleReviewLike(gameId, comment.id);
       comments = comments.map(c => {
-        if (c.id === comment.id) {
-          return {
-            ...c,
-            isLiked: res.liked,
-            likesCount: res.likesCount
-          };
-        }
+        if (c.id === comment.id) { return { ...c, isLiked: res.liked, likesCount: res.likesCount }; }
         return c;
       });
     } catch (e: any) {
 
       comments = comments.map(c => {
-        if (c.id === comment.id) {
-          return {
-            ...c,
-            isLiked: wasLiked,
-            likesCount: currentCount
-          };
-        }
+        if (c.id === comment.id) { return { ...c, isLiked: wasLiked, likesCount: currentCount }; }
         return c;
       });
-      uiStore.addToast({
-        title: 'Помилка',
-        message: e?.message || 'Не вдалося оновити вподобайку.',
-        type: 'error'
-      });
+      uiStore.addToast({ title: 'Помилка', message: e?.message || 'Не вдалося оновити вподобайку.', type: 'error' });
     }
   }
 
@@ -225,17 +195,9 @@
         });
       }
 
-      uiStore.addToast({
-        title: 'Коментар опубліковано',
-        message: 'Ваш коментар успішно додано.',
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Коментар опубліковано', message: 'Ваш коментар успішно додано.', type: 'success' });
     } catch (e: any) {
-      uiStore.addToast({
-        title: 'Помилка',
-        message: e?.message || 'Не вдалося опублікувати коментар.',
-        type: 'error'
-      });
+      uiStore.addToast({ title: 'Помилка', message: e?.message || 'Не вдалося опублікувати коментар.', type: 'error' });
     } finally {
       isSubmitting = false;
     }

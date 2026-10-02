@@ -20,10 +20,7 @@ export function resolveMediaUrl(url: string): string {
   return BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
 }
 
-export interface RenderDecoratedOptions {
-  preserveNewlines?: boolean;
-  allowImages?: boolean;
-}
+export interface RenderDecoratedOptions { preserveNewlines?: boolean; allowImages?: boolean; }
 
 export function renderDecoratedText(raw?: string | null, options: RenderDecoratedOptions = {}): string {
   if (!raw) return '';
@@ -56,9 +53,7 @@ export function renderDecoratedText(raw?: string | null, options: RenderDecorate
     });
   }
 
-  if (preserveNewlines) {
-    safe = safe.replace(/\n/g, '<br />');
-  }
+  if (preserveNewlines) { safe = safe.replace(/\n/g, '<br />'); }
 
   return safe;
 }

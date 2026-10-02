@@ -4,17 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice } from '../../utils/formatters';
   import type { WishlistItem } from '../../types';
-  import {
-    X,
-    Heart,
-    Trash2,
-    ShoppingCart,
-    Search,
-    ArrowUpDown,
-    Sparkles,
-    Gamepad2,
-    ExternalLink
-  } from 'lucide-svelte';
+  import { X, Heart, Trash2, ShoppingCart, Search, ArrowUpDown, Sparkles, Gamepad2, ExternalLink } from 'lucide-svelte';
   import BackendImage from '../ui/BackendImage.svelte';
 
   let search = $state('');
@@ -48,10 +38,7 @@
     });
   }
 
-  function handleOpenGameDetails(item: WishlistItem) {
-    wishlistStore.closeModal();
-    gamesStore.selectGame(item.game);
-  }
+  function handleOpenGameDetails(item: WishlistItem) { wishlistStore.closeModal(); gamesStore.selectGame(item.game); }
 </script>
 
 {#if $wishlistStore.isModalOpen}
@@ -179,10 +166,7 @@
 
                 <button
                   type="button"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    wishlistStore.toggleWishlist(item.game);
-                  }}
+                  onclick={(e) => { e.stopPropagation(); wishlistStore.toggleWishlist(item.game); }}
                   class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition-all cursor-pointer"
                   title="Видалити зі списку бажань"
                 >
@@ -205,10 +189,7 @@
               Натискайте на іконку серця ♥ біля будь-якої гри, щоб зберегти її тут і стежити за знижками.
             </p>
             <button
-              onclick={() => {
-                wishlistStore.closeModal();
-                uiStore.setTab('catalog');
-              }}
+              onclick={() => { wishlistStore.closeModal(); uiStore.setTab('catalog'); }}
               class="mt-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
               <Gamepad2 class="w-4 h-4" />

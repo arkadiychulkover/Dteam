@@ -31,10 +31,7 @@
 
   let isCheckingOut = $state(false);
 
-  function openGame(game: Game) {
-    gamesStore.selectGame(game);
-    uiStore.setTab('game');
-  }
+  function openGame(game: Game) { gamesStore.selectGame(game); uiStore.setTab('game'); }
 
   async function handleCheckout() {
     if (!$currentUser) {

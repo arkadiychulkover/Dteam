@@ -1,10 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    communityService,
-    type CommunityPost,
-    type CommunityComment,
-  } from "../../services/communityService";
+  import { communityService, type CommunityPost, type CommunityComment, } from "../../services/communityService";
   import { currentUser } from "../../stores/authStore";
   import { uiStore } from "../../stores/uiStore";
   import { profileStore } from "../../stores/profileStore";
@@ -48,9 +44,7 @@
   let activeModalVideoPost = $state<CommunityPost | null>(null);
 
   let posts = $state<CommunityPost[]>([]);
-  let otherPosts = $derived(
-    posts.filter((p) => p.id !== selectedPostId).slice(0, 5),
-  );
+  let otherPosts = $derived( posts.filter((p) => p.id !== selectedPostId).slice(0, 5), );
 
   let gameTitle = $state("");
   let subscribersCount = $state(0);
@@ -80,9 +74,7 @@
   let activeReplyCommentId = $state<string | null>(null);
 
   let targetGameId = $state(gameId || "");
-  let newPostCategory = $state<"forum" | "screenshots" | "videos" | "guides">(
-    "forum",
-  );
+  let newPostCategory = $state<"forum" | "screenshots" | "videos" | "guides">( "forum", );
   let newPostTitle = $state("");
   let newPostContent = $state("");
   let newPostMediaType = $state<"image" | "video" | "upload" | "none">("none");
@@ -94,23 +86,14 @@
   let hubUploadedType = $state<"image" | "video" | "none">("none");
   let hubFileInput = $state<HTMLInputElement>();
 
-  $effect(() => {
-    if (gameId) targetGameId = gameId;
-  });
+  $effect(() => { if (gameId) targetGameId = gameId; });
 
-  onMount(() => {
-    gamesStore.loadGames();
-  });
+  onMount(() => { gamesStore.loadGames(); });
 
   async function loadPosts() {
     isLoading = true;
     try {
-      const res = await communityService.getPosts(
-        gameId,
-        activeCategory,
-        searchQuery,
-        sortBy,
-      );
+      const res = await communityService.getPosts( gameId, activeCategory, searchQuery, sortBy, );
       posts = res.posts;
       gameTitle = res.gameTitle;
       subscribersCount = res.subscribersCount;
@@ -139,22 +122,12 @@
     const _cat = activeCategory;
     const _sort = sortBy;
     const _search = searchQuery;
-    if (!selectedPostId) {
-      loadPosts();
-    }
+    if (!selectedPostId) { loadPosts(); }
   });
 
-  function handleSelectPost(postId: string) {
-    selectedPostId = postId;
-    loadPostDetails(postId);
-  }
+  function handleSelectPost(postId: string) { selectedPostId = postId; loadPostDetails(postId); }
 
-  function handleBackToList() {
-    selectedPostId = null;
-    selectedPost = null;
-    comments = [];
-    loadPosts();
-  }
+  function handleBackToList() { selectedPostId = null; selectedPost = null; comments = []; loadPosts(); }
 
   async function handleToggleLikePost(postId: string, isDetail = false) {
     if (!$currentUser) {
@@ -172,24 +145,13 @@
 
       posts = posts.map((p) =>
         p.id === postId
-          ? {
-              ...p,
-              stats: {
-                ...p.stats,
-                likesCount: res.likesCount,
-                isLiked: res.liked,
-              },
-            }
+          ? { ...p, stats: { ...p.stats, likesCount: res.likesCount, isLiked: res.liked, }, }
           : p,
       );
       if (isDetail && selectedPost && selectedPost.id === postId) {
         selectedPost = {
           ...selectedPost,
-          stats: {
-            ...selectedPost.stats,
-            likesCount: res.likesCount,
-            isLiked: res.liked,
-          },
+          stats: { ...selectedPost.stats, likesCount: res.likesCount, isLiked: res.liked, },
         };
       }
     } catch (e) {
@@ -222,11 +184,7 @@
       ["mp4", "webm", "mov", "m4v"].includes(ext);
 
     if (!isImage && !isVideo) {
-      uiStore.addToast({
-        title: "Невірний формат",
-        message: "Оберіть файл зображення або відео.",
-        type: "error",
-      });
+      uiStore.addToast({ title: "Невірний формат", message: "Оберіть файл зображення або відео.", type: "error", });
       input.value = "";
       return;
     }
@@ -239,11 +197,7 @@
       const res = await communityService.uploadMedia(file);
       newPostMediaUrl = res.url;
       hubUploadedType = res.type;
-      uiStore.addToast({
-        title: "Файл завантажено",
-        message: "Медіафайл успішно прикріплено.",
-        type: "success",
-      });
+      uiStore.addToast({ title: "Файл завантажено", message: "Медіафайл успішно прикріплено.", type: "success", });
     } catch (err: any) {
       uiStore.addToast({
         title: "Помилка завантаження",
@@ -261,19 +215,11 @@
   async function handleCreatePostSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!newPostTitle.trim() && newPostCategory !== "screenshots") {
-      uiStore.addToast({
-        title: "Помилка",
-        message: "Заголовок обов’язковий для цієї категорії.",
-        type: "warning",
-      });
+      uiStore.addToast({ title: "Помилка", message: "Заголовок обов’язковий для цієї категорії.", type: "warning", });
       return;
     }
     if (!newPostContent.trim()) {
-      uiStore.addToast({
-        title: "Помилка",
-        message: "Вміст публікації не може бути порожнім.",
-        type: "warning",
-      });
+      uiStore.addToast({ title: "Помилка", message: "Вміст публікації не може бути порожнім.", type: "warning", });
       return;
     }
 
@@ -328,30 +274,12 @@
     if (!newCommentText.trim() || !selectedPostId) return;
 
     try {
-      const newComment = await communityService.addComment(
-        selectedPostId,
-        newCommentText.trim(),
-      );
-      comments = [
-        {
-          ...newComment,
-          createdAt: "Щойно",
-          replies: [],
-        },
-        ...comments,
-      ];
+      const newComment = await communityService.addComment( selectedPostId, newCommentText.trim(), );
+      comments = [ { ...newComment, createdAt: "Щойно", replies: [], }, ...comments, ];
       newCommentText = "";
-      uiStore.addToast({
-        title: "Коментар додано",
-        message: "Ваш коментар успішно опубліковано.",
-        type: "success",
-      });
+      uiStore.addToast({ title: "Коментар додано", message: "Ваш коментар успішно опубліковано.", type: "success", });
     } catch (e: any) {
-      uiStore.addToast({
-        title: "Помилка",
-        message: e?.message || "Не вдалося надіслати коментар.",
-        type: "error",
-      });
+      uiStore.addToast({ title: "Помилка", message: e?.message || "Не вдалося надіслати коментар.", type: "error", });
     }
   }
 
@@ -376,12 +304,7 @@
             ...c,
             replies: [
               ...c.replies,
-              {
-                id: newReply.id,
-                author: newReply.author,
-                createdAt: "Щойно",
-                content: text.trim(),
-              },
+              { id: newReply.id, author: newReply.author, createdAt: "Щойно", content: text.trim(), },
             ],
           };
         }
@@ -390,11 +313,7 @@
       replyText[commentId] = "";
       activeReplyCommentId = null;
     } catch (e: any) {
-      uiStore.addToast({
-        title: "Помилка",
-        message: e?.message || "Не вдалося надіслати відповідь.",
-        type: "error",
-      });
+      uiStore.addToast({ title: "Помилка", message: e?.message || "Не вдалося надіслати відповідь.", type: "error", });
     }
   }
 
@@ -417,9 +336,7 @@
 
   const sortedComments = $derived.by(() => {
     const list = [...comments];
-    if (commentSortBy === "oldest") {
-      return list.reverse();
-    }
+    if (commentSortBy === "oldest") { return list.reverse(); }
     return list;
   });
 </script>
@@ -508,10 +425,7 @@
               <div class="flex items-center justify-between">
                 <button
                   type="button"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    profileStore.viewProfile(post.author.id);
-                  }}
+                  onclick={(e) => { e.stopPropagation(); profileStore.viewProfile(post.author.id); }}
                   class="flex items-center gap-3 cursor-pointer text-left"
                 >
                   <BackendImage
@@ -620,15 +534,9 @@
                     <div
                       role="button"
                       tabindex="0"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        activeModalVideoPost = post;
-                      }}
+                      onclick={(e) => { e.stopPropagation(); activeModalVideoPost = post; }}
                       onkeydown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.stopPropagation();
-                          activeModalVideoPost = post;
-                        }
+                        if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); activeModalVideoPost = post; }
                       }}
                       class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 group/vid cursor-pointer hover:border-cyan-400/60 transition-all"
                     >
@@ -658,10 +566,7 @@
                 <div class="flex items-center gap-4">
                   <button
                     type="button"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      handleToggleLikePost(post.id);
-                    }}
+                    onclick={(e) => { e.stopPropagation(); handleToggleLikePost(post.id); }}
                     class="flex items-center gap-1.5 hover:text-cyan-300 transition-colors
                       {post.stats.isLiked ? 'text-cyan-400' : ''}"
                   >
@@ -681,10 +586,7 @@
 
                 <button
                   type="button"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    handleSharePost(post.id);
-                  }}
+                  onclick={(e) => { e.stopPropagation(); handleSharePost(post.id); }}
                   class="flex items-center gap-1.5 hover:text-cyan-300 transition-colors"
                 >
                   <Share2 class="w-3.5 h-3.5" />
@@ -770,10 +672,7 @@
           <nav class="space-y-1.5">
             {#each Object.entries(categoryLabels) as [key, label]}
               <button
-                onclick={() => {
-                  activeCategory = key as any;
-                  loadPosts();
-                }}
+                onclick={() => { activeCategory = key as any; loadPosts(); }}
                 class="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer
                   {activeCategory === key
                   ? 'bg-[#088395] text-white shadow-lg font-black'

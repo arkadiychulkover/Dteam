@@ -5,9 +5,7 @@
   import { userService } from '../../services/userService';
   import { Ban, ShieldAlert, ShieldCheck, LogOut, RefreshCw } from 'lucide-svelte';
 
-  interface Props {
-    onRetry?: () => void;
-  }
+  interface Props { onRetry?: () => void; }
 
   let { onRetry }: Props = $props();
   let isChecking = $state(false);
@@ -24,35 +22,22 @@
         isAdmin = false;
       }
     } catch (e: any) {
-      if (e?.isAdmin || $currentUser?.isAdmin) {
-        isAdmin = true;
-      } else {
-        isAdmin = false;
-      }
+      if (e?.isAdmin || $currentUser?.isAdmin) { isAdmin = true; } else { isAdmin = false; }
     }
   }
 
-  onMount(() => {
-    checkAdminStatus();
-  });
+  onMount(() => { checkAdminStatus(); });
 
   async function handleCheckAgain() {
     isChecking = true;
     await checkAdminStatus();
-    if (onRetry) {
-      await onRetry();
-    }
+    if (onRetry) { await onRetry(); }
     setTimeout(() => (isChecking = false), 1000);
   }
 
-  async function handleLogout() {
-    await authStore.logout();
-    window.location.reload();
-  }
+  async function handleLogout() { await authStore.logout(); window.location.reload(); }
 
-  function handleGoToAdmin() {
-    uiStore.setTab('admin');
-  }
+  function handleGoToAdmin() { uiStore.setTab('admin'); }
 </script>
 
 <div class="min-h-[85vh] flex items-center justify-center p-4">

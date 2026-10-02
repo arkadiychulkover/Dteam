@@ -22,11 +22,7 @@ import { usePresenceStore } from '../store/usePresenceStore';
 import { chatService, BackendFriend } from '../services/chatService';
 import { Ionicons } from '@expo/vector-icons';
 
-interface ChatsScreenProps {
-  onSelectDialog: (dialog: Dialog) => void;
-  navigation?: any;
-  onNavigateLogin?: () => void;
-}
+interface ChatsScreenProps { onSelectDialog: (dialog: Dialog) => void; navigation?: any; onNavigateLogin?: () => void; }
 
 export const ChatsScreen: React.FC<ChatsScreenProps> = ({
   onSelectDialog,
@@ -56,33 +52,22 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadConversations();
-      fetchFriends();
-    } else {
-      setFriends([]);
-    }
+    if (isAuthenticated) { loadConversations(); fetchFriends(); } else { setFriends([]); }
   }, [isAuthenticated, loadConversations, fetchFriends]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([
-      loadConversations(),
-      fetchFriends(),
-    ]);
+    await Promise.all([ loadConversations(), fetchFriends(), ]);
     setIsRefreshing(false);
   };
 
   const handleStartChatWithFriend = (friend: BackendFriend) => {
     setIsNewChatModalOpen(false);
-    // Шукаємо, чи вже є діалог з цим другом
+    
     const existing = conversations.find((c) => c.friendId === friend.id);
-    if (existing) {
-      onSelectDialog(existing);
-      return;
-    }
+    if (existing) { onSelectDialog(existing); return; }
 
-    // Створюємо новий діалог для переходу
+    
     const newDialog: Dialog = {
       id: friend.id,
       friendId: friend.id,
@@ -106,11 +91,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
         title="Потрібна авторизація"
         description="Увійдіть у ваш акаунт DTEAM, щоб переглядати листування та спілкуватися з друзями."
         onLogin={() => {
-          if (onNavigateLogin) {
-            onNavigateLogin();
-          } else if (navigation?.navigate) {
-            navigation.navigate('Login');
-          }
+          if (onNavigateLogin) { onNavigateLogin(); } else if (navigation?.navigate) { navigation.navigate('Login'); }
         }}
       />
     );
@@ -123,12 +104,8 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
 
     if (!matchesSearch) return false;
 
-    if (filter === 'online') {
-      return isOnline(d.friendId) || d.friendStatus === 1 || d.friendStatus === 2;
-    }
-    if (filter === 'unread') {
-      return d.unreadCount > 0;
-    }
+    if (filter === 'online') { return isOnline(d.friendId) || d.friendStatus === 1 || d.friendStatus === 2; }
+    if (filter === 'unread') { return d.unreadCount > 0; }
     return true;
   });
 
@@ -208,9 +185,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
         <FlatList
           data={filteredDialogs}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <DialogItem dialog={item} onPress={() => onSelectDialog(item)} />
-          )}
+          renderItem={({ item }) => ( <DialogItem dialog={item} onPress={() => onSelectDialog(item)} /> )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -255,12 +230,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
                         <Text
                           style={[
                             styles.quickFriendStatus,
-                            {
-                              color:
-                                isOnline(f.id) || f.status === 1
-                                  ? colors.accentEmerald
-                                  : colors.textDim,
-                            },
+                            { color: isOnline(f.id) || f.status === 1 ? colors.accentEmerald : colors.textDim, },
                           ]}
                         >
                           {isOnline(f.id) || f.status === 1
@@ -283,7 +253,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
         />
       )}
 
-      {/* Модальне вікно вибору друга для нового чату */}
+      {}
       <Modal
         visible={isNewChatModalOpen}
         animationType="slide"
@@ -330,11 +300,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
                         <View
                           style={[
                             styles.friendModalStatusDot,
-                            {
-                              backgroundColor: friendOnline
-                                ? colors.accentEmerald
-                                : colors.offline,
-                            },
+                            { backgroundColor: friendOnline ? colors.accentEmerald : colors.offline, },
                           ]}
                         />
                       </View>
@@ -344,11 +310,7 @@ export const ChatsScreen: React.FC<ChatsScreenProps> = ({
                           <Text
                             style={[
                               styles.friendModalStatusText,
-                              {
-                                color: friendOnline
-                                  ? colors.accentEmerald
-                                  : colors.textDim,
-                              },
+                              { color: friendOnline ? colors.accentEmerald : colors.textDim, },
                             ]}
                           >
                             {friendOnline ? 'У мережі' : 'Не в мережі'}
@@ -378,23 +340,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.text,
-    letterSpacing: 0.3,
-  },
-  screenSubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, },
+  screenTitle: { fontSize: 22, fontWeight: '900', color: colors.text, letterSpacing: 0.3, },
+  screenSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2, },
   newChatBtn: {
     width: 40,
     height: 40,
@@ -414,19 +362,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 14,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 13,
-  },
-  filtersRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
+  searchIcon: { marginRight: 8, },
+  searchInput: { flex: 1, color: colors.text, fontSize: 13, },
+  filtersRow: { flexDirection: 'row', gap: 8, marginBottom: 14, },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -438,43 +376,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  filterChipActive: {
-    backgroundColor: 'rgba(34, 211, 238, 0.15)',
-    borderColor: colors.primary,
-  },
-  filterDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  filterTextActive: {
-    color: colors.primary,
-    fontWeight: '800',
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  centerBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 10,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-  },
+  filterChipActive: { backgroundColor: 'rgba(34, 211, 238, 0.15)', borderColor: colors.primary, },
+  filterDot: { width: 6, height: 6, borderRadius: 3, },
+  filterText: { fontSize: 12, fontWeight: '600', color: colors.textMuted, },
+  filterTextActive: { color: colors.primary, fontWeight: '800', },
+  listContent: { paddingBottom: 20, },
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, },
+  loadingText: { color: colors.textMuted, fontSize: 13, marginTop: 10, },
+  emptyContainer: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 16, },
   emptyIconCircle: {
     width: 64,
     height: 64,
@@ -484,19 +393,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 20,
-  },
+  emptyTitle: { fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 6, },
+  emptySubtitle: { fontSize: 12, color: colors.textMuted, textAlign: 'center', lineHeight: 18, marginBottom: 20, },
   quickFriendsSection: {
     width: '100%',
     backgroundColor: colors.surfaceCard,
@@ -506,12 +404,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginTop: 8,
   },
-  quickFriendsHeader: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
+  quickFriendsHeader: { fontSize: 13, fontWeight: '800', color: colors.textSecondary, marginBottom: 12, },
   quickFriendRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -520,24 +413,10 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 12,
   },
-  quickFriendAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  quickFriendInfo: {
-    flex: 1,
-  },
-  quickFriendName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  quickFriendStatus: {
-    fontSize: 11,
-    color: colors.textDim,
-    marginTop: 2,
-  },
+  quickFriendAvatar: { width: 40, height: 40, borderRadius: 20, },
+  quickFriendInfo: { flex: 1, },
+  quickFriendName: { fontSize: 14, fontWeight: '700', color: colors.text, },
+  quickFriendStatus: { fontSize: 11, color: colors.textDim, marginTop: 2, },
   quickWriteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -547,16 +426,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  quickWriteText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#021118',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(2, 17, 24, 0.8)',
-    justifyContent: 'flex-end',
-  },
+  quickWriteText: { fontSize: 12, fontWeight: '800', color: '#021118', },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(2, 17, 24, 0.8)', justifyContent: 'flex-end', },
   modalContent: {
     backgroundColor: colors.surfaceCard,
     borderTopLeftRadius: 24,
@@ -566,31 +437,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: colors.text,
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: 16,
-  },
-  noFriendsBox: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    gap: 8,
-  },
-  noFriendsText: {
-    fontSize: 13,
-    color: colors.textDim,
-  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, },
+  modalTitle: { fontSize: 18, fontWeight: '900', color: colors.text, },
+  modalSubtitle: { fontSize: 12, color: colors.textMuted, marginBottom: 16, },
+  noFriendsBox: { alignItems: 'center', paddingVertical: 32, gap: 8, },
+  noFriendsText: { fontSize: 13, color: colors.textDim, },
   friendModalItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -599,14 +450,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 12,
   },
-  friendModalAvatarWrap: {
-    position: 'relative',
-  },
-  friendModalAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
+  friendModalAvatarWrap: { position: 'relative', },
+  friendModalAvatar: { width: 44, height: 44, borderRadius: 22, },
   friendModalStatusDot: {
     position: 'absolute',
     bottom: 0,
@@ -617,26 +462,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#08121f',
   },
-  friendModalInfo: {
-    flex: 1,
-  },
-  friendModalNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  friendModalStatusText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  friendModalUsername: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  friendModalBio: {
-    fontSize: 12,
-    color: colors.textDim,
-    marginTop: 2,
-  },
+  friendModalInfo: { flex: 1, },
+  friendModalNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
+  friendModalStatusText: { fontSize: 11, fontWeight: '700', },
+  friendModalUsername: { fontSize: 14, fontWeight: '800', color: colors.text, },
+  friendModalBio: { fontSize: 12, color: colors.textDim, marginTop: 2, },
 });

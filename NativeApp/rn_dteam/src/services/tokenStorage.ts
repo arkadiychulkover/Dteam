@@ -24,13 +24,9 @@ class TokenStorage {
     }
   }
 
-  public getSyncToken(): string | null {
-    return this.cachedAccessToken;
-  }
+  public getSyncToken(): string | null { return this.cachedAccessToken; }
 
-  public getSyncRefreshToken(): string | null {
-    return this.cachedRefreshToken;
-  }
+  public getSyncRefreshToken(): string | null { return this.cachedRefreshToken; }
 
   public async getToken(): Promise<string | null> {
     if (this.cachedAccessToken) return this.cachedAccessToken;
@@ -84,20 +80,14 @@ class TokenStorage {
   }
 
   public async setTokens(accessToken: string | null, refreshToken: string | null): Promise<void> {
-    await Promise.all([
-      this.setToken(accessToken),
-      this.setRefreshToken(refreshToken),
-    ]);
+    await Promise.all([ this.setToken(accessToken), this.setRefreshToken(refreshToken), ]);
   }
 
   public async clearTokens(): Promise<void> {
     this.cachedAccessToken = null;
     this.cachedRefreshToken = null;
     try {
-      await Promise.all([
-        AsyncStorage.removeItem(ACCESS_TOKEN_KEY),
-        AsyncStorage.removeItem(REFRESH_TOKEN_KEY),
-      ]);
+      await Promise.all([ AsyncStorage.removeItem(ACCESS_TOKEN_KEY), AsyncStorage.removeItem(REFRESH_TOKEN_KEY), ]);
       this.notifyListeners(null);
     } catch (e) {
       console.warn('[TokenStorage] Error clearing tokens:', e);
@@ -111,11 +101,7 @@ class TokenStorage {
 
   private notifyListeners(token: string | null) {
     this.listeners.forEach((listener) => {
-      try {
-        listener(token);
-      } catch (e) {
-        console.warn('[TokenStorage] Listener error:', e);
-      }
+      try { listener(token); } catch (e) { console.warn('[TokenStorage] Listener error:', e); }
     });
   }
 
@@ -128,9 +114,7 @@ class TokenStorage {
       if (parts.length !== 3) return false;
 
       let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) {
-        base64 += '=';
-      }
+      while (base64.length % 4) { base64 += '='; }
 
       const jsonPayload = decodeURIComponent(
         Array.prototype.map

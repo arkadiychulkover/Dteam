@@ -52,12 +52,7 @@ export interface ChatMediaItem {
   createdAt: string;
 }
 
-export interface ChatMonthGroup {
-  monthLabel: string;
-  year: number;
-  month: number;
-  items: ChatMediaItem[];
-}
+export interface ChatMonthGroup { monthLabel: string; year: number; month: number; items: ChatMediaItem[]; }
 
 export interface ChatMediaSummary {
   totalPhotos: number;

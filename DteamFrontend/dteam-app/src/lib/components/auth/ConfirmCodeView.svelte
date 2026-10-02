@@ -10,23 +10,15 @@
   let resendCountdown = $state(60);
   let timer: any = null;
 
-  onMount(() => {
-    startCountdown();
-  });
+  onMount(() => { startCountdown(); });
 
-  onDestroy(() => {
-    if (timer) clearInterval(timer);
-  });
+  onDestroy(() => { if (timer) clearInterval(timer); });
 
   function startCountdown() {
     resendCountdown = 60;
     if (timer) clearInterval(timer);
     timer = setInterval(() => {
-      if (resendCountdown > 0) {
-        resendCountdown -= 1;
-      } else {
-        clearInterval(timer);
-      }
+      if (resendCountdown > 0) { resendCountdown -= 1; } else { clearInterval(timer); }
     }, 1000);
   }
 
@@ -37,15 +29,10 @@
     unsub();
 
     if (!currentEmail && typeof window !== 'undefined' && window.sessionStorage) {
-      try {
-        currentEmail = sessionStorage.getItem('dteam_reset_email') || '';
-      } catch {}
+      try { currentEmail = sessionStorage.getItem('dteam_reset_email') || ''; } catch {}
     }
 
-    if (!currentEmail) {
-      uiStore.setTab('forgot-password');
-      return;
-    }
+    if (!currentEmail) { uiStore.setTab('forgot-password'); return; }
 
     try {
       const res = await authStore.requestPasswordReset(currentEmail);
@@ -64,21 +51,14 @@
     e.preventDefault();
     const trimmedCode = resetCode.trim();
 
-    if (!trimmedCode) {
-      errorMessage = 'Введіть код підтвердження (GUID)';
-      return;
-    }
+    if (!trimmedCode) { errorMessage = 'Введіть код підтвердження (GUID)'; return; }
 
     errorMessage = '';
     isSubmitting = true;
 
     try {
       await authStore.verifyResetCode(trimmedCode);
-      uiStore.addToast({
-        title: 'Код підтверджено',
-        message: 'Тепер встановіть новий пароль.',
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Код підтверджено', message: 'Тепер встановіть новий пароль.', type: 'success' });
       uiStore.setTab('reset-password');
     } catch (err: any) {
       errorMessage = err.message || 'Невірний або застарілий код підтвердження.';

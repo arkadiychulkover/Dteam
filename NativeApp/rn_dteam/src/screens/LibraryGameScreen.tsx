@@ -64,21 +64,13 @@ export const LibraryGameScreen: React.FC<LibraryGameScreenProps> = (props) => {
         if (fetchedReviews) setReviews(fetchedReviews);
         if (fetchedDlcs) setDlcs(fetchedDlcs);
       })
-      .finally(() => {
-        if (isMounted) setIsLoadingDetails(false);
-      });
+      .finally(() => { if (isMounted) setIsLoadingDetails(false); });
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [initialGame.id]);
 
   const handleBack = () => {
-    if (props.navigation?.canGoBack?.()) {
-      props.navigation.goBack();
-    } else if (props.onBack) {
-      props.onBack();
-    }
+    if (props.navigation?.canGoBack?.()) { props.navigation.goBack(); } else if (props.onBack) { props.onBack(); }
   };
 
   const handleToggleFavorite = async () => {
@@ -334,15 +326,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  loaderCenter: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: theme.colors.textMuted,
-  },
+  loaderCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', },
+  emptyText: { fontSize: 14, color: theme.colors.textMuted, },
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,16 +338,8 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.borderSubtle,
     backgroundColor: theme.colors.surface,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
+  backButton: { flexDirection: 'row', alignItems: 'center', gap: 4, },
+  backButtonText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, },
   navTitle: {
     fontSize: 15,
     fontWeight: '800',
@@ -371,33 +348,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 8,
   },
-  favHeaderBtn: {
-    padding: 4,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  heroWrapper: {
-    height: 200,
-    position: 'relative',
-    justifyContent: 'flex-end',
-  },
-  heroImage: {
-    ...StyleSheet.absoluteFill,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(3, 13, 18, 0.65)',
-  },
-  heroContent: {
-    padding: 16,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
+  favHeaderBtn: { padding: 4, },
+  scrollContent: { paddingBottom: 40, },
+  heroWrapper: { height: 200, position: 'relative', justifyContent: 'flex-end', },
+  heroImage: { ...StyleSheet.absoluteFill, },
+  heroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(3, 13, 18, 0.65)', },
+  heroContent: { padding: 16, },
+  heroTitle: { fontSize: 22, fontWeight: '900', color: theme.colors.text, marginBottom: 6, },
   playTimeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -408,11 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
-  playTimeText: {
-    fontSize: 11,
-    color: theme.colors.primary,
-    fontWeight: '700',
-  },
+  playTimeText: { fontSize: 11, color: theme.colors.primary, fontWeight: '700', },
   actionPanel: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -432,26 +385,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: theme.borderRadius.md,
   },
-  disabledBtn: {
-    opacity: 0.6,
-  },
-  downloadButtonText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-  },
-  metaStatBox: {
-    alignItems: 'flex-end',
-  },
-  statLabel: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-  },
-  statValue: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
+  disabledBtn: { opacity: 0.6, },
+  downloadButtonText: { fontSize: 14, fontWeight: '900', color: '#000', },
+  metaStatBox: { alignItems: 'flex-end', },
+  statLabel: { fontSize: 10, color: theme.colors.textDim, },
+  statValue: { fontSize: 13, fontWeight: '800', color: theme.colors.text, },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
@@ -459,31 +397,12 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.borderSubtle,
     paddingHorizontal: 16,
   },
-  tabButton: {
-    paddingVertical: 12,
-    marginRight: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabButtonActive: {
-    borderBottomColor: theme.colors.primary,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.textMuted,
-  },
-  tabTextActive: {
-    color: theme.colors.primary,
-  },
-  sectionContainer: {
-    padding: 16,
-  },
-  metaGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
+  tabButton: { paddingVertical: 12, marginRight: 20, borderBottomWidth: 2, borderBottomColor: 'transparent', },
+  tabButtonActive: { borderBottomColor: theme.colors.primary, },
+  tabText: { fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, },
+  tabTextActive: { color: theme.colors.primary, },
+  sectionContainer: { padding: 16, },
+  metaGrid: { flexDirection: 'row', gap: 12, marginBottom: 16, },
   metaTile: {
     flex: 1,
     backgroundColor: theme.colors.card,
@@ -493,22 +412,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  tileTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginVertical: 2,
-  },
-  tileSub: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-  },
-  genresRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 16,
-  },
+  tileTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.text, marginVertical: 2, },
+  tileSub: { fontSize: 10, color: theme.colors.textDim, },
+  genresRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16, },
   genreChip: {
     backgroundColor: theme.colors.badgeBg,
     paddingHorizontal: 8,
@@ -517,17 +423,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.badgeBorder,
   },
-  genreChipText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.primary,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
+  genreChipText: { fontSize: 11, fontWeight: '700', color: theme.colors.primary, },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: theme.colors.text, marginBottom: 8, },
   shortDescBox: {
     backgroundColor: theme.colors.card,
     borderLeftWidth: 3,
@@ -536,17 +433,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 12,
   },
-  shortDescText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  fullDescText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    lineHeight: 20,
-  },
+  shortDescText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, fontStyle: 'italic', },
+  fullDescText: { fontSize: 13, color: theme.colors.textMuted, lineHeight: 20, },
   emptyBox: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
@@ -556,11 +444,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderSubtle,
     marginVertical: 10,
   },
-  emptyBoxText: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 8,
-  },
+  emptyBoxText: { fontSize: 12, color: theme.colors.textMuted, marginTop: 8, },
   dlcCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -572,25 +456,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  dlcImage: {
-    width: 60,
-    height: 40,
-    borderRadius: 6,
-  },
-  dlcInfo: {
-    flex: 1,
-  },
-  dlcTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  dlcPrice: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.primary,
-    marginTop: 2,
-  },
+  dlcImage: { width: 60, height: 40, borderRadius: 6, },
+  dlcInfo: { flex: 1, },
+  dlcTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.text, },
+  dlcPrice: { fontSize: 12, fontWeight: '800', color: theme.colors.primary, marginTop: 2, },
   reviewCard: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
@@ -599,11 +468,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  reviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
+  reviewHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, },
   reviewerAvatar: {
     width: 28,
     height: 28,
@@ -613,23 +478,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
   },
-  avatarChar: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
-  reviewUserMeta: {
-    flex: 1,
-  },
-  reviewerName: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  reviewDate: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-  },
+  avatarChar: { fontSize: 12, fontWeight: '800', color: theme.colors.primary, },
+  reviewUserMeta: { flex: 1, },
+  reviewerName: { fontSize: 12, fontWeight: '800', color: theme.colors.text, },
+  reviewDate: { fontSize: 10, color: theme.colors.textDim, },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -639,14 +491,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  ratingVal: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.star,
-  },
-  reviewContent: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    lineHeight: 18,
-  },
+  ratingVal: { fontSize: 11, fontWeight: '800', color: theme.colors.star, },
+  reviewContent: { fontSize: 12, color: theme.colors.textMuted, lineHeight: 18, },
 });

@@ -57,17 +57,13 @@
 
   const distinctPlayingGames = $derived.by(() => {
     const set = new Set<string>();
-    friends.forEach((f) => {
-      if (f.currentGame) set.add(f.currentGame);
-    });
+    friends.forEach((f) => { if (f.currentGame) set.add(f.currentGame); });
     return Array.from(set);
   });
 
   const filteredFriends = $derived.by(() => {
     let list = activeTab === 'online' ? onlineFriends : friends;
-    if (selectedGameFilter !== 'all') {
-      list = list.filter((f) => f.currentGame === selectedGameFilter);
-    }
+    if (selectedGameFilter !== 'all') { list = list.filter((f) => f.currentGame === selectedGameFilter); }
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter(f =>
@@ -96,9 +92,7 @@
     return outgoingRequests.filter(r => r.receiverUsername.toLowerCase().includes(q));
   });
 
-  onMount(() => {
-    friendsStore.loadAll();
-  });
+  onMount(() => { friendsStore.loadAll(); });
 
   function getStatusDotColor(status: UserStatus): string {
     if (status === UserStatus.Online) return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]';
@@ -118,9 +112,7 @@
     activeMenuFriendId = activeMenuFriendId === friendId ? null : friendId;
   }
 
-  function closeMenu() {
-    activeMenuFriendId = null;
-  }
+  function closeMenu() { activeMenuFriendId = null; }
 
   async function copyMyId() {
     if (!$currentUser?.id) return;
@@ -354,10 +346,7 @@
           <div class="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onclick={() => {
-                chatStore.selectConversation(friend.id);
-                uiStore.setTab('chat');
-              }}
+              onclick={() => { chatStore.selectConversation(friend.id); uiStore.setTab('chat'); }}
               class="p-2 text-cyan-400 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition-all cursor-pointer shadow-sm"
               title="Написати повідомлення"
             >

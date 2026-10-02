@@ -47,11 +47,7 @@ interface SettingsUiState {
 }
 
 function createSettingsStore() {
-  const serverState = writable<SettingsServerState>({
-    profile: null,
-    preferences: null,
-    walletSummary: null,
-  });
+  const serverState = writable<SettingsServerState>({ profile: null, preferences: null, walletSummary: null, });
 
   const draftState = writable<GeneralDraftState>({
     username: '',
@@ -83,11 +79,7 @@ function createSettingsStore() {
     uiState.update((s) => ({ ...s, isLoading: true, error: null }));
     try {
       const res = await settingsService.getSettings();
-      serverState.set({
-        profile: res.profile,
-        preferences: res.preferences,
-        walletSummary: res.walletSummary,
-      });
+      serverState.set({ profile: res.profile, preferences: res.preferences, walletSummary: res.walletSummary, });
 
       draftState.set({
         username: res.profile.username || '',
@@ -105,28 +97,16 @@ function createSettingsStore() {
     } catch (err: any) {
       const msg = err.message || 'Помилка завантаження налаштувань';
       uiState.update((s) => ({ ...s, isLoading: false, error: msg }));
-      uiStore.addToast({
-        title: 'Помилка',
-        message: msg,
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: msg, type: 'error', });
     }
   }
 
-  function setTab(tab: SettingsTabId) {
-    uiState.update((s) => ({ ...s, activeTab: tab }));
-  }
+  function setTab(tab: SettingsTabId) { uiState.update((s) => ({ ...s, activeTab: tab })); }
 
-  function setSearchQuery(q: string) {
-    uiState.update((s) => ({ ...s, searchQuery: q }));
-  }
+  function setSearchQuery(q: string) { uiState.update((s) => ({ ...s, searchQuery: q })); }
 
   function updateGeneralDraft(partial: Partial<GeneralDraftState>) {
-    draftState.update((s) => ({
-      ...s,
-      ...partial,
-      isDirty: true,
-    }));
+    draftState.update((s) => ({ ...s, ...partial, isDirty: true, }));
   }
 
   function resetGeneralDraft() {
@@ -170,20 +150,12 @@ function createSettingsStore() {
       });
 
       uiState.update((s) => ({ ...s, isSaving: false }));
-      uiStore.addToast({
-        title: 'Успішно',
-        message: 'Налаштування профілю збережено!',
-        type: 'success',
-      });
+      uiStore.addToast({ title: 'Успішно', message: 'Налаштування профілю збережено!', type: 'success', });
       return true;
     } catch (err: any) {
       const msg = err.message || 'Не вдалося зберегти зміни';
       uiState.update((s) => ({ ...s, isSaving: false, error: msg }));
-      uiStore.addToast({
-        title: 'Помилка збереження',
-        message: msg,
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка збереження', message: msg, type: 'error', });
       return false;
     }
   }
@@ -195,11 +167,7 @@ function createSettingsStore() {
       updateGeneralDraft({ avatarUrl: res.avatarUrl });
       authStore.patchUser({ avatarUrl: res.avatarUrl });
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
-      uiStore.addToast({
-        title: 'Аватар оновлено',
-        message: 'Новий аватар успішно збережено.',
-        type: 'success',
-      });
+      uiStore.addToast({ title: 'Аватар оновлено', message: 'Новий аватар успішно збережено.', type: 'success', });
       return res.avatarUrl;
     } catch (err: any) {
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
@@ -219,11 +187,7 @@ function createSettingsStore() {
       updateGeneralDraft({ avatarUrl: '' });
       authStore.patchUser({ avatarUrl: null });
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
-      uiStore.addToast({
-        title: 'Аватар видалено',
-        message: 'Аватар успішно видалено.',
-        type: 'success',
-      });
+      uiStore.addToast({ title: 'Аватар видалено', message: 'Аватар успішно видалено.', type: 'success', });
       return true;
     } catch (err: any) {
       uiState.update((s) => ({ ...s, isUploadingAvatar: false }));
@@ -289,11 +253,7 @@ function createSettingsStore() {
     } catch (err: any) {
       const msg = err.message || 'Помилка зміни паролю';
       uiState.update((s) => ({ ...s, isSaving: false, error: msg }));
-      uiStore.addToast({
-        title: 'Помилка',
-        message: msg,
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: msg, type: 'error', });
       return false;
     }
   }
@@ -333,11 +293,7 @@ function createSettingsStore() {
     } catch (err: any) {
       const msg = err.message || 'Помилка видалення акаунта';
       uiState.update((s) => ({ ...s, isSaving: false, error: msg }));
-      uiStore.addToast({
-        title: 'Помилка',
-        message: msg,
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: msg, type: 'error', });
       return false;
     }
   }

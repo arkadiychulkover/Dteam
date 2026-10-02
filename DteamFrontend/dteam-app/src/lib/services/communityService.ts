@@ -5,46 +5,26 @@ export interface CommunityPost {
   gameId: string;
   gameTitle?: string;
   gameBannerUrl?: string;
-  author: {
-    id: string;
-    username: string;
-    avatarUrl: string;
-  };
+  author: { id: string; username: string; avatarUrl: string; };
   createdAt: string;
   category: 'all' | 'forum' | 'screenshots' | 'videos' | 'guides' | 'news';
   title: string;
   content: string;
-  media: {
-    type: 'image' | 'video' | 'none';
-    url: string;
-    thumbnailUrl?: string;
-  };
-  stats: {
-    likesCount: number;
-    commentsCount: number;
-    isLiked: boolean;
-  };
+  media: { type: 'image' | 'video' | 'none'; url: string; thumbnailUrl?: string; };
+  stats: { likesCount: number; commentsCount: number; isLiked: boolean; };
 }
 
 export interface CommunityComment {
   id: string;
   postId: string;
-  author: {
-    id: string;
-    username: string;
-    avatarUrl: string;
-  };
+  author: { id: string; username: string; avatarUrl: string; };
   createdAt: string;
   content: string;
   likesCount: number;
   isLiked: boolean;
   replies: {
     id: string;
-    author: {
-      id: string;
-      username: string;
-      avatarUrl: string;
-    };
+    author: { id: string; username: string; avatarUrl: string; };
     createdAt: string;
     content: string;
   }[];
@@ -57,10 +37,7 @@ export interface GetPostsResponse {
   posts: CommunityPost[];
 }
 
-export interface GetPostDetailsResponse {
-  post: CommunityPost;
-  comments: CommunityComment[];
-}
+export interface GetPostDetailsResponse { post: CommunityPost; comments: CommunityComment[]; }
 
 export const communityService = {
   getPosts: async (gameId: string | null, category = 'all', search = '', sortBy = 'newest'): Promise<GetPostsResponse> => {

@@ -18,11 +18,7 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
 import { theme } from '../styles/theme';
 
-interface LoginScreenProps {
-  navigation?: any;
-  onSuccessLogin?: () => void;
-  onNavigateForgotPassword?: () => void;
-}
+interface LoginScreenProps { navigation?: any; onSuccessLogin?: () => void; onNavigateForgotPassword?: () => void; }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   navigation,
@@ -37,10 +33,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
-    if (!identifier.trim() || !password) {
-      setErrorMessage('Будь ласка, заповніть усі поля');
-      return;
-    }
+    if (!identifier.trim() || !password) { setErrorMessage('Будь ласка, заповніть усі поля'); return; }
 
     setErrorMessage('');
     setIsSubmitting(true);
@@ -223,25 +216,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderSubtle,
   },
-  topBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  topBackBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
+  topBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, },
+  topBackBtnText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, },
+  keyboardContainer: { flex: 1, },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 16, paddingVertical: 20, },
   cardContainer: {
     backgroundColor: theme.colors.glassBg,
     borderRadius: theme.borderRadius.xl,
@@ -254,10 +232,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
+  header: { alignItems: 'center', marginBottom: 24, },
   logoBadge: {
     width: 56,
     height: 56,
@@ -272,21 +247,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: 0.5,
-  },
-  titleAccent: {
-    color: theme.colors.primary,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 6,
-    textAlign: 'center',
-  },
+  title: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: 0.5, },
+  titleAccent: { color: theme.colors.primary, },
+  subtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: 6, textAlign: 'center', },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -298,33 +261,11 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  errorText: {
-    fontSize: 12,
-    color: theme.colors.error,
-    fontWeight: '600',
-    flex: 1,
-  },
-  formGroup: {
-    marginBottom: 16,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.8,
-  },
-  forgotText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    marginBottom: 8,
-  },
+  errorText: { fontSize: 12, color: theme.colors.error, fontWeight: '600', flex: 1, },
+  formGroup: { marginBottom: 16, },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', },
+  label: { fontSize: 11, fontWeight: '800', color: theme.colors.textSecondary, marginBottom: 8, letterSpacing: 0.8, },
+  forgotText: { fontSize: 11, fontWeight: '700', color: theme.colors.primary, marginBottom: 8, },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -334,49 +275,15 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 46,
-    fontSize: 14,
-    color: theme.colors.text,
-  },
-  passwordInput: {
-    paddingRight: 36,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 12,
-    padding: 4,
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 12,
-  },
-  rememberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rememberText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    fontWeight: '500',
-  },
-  encryptedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  encryptedText: {
-    fontSize: 10,
-    color: theme.colors.secondary,
-    fontWeight: '700',
-  },
+  inputIcon: { marginRight: 10, },
+  input: { flex: 1, height: 46, fontSize: 14, color: theme.colors.text, },
+  passwordInput: { paddingRight: 36, },
+  eyeButton: { position: 'absolute', right: 12, padding: 4, },
+  optionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 12, },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
+  rememberText: { fontSize: 12, color: theme.colors.textSecondary, fontWeight: '500', },
+  encryptedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, },
+  encryptedText: { fontSize: 10, color: theme.colors.secondary, fontWeight: '700', },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,15 +299,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#000',
-    letterSpacing: 0.5,
-  },
+  disabledButton: { opacity: 0.6, },
+  submitButtonText: { fontSize: 15, fontWeight: '900', color: '#000', letterSpacing: 0.5, },
   footer: {
     marginTop: 24,
     paddingTop: 16,
@@ -408,12 +308,6 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.borderSubtle,
     alignItems: 'center',
   },
-  footerText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-  },
-  footerLink: {
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
+  footerText: { fontSize: 13, color: theme.colors.textMuted, },
+  footerLink: { fontWeight: '800', color: theme.colors.primary, },
 });

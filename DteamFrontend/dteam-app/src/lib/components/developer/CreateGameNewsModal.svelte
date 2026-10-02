@@ -4,12 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { X, Newspaper, Upload, Image, Film, Loader2, Gamepad2, AlertCircle } from 'lucide-svelte';
 
-  interface Props {
-    game: Game;
-    isOpen: boolean;
-    onClose: () => void;
-    onCreated?: () => void;
-  }
+  interface Props { game: Game; isOpen: boolean; onClose: () => void; onCreated?: () => void; }
 
   let { game, isOpen, onClose, onCreated }: Props = $props();
 
@@ -31,10 +26,7 @@
     isSubmitting = false;
   }
 
-  function handleClose() {
-    resetForm();
-    onClose();
-  }
+  function handleClose() { resetForm(); onClose(); }
 
   function handleFileSelected(file: File) {
     if (!file) return;
@@ -67,9 +59,7 @@
 
   function handleFileInputChange(e: Event) {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      handleFileSelected(input.files[0]);
-    }
+    if (input.files && input.files[0]) { handleFileSelected(input.files[0]); }
   }
 
   function handleDrop(e: DragEvent) {

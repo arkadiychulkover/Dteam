@@ -10,18 +10,12 @@ class FriendsHubService {
   private isStarting = false;
 
   public async start(): Promise<void> {
-    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
-      return;
-    }
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) { return; }
 
-    if (this.isStarting) {
-      return;
-    }
+    if (this.isStarting) { return; }
 
     const state = get(authStore);
-    if (!state.token) {
-      return;
-    }
+    if (!state.token) { return; }
 
     this.isStarting = true;
 
@@ -46,13 +40,9 @@ class FriendsHubService {
           friendsStore.setInitialOnlineFriends(userIds);
         });
 
-        this.connection.on('UserOnline', (userId: string) => {
-          friendsStore.setUserOnline(userId);
-        });
+        this.connection.on('UserOnline', (userId: string) => { friendsStore.setUserOnline(userId); });
 
-        this.connection.on('UserOffline', (userId: string) => {
-          friendsStore.setUserOffline(userId);
-        });
+        this.connection.on('UserOffline', (userId: string) => { friendsStore.setUserOffline(userId); });
 
         this.connection.on('UserStatusChanged', (data: { userId: string; status: string }) => {
           if (data.status === 'Online') {
@@ -73,30 +63,18 @@ class FriendsHubService {
           }
         });
 
-        this.connection.on('FriendRequestAccepted', () => {
-          friendsStore.loadAll();
-        });
+        this.connection.on('FriendRequestAccepted', () => { friendsStore.loadAll(); });
 
-        this.connection.on('FriendRemoved', () => {
-          friendsStore.loadAll();
-        });
+        this.connection.on('FriendRemoved', () => { friendsStore.loadAll(); });
 
-        this.connection.on('FriendRequestCancelled', () => {
-          friendsStore.loadRequests();
-        });
+        this.connection.on('FriendRequestCancelled', () => { friendsStore.loadRequests(); });
 
-        this.connection.on('FriendRequestRejected', () => {
-          friendsStore.loadRequests();
-        });
+        this.connection.on('FriendRequestRejected', () => { friendsStore.loadRequests(); });
 
-        this.connection.onreconnected(() => {
-          friendsStore.loadAll();
-        });
+        this.connection.onreconnected(() => { friendsStore.loadAll(); });
       }
 
-      if (this.connection.state === signalR.HubConnectionState.Disconnected) {
-        await this.connection.start();
-      }
+      if (this.connection.state === signalR.HubConnectionState.Disconnected) { await this.connection.start(); }
     } catch (err) {
       console.warn('FriendsHub connection error:', err);
     } finally {
@@ -106,18 +84,12 @@ class FriendsHubService {
 
   public async stop(): Promise<void> {
     if (this.connection) {
-      try {
-        await this.connection.stop();
-      } catch (err) {
-        console.warn('FriendsHub stop error:', err);
-      }
+      try { await this.connection.stop(); } catch (err) { console.warn('FriendsHub stop error:', err); }
       this.connection = null;
     }
   }
 
-  public isConnected(): boolean {
-    return this.connection?.state === signalR.HubConnectionState.Connected;
-  }
+  public isConnected(): boolean { return this.connection?.state === signalR.HubConnectionState.Connected; }
 }
 
 export const friendsHubService = new FriendsHubService();

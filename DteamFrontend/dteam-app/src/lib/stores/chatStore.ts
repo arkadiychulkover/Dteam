@@ -2,11 +2,7 @@ import { writable, get, derived } from 'svelte/store';
 import { chatService } from '../services/chatService';
 import { chatHubService } from '../services/chatHubService';
 import { authStore, currentUser } from './authStore';
-import type {
-  ChatConversation,
-  ChatMessage,
-  ChatMediaSummary
-} from '../types/chat';
+import type { ChatConversation, ChatMessage, ChatMediaSummary } from '../types/chat';
 
 export type RightSidebarTab = 'profile' | 'photos' | 'files' | 'voice';
 
@@ -54,24 +50,12 @@ function createChatStore() {
     unsubs = [];
 
     unsubs.push(
-      chatHubService.onReceiveMessage((msg) => {
-        handleIncomingMessage(msg);
-      }),
-      chatHubService.onMessageRead((data) => {
-        handleMessageRead(data.messageId, data.readerUserId, data.readAt);
-      }),
-      chatHubService.onUserTyping((data) => {
-        handleUserTyping(data.userId, data.isTyping);
-      }),
-      chatHubService.onHistoryCleared((data) => {
-        handleHistoryCleared(data.clearedWithUserId);
-      }),
-      chatHubService.onMessageDeleted((data) => {
-        handleMessageDeleted(data.messageId, data.peerId);
-      }),
-      chatHubService.onReconnected(() => {
-        handleReconnected();
-      })
+      chatHubService.onReceiveMessage((msg) => { handleIncomingMessage(msg); }),
+      chatHubService.onMessageRead((data) => { handleMessageRead(data.messageId, data.readerUserId, data.readAt); }),
+      chatHubService.onUserTyping((data) => { handleUserTyping(data.userId, data.isTyping); }),
+      chatHubService.onHistoryCleared((data) => { handleHistoryCleared(data.clearedWithUserId); }),
+      chatHubService.onMessageDeleted((data) => { handleMessageDeleted(data.messageId, data.peerId); }),
+      chatHubService.onReconnected(() => { handleReconnected(); })
     );
   }
 
@@ -130,14 +114,7 @@ function createChatStore() {
         return timeB - timeA;
       });
 
-      return {
-        ...state,
-        messages: {
-          ...state.messages,
-          [peerId]: updatedList
-        },
-        conversations: convs
-      };
+      return { ...state, messages: { ...state.messages, [peerId]: updatedList }, conversations: convs };
     });
 
     const state = get({ subscribe });
@@ -159,43 +136,25 @@ function createChatStore() {
         });
       }
 
-      return {
-        ...state,
-        messages: newMessages
-      };
+      return { ...state, messages: newMessages };
     });
   }
 
   function handleUserTyping(userId: string, isTyping: boolean) {
     const id = userId.toLowerCase();
-    update(state => ({
-      ...state,
-      typingUsers: {
-        ...state.typingUsers,
-        [id]: isTyping
-      }
-    }));
+    update(state => ({ ...state, typingUsers: { ...state.typingUsers, [id]: isTyping } }));
   }
 
   function handleHistoryCleared(clearedWithUserId: string) {
     const peerId = clearedWithUserId.toLowerCase();
     update(state => ({
       ...state,
-      messages: {
-        ...state.messages,
-        [peerId]: []
-      },
+      messages: { ...state.messages, [peerId]: [] },
       conversations: state.conversations.map(c =>
         c.friendId.toLowerCase() === peerId ? { ...c, lastMessage: null, unreadCount: 0 } : c
       ),
-      cursors: {
-        ...state.cursors,
-        [peerId]: null
-      },
-      hasMore: {
-        ...state.hasMore,
-        [peerId]: false
-      },
+      cursors: { ...state.cursors, [peerId]: null },
+      hasMore: { ...state.hasMore, [peerId]: false },
       mediaSummary: state.activeFriendId?.toLowerCase() === peerId ? null : state.mediaSummary
     }));
   }
@@ -203,10 +162,7 @@ function createChatStore() {
   function filterMediaGroups(groups: ChatMonthGroup[] | undefined, messageId: string): ChatMonthGroup[] {
     if (!groups) return [];
     return groups
-      .map(g => ({
-        ...g,
-        items: g.items.filter(item => item.messageId !== messageId)
-      }))
+      .map(g => ({ ...g, items: g.items.filter(item => item.messageId !== messageId) }))
       .filter(g => g.items.length > 0);
   }
 
@@ -235,10 +191,7 @@ function createChatStore() {
 
       return {
         ...state,
-        messages: {
-          ...state.messages,
-          [id]: filtered
-        },
+        messages: { ...state.messages, [id]: filtered },
         conversations: state.conversations.map(c =>
           c.friendId.toLowerCase() === id ? { ...c, lastMessage: lastMsg } : c
         ),
@@ -258,9 +211,7 @@ function createChatStore() {
         const lastMsg = msgs[msgs.length - 1];
         try {
           const missed = await chatService.getMissedMessages(state.activeFriendId, lastMsg.createdAt);
-          if (missed && missed.length > 0) {
-            missed.forEach(m => handleIncomingMessage(m));
-          }
+          if (missed && missed.length > 0) { missed.forEach(m => handleIncomingMessage(m)); }
         } catch (e) {
           console.warn('[ChatStore] Could not sync missed messages:', e);
         }
@@ -285,9 +236,7 @@ function createChatStore() {
     try {
       const convs = await chatService.seedDemoConversations();
       update(s => ({ ...s, conversations: convs, isLoadingConversations: false }));
-      if (convs.length > 0) {
-        selectConversation(convs[0].friendId);
-      }
+      if (convs.length > 0) { selectConversation(convs[0].friendId); }
     } catch (e) {
       console.warn('[ChatStore] Failed to seed demo conversations:', e);
       update(s => ({ ...s, isLoadingConversations: false }));
@@ -296,11 +245,7 @@ function createChatStore() {
 
   async function selectConversation(friendId: string) {
     const id = friendId.toLowerCase();
-    update(s => ({
-      ...s,
-      activeFriendId: id,
-      rightSidebarTab: 'profile'
-    }));
+    update(s => ({ ...s, activeFriendId: id, rightSidebarTab: 'profile' }));
 
     loadHistory(id);
     loadMediaSummary(id);
@@ -320,18 +265,9 @@ function createChatStore() {
       const res = await chatService.getHistory(friendId, undefined, 50);
       update(s => ({
         ...s,
-        messages: {
-          ...s.messages,
-          [id]: res.items
-        },
-        cursors: {
-          ...s.cursors,
-          [id]: res.nextCursor || null
-        },
-        hasMore: {
-          ...s.hasMore,
-          [id]: res.hasMore
-        },
+        messages: { ...s.messages, [id]: res.items },
+        cursors: { ...s.cursors, [id]: res.nextCursor || null },
+        hasMore: { ...s.hasMore, [id]: res.hasMore },
         isLoadingHistory: false
       }));
 
@@ -352,9 +288,7 @@ function createChatStore() {
     const id = friendId.toLowerCase();
     const state = get({ subscribe });
     const cursor = state.cursors[id];
-    if (!cursor || !state.hasMore[id] || state.isLoadingMore) {
-      return;
-    }
+    if (!cursor || !state.hasMore[id] || state.isLoadingMore) { return; }
 
     update(s => ({ ...s, isLoadingMore: true }));
     try {
@@ -364,18 +298,9 @@ function createChatStore() {
 
         return {
           ...s,
-          messages: {
-            ...s.messages,
-            [id]: [...res.items, ...existing]
-          },
-          cursors: {
-            ...s.cursors,
-            [id]: res.nextCursor || null
-          },
-          hasMore: {
-            ...s.hasMore,
-            [id]: res.hasMore
-          },
+          messages: { ...s.messages, [id]: [...res.items, ...existing] },
+          cursors: { ...s.cursors, [id]: res.nextCursor || null },
+          hasMore: { ...s.hasMore, [id]: res.hasMore },
           isLoadingMore: false
         };
       });
@@ -414,10 +339,7 @@ function createChatStore() {
 
     update(s => ({
       ...s,
-      messages: {
-        ...s.messages,
-        [receiverId]: [...(s.messages[receiverId] || []), optimisticMsg]
-      }
+      messages: { ...s.messages, [receiverId]: [...(s.messages[receiverId] || []), optimisticMsg] }
     }));
 
     try {
@@ -433,13 +355,7 @@ function createChatStore() {
         const msgs = (s.messages[receiverId] || []).map(m =>
           m.clientMessageId === clientMessageId ? { ...sent, isOptimistic: false } : m
         );
-        return {
-          ...s,
-          messages: {
-            ...s.messages,
-            [receiverId]: msgs
-          }
-        };
+        return { ...s, messages: { ...s.messages, [receiverId]: msgs } };
       });
 
       loadMediaSummary(receiverId);
@@ -450,13 +366,7 @@ function createChatStore() {
         const msgs = (s.messages[receiverId] || []).map(m =>
           m.clientMessageId === clientMessageId ? { ...m, isOptimistic: false, isFailed: true } : m
         );
-        return {
-          ...s,
-          messages: {
-            ...s.messages,
-            [receiverId]: msgs
-          }
-        };
+        return { ...s, messages: { ...s.messages, [receiverId]: msgs } };
       });
     }
   }
@@ -467,21 +377,12 @@ function createChatStore() {
       await chatService.clearHistory(friendId);
       update(s => ({
         ...s,
-        messages: {
-          ...s.messages,
-          [id]: []
-        },
+        messages: { ...s.messages, [id]: [] },
         conversations: s.conversations.map(c =>
           c.friendId.toLowerCase() === id ? { ...c, lastMessage: null, unreadCount: 0 } : c
         ),
-        cursors: {
-          ...s.cursors,
-          [id]: null
-        },
-        hasMore: {
-          ...s.hasMore,
-          [id]: false
-        }
+        cursors: { ...s.cursors, [id]: null },
+        hasMore: { ...s.hasMore, [id]: false }
       }));
       loadMediaSummary(id);
     } catch (e) {
@@ -508,28 +409,16 @@ function createChatStore() {
     }
   }
 
-  function setRightSidebarTab(tab: RightSidebarTab) {
-    update(s => ({ ...s, rightSidebarTab: tab }));
-  }
+  function setRightSidebarTab(tab: RightSidebarTab) { update(s => ({ ...s, rightSidebarTab: tab })); }
 
-  function setSearchQuery(query: string) {
-    update(s => ({ ...s, searchQuery: query }));
-  }
+  function setSearchQuery(query: string) { update(s => ({ ...s, searchQuery: query })); }
 
-  function setPlayingVoiceId(messageId: string | null) {
-    update(s => ({ ...s, currentPlayingVoiceId: messageId }));
-  }
+  function setPlayingVoiceId(messageId: string | null) { update(s => ({ ...s, currentPlayingVoiceId: messageId })); }
 
   function toggleNotifications(friendId: string) {
     update(s => {
       const current = s.notificationsEnabled[friendId] ?? true;
-      return {
-        ...s,
-        notificationsEnabled: {
-          ...s.notificationsEnabled,
-          [friendId]: !current
-        }
-      };
+      return { ...s, notificationsEnabled: { ...s.notificationsEnabled, [friendId]: !current } };
     });
   }
 

@@ -1,11 +1,6 @@
 import type { UserStatus } from './user';
 
-export enum FriendRequestStatus {
-  Pending = 0,
-  Accepted = 1,
-  Rejected = 2,
-  Cancelled = 3
-}
+export enum FriendRequestStatus { Pending = 0, Accepted = 1, Rejected = 2, Cancelled = 3 }
 
 export interface FriendDto {
   id: string;
@@ -32,17 +27,8 @@ export interface FriendRequestDto {
   createdAt: string;
 }
 
-export interface SendFriendRequestDto {
-  receiverId?: string;
-  receiverUsername?: string;
-}
+export interface SendFriendRequestDto { receiverId?: string; receiverUsername?: string; }
 
-export interface FriendActionResponseDto {
-  success: boolean;
-  message: string;
-}
+export interface FriendActionResponseDto { success: boolean; message: string; }
 
-export interface FriendsGameStatusDto {
-  friendsWhoOwn: FriendDto[];
-  friendsWhoWishlist: FriendDto[];
-}
+export interface FriendsGameStatusDto { friendsWhoOwn: FriendDto[]; friendsWhoWishlist: FriendDto[]; }

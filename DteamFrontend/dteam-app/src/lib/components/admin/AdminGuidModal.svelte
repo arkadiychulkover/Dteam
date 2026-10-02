@@ -4,12 +4,7 @@
   import type { Duser } from '../../types';
   import { X, KeyRound, Wand2, Copy, Check, ShieldCheck, UserCheck } from 'lucide-svelte';
 
-  interface Props {
-    isOpen: boolean;
-    onClose: () => void;
-    users: Duser[];
-    onGuidChanged: () => void;
-  }
+  interface Props { isOpen: boolean; onClose: () => void; users: Duser[]; onGuidChanged: () => void; }
 
   let { isOpen, onClose, users, onGuidChanged }: Props = $props();
 
@@ -17,11 +12,7 @@
   let isCopied = $state(false);
   let isAutoDetecting = $state(false);
 
-  $effect(() => {
-    if (isOpen) {
-      inputGuid = $activeAdminIdStore || '';
-    }
-  });
+  $effect(() => { if (isOpen) { inputGuid = $activeAdminIdStore || ''; } });
 
   const adminUsers = $derived(users.filter((u) => u.isAdmin));
 
@@ -66,9 +57,7 @@
     setTimeout(() => (isCopied = false), 2000);
   }
 
-  function handleSelectUser(user: Duser) {
-    inputGuid = user.id;
-  }
+  function handleSelectUser(user: Duser) { inputGuid = user.id; }
 </script>
 
 {#if isOpen}

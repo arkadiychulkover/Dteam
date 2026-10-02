@@ -86,11 +86,7 @@ function createLibraryStore() {
     createCollection: async (name: string, description?: string, gameIds?: string[]) => {
       try {
         const created = await collectionsService.createCollection({ name, description, gameIds });
-        update((s) => ({
-          ...s,
-          collections: [created, ...s.collections],
-          activeCollectionId: created.id,
-        }));
+        update((s) => ({ ...s, collections: [created, ...s.collections], activeCollectionId: created.id, }));
         uiStore.addToast({
           title: 'Колекцію створено',
           message: `Колекція "${name}" успішно створена.`,
@@ -110,15 +106,8 @@ function createLibraryStore() {
     updateCollection: async (id: string, name: string, description?: string) => {
       try {
         const updated = await collectionsService.updateCollection(id, { name, description });
-        update((s) => ({
-          ...s,
-          collections: s.collections.map((c) => (c.id === id ? updated : c)),
-        }));
-        uiStore.addToast({
-          title: 'Оновлено',
-          message: `Колекцію оновлено.`,
-          type: 'success',
-        });
+        update((s) => ({ ...s, collections: s.collections.map((c) => (c.id === id ? updated : c)), }));
+        uiStore.addToast({ title: 'Оновлено', message: `Колекцію оновлено.`, type: 'success', });
         return updated;
       } catch (err: any) {
         uiStore.addToast({
@@ -138,11 +127,7 @@ function createLibraryStore() {
           collections: s.collections.filter((c) => c.id !== id),
           activeCollectionId: s.activeCollectionId === id ? 'all' : s.activeCollectionId,
         }));
-        uiStore.addToast({
-          title: 'Видалено',
-          message: 'Колекцію успішно видалено.',
-          type: 'success',
-        });
+        uiStore.addToast({ title: 'Видалено', message: 'Колекцію успішно видалено.', type: 'success', });
       } catch (err: any) {
         uiStore.addToast({
           title: 'Помилка видалення',
@@ -175,16 +160,9 @@ function createLibraryStore() {
             type: 'success',
           });
         }
-        update((s) => ({
-          ...s,
-          collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
-        }));
+        update((s) => ({ ...s, collections: s.collections.map((c) => (c.id === collectionId ? updated : c)), }));
       } catch (err: any) {
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err?.message || 'Не вдалося оновити колекцію.',
-          type: 'error',
-        });
+        uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося оновити колекцію.', type: 'error', });
       }
     },
 
@@ -205,11 +183,7 @@ function createLibraryStore() {
             item.gameId === gameId ? { ...item, isFavorite: !item.isFavorite } : item
           ),
         }));
-        uiStore.addToast({
-          title: 'Помилка',
-          message: err?.message || 'Не вдалося оновити обране.',
-          type: 'error',
-        });
+        uiStore.addToast({ title: 'Помилка', message: err?.message || 'Не вдалося оновити обране.', type: 'error', });
       }
     },
 

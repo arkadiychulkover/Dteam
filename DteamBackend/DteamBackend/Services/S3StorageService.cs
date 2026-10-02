@@ -203,9 +203,6 @@ namespace DteamBackend.Services
         }
     }
 
-    /// <summary>
-    /// Обгортка над потоком відповіді S3 для коректного закриття GetObjectResponse після відправки файлу.
-    /// </summary>
     internal sealed class S3ResponseStream : Stream
     {
         private readonly GetObjectResponse _response;

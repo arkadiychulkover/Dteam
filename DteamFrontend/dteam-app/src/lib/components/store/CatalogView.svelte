@@ -67,10 +67,7 @@ import { onMount } from 'svelte';
     { id: 'newest', label: 'Новинки' },
   ];
 
-  function applyFilter(changes: any) {
-    gamesStore.setFilters(changes);
-    gamesStore.loadCatalogGames();
-  }
+  function applyFilter(changes: any) { gamesStore.setFilters(changes); gamesStore.loadCatalogGames(); }
 
   function handleSearchSubmit(e?: Event) {
     if (e) e.preventDefault();
@@ -83,16 +80,9 @@ import { onMount } from 'svelte';
     const query = (e.target as HTMLInputElement).value;
     searchInput = query;
 
-    if (catalogDebounceTimer) {
-      clearTimeout(catalogDebounceTimer);
-    }
+    if (catalogDebounceTimer) { clearTimeout(catalogDebounceTimer); }
 
-    if (!query.trim()) {
-      catalogRecommendations = [];
-      isCatalogRecsOpen = false;
-      isCatalogLoadingRecs = false;
-      return;
-    }
+    if (!query.trim()) { catalogRecommendations = []; isCatalogRecsOpen = false; isCatalogLoadingRecs = false; return; }
 
     catalogDebounceTimer = setTimeout(async () => {
       isCatalogLoadingRecs = true;
@@ -143,24 +133,15 @@ import { onMount } from 'svelte';
       openGame(fullGame);
     } catch {
       const cached = $gamesStore.games.find(g => g.id === rec.id);
-      if (cached) {
-        openGame(cached);
-      } else {
-        applyFilter({ search: rec.title });
-      }
+      if (cached) { openGame(cached); } else { applyFilter({ search: rec.title }); }
     }
   }
 
   function handleCatalogClickOutside(e: MouseEvent) {
-    if (catalogSearchWrapperEl && !catalogSearchWrapperEl.contains(e.target as Node)) {
-      isCatalogRecsOpen = false;
-    }
+    if (catalogSearchWrapperEl && !catalogSearchWrapperEl.contains(e.target as Node)) { isCatalogRecsOpen = false; }
   }
 
-  function handleTagSubmit(e?: Event) {
-    if (e) e.preventDefault();
-    applyFilter({ tagQuery: tagInput });
-  }
+  function handleTagSubmit(e?: Event) { if (e) e.preventDefault(); applyFilter({ tagQuery: tagInput }); }
 
   function handleReset() {
     searchInput = '';
@@ -170,25 +151,17 @@ import { onMount } from 'svelte';
     gamesStore.loadCatalogGames();
   }
 
-  $effect(() => {
-    searchInput = $gamesStore.filters.search;
-  });
+  $effect(() => { searchInput = $gamesStore.filters.search; });
 
-  function calculateOriginalPrice(game: Game): string {
-    return formatBasePrice(game.priceInNanoTons);
-  }
+  function calculateOriginalPrice(game: Game): string { return formatBasePrice(game.priceInNanoTons); }
 
   function openGame(game: Game) {
     gamesStore.selectGame(game);
     uiStore.setTab('game');
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'instant' }); }
   }
 
-  onMount(() => {
-    gamesStore.loadCatalogGames();
-  });
+  onMount(() => { gamesStore.loadCatalogGames(); });
 </script>
 
 <svelte:window onclick={handleCatalogClickOutside} />
@@ -203,11 +176,7 @@ import { onMount } from 'svelte';
           placeholder="Пошук у Крамниці Dteam..."
           bind:value={searchInput}
           oninput={handleCatalogSearchInput}
-          onfocus={() => {
-            if (searchInput.trim() && catalogRecommendations.length > 0) {
-              isCatalogRecsOpen = true;
-            }
-          }}
+          onfocus={() => { if (searchInput.trim() && catalogRecommendations.length > 0) { isCatalogRecsOpen = true; } }}
           class="w-full pl-11 pr-10 py-3 rounded-2xl bg-[#061820]/95 border border-cyan-500/30 focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(13,242,201,0.25)] focus:outline-none text-xs text-white placeholder-slate-400 shadow-inner transition-all"
         />
         {#if searchInput}
@@ -560,10 +529,7 @@ import { onMount } from 'svelte';
 
                   <button
                     type="button"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      wishlistStore.toggleWishlist(game);
-                    }}
+                    onclick={(e) => { e.stopPropagation(); wishlistStore.toggleWishlist(game); }}
                     class="absolute top-3 left-3 p-1.5 rounded-xl bg-black/70 backdrop-blur-md border transition-all cursor-pointer shadow-md
                       {isWishlisted
                         ? 'border-rose-500/60 text-rose-500 hover:bg-rose-950/80'
@@ -648,10 +614,7 @@ import { onMount } from 'svelte';
                 <div class="flex items-center gap-3 shrink-0">
                   <button
                     type="button"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      wishlistStore.toggleWishlist(game);
-                    }}
+                    onclick={(e) => { e.stopPropagation(); wishlistStore.toggleWishlist(game); }}
                     class="p-2 rounded-xl bg-[#0a232c] hover:bg-rose-950/80 border transition-all cursor-pointer
                       {isWishlisted ? 'border-rose-500/80 text-rose-500' : 'border-cyan-500/20 text-slate-400 hover:text-rose-400'}"
                     title={isWishlisted ? 'Видалити зі списку бажань' : 'Додати до списку бажань'}

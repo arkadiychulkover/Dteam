@@ -24,21 +24,13 @@ export const gamesService = {
     return await api.get<Game[]>(`/games${query}`);
   },
 
-  async getGameById(id: string): Promise<Game> {
-    return await api.get<Game>(`/games/${id}`);
-  },
+  async getGameById(id: string): Promise<Game> { return await api.get<Game>(`/games/${id}`); },
 
-  async getGenres(): Promise<string[]> {
-    return await api.get<string[]>('/games/genres');
-  },
+  async getGenres(): Promise<string[]> { return await api.get<string[]>('/games/genres'); },
 
-  async getReviews(gameId: string): Promise<Review[]> {
-    return await api.get<Review[]>(`/games/${gameId}/reviews`);
-  },
+  async getReviews(gameId: string): Promise<Review[]> { return await api.get<Review[]>(`/games/${gameId}/reviews`); },
 
-  async getDlcs(gameId: string): Promise<Game[]> {
-    return await api.get<Game[]>(`/games/${gameId}/dlcs`);
-  },
+  async getDlcs(gameId: string): Promise<Game[]> { return await api.get<Game[]>(`/games/${gameId}/dlcs`); },
 
   async buyGame(gameId: string): Promise<{ success: boolean; txHash?: string }> {
     return await api.post(`/games/${gameId}/buy`);

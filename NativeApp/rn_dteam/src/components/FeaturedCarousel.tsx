@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Game } from '../types';
 import { BackendImage } from './BackendImage';
 import { formatPrice, formatBasePrice } from '../utils/formatters';
 import { theme } from '../styles/theme';
 
-interface FeaturedCarouselProps {
-  games: Game[];
-  onPress: (game: Game) => void;
-}
+interface FeaturedCarouselProps { games: Game[]; onPress: (game: Game) => void; }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -26,9 +17,7 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ games, onPre
 
   useEffect(() => {
     if (featuredGames.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % featuredGames.length);
-    }, 5000);
+    const interval = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % featuredGames.length); }, 5000);
     return () => clearInterval(interval);
   }, [featuredGames.length]);
 
@@ -38,13 +27,9 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ games, onPre
   const hasDiscount = (activeGame.discountPercentage || 0) > 0;
   const imageSource = activeGame.headerImageUrl || activeGame.coverImageUrl;
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % featuredGames.length);
-  };
+  const nextSlide = () => { setCurrentIndex((prev) => (prev + 1) % featuredGames.length); };
 
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + featuredGames.length) % featuredGames.length);
-  };
+  const prevSlide = () => { setCurrentIndex((prev) => (prev - 1 + featuredGames.length) % featuredGames.length); };
 
   return (
     <View style={styles.container}>
@@ -77,10 +62,7 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ games, onPre
           <View style={styles.arrowControls}>
             <TouchableOpacity
               style={styles.arrowBtn}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                prevSlide();
-              }}
+              onPress={(e) => { e.stopPropagation?.(); prevSlide(); }}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={18} color="#fff" />
@@ -88,10 +70,7 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ games, onPre
 
             <TouchableOpacity
               style={styles.arrowBtn}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                nextSlide();
-              }}
+              onPress={(e) => { e.stopPropagation?.(); nextSlide(); }}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-forward" size={18} color="#fff" />
@@ -136,10 +115,7 @@ export const FeaturedCarousel: React.FC<FeaturedCarouselProps> = ({ games, onPre
             <TouchableOpacity
               key={idx}
               onPress={() => setCurrentIndex(idx)}
-              style={[
-                styles.dot,
-                currentIndex === idx ? styles.activeDot : styles.inactiveDot,
-              ]}
+              style={[ styles.dot, currentIndex === idx ? styles.activeDot : styles.inactiveDot, ]}
             />
           ))}
         </View>
@@ -161,14 +137,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(3, 13, 18, 0.55)',
-  },
+  bannerImage: { width: '100%', height: '100%', },
+  gradientOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(3, 13, 18, 0.55)', },
   topBadgesRow: {
     position: 'absolute',
     top: 12,
@@ -187,23 +157,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  featuredText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  discountBadge: {
-    backgroundColor: theme.colors.discount,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  discountText: {
-    color: '#000',
-    fontSize: 11,
-    fontWeight: '900',
-  },
+  featuredText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, },
+  discountBadge: { backgroundColor: theme.colors.discount, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, },
+  discountText: { color: '#000', fontSize: 11, fontWeight: '900', },
   arrowControls: {
     position: 'absolute',
     top: '40%',
@@ -233,41 +189,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: theme.colors.text,
-  },
-  subtitle: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  priceBlock: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-  },
-  originalPrice: {
-    fontSize: 11,
-    color: theme.colors.textDim,
-    textDecorationLine: 'line-through',
-  },
-  priceText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: theme.colors.text,
-  },
-  discountedPrice: {
-    color: theme.colors.secondary,
-  },
+  title: { fontSize: 18, fontWeight: '900', color: theme.colors.text, },
+  subtitle: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 15, },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, },
+  priceBlock: { flexDirection: 'row', alignItems: 'baseline', gap: 6, },
+  originalPrice: { fontSize: 11, color: theme.colors.textDim, textDecorationLine: 'line-through', },
+  priceText: { fontSize: 15, fontWeight: '900', color: theme.colors.text, },
+  discountedPrice: { color: theme.colors.secondary, },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -277,28 +205,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: theme.borderRadius.sm,
   },
-  ctaText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#000',
-  },
-  paginationRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-  },
-  dot: {
-    height: 4,
-    borderRadius: 2,
-  },
-  activeDot: {
-    width: 22,
-    backgroundColor: theme.colors.primary,
-  },
-  inactiveDot: {
-    width: 8,
-    backgroundColor: theme.colors.borderSubtle,
-  },
+  ctaText: { fontSize: 11, fontWeight: '800', color: '#000', },
+  paginationRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 10, },
+  dot: { height: 4, borderRadius: 2, },
+  activeDot: { width: 22, backgroundColor: theme.colors.primary, },
+  inactiveDot: { width: 8, backgroundColor: theme.colors.borderSubtle, },
 });

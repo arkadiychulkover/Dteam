@@ -11,9 +11,7 @@
 
   const { uiState } = settingsStore;
 
-  onMount(() => {
-    settingsStore.loadSettings();
-  });
+  onMount(() => { settingsStore.loadSettings(); });
 </script>
 
 <div class="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-[#021822] via-[#02141c] to-[#010e14] py-8 px-4 sm:px-6 lg:px-8">

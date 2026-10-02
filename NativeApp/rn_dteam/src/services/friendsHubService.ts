@@ -8,19 +8,12 @@ class FriendsHubService {
   private isStarting = false;
 
   public async start(): Promise<void> {
-    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
-      return;
-    }
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) { return; }
 
-    if (this.isStarting) {
-      return;
-    }
+    if (this.isStarting) { return; }
 
     const token = tokenStorage.getSyncToken() || (await tokenStorage.getToken());
-    if (!token) {
-      console.log('[FriendsHubService] Cannot start hub: No auth token present.');
-      return;
-    }
+    if (!token) { console.log('[FriendsHubService] Cannot start hub: No auth token present.'); return; }
 
     this.isStarting = true;
 
@@ -42,25 +35,25 @@ class FriendsHubService {
           .configureLogging(signalR.LogLevel.Warning)
           .build();
 
-        // 1. Initial list of online friends from server
+        
         this.connection.on('OnlineFriendsList', (userIds: string[]) => {
           console.log('[FriendsHubService] 🟢 OnlineFriendsList received:', userIds);
           usePresenceStore.getState().setInitialOnlineFriends(userIds);
         });
 
-        // 2. A friend became online
+        
         this.connection.on('UserOnline', (userId: string) => {
           console.log('[FriendsHubService] 🟢 UserOnline:', userId);
           usePresenceStore.getState().setUserOnline(userId);
         });
 
-        // 3. A friend became offline
+        
         this.connection.on('UserOffline', (userId: string) => {
           console.log('[FriendsHubService] 🔴 UserOffline:', userId);
           usePresenceStore.getState().setUserOffline(userId);
         });
 
-        // 4. Friend status changed (e.g. Online vs Offline)
+        
         this.connection.on('UserStatusChanged', (data: { userId: string; status: string }) => {
           console.log('[FriendsHubService] 🔄 UserStatusChanged:', data);
           if (data.status === 'Online') {
@@ -70,13 +63,9 @@ class FriendsHubService {
           }
         });
 
-        this.connection.onreconnected(() => {
-          console.log('[FriendsHubService] 🔄 Reconnected to FriendsHub');
-        });
+        this.connection.onreconnected(() => { console.log('[FriendsHubService] 🔄 Reconnected to FriendsHub'); });
 
-        this.connection.onclose((err) => {
-          console.log('[FriendsHubService] Connection closed:', err);
-        });
+        this.connection.onclose((err) => { console.log('[FriendsHubService] Connection closed:', err); });
       }
 
       if (this.connection.state === signalR.HubConnectionState.Disconnected) {
@@ -103,9 +92,7 @@ class FriendsHubService {
     }
   }
 
-  public isConnected(): boolean {
-    return this.connection?.state === signalR.HubConnectionState.Connected;
-  }
+  public isConnected(): boolean { return this.connection?.state === signalR.HubConnectionState.Connected; }
 }
 
 export const friendsHubService = new FriendsHubService();

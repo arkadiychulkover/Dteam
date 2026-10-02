@@ -107,27 +107,16 @@
   function handleSeek(e: Event) {
     const input = e.target as HTMLInputElement;
     const targetTime = parseFloat(input.value);
-    if (videoElement) {
-      videoElement.currentTime = targetTime;
-      currentTime = targetTime;
-    }
+    if (videoElement) { videoElement.currentTime = targetTime; currentTime = targetTime; }
   }
 
-  function toggleMute() {
-    if (!videoElement) return;
-    isMuted = !isMuted;
-    videoElement.muted = isMuted;
-  }
+  function toggleMute() { if (!videoElement) return; isMuted = !isMuted; videoElement.muted = isMuted; }
 
   function handleVolumeChange(e: Event) {
     const input = e.target as HTMLInputElement;
     const val = parseFloat(input.value);
     volume = val;
-    if (videoElement) {
-      videoElement.volume = val;
-      isMuted = val === 0;
-      videoElement.muted = isMuted;
-    }
+    if (videoElement) { videoElement.volume = val; isMuted = val === 0; videoElement.muted = isMuted; }
   }
 
   function toggleFullscreen() {
@@ -171,17 +160,11 @@
   function handleMouseMove() {
     showControls = true;
     clearTimeout(controlsTimeout);
-    controlsTimeout = setTimeout(() => {
-      if (isPlaying) {
-        showControls = false;
-      }
-    }, 2500);
+    controlsTimeout = setTimeout(() => { if (isPlaying) { showControls = false; } }, 2500);
   }
 
   function closeModal() {
-    if (videoElement) {
-      videoElement.pause();
-    }
+    if (videoElement) { videoElement.pause(); }
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
@@ -200,15 +183,10 @@
     } else {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
-      if (videoElement) {
-        videoElement.pause();
-      }
+      if (videoElement) { videoElement.pause(); }
     }
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+    return () => { window.removeEventListener('keydown', handleKeyDown); document.body.style.overflow = ''; };
   });
 </script>
 
@@ -217,9 +195,7 @@
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-2 md:p-6 animate-in fade-in duration-200"
     role="dialog"
     aria-modal="true"
-    onclick={(e) => {
-      if (e.target === e.currentTarget) closeModal();
-    }}
+    onclick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
   >
     <div
       bind:this={containerElement}
@@ -291,19 +267,11 @@
             class="w-full h-full max-h-[72vh] object-contain cursor-pointer"
             onclick={togglePlay}
             ontimeupdate={handleTimeUpdate}
-            onloadedmetadata={() => {
-              if (videoElement) duration = videoElement.duration || 0;
-            }}
+            onloadedmetadata={() => { if (videoElement) duration = videoElement.duration || 0; }}
             onwaiting={() => (isBuffering = true)}
-            onplaying={() => {
-              isBuffering = false;
-              isPlaying = true;
-            }}
+            onplaying={() => { isBuffering = false; isPlaying = true; }}
             onpause={() => (isPlaying = false)}
-            onended={() => {
-              isPlaying = false;
-              showControls = true;
-            }}
+            onended={() => { isPlaying = false; showControls = true; }}
           >
             <track kind="captions" />
           </video>
@@ -362,9 +330,7 @@
 
                 <button
                   type="button"
-                  onclick={() => {
-                    if (videoElement) videoElement.currentTime = 0;
-                  }}
+                  onclick={() => { if (videoElement) videoElement.currentTime = 0; }}
                   class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                   title="Спочатку"
                 >

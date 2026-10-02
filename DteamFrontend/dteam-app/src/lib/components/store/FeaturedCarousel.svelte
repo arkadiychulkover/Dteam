@@ -13,10 +13,7 @@
   const activeGame = $derived(allGames[currentIndex] || allGames[0]);
   const isHeroWishlisted = $derived(activeGame ? $wishlistStore.wishlistGameIds.has(activeGame.id) : false);
 
-  function nextSlide() {
-    if (allGames.length === 0) return;
-    currentIndex = (currentIndex + 1) % allGames.length;
-  }
+  function nextSlide() { if (allGames.length === 0) return; currentIndex = (currentIndex + 1) % allGames.length; }
 
   function prevSlide() {
     if (allGames.length === 0) return;
@@ -25,9 +22,7 @@
 
   function handleHeroWishlistToggle(e: MouseEvent) {
     e.stopPropagation();
-    if (activeGame) {
-      wishlistStore.toggleWishlist(activeGame);
-    }
+    if (activeGame) { wishlistStore.toggleWishlist(activeGame); }
   }
 </script>
 
@@ -91,10 +86,7 @@
       {#if allGames.length > 1}
         <button
           type="button"
-          onclick={(e) => {
-            e.stopPropagation();
-            prevSlide();
-          }}
+          onclick={(e) => { e.stopPropagation(); prevSlide(); }}
           class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-cyan-500 text-white hover:text-black border border-white/20 flex items-center justify-center backdrop-blur-md transition-all z-20 cursor-pointer shadow-lg"
           aria-label="Previous game"
         >
@@ -103,10 +95,7 @@
 
         <button
           type="button"
-          onclick={(e) => {
-            e.stopPropagation();
-            nextSlide();
-          }}
+          onclick={(e) => { e.stopPropagation(); nextSlide(); }}
           class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-cyan-500 text-white hover:text-black border border-white/20 flex items-center justify-center backdrop-blur-md transition-all z-20 cursor-pointer shadow-lg"
           aria-label="Next game"
         >

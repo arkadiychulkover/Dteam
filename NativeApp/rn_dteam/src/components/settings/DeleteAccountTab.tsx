@@ -61,19 +61,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.danger,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  header: { marginBottom: 20, },
+  title: { fontSize: 18, fontWeight: '800', color: colors.danger, marginBottom: 4, },
+  subtitle: { fontSize: 12, color: colors.textMuted, },
   warningCard: {
     backgroundColor: 'rgba(239, 68, 68, 0.08)',
     borderRadius: 20,
@@ -81,33 +71,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
-  warningHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  warningTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.danger,
-    flex: 1,
-  },
-  warningBody: {
-    fontSize: 13,
-    color: colors.text,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  bulletList: {
-    gap: 6,
-    marginBottom: 20,
-  },
-  bulletItem: {
-    fontSize: 12,
-    color: colors.textMuted,
-    lineHeight: 18,
-  },
+  warningHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12, },
+  warningTitle: { fontSize: 15, fontWeight: '800', color: colors.danger, flex: 1, },
+  warningBody: { fontSize: 13, color: colors.text, fontWeight: '600', marginBottom: 10, },
+  bulletList: { gap: 6, marginBottom: 20, },
+  bulletItem: { fontSize: 12, color: colors.textMuted, lineHeight: 18, },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,9 +85,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
   },
-  deleteBtnText: {
-    color: '#ffffff',
-    fontWeight: '800',
-    fontSize: 13,
-  },
+  deleteBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 13, },
 });

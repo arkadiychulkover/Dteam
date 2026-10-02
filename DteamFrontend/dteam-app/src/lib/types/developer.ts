@@ -1,8 +1,4 @@
-export interface DailyMetricPoint {
-  date: string;
-  downloads: number;
-  earningsInTon: number;
-}
+export interface DailyMetricPoint { date: string; downloads: number; earningsInTon: number; }
 
 export interface DeveloperStats {
   totalEarningsInNanoTons: number;

@@ -10,14 +10,7 @@ function createWishlistStore() {
     wishlistGameIds: Set<string>;
     isLoading: boolean;
     isModalOpen: boolean;
-  }>({
-    items: [],
-    wishlistGameIds: new Set<string>(),
-    isLoading: false,
-    isModalOpen: false,
-  });
-
-  return {
+  }>({ items: [], wishlistGameIds: new Set<string>(), isLoading: false, isModalOpen: false, }); return {
     subscribe,
 
     openModal: () => update((s) => ({ ...s, isModalOpen: true })),
@@ -31,12 +24,7 @@ function createWishlistStore() {
       try {
         const items = await wishlistService.getWishlist();
         const gameIds = new Set(items.map((i) => i.gameId));
-        update((s) => ({
-          ...s,
-          items: items || [],
-          wishlistGameIds: gameIds,
-          isLoading: false,
-        }));
+        update((s) => ({ ...s, items: items || [], wishlistGameIds: gameIds, isLoading: false, }));
       } catch (err) {
         console.warn('[wishlistStore] Failed to load wishlist:', err);
         update((s) => ({ ...s, isLoading: false }));
@@ -62,11 +50,7 @@ function createWishlistStore() {
         update((s) => {
           const nextGameIds = new Set(s.wishlistGameIds);
           nextGameIds.delete(game.id);
-          return {
-            ...s,
-            items: s.items.filter((i) => i.gameId !== game.id),
-            wishlistGameIds: nextGameIds,
-          };
+          return { ...s, items: s.items.filter((i) => i.gameId !== game.id), wishlistGameIds: nextGameIds, };
         });
 
         try {
@@ -93,19 +77,12 @@ function createWishlistStore() {
         update((s) => {
           const nextGameIds = new Set(s.wishlistGameIds);
           nextGameIds.add(game.id);
-          return {
-            ...s,
-            items: [dummyItem, ...s.items],
-            wishlistGameIds: nextGameIds,
-          };
+          return { ...s, items: [dummyItem, ...s.items], wishlistGameIds: nextGameIds, };
         });
 
         try {
           const newItem = await wishlistService.addToWishlist({ gameId: game.id });
-          update((s) => ({
-            ...s,
-            items: [newItem, ...s.items.filter((i) => i.gameId !== game.id)],
-          }));
+          update((s) => ({ ...s, items: [newItem, ...s.items.filter((i) => i.gameId !== game.id)], }));
 
           uiStore.addToast({
             title: 'Додано до бажаного ♥',
@@ -117,11 +94,7 @@ function createWishlistStore() {
           update((s) => {
             const nextGameIds = new Set(s.wishlistGameIds);
             nextGameIds.delete(game.id);
-            return {
-              ...s,
-              items: s.items.filter((i) => i.gameId !== game.id),
-              wishlistGameIds: nextGameIds,
-            };
+            return { ...s, items: s.items.filter((i) => i.gameId !== game.id), wishlistGameIds: nextGameIds, };
           });
         }
       }

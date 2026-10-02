@@ -38,10 +38,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       set({ games, isLoading: false, error: null });
     } catch (err: any) {
       console.warn('[GamesStore] Error loading games:', err.message);
-      set({
-        isLoading: false,
-        error: err.message || 'Не вдалося завантажити ігри. Перевірте зʼєднання.',
-      });
+      set({ isLoading: false, error: err.message || 'Не вдалося завантажити ігри. Перевірте зʼєднання.', });
     }
   },
 
@@ -58,9 +55,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
     }
   },
 
-  selectGame: (game: Game | null) => {
-    set({ selectedGame: game });
-  },
+  selectGame: (game: Game | null) => { set({ selectedGame: game }); },
 
   loadGameDetails: async (id: string) => {
     try {
@@ -73,8 +68,5 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
     }
   },
 
-  setSelectedGenre: (genre: string) => {
-    set({ selectedGenre: genre });
-    get().loadGames({ genre });
-  },
+  setSelectedGenre: (genre: string) => { set({ selectedGenre: genre }); get().loadGames({ genre }); },
 }));

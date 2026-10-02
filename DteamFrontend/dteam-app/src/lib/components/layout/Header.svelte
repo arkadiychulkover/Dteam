@@ -70,9 +70,7 @@
     { id: 'admin', label: 'Адмінка', icon: Shield, adminOnly: true },
   ];
 
-  const visibleTabs = $derived(
-    baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin)
-  );
+  const visibleTabs = $derived( baseTabs.filter(tab => !tab.adminOnly || $isUserAdmin) );
 
   function formatRelativeTime(dateStr: string): string {
     try {
@@ -92,9 +90,7 @@
   }
 
   function handleNotificationClick(item: AppNotification) {
-    if (!item.isRead) {
-      notificationStore.markAsRead(item.id);
-    }
+    if (!item.isRead) { notificationStore.markAsRead(item.id); }
     notificationStore.closeDropdown();
 
     const target = getNotificationUrl(item);
@@ -104,25 +100,16 @@
       uiStore.setTab('friends');
     } else if (target.tab === 'chat') {
       uiStore.setTab('chat');
-      if (target.param) {
-        chatStore.selectConversation(target.param);
-      }
+      if (target.param) { chatStore.selectConversation(target.param); }
     }
   }
 
-  function handleLogout() {
-    authStore.logout();
-    isUserDropdownOpen = false;
-    uiStore.setTab('store');
-  }
+  function handleLogout() { authStore.logout(); isUserDropdownOpen = false; uiStore.setTab('store'); }
 
   function handleSearchSubmit(e?: SubmitEvent) {
     if (e) e.preventDefault();
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     if (headerSearchQuery.trim()) {
@@ -132,39 +119,26 @@
   }
 
   function handleCatalogMouseEnter() {
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     isCategoriesModalOpen = true;
   }
 
   function handleCatalogMouseLeave() {
     if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
-    closeCatalogTimer = setTimeout(() => {
-      isCategoriesModalOpen = false;
-    }, 250);
+    closeCatalogTimer = setTimeout(() => { isCategoriesModalOpen = false; }, 250);
   }
 
   function handleModalMouseEnter() {
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
   }
 
   function handleModalMouseLeave() {
     if (closeCatalogTimer) clearTimeout(closeCatalogTimer);
-    closeCatalogTimer = setTimeout(() => {
-      isCategoriesModalOpen = false;
-    }, 250);
+    closeCatalogTimer = setTimeout(() => { isCategoriesModalOpen = false; }, 250);
   }
 
   function handleCatalogClick() {
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     if ($uiStore.activeTab !== 'catalog') {
       uiStore.setTab('catalog');
       isCategoriesModalOpen = false;
@@ -238,13 +212,9 @@
       return;
     }
 
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
+    if (debounceTimer) { clearTimeout(debounceTimer); }
 
-    debounceTimer = setTimeout(() => {
-      fetchRecommendations(query);
-    }, 400);
+    debounceTimer = setTimeout(() => { fetchRecommendations(query); }, 400);
   }
 
   function handleSearchFocus() {
@@ -258,10 +228,7 @@
   }
 
   function handleSelectCategoryFilter(filter: Partial<CatalogFilterState>) {
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     gamesStore.resetFilters();
     gamesStore.setFilters(filter);
     gamesStore.loadCatalogGames();
@@ -271,17 +238,12 @@
     headerSearchQuery = '';
 
     uiStore.setTab('catalog');
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'instant' }); }
   }
 
   async function handleSelectRecommendation(rec: GameRecommendation) {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
     headerSearchQuery = rec.title;
@@ -303,18 +265,13 @@
 
   function handleClickOutside(e: MouseEvent) {
     const target = e.target as Node;
-    if (searchWrapperEl && !searchWrapperEl.contains(target)) {
-      isRecommendationsOpen = false;
-    }
+    if (searchWrapperEl && !searchWrapperEl.contains(target)) { isRecommendationsOpen = false; }
     if (
       categoriesModalEl && !categoriesModalEl.contains(target) &&
       (!catalogBtnEl || !catalogBtnEl.contains(target))
     ) {
       isCategoriesModalOpen = false;
-      if (closeCatalogTimer) {
-        clearTimeout(closeCatalogTimer);
-        closeCatalogTimer = null;
-      }
+      if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     }
   }
 
@@ -322,10 +279,7 @@
     if (e.key === 'Escape') {
       isRecommendationsOpen = false;
       isCategoriesModalOpen = false;
-      if (closeCatalogTimer) {
-        clearTimeout(closeCatalogTimer);
-        closeCatalogTimer = null;
-      }
+      if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     }
   }
 
@@ -334,10 +288,7 @@
     headerSearchQuery = '';
     isRecommendationsOpen = false;
     isCategoriesModalOpen = false;
-    if (closeCatalogTimer) {
-      clearTimeout(closeCatalogTimer);
-      closeCatalogTimer = null;
-    }
+    if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
     uiStore.setTab('store');
   }
 </script>
@@ -815,10 +766,7 @@
       onSelectFilter={handleSelectCategoryFilter}
       onClose={() => {
         isCategoriesModalOpen = false;
-        if (closeCatalogTimer) {
-          clearTimeout(closeCatalogTimer);
-          closeCatalogTimer = null;
-        }
+        if (closeCatalogTimer) { clearTimeout(closeCatalogTimer); closeCatalogTimer = null; }
       }}
     />
   </div>

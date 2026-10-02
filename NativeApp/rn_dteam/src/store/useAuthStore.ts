@@ -22,9 +22,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   isLoading: true,
 
   checkAuth: async () => {
-    if (checkAuthPromise) {
-      return checkAuthPromise;
-    }
+    if (checkAuthPromise) { return checkAuthPromise; }
 
     checkAuthPromise = (async () => {
       set({ isLoading: true });
@@ -47,12 +45,12 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
         set({ user: normalizedUser, isAuthenticated: !!normalizedUser, isLoading: false });
       } catch (err: any) {
         console.warn('[AuthStore] Failed to check current user session:', err);
-        // Only clear user credentials if the token is rejected (401 Unauthorized)
+        
         if (err?.status === 401) {
           await tokenStorage.clearTokens().catch(() => {});
           set({ user: null, isAuthenticated: false, isLoading: false });
         } else {
-          // For 429 Too Many Requests or network hiccups, retain current auth state
+          
           set({ isLoading: false });
         }
       } finally {

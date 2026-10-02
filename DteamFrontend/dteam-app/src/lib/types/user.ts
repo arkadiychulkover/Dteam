@@ -1,15 +1,6 @@
-export enum UserStatus {
-  Offline = 0,
-  Online = 1,
-  InGame = 2,
-  Away = 3,
-}
+export enum UserStatus { Offline = 0, Online = 1, InGame = 2, Away = 3, }
 
-export enum FriendshipStatus {
-  Pending = 0,
-  Accepted = 1,
-  Blocked = 2,
-}
+export enum FriendshipStatus { Pending = 0, Accepted = 1, Blocked = 2, }
 
 export interface Duser {
   id: string;

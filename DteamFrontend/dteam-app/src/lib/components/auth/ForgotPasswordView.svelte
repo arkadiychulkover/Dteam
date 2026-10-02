@@ -10,10 +10,7 @@
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
 
-    if (!identifier.trim()) {
-      errorMessage = 'Введіть email або логін';
-      return;
-    }
+    if (!identifier.trim()) { errorMessage = 'Введіть email або логін'; return; }
 
     errorMessage = '';
     isSubmitting = true;

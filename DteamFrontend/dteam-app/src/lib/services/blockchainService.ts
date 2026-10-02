@@ -48,16 +48,10 @@ export async function getTdpBalanceHybrid(walletAddress?: string | null, isMetaM
 
   try {
     const res = await api.get<{ balance: number }>(`/token/balance/${walletAddress}`);
-    if (res && typeof res.balance === 'number') {
-      return res.balance;
-    }
+    if (res && typeof res.balance === 'number') { return res.balance; }
   } catch (err) {
     console.warn('[TDP Balance] Backend API query failed, trying Hardhat RPC:', err);
   }
 
-  try {
-    return await getBalanceDirectFromBlockchain(walletAddress, false);
-  } catch {
-    return 0;
-  }
+  try { return await getBalanceDirectFromBlockchain(walletAddress, false); } catch { return 0; }
 }

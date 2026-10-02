@@ -7,10 +7,7 @@ export interface VerifyWalletResponse {
   message: string;
 }
 
-export interface BalanceResponse {
-  address: string;
-  balance: number;
-}
+export interface BalanceResponse { address: string; balance: number; }
 
 export const tokenService = {
   async verifyWallet(walletAddress: string, userId?: string): Promise<VerifyWalletResponse> {

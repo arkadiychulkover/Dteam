@@ -33,10 +33,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async () => {
-    if (!identifier.trim()) {
-      setErrorMessage('Введіть email або логін');
-      return;
-    }
+    if (!identifier.trim()) { setErrorMessage('Введіть email або логін'); return; }
 
     setErrorMessage('');
     setIsSubmitting(true);
@@ -77,11 +74,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   };
 
   const goToLogin = () => {
-    if (onNavigateLogin) {
-      onNavigateLogin();
-    } else if (navigation?.navigate) {
-      navigation.navigate('Login');
-    }
+    if (onNavigateLogin) { onNavigateLogin(); } else if (navigation?.navigate) { navigation.navigate('Login'); }
   };
 
   return (
@@ -191,25 +184,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderSubtle,
   },
-  topBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  topBackBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
+  topBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, },
+  topBackBtnText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, },
+  keyboardContainer: { flex: 1, },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 16, paddingVertical: 20, },
   cardContainer: {
     backgroundColor: theme.colors.glassBg,
     borderRadius: theme.borderRadius.xl,
@@ -222,10 +200,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
+  header: { alignItems: 'center', marginBottom: 24, },
   logoBadge: {
     width: 56,
     height: 56,
@@ -237,18 +212,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 6,
-    textAlign: 'center',
-  },
+  title: { fontSize: 24, fontWeight: '900', color: theme.colors.text, letterSpacing: 0.5, },
+  subtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: 6, textAlign: 'center', },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,22 +225,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  errorText: {
-    fontSize: 12,
-    color: theme.colors.error,
-    fontWeight: '600',
-    flex: 1,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.8,
-  },
+  errorText: { fontSize: 12, color: theme.colors.error, fontWeight: '600', flex: 1, },
+  formGroup: { marginBottom: 20, },
+  label: { fontSize: 11, fontWeight: '800', color: theme.colors.textSecondary, marginBottom: 8, letterSpacing: 0.8, },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -285,15 +237,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 46,
-    fontSize: 14,
-    color: theme.colors.text,
-  },
+  inputIcon: { marginRight: 10, },
+  input: { flex: 1, height: 46, fontSize: 14, color: theme.colors.text, },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -308,15 +253,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#000',
-    letterSpacing: 0.5,
-  },
+  disabledButton: { opacity: 0.6, },
+  submitButtonText: { fontSize: 15, fontWeight: '900', color: '#000', letterSpacing: 0.5, },
   footer: {
     marginTop: 24,
     paddingTop: 16,
@@ -324,14 +262,6 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.borderSubtle,
     alignItems: 'center',
   },
-  backLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  backLinkText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    fontWeight: '700',
-  },
+  backLink: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+  backLinkText: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '700', },
 });

@@ -67,11 +67,7 @@
   }
 
   onMount(() => {
-    if (!$currentUser?.id) {
-      uiStore.setLoginModal(true);
-      uiStore.setTab('store');
-      return;
-    }
+    if (!$currentUser?.id) { uiStore.setLoginModal(true); uiStore.setTab('store'); return; }
     developerStore.loadAll();
     loadMyNews();
   });
@@ -94,12 +90,8 @@
   );
 
   const dailyPoints = $derived($developerStore.stats?.dailyDynamics || []);
-  const maxDownloadsInChart = $derived(
-    Math.max(2, ...dailyPoints.map((p) => p.downloads))
-  );
-  const maxEarningsInChart = $derived(
-    Math.max(1, ...dailyPoints.map((p) => Number(p.earningsInTon) || 0))
-  );
+  const maxDownloadsInChart = $derived( Math.max(2, ...dailyPoints.map((p) => p.downloads)) );
+  const maxEarningsInChart = $derived( Math.max(1, ...dailyPoints.map((p) => Number(p.earningsInTon) || 0)) );
 
   const revenueChartData = $derived.by(() => {
     if (dailyPoints.length === 0) return { pathD: '', areaD: '', points: [] };
@@ -158,10 +150,7 @@
     return { pathD, areaD, points: coords };
   });
 
-  function handleViewInStore(game: Game) {
-    gamesStore.selectGame(game);
-    uiStore.setTab('game');
-  }
+  function handleViewInStore(game: Game) { gamesStore.selectGame(game); uiStore.setTab('game'); }
 
   function handleTogglePublish(game: Game) {
     if (!game.isPublished && !game.serverArchivePath) {
@@ -176,10 +165,7 @@
   }
 
   async function confirmDelete() {
-    if (gameToDelete) {
-      await developerStore.deleteGame(gameToDelete.id);
-      gameToDelete = null;
-    }
+    if (gameToDelete) { await developerStore.deleteGame(gameToDelete.id); gameToDelete = null; }
   }
 </script>
 

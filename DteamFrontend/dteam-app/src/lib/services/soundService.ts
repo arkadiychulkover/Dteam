@@ -33,13 +33,9 @@ class SoundService {
     window.addEventListener('keydown', unlock, { passive: true, once: true });
   }
 
-  public setMuted(muted: boolean) {
-    this.isMuted = muted;
-  }
+  public setMuted(muted: boolean) { this.isMuted = muted; }
 
-  public getIsMuted(): boolean {
-    return this.isMuted;
-  }
+  public getIsMuted(): boolean { return this.isMuted; }
 
   public playNotification(type: 'success' | 'info' | 'warning' | 'error' = 'info') {
     if (this.isMuted || typeof window === 'undefined') return;

@@ -18,8 +18,8 @@ export interface BackendChatMessage {
   senderId: string;
   receiverId: string;
   content?: string | null;
-  type: number; // 0=text, 1=file, 2=image, 3=voice
-  status: number; // 0=sent, 1=delivered, 2=read
+  type: number; 
+  status: number; 
   mediaUrl?: string | null;
   originalFileName?: string | null;
   contentType?: string | null;
@@ -33,7 +33,7 @@ export interface BackendConversation {
   friendId: string;
   friendUsername: string;
   friendAvatarUrl?: string | null;
-  friendStatus: number; // 0=offline, 1=online, 2=inGame
+  friendStatus: number; 
   lastMessage?: BackendChatMessage | null;
   unreadCount: number;
   lastActivityAt?: string | null;
@@ -63,9 +63,7 @@ function formatMessageTime(isoString?: string | null): string {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
 
-    if (isToday) {
-      return `${hours}:${minutes}`;
-    }
+    if (isToday) { return `${hours}:${minutes}`; }
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     return `${day}.${month}`;
@@ -133,15 +131,12 @@ export function mapBackendConversation(conv: BackendConversation, currentUserId?
 }
 
 export const chatService = {
-  /**
-   * Отримати список реальних діалогів користувача з бекенду
-   */
+  
+
   async getConversations(currentUserId?: string): Promise<Dialog[]> {
     try {
       const convs = await api.get<BackendConversation[]>('/chat/conversations');
-      if (Array.isArray(convs)) {
-        return convs.map((c) => mapBackendConversation(c, currentUserId));
-      }
+      if (Array.isArray(convs)) { return convs.map((c) => mapBackendConversation(c, currentUserId)); }
       return [];
     } catch (err) {
       console.warn('[chatService] Failed to load conversations:', err);
@@ -149,14 +144,13 @@ export const chatService = {
     }
   },
 
-  /**
-   * Отримати історію реальних повідомлень для конкретного друга
-   */
+  
+
   async getHistory(friendId: string, currentUserId?: string, limit = 50): Promise<ChatMessage[]> {
     try {
       const res = await api.get<{ items: BackendChatMessage[] }>(`/chat/history/${friendId}?limit=${limit}`);
       if (res && Array.isArray(res.items)) {
-        // Сервер повертає від нових до старих або хронологічно, сортуємо хронологічно
+        
         const sorted = [...res.items].sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
@@ -169,25 +163,18 @@ export const chatService = {
     }
   },
 
-  /**
-   * Відправити текстове повідомлення на сервер
-   */
+  
+
   async sendMessage(receiverId: string, content: string, currentUserId?: string): Promise<ChatMessage> {
     const clientMessageId = `cm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const payload = {
-      receiverId,
-      clientMessageId,
-      content: content.trim(),
-      type: 0, // 0 = Text
-    };
+    const payload = { receiverId, clientMessageId, content: content.trim(), type: 0, };
 
     const res = await api.post<BackendChatMessage>('/chat/send', payload);
     return mapBackendMessage(res, currentUserId);
   },
 
-  /**
-   * Завантажити медіа/файл/голосове повідомлення на сервер
-   */
+  
+
   async uploadAttachment(
     fileUri: string,
     duration?: number,
@@ -216,23 +203,16 @@ export const chatService = {
     } else {
       const finalName = fileName || (duration ? 'voice.m4a' : 'attachment.bin');
       const finalType = mimeType || (duration ? 'audio/m4a' : 'application/octet-stream');
-      formData.append('file', {
-        uri: fileUri,
-        name: finalName,
-        type: finalType,
-      } as any);
+      formData.append('file', { uri: fileUri, name: finalName, type: finalType, } as any);
     }
 
-    if (duration != null && duration > 0) {
-      formData.append('duration', Math.round(duration).toString());
-    }
+    if (duration != null && duration > 0) { formData.append('duration', Math.round(duration).toString()); }
 
     return await api.post<ChatUploadResponse>('/chat/upload', formData);
   },
 
-  /**
-   * Завантажити та відправити голосове повідомлення
-   */
+  
+
   async sendVoiceMessage(
     receiverId: string,
     voiceUri: string,
@@ -245,7 +225,7 @@ export const chatService = {
       receiverId,
       clientMessageId,
       content: 'Голосове повідомлення',
-      type: 3, // 3 = Voice
+      type: 3, 
       uploadId: upload.uploadId,
     };
 
@@ -253,9 +233,8 @@ export const chatService = {
     return mapBackendMessage(res, currentUserId);
   },
 
-  /**
-   * Завантажити та відправити зображення
-   */
+  
+
   async sendImageMessage(
     receiverId: string,
     imageUri: string,
@@ -264,21 +243,14 @@ export const chatService = {
   ): Promise<ChatMessage> {
     const upload = await this.uploadAttachment(imageUri, undefined, 'image.jpg', 'image/jpeg');
     const clientMessageId = `cm_img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const payload = {
-      receiverId,
-      clientMessageId,
-      content: caption || '',
-      type: 2, // 2 = Image
-      uploadId: upload.uploadId,
-    };
+    const payload = { receiverId, clientMessageId, content: caption || '', type: 2, uploadId: upload.uploadId, };
 
     const res = await api.post<BackendChatMessage>('/chat/send', payload);
     return mapBackendMessage(res, currentUserId);
   },
 
-  /**
-   * Завантажити та відправити файл
-   */
+  
+
   async sendFileMessage(
     receiverId: string,
     fileUri: string,
@@ -287,32 +259,20 @@ export const chatService = {
   ): Promise<ChatMessage> {
     const upload = await this.uploadAttachment(fileUri, undefined, fileName);
     const clientMessageId = `cm_file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const payload = {
-      receiverId,
-      clientMessageId,
-      content: fileName,
-      type: 1, // 1 = File
-      uploadId: upload.uploadId,
-    };
+    const payload = { receiverId, clientMessageId, content: fileName, type: 1, uploadId: upload.uploadId, };
 
     const res = await api.post<BackendChatMessage>('/chat/send', payload);
     return mapBackendMessage(res, currentUserId);
   },
 
-  /**
-   * Позначити повідомлення як прочитане
-   */
+  
+
   async markAsRead(messageId: string): Promise<void> {
-    try {
-      await api.post(`/chat/messages/${messageId}/read`);
-    } catch {
-      // ігноруємо некритичні помилки синхронізації
-    }
+    try { await api.post(`/chat/messages/${messageId}/read`); } catch { }
   },
 
-  /**
-   * Отримати список друзів з сервера
-   */
+  
+
   async getFriends(): Promise<BackendFriend[]> {
     try {
       const list = await api.get<BackendFriend[]>('/friends/list');

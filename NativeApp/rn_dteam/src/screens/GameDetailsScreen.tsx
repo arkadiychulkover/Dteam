@@ -19,12 +19,7 @@ import { libraryService } from '../services/libraryService';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { BackendImage } from '../components/BackendImage';
-import {
-  formatPrice,
-  formatBasePrice,
-  formatDate,
-  formatBytes,
-} from '../utils/formatters';
+import { formatPrice, formatBasePrice, formatDate, formatBytes, } from '../utils/formatters';
 import { theme } from '../styles/theme';
 import { colors } from '../theme/colors';
 
@@ -54,11 +49,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
   const { items: cartItems, isInCart, addToCart, loadCart } = useCartStore();
 
   const handleBack = () => {
-    if (props.navigation?.canGoBack?.()) {
-      props.navigation.goBack();
-    } else if (props.onBack) {
-      props.onBack();
-    }
+    if (props.navigation?.canGoBack?.()) { props.navigation.goBack(); } else if (props.onBack) { props.onBack(); }
   };
 
   const handleSelectGame = (g: Game) => {
@@ -89,17 +80,11 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
       .then((fullGame) => {
         if (isMounted && fullGame) {
           setGame(fullGame);
-          if (!selectedMediaUrl) {
-            setSelectedMediaUrl(fullGame.headerImageUrl || fullGame.coverImageUrl || null);
-          }
+          if (!selectedMediaUrl) { setSelectedMediaUrl(fullGame.headerImageUrl || fullGame.coverImageUrl || null); }
         }
       })
-      .catch((err) => {
-        console.warn('[GameDetails] Failed to refresh game details:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingDetails(false);
-      });
+      .catch((err) => { console.warn('[GameDetails] Failed to refresh game details:', err); })
+      .finally(() => { if (isMounted) setIsLoadingDetails(false); });
 
     if (isAuthenticated) {
       loadCart();
@@ -107,9 +92,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
         .getUserLibrary()
         .then((userGames) => {
           if (isMounted && Array.isArray(userGames)) {
-            const owned = userGames.some(
-              (ug) => ug.gameId === initialGame.id || ug.game?.id === initialGame.id
-            );
+            const owned = userGames.some( (ug) => ug.gameId === initialGame.id || ug.game?.id === initialGame.id );
             setIsOwned(owned);
           }
         })
@@ -117,42 +100,29 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
 
       wishlistService
         .isWishlisted(initialGame.id)
-        .then((wishlisted) => {
-          if (isMounted) setIsWishlisted(wishlisted);
-        })
+        .then((wishlisted) => { if (isMounted) setIsWishlisted(wishlisted); })
         .catch(() => {});
     }
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [initialGame.id, isAuthenticated, loadCart]);
 
   const hasDiscount = (game.discountPercentage || 0) > 0;
 
   const mediaList: string[] = [];
   if (game.headerImageUrl) mediaList.push(game.headerImageUrl);
-  if (game.coverImageUrl && !mediaList.includes(game.coverImageUrl)) {
-    mediaList.push(game.coverImageUrl);
-  }
+  if (game.coverImageUrl && !mediaList.includes(game.coverImageUrl)) { mediaList.push(game.coverImageUrl); }
   if (game.screenshotUrls) {
-    game.screenshotUrls.forEach((url) => {
-      if (url && !mediaList.includes(url)) mediaList.push(url);
-    });
+    game.screenshotUrls.forEach((url) => { if (url && !mediaList.includes(url)) mediaList.push(url); });
   }
 
-  // 1. Купити зараз: додає в кошик та одразу переводить на екран оформлення кошика
+  
   const handleBuyNow = async () => {
-    if (!isAuthenticated) {
-      props.navigation?.navigate('Login');
-      return;
-    }
+    if (!isAuthenticated) { props.navigation?.navigate('Login'); return; }
 
     setIsAddingToCart(true);
     try {
-      if (!inCart) {
-        await addToCart(game.id);
-      }
+      if (!inCart) { await addToCart(game.id); }
       props.navigation?.navigate('Cart');
     } catch (err: any) {
       console.warn('[GameDetailsScreen] Error in handleBuyNow:', err);
@@ -162,17 +132,11 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
     }
   };
 
-  // 2. Додати в кошик: просто додає в кошик на бекенді
+  
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      props.navigation?.navigate('Login');
-      return;
-    }
+    if (!isAuthenticated) { props.navigation?.navigate('Login'); return; }
 
-    if (inCart) {
-      props.navigation?.navigate('Cart');
-      return;
-    }
+    if (inCart) { props.navigation?.navigate('Cart'); return; }
 
     setIsAddingToCart(true);
     try {
@@ -184,12 +148,9 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
     }
   };
 
-  // 3. Додати / видалити з бажаного
+  
   const handleWishlistToggle = async () => {
-    if (!isAuthenticated) {
-      props.navigation?.navigate('Login');
-      return;
-    }
+    if (!isAuthenticated) { props.navigation?.navigate('Login'); return; }
 
     const nextState = !isWishlisted;
     setIsWishlisted(nextState);
@@ -287,10 +248,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
               return (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.thumbnailItem,
-                    isSelected && styles.thumbnailItemActive,
-                  ]}
+                  style={[ styles.thumbnailItem, isSelected && styles.thumbnailItemActive, ]}
                   onPress={() => setSelectedMediaUrl(url)}
                   activeOpacity={0.8}
                 >
@@ -314,9 +272,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
               <Text style={styles.ratingValue}>
                 {game.averageRating > 0 ? game.averageRating.toFixed(2) : 'NEW'}
               </Text>
-              {game.reviewsCount > 0 && (
-                <Text style={styles.reviewsCountText}>({game.reviewsCount})</Text>
-              )}
+              {game.reviewsCount > 0 && ( <Text style={styles.reviewsCountText}>({game.reviewsCount})</Text> )}
             </View>
 
             <View style={styles.downloadsBadge}>
@@ -357,9 +313,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
                 <Text style={styles.platformBadgeText}>macOS</Text>
               </View>
             )}
-            {game.sizeInBytes > 0 && (
-              <Text style={styles.sizeText}>Розмір: {formatBytes(game.sizeInBytes)}</Text>
-            )}
+            {game.sizeInBytes > 0 && ( <Text style={styles.sizeText}>Розмір: {formatBytes(game.sizeInBytes)}</Text> )}
           </View>
         </View>
 
@@ -398,7 +352,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
               </TouchableOpacity>
             ) : (
               <>
-                {/* 1. Купити зараз: додає в кошик та одразу переводить на екран кошика */}
+                {}
                 <TouchableOpacity
                   style={styles.buyNowButton}
                   onPress={handleBuyNow}
@@ -415,12 +369,9 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
                   )}
                 </TouchableOpacity>
 
-                {/* 2. Додати в кошик: просто додає в кошик на бекенді */}
+                {}
                 <TouchableOpacity
-                  style={[
-                    styles.addToCartButton,
-                    inCart && styles.addToCartButtonActive,
-                  ]}
+                  style={[ styles.addToCartButton, inCart && styles.addToCartButtonActive, ]}
                   onPress={handleAddToCart}
                   disabled={isAddingToCart}
                   activeOpacity={0.8}
@@ -431,21 +382,15 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
                     color={inCart ? colors.accentEmerald : colors.primary}
                   />
                   <Text
-                    style={[
-                      styles.addToCartButtonText,
-                      inCart && styles.addToCartButtonTextActive,
-                    ]}
+                    style={[ styles.addToCartButtonText, inCart && styles.addToCartButtonTextActive, ]}
                   >
                     {inCart ? 'У кошику (відкрити)' : 'Додати в кошик'}
                   </Text>
                 </TouchableOpacity>
 
-                {/* 3. До бажаного */}
+                {}
                 <TouchableOpacity
-                  style={[
-                    styles.wishlistButton,
-                    isWishlisted && styles.wishlistButtonActive,
-                  ]}
+                  style={[ styles.wishlistButton, isWishlisted && styles.wishlistButtonActive, ]}
                   onPress={handleWishlistToggle}
                   activeOpacity={0.7}
                 >
@@ -455,10 +400,7 @@ export const GameDetailsScreen: React.FC<GameDetailsScreenProps> = (props) => {
                     color={isWishlisted ? '#f43f5e' : theme.colors.textMuted}
                   />
                   <Text
-                    style={[
-                      styles.wishlistButtonText,
-                      isWishlisted && styles.wishlistButtonTextActive,
-                    ]}
+                    style={[ styles.wishlistButtonText, isWishlisted && styles.wishlistButtonTextActive, ]}
                   >
                     {isWishlisted ? 'У списку бажань' : 'До бажаного'}
                   </Text>
@@ -575,18 +517,8 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.borderSubtle,
     backgroundColor: theme.colors.surface,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingRight: 8,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
+  backButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingRight: 8, },
+  backButtonText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, },
   navTitle: {
     flex: 1,
     fontSize: 14,
@@ -595,15 +527,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 8,
   },
-  navRightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cartHeaderBtn: {
-    position: 'relative',
-    padding: 4,
-  },
+  navRightRow: { flexDirection: 'row', alignItems: 'center', gap: 12, },
+  cartHeaderBtn: { position: 'relative', padding: 4, },
   cartNavBadge: {
     position: 'absolute',
     top: -2,
@@ -616,27 +541,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  cartNavBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#000',
-  },
-  wishlistHeaderBtn: {
-    padding: 4,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  mainMediaWrapper: {
-    width: '100%',
-    height: 230,
-    backgroundColor: theme.colors.surface,
-    position: 'relative',
-  },
-  mainMediaImage: {
-    width: '100%',
-    height: '100%',
-  },
+  cartNavBadgeText: { fontSize: 9, fontWeight: '900', color: '#000', },
+  wishlistHeaderBtn: { padding: 4, },
+  scrollContent: { paddingBottom: 40, },
+  mainMediaWrapper: { width: '100%', height: 230, backgroundColor: theme.colors.surface, position: 'relative', },
+  mainMediaImage: { width: '100%', height: '100%', },
   discountBadge: {
     position: 'absolute',
     top: 12,
@@ -646,11 +555,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 6,
   },
-  discountText: {
-    color: '#000',
-    fontWeight: '900',
-    fontSize: 13,
-  },
+  discountText: { color: '#000', fontWeight: '900', fontSize: 13, },
   detailsLoader: {
     position: 'absolute',
     top: 12,
@@ -659,12 +564,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 6,
   },
-  thumbnailsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
-    backgroundColor: theme.colors.surface,
-  },
+  thumbnailsScroll: { paddingHorizontal: 16, paddingVertical: 12, gap: 10, backgroundColor: theme.colors.surface, },
   thumbnailItem: {
     width: 76,
     height: 48,
@@ -674,29 +574,11 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     backgroundColor: theme.colors.card,
   },
-  thumbnailItemActive: {
-    borderColor: theme.colors.primary,
-  },
-  thumbnailImage: {
-    width: '100%',
-    height: '100%',
-  },
-  infoBlock: {
-    padding: 16,
-  },
-  gameTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 12,
-  },
+  thumbnailItemActive: { borderColor: theme.colors.primary, },
+  thumbnailImage: { width: '100%', height: '100%', },
+  infoBlock: { padding: 16, },
+  gameTitle: { fontSize: 22, fontWeight: '900', color: theme.colors.text, marginBottom: 8, },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12, },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -706,24 +588,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  ratingValue: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.star,
-  },
-  reviewsCountText: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-  },
-  downloadsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  downloadsText: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-  },
+  ratingValue: { fontSize: 12, fontWeight: '800', color: theme.colors.star, },
+  reviewsCountText: { fontSize: 11, color: theme.colors.textMuted, },
+  downloadsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, },
+  downloadsText: { fontSize: 12, color: theme.colors.textMuted, },
   versionBadge: {
     backgroundColor: theme.colors.card,
     paddingHorizontal: 6,
@@ -732,17 +600,8 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: theme.colors.borderSubtle,
   },
-  versionText: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-    fontWeight: '600',
-  },
-  genresRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
-  },
+  versionText: { fontSize: 10, color: theme.colors.textDim, fontWeight: '600', },
+  genresRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12, },
   genreChip: {
     backgroundColor: theme.colors.badgeBg,
     paddingHorizontal: 8,
@@ -751,21 +610,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.badgeBorder,
   },
-  genreChipText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.primary,
-  },
-  platformsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  platformLabel: {
-    fontSize: 12,
-    color: theme.colors.textDim,
-  },
+  genreChipText: { fontSize: 11, fontWeight: '700', color: theme.colors.primary, },
+  platformsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', },
+  platformLabel: { fontSize: 12, color: theme.colors.textDim, },
   platformBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -775,16 +622,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 4,
   },
-  platformBadgeText: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
-  },
-  sizeText: {
-    fontSize: 11,
-    color: theme.colors.textDim,
-    marginLeft: 6,
-  },
+  platformBadgeText: { fontSize: 11, color: theme.colors.textSecondary, fontWeight: '600', },
+  sizeText: { fontSize: 11, color: theme.colors.textDim, marginLeft: 6, },
   buyCard: {
     marginHorizontal: 16,
     marginVertical: 12,
@@ -794,50 +633,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  buyCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  buyCardLabel: {
-    fontSize: 11,
-    color: theme.colors.textDim,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  originalPriceText: {
-    fontSize: 13,
-    color: theme.colors.textDim,
-    textDecorationLine: 'line-through',
-  },
-  finalPriceText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: theme.colors.text,
-  },
-  discountedFinalPrice: {
-    color: theme.colors.secondary,
-  },
+  buyCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, },
+  buyCardLabel: { fontSize: 11, color: theme.colors.textDim, fontWeight: '600', marginBottom: 2, },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, },
+  originalPriceText: { fontSize: 13, color: theme.colors.textDim, textDecorationLine: 'line-through', },
+  finalPriceText: { fontSize: 20, fontWeight: '900', color: theme.colors.text, },
+  discountedFinalPrice: { color: theme.colors.secondary, },
   discountCardBadge: {
     backgroundColor: theme.colors.discount,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
   },
-  discountCardText: {
-    color: '#000',
-    fontWeight: '900',
-    fontSize: 12,
-  },
-  actionsContainer: {
-    gap: 10,
-  },
+  discountCardText: { color: '#000', fontWeight: '900', fontSize: 12, },
+  actionsContainer: { gap: 10, },
   ownedButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -849,11 +658,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
   },
-  ownedButtonText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#10b981',
-  },
+  ownedButtonText: { fontSize: 14, fontWeight: '800', color: '#10b981', },
   buyNowButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -863,12 +668,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
   },
-  buyNowButtonText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-    letterSpacing: 0.5,
-  },
+  buyNowButtonText: { fontSize: 14, fontWeight: '900', color: '#000', letterSpacing: 0.5, },
   addToCartButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -880,18 +680,9 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: theme.borderRadius.md,
   },
-  addToCartButtonActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    borderColor: '#10b981',
-  },
-  addToCartButtonText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
-  addToCartButtonTextActive: {
-    color: '#10b981',
-  },
+  addToCartButtonActive: { backgroundColor: 'rgba(16, 185, 129, 0.12)', borderColor: '#10b981', },
+  addToCartButtonText: { fontSize: 14, fontWeight: '800', color: theme.colors.primary, },
+  addToCartButtonTextActive: { color: '#10b981', },
   wishlistButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -903,18 +694,9 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: theme.borderRadius.md,
   },
-  wishlistButtonActive: {
-    backgroundColor: 'rgba(244, 63, 94, 0.1)',
-    borderColor: '#f43f5e',
-  },
-  wishlistButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.textMuted,
-  },
-  wishlistButtonTextActive: {
-    color: '#f43f5e',
-  },
+  wishlistButtonActive: { backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: '#f43f5e', },
+  wishlistButtonText: { fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, },
+  wishlistButtonTextActive: { color: '#f43f5e', },
   blockchainNotice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -924,21 +706,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.borderSubtle,
   },
-  blockchainNoticeText: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-    lineHeight: 14,
-    flex: 1,
-  },
-  descriptionSection: {
-    padding: 16,
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
+  blockchainNoticeText: { fontSize: 10, color: theme.colors.textDim, lineHeight: 14, flex: 1, },
+  descriptionSection: { padding: 16, },
+  sectionHeading: { fontSize: 16, fontWeight: '800', color: theme.colors.text, marginBottom: 10, },
   shortDescBox: {
     backgroundColor: theme.colors.card,
     borderLeftWidth: 3,
@@ -947,28 +717,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 12,
   },
-  shortDescText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  fullDescText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    lineHeight: 20,
-  },
-  dlcSection: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.borderSubtle,
-  },
-  dlcHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
+  shortDescText: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, fontStyle: 'italic', },
+  fullDescText: { fontSize: 13, color: theme.colors.textMuted, lineHeight: 20, },
+  dlcSection: { padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.borderSubtle, },
+  dlcHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, },
   dlcItem: {
     flexDirection: 'row',
     backgroundColor: theme.colors.card,
@@ -979,47 +731,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
-  dlcImageWrap: {
-    width: 65,
-    height: 65,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  dlcImage: {
-    width: '100%',
-    height: '100%',
-  },
-  dlcInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  dlcTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  dlcDesc: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-    marginTop: 2,
-    lineHeight: 14,
-  },
-  dlcPrice: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.secondary,
-    marginTop: 4,
-  },
-  tagsSection: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.borderSubtle,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  dlcImageWrap: { width: 65, height: 65, borderRadius: 6, overflow: 'hidden', },
+  dlcImage: { width: '100%', height: '100%', },
+  dlcInfo: { flex: 1, justifyContent: 'center', },
+  dlcTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.text, },
+  dlcDesc: { fontSize: 10, color: theme.colors.textDim, marginTop: 2, lineHeight: 14, },
+  dlcPrice: { fontSize: 12, fontWeight: '800', color: theme.colors.secondary, marginTop: 4, },
+  tagsSection: { padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.borderSubtle, },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, },
   tagBadge: {
     backgroundColor: theme.colors.card,
     paddingHorizontal: 10,
@@ -1028,18 +747,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  tagText: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-  },
-  languagesSection: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.borderSubtle,
-  },
-  langGrid: {
-    gap: 8,
-  },
+  tagText: { fontSize: 11, color: theme.colors.textMuted, },
+  languagesSection: { padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.borderSubtle, },
+  langGrid: { gap: 8, },
   langItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1049,15 +759,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
   },
-  langName: {
-    fontSize: 12,
-    color: theme.colors.text,
-    fontWeight: '600',
-  },
-  langBadges: {
-    flexDirection: 'row',
-    gap: 6,
-  },
+  langName: { fontSize: 12, color: theme.colors.text, fontWeight: '600', },
+  langBadges: { flexDirection: 'row', gap: 6, },
   langTag: {
     fontSize: 10,
     color: theme.colors.textDim,
@@ -1066,14 +769,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  loaderCenter: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: theme.colors.textMuted,
-  },
+  loaderCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, },
+  emptyText: { fontSize: 14, color: theme.colors.textMuted, },
 });

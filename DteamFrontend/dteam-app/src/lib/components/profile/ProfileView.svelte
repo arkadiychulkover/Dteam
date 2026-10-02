@@ -5,18 +5,7 @@
   import { formatPrice, formatBalance, formatAddress } from '../../utils/formatters';
   import { UserStatus } from '../../types';
   import { uiStore } from '../../stores/uiStore';
-  import {
-    User,
-    Wallet,
-    Coins,
-    ShieldCheck,
-    Gamepad2,
-    Sparkles,
-    Users,
-    Copy,
-    Check,
-    Plus
-  } from 'lucide-svelte';
+  import { User, Wallet, Coins, ShieldCheck, Gamepad2, Sparkles, Users, Copy, Check, Plus } from 'lucide-svelte';
   import BackendImage from '../ui/BackendImage.svelte';
 
   let copied = $state(false);

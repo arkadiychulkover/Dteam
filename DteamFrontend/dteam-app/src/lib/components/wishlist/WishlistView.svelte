@@ -80,13 +80,9 @@
     date_new: 'Спочатку нові'
   };
 
-  onMount(() => {
-    wishlistStore.loadWishlist();
-  });
+  onMount(() => { wishlistStore.loadWishlist(); });
 
-  function calculateOriginalPrice(g: Game): string {
-    return formatBasePrice(g.priceInNanoTons);
-  }
+  function calculateOriginalPrice(g: Game): string { return formatBasePrice(g.priceInNanoTons); }
 
   function handleResetFilters() {
     wishlistSearchQuery = '';
@@ -107,15 +103,9 @@
     }
   }
 
-  function openGame(game: Game) {
-    gamesStore.selectGame(game);
-    uiStore.setTab('game');
-  }
+  function openGame(game: Game) { gamesStore.selectGame(game); uiStore.setTab('game'); }
 
-  function handleAddToCart(e: MouseEvent, game: Game) {
-    e.stopPropagation();
-    cartStore.addToCart(game);
-  }
+  function handleAddToCart(e: MouseEvent, game: Game) { e.stopPropagation(); cartStore.addToCart(game); }
 
   const filteredItems = $derived(
     $wishlistStore.items
@@ -169,24 +159,12 @@
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === 'discounts') {
-          return (b.game.discountPercentage || 0) - (a.game.discountPercentage || 0);
-        }
-        if (sortBy === 'price_asc') {
-          return Number(a.game.priceInNanoTons) - Number(b.game.priceInNanoTons);
-        }
-        if (sortBy === 'price_desc') {
-          return Number(b.game.priceInNanoTons) - Number(a.game.priceInNanoTons);
-        }
-        if (sortBy === 'title_asc') {
-          return a.game.title.localeCompare(b.game.title);
-        }
-        if (sortBy === 'title_desc') {
-          return b.game.title.localeCompare(a.game.title);
-        }
-        if (sortBy === 'date_new') {
-          return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
-        }
+        if (sortBy === 'discounts') { return (b.game.discountPercentage || 0) - (a.game.discountPercentage || 0); }
+        if (sortBy === 'price_asc') { return Number(a.game.priceInNanoTons) - Number(b.game.priceInNanoTons); }
+        if (sortBy === 'price_desc') { return Number(b.game.priceInNanoTons) - Number(a.game.priceInNanoTons); }
+        if (sortBy === 'title_asc') { return a.game.title.localeCompare(b.game.title); }
+        if (sortBy === 'title_desc') { return b.game.title.localeCompare(a.game.title); }
+        if (sortBy === 'date_new') { return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(); }
         return 0;
       })
   );
@@ -544,10 +522,7 @@
               {#each (Object.keys(sortLabels) as SortOption[]) as opt}
                 <button
                   type="button"
-                  onclick={() => {
-                    sortBy = opt;
-                    isSortDropdownOpen = false;
-                  }}
+                  onclick={() => { sortBy = opt; isSortDropdownOpen = false; }}
                   class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-between
                     {sortBy === opt
                       ? 'bg-cyan-500/20 text-cyan-300 font-bold'
@@ -631,10 +606,7 @@
               <div class="flex sm:flex-col items-end justify-between sm:justify-center w-full sm:w-auto shrink-0 gap-3">
                 <button
                   type="button"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    wishlistStore.toggleWishlist(game);
-                  }}
+                  onclick={(e) => { e.stopPropagation(); wishlistStore.toggleWishlist(game); }}
                   class="absolute top-2.5 right-2.5 p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
                   title="Видалити зі списку бажаного"
                 >

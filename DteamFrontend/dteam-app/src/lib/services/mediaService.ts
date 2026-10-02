@@ -44,11 +44,7 @@ export const mediaService = {
         video.src = objectUrl;
 
         video.onloadeddata = () => {
-          try {
-            video.currentTime = Math.min(1, (video.duration || 1) / 2);
-          } catch {
-            video.currentTime = 0;
-          }
+          try { video.currentTime = Math.min(1, (video.duration || 1) / 2); } catch { video.currentTime = 0; }
         };
 
         video.onseeked = () => {
@@ -57,10 +53,7 @@ export const mediaService = {
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 360;
             const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              reject(new Error('Canvas недоступний.'));
-              return;
-            }
+            if (!ctx) { reject(new Error('Canvas недоступний.')); return; }
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             resolve(canvas.toDataURL('image/jpeg', 0.85));
           } catch (err) {

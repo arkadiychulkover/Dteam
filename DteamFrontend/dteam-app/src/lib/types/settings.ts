@@ -20,11 +20,7 @@ export interface NotificationPreferences {
   chatSoundEnabled: boolean;
 }
 
-export interface WalletSummary {
-  balanceInNanoTons: number;
-  formattedBalance: number;
-  currency: string;
-}
+export interface WalletSummary { balanceInNanoTons: number; formattedBalance: number; currency: string; }
 
 export interface SettingsResponse {
   profile: UserProfileSettings;
@@ -41,17 +37,9 @@ export interface UpdateGeneralSettings {
   preferredLanguage?: string | null;
 }
 
-export interface ChangePasswordRequest {
-  oldPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
-}
+export interface ChangePasswordRequest { oldPassword: string; newPassword: string; confirmNewPassword: string; }
 
-export interface DeleteAccountRequest {
-  usernameConfirmation: string;
-  password: string;
-  confirmPassword: string;
-}
+export interface DeleteAccountRequest { usernameConfirmation: string; password: string; confirmPassword: string; }
 
 export interface WalletTransactionItem {
   id: string;
@@ -62,12 +50,6 @@ export interface WalletTransactionItem {
   date: string;
 }
 
-export interface PagedResult<T> {
-  items: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+export interface PagedResult<T> { items: T[]; totalCount: number; page: number; pageSize: number; totalPages: number; }
 
 export type SettingsTabId = 'general' | 'password' | 'notifications' | 'wallet' | 'delete-account';

@@ -27,12 +27,7 @@
   let isCopied = $state(false);
   let isLoading = $state(false);
   let errorMessage = $state<string | null>(null);
-  let successResult = $state<{
-    message: string;
-    amount: number;
-    newBalance: number;
-    txhHash: string;
-  } | null>(null);
+  let successResult = $state<{ message: string; amount: number; newBalance: number; txhHash: string; } | null>(null);
 
   const presets = [0.5, 1, 3, 5, 10, 25];
 
@@ -49,9 +44,7 @@
     try {
       await navigator.clipboard.writeText(depositAddress);
       isCopied = true;
-      setTimeout(() => {
-        isCopied = false;
-      }, 2500);
+      setTimeout(() => { isCopied = false; }, 2500);
     } catch (e) {
       console.warn('Copy failed', e);
     }
@@ -60,18 +53,13 @@
   async function pasteHash() {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        txhHash = text.trim();
-      }
+      if (text) { txhHash = text.trim(); }
     } catch (e) {
       console.warn('Paste failed', e);
     }
   }
 
-  function handlePreset(val: number) {
-    amount = val;
-    errorMessage = null;
-  }
+  function handlePreset(val: number) { amount = val; errorMessage = null; }
 
   async function handleVerify() {
     errorMessage = null;
@@ -113,12 +101,7 @@
     }
   }
 
-  function handleClose() {
-    uiStore.setDepositModal(false);
-    errorMessage = null;
-    successResult = null;
-    txhHash = '';
-  }
+  function handleClose() { uiStore.setDepositModal(false); errorMessage = null; successResult = null; txhHash = ''; }
 </script>
 
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

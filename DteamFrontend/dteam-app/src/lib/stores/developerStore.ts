@@ -28,10 +28,7 @@ function createDeveloperStore() {
     async loadAll() {
       update((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const [games, stats] = await Promise.all([
-          developerService.getMyGames(),
-          developerService.getStats(),
-        ]);
+        const [games, stats] = await Promise.all([ developerService.getMyGames(), developerService.getStats(), ]);
         update((s) => ({ ...s, games, stats, isLoading: false }));
       } catch (err: any) {
         update((s) => ({
@@ -92,11 +89,7 @@ function createDeveloperStore() {
       update((s) => ({ ...s, isSaving: true }));
       try {
         const updated = await developerService.updateGame(id, data);
-        update((s) => ({
-          ...s,
-          games: s.games.map((g) => (g.id === id ? updated : g)),
-          isSaving: false,
-        }));
+        update((s) => ({ ...s, games: s.games.map((g) => (g.id === id ? updated : g)), isSaving: false, }));
         uiStore.addToast({
           title: 'Оновлено!',
           message: `Дані гри "${updated.title}" успішно збережено.`,
@@ -118,10 +111,7 @@ function createDeveloperStore() {
     async togglePublishStatus(id: string) {
       try {
         const updated = await developerService.togglePublishStatus(id);
-        update((s) => ({
-          ...s,
-          games: s.games.map((g) => (g.id === id ? updated : g)),
-        }));
+        update((s) => ({ ...s, games: s.games.map((g) => (g.id === id ? updated : g)), }));
         uiStore.addToast({
           title: updated.isPublished ? 'Опубліковано' : 'Знято з публікації',
           message: `Статус гри "${updated.title}": ${updated.isPublished ? 'Опубліковано в каталозі' : 'Чернетка (приховано)'}`,
@@ -145,11 +135,7 @@ function createDeveloperStore() {
           games: s.games.filter((g) => g.id !== id),
           stats: s.stats ? { ...s.stats, totalGames: Math.max(0, s.stats.totalGames - 1) } : null,
         }));
-        uiStore.addToast({
-          title: 'Видалено',
-          message: 'Гру успішно видалено з платформи.',
-          type: 'info',
-        });
+        uiStore.addToast({ title: 'Видалено', message: 'Гру успішно видалено з платформи.', type: 'info', });
         gamesStore.loadGames();
       } catch (err: any) {
         uiStore.addToast({

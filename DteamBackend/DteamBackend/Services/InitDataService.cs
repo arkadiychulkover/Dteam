@@ -1104,7 +1104,7 @@ namespace DteamBackend.Services
         {
             public string GameTitle { get; set; } = string.Empty;
             public string AuthorUsername { get; set; } = string.Empty;
-            public string Category { get; set; } = "forum"; // "news", "forum", "guides", "screenshots", "videos"
+            public string Category { get; set; } = "forum"; 
             public string Title { get; set; } = string.Empty;
             public string Content { get; set; } = string.Empty;
             public string MediaType { get; set; } = "none";
@@ -1157,7 +1157,7 @@ namespace DteamBackend.Services
                     CREATE INDEX IF NOT EXISTS ""IX_CommunityComments_PostId"" ON ""CommunityComments"" (""PostId"");
                 ");
 
-                // Clean up any legacy dummy or broken test posts
+                
                 var junkPosts = await context.CommunityPosts
                     .Where(p => string.IsNullOrWhiteSpace(p.GameId)
                         || p.GameId.StartsWith("lib-")
@@ -1195,7 +1195,7 @@ namespace DteamBackend.Services
 
                 var seedPosts = new List<SeedCommunityPostDef>
                 {
-                    // 1. Cyberpunk 2077
+                    
                     new()
                     {
                         GameTitle = "Cyberpunk 2077",
@@ -1309,7 +1309,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 2. The Witcher 3
+                    
                     new()
                     {
                         GameTitle = "The Witcher 3: Wild Hunt",
@@ -1375,7 +1375,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 3. Elden Ring
+                    
                     new()
                     {
                         GameTitle = "Elden Ring",
@@ -1437,7 +1437,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 4. Baldur's Gate 3
+                    
                     new()
                     {
                         GameTitle = "Baldur's Gate 3",
@@ -1487,7 +1487,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 5. DOOM Eternal
+                    
                     new()
                     {
                         GameTitle = "DOOM Eternal",
@@ -1522,7 +1522,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 6. Forza Horizon 5
+                    
                     new()
                     {
                         GameTitle = "Forza Horizon 5",
@@ -1556,7 +1556,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 7. Resident Evil 4 Remake
+                    
                     new()
                     {
                         GameTitle = "Resident Evil 4 Remake",
@@ -1590,7 +1590,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 8. Civilization VI
+                    
                     new()
                     {
                         GameTitle = "Sid Meier's Civilization VI",
@@ -1623,7 +1623,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 9. Dead Cells
+                    
                     new()
                     {
                         GameTitle = "Dead Cells",
@@ -1657,7 +1657,7 @@ namespace DteamBackend.Services
                         }
                     },
 
-                    // 10. Subnautica
+                    
                     new()
                     {
                         GameTitle = "Subnautica",
@@ -2910,7 +2910,7 @@ namespace DteamBackend.Services
             PasswordHasher.CreatePasswordHash("admin123321", out string passwordHash, out string passwordSalt);
             var adminEthAddress = _configuration?["Ethereum:PublicKey"] ?? "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 
-            // 1. Ensure 'adim'
+            
             var adim = await context.Users.FirstOrDefaultAsync(u => u.Email == "adim@gmail.com" || u.Username == "adim");
             if (adim == null)
             {
@@ -2940,7 +2940,7 @@ namespace DteamBackend.Services
                 adim.IsAdmin = true;
             }
 
-            // 2. Ensure 'admin'
+            
             var admin = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@gmail.com" || u.Username == "admin");
             if (admin == null)
             {

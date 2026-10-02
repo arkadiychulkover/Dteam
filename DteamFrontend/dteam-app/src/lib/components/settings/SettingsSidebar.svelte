@@ -2,16 +2,7 @@
   import { settingsStore } from '../../stores/settingsStore';
   import { themeStore } from '../../stores/themeStore';
   import SettingsToggle from './primitives/SettingsToggle.svelte';
-  import {
-    Search,
-    Moon,
-    Sun,
-    User,
-    Lock,
-    Bell,
-    Wallet,
-    UserX,
-  } from 'lucide-svelte';
+  import { Search, Moon, Sun, User, Lock, Bell, Wallet, UserX, } from 'lucide-svelte';
   import type { SettingsTabId } from '../../types/settings';
 
   const { uiState } = settingsStore;

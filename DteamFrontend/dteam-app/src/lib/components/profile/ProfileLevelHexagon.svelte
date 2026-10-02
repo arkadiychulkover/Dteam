@@ -11,11 +11,7 @@
     title?: string;
   } = $props();
 
-  const sizeClasses = {
-    sm: 'w-7 h-7',
-    md: 'w-9 h-9',
-    lg: 'w-11 h-11'
-  };
+  const sizeClasses = { sm: 'w-7 h-7', md: 'w-9 h-9', lg: 'w-11 h-11' };
 
   const dynamicFontSize = $derived.by(() => {
     const len = String(level).length;

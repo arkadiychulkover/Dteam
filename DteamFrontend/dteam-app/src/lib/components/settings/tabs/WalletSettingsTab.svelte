@@ -10,13 +10,9 @@
 
   let depositAmount = $state('');
 
-  onMount(() => {
-    settingsStore.loadTransactions(1);
-  });
+  onMount(() => { settingsStore.loadTransactions(1); });
 
-  function handleDeposit() {
-    uiStore.setDepositModal(true);
-  }
+  function handleDeposit() { uiStore.setDepositModal(true); }
 
   function goToPage(p: number) {
     if (p < 1 || p > $uiState.txTotalPages || p === $uiState.txPage) return;

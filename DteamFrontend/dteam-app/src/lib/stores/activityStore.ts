@@ -10,15 +10,7 @@ function createActivityStore() {
     globalActivities: UserActivity[];
     isLoading: boolean;
     error: string | null;
-  }>({
-    friendsActivities: [],
-    userActivities: {},
-    globalActivities: [],
-    isLoading: false,
-    error: null,
-  });
-
-  return {
+  }>({ friendsActivities: [], userActivities: {}, globalActivities: [], isLoading: false, error: null, }); return {
     subscribe,
 
     loadFriendsActivities: async (force = false) => {
@@ -38,13 +30,7 @@ function createActivityStore() {
 
       try {
         const list = await activityService.getUserActivities(userId, 50, 0);
-        update((s) => ({
-          ...s,
-          userActivities: {
-            ...s.userActivities,
-            [userId.toLowerCase()]: list
-          }
-        }));
+        update((s) => ({ ...s, userActivities: { ...s.userActivities, [userId.toLowerCase()]: list } }));
       } catch (err: any) {
         console.warn(`[activityStore] Failed to load activities for user ${userId}:`, err);
       }

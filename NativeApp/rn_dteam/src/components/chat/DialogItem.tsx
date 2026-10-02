@@ -6,10 +6,7 @@ import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePresenceStore } from '../../store/usePresenceStore';
 
-interface DialogItemProps {
-  dialog: Dialog;
-  onPress: () => void;
-}
+interface DialogItemProps { dialog: Dialog; onPress: () => void; }
 
 export const DialogItem: React.FC<DialogItemProps> = ({ dialog, onPress }) => {
   const isOnline = usePresenceStore((s) => s.isOnline(dialog.friendId));
@@ -51,9 +48,7 @@ export const DialogItem: React.FC<DialogItemProps> = ({ dialog, onPress }) => {
 
         <View style={styles.bottomRow}>
           <View style={styles.lastMessageContainer}>
-            {isVoice && (
-              <Ionicons name="mic-outline" size={13} color={colors.primary} style={{ marginRight: 3 }} />
-            )}
+            {isVoice && ( <Ionicons name="mic-outline" size={13} color={colors.primary} style={{ marginRight: 3 }} /> )}
             {isImage && (
               <Ionicons name="image-outline" size={13} color={colors.primary} style={{ marginRight: 3 }} />
             )}
@@ -61,10 +56,7 @@ export const DialogItem: React.FC<DialogItemProps> = ({ dialog, onPress }) => {
               <Ionicons name="document-text-outline" size={13} color={colors.primary} style={{ marginRight: 3 }} />
             )}
             <Text
-              style={[
-                styles.lastMessageText,
-                dialog.unreadCount > 0 && styles.lastMessageUnread,
-              ]}
+              style={[ styles.lastMessageText, dialog.unreadCount > 0 && styles.lastMessageUnread, ]}
               numberOfLines={1}
             >
               {dialog.lastMessage}
@@ -97,9 +89,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 12,
   },
-  avatarWrapper: {
-    position: 'relative',
-  },
+  avatarWrapper: { position: 'relative', },
   avatar: {
     width: 48,
     height: 48,
@@ -118,47 +108,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.surfaceCard,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 4,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  username: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-    flex: 1,
-    marginRight: 8,
-  },
-  timeText: {
-    fontSize: 11,
-    color: colors.textDim,
-    fontFamily: 'monospace',
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  lastMessageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 8,
-  },
-  lastMessageText: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  lastMessageUnread: {
-    color: colors.text,
-    fontWeight: '600',
-  },
+  content: { flex: 1, justifyContent: 'center', gap: 4, },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
+  username: { fontSize: 15, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8, },
+  timeText: { fontSize: 11, color: colors.textDim, fontFamily: 'monospace', },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
+  lastMessageContainer: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8, },
+  lastMessageText: { fontSize: 13, color: colors.textMuted, },
+  lastMessageUnread: { color: colors.text, fontWeight: '600', },
   unreadBadge: {
     backgroundColor: colors.primary,
     minWidth: 20,
@@ -168,9 +125,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
-  unreadCountText: {
-    color: '#021118',
-    fontSize: 11,
-    fontWeight: '900',
-  },
+  unreadCountText: { color: '#021118', fontSize: 11, fontWeight: '900', },
 });

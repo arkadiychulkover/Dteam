@@ -19,9 +19,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
 
   setInitialOnlineFriends: (userIds: string[]) => {
     const nextSet = new Set<string>();
-    userIds.forEach((id) => {
-      if (id) nextSet.add(id.toLowerCase());
-    });
+    userIds.forEach((id) => { if (id) nextSet.add(id.toLowerCase()); });
     set({ onlineUserIds: nextSet });
   },
 
@@ -43,7 +41,5 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
     set({ onlineUserIds: updated });
   },
 
-  clear: () => {
-    set({ onlineUserIds: new Set<string>() });
-  },
+  clear: () => { set({ onlineUserIds: new Set<string>() }); },
 }));

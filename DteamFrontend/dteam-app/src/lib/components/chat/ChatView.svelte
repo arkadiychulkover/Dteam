@@ -9,9 +9,7 @@
 
   let isMobileProfileDrawerOpen = $state(false);
 
-  onMount(() => {
-    chatStore.loadConversations();
-  });
+  onMount(() => { chatStore.loadConversations(); });
 
   const activeConversation = $derived.by(() => {
     if (!$chatStore.activeFriendId) return null;
@@ -31,10 +29,7 @@
     return key ? ($chatStore.messages[key] || []) : ($chatStore.messages[$chatStore.activeFriendId] || []);
   });
 
-  function handleBackToDialogs() {
-    chatStore.selectConversation('');
-    isMobileProfileDrawerOpen = false;
-  }
+  function handleBackToDialogs() { chatStore.selectConversation(''); isMobileProfileDrawerOpen = false; }
 </script>
 
 <div class="h-[calc(100dvh-116px)] lg:h-[calc(100dvh-65px)] flex overflow-hidden bg-[#030e14] text-slate-100 relative">

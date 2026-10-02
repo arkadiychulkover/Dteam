@@ -79,14 +79,10 @@ function createUiStore() {
       } catch {
         const currentGames = get(gamesStore).games;
         const cached = currentGames.find((g) => g.id === gameId);
-        if (cached) {
-          gamesStore.selectGame(cached);
-        }
+        if (cached) { gamesStore.selectGame(cached); }
       }
       update((s) => ({ ...s, activeTab: 'game' }));
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     },
     setLoginModal: (isOpen: boolean) => update((s) => ({ ...s, isLoginModalOpen: isOpen })),
     setConfirmCodeModal: (isOpen: boolean) => update((s) => ({ ...s, isConfirmCodeModalOpen: isOpen })),
@@ -114,24 +110,11 @@ function createUiStore() {
 
       soundService.playNotification(toast.type);
 
-      update((s) => ({
-        ...s,
-        toasts: [...s.toasts, newToast],
-      }));
+      update((s) => ({ ...s, toasts: [...s.toasts, newToast], }));
 
-      setTimeout(() => {
-        update((s) => ({
-          ...s,
-          toasts: s.toasts.filter((t) => t.id !== id),
-        }));
-      }, duration + 10000);
+      setTimeout(() => { update((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id), })); }, duration + 10000);
     },
-    removeToast: (id: string) => {
-      update((s) => ({
-        ...s,
-        toasts: s.toasts.filter((t) => t.id !== id),
-      }));
-    },
+    removeToast: (id: string) => { update((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id), })); },
   };
 }
 

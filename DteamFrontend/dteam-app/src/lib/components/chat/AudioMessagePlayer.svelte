@@ -40,49 +40,23 @@
     return url;
   });
 
-  $effect(() => {
-    if (durationSeconds && durationSeconds > 0) {
-      totalDuration = durationSeconds;
-    }
-  });
+  $effect(() => { if (durationSeconds && durationSeconds > 0) { totalDuration = durationSeconds; } });
 
-  $effect(() => {
-    if ($chatStore.currentPlayingVoiceId !== messageId && isPlaying) {
-      pauseAudio();
-    }
-  });
+  $effect(() => { if ($chatStore.currentPlayingVoiceId !== messageId && isPlaying) { pauseAudio(); } });
 
   function initAudio() {
     if (!resolvedSrc) return null;
-    if (!audio) {
-      audio = new Audio();
-      setupAudioListeners();
-    }
-    if (audio.src !== resolvedSrc) {
-      audio.src = resolvedSrc;
-      audio.load();
-    }
+    if (!audio) { audio = new Audio(); setupAudioListeners(); }
+    if (audio.src !== resolvedSrc) { audio.src = resolvedSrc; audio.load(); }
     return audio;
   }
 
-  $effect(() => {
-    if (resolvedSrc && audio && audio.src !== resolvedSrc) {
-      audio.src = resolvedSrc;
-      audio.load();
-    }
-  });
+  $effect(() => { if (resolvedSrc && audio && audio.src !== resolvedSrc) { audio.src = resolvedSrc; audio.load(); } });
 
   onMount(() => {
-    if (resolvedSrc) {
-      initAudio();
-    }
+    if (resolvedSrc) { initAudio(); }
 
-    return () => {
-      if (audio) {
-        audio.pause();
-        audio = null;
-      }
-    };
+    return () => { if (audio) { audio.pause(); audio = null; } };
   });
 
   function setupAudioListeners() {
@@ -94,22 +68,11 @@
       }
     });
 
-    audio.addEventListener('timeupdate', () => {
-      if (!isDragging && audio) {
-        currentTime = audio.currentTime;
-      }
-    });
+    audio.addEventListener('timeupdate', () => { if (!isDragging && audio) { currentTime = audio.currentTime; } });
 
-    audio.addEventListener('ended', () => {
-      isPlaying = false;
-      currentTime = 0;
-      chatStore.setPlayingVoiceId(null);
-    });
+    audio.addEventListener('ended', () => { isPlaying = false; currentTime = 0; chatStore.setPlayingVoiceId(null); });
 
-    audio.addEventListener('error', (e) => {
-      console.warn('[AudioPlayer] Audio error:', e);
-      isPlaying = false;
-    });
+    audio.addEventListener('error', (e) => { console.warn('[AudioPlayer] Audio error:', e); isPlaying = false; });
   }
 
   function togglePlay() {
@@ -130,22 +93,16 @@
   }
 
   function pauseAudio() {
-    if (audio) {
-      audio.pause();
-    }
+    if (audio) { audio.pause(); }
     isPlaying = false;
-    if ($chatStore.currentPlayingVoiceId === messageId) {
-      chatStore.setPlayingVoiceId(null);
-    }
+    if ($chatStore.currentPlayingVoiceId === messageId) { chatStore.setPlayingVoiceId(null); }
   }
 
   function handleSeek(e: Event) {
     const input = e.target as HTMLInputElement;
     const seekTo = parseFloat(input.value);
     currentTime = seekTo;
-    if (audio) {
-      audio.currentTime = seekTo;
-    }
+    if (audio) { audio.currentTime = seekTo; }
   }
 
   function formatTime(seconds: number): string {

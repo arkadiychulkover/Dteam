@@ -19,10 +19,7 @@ export const paymentService = {
   },
 
   async verifyTransaction(txhHash: string, amount: number): Promise<PaymentVerificationResult> {
-    const payload: VerifyTransactionRequest = {
-      txhHash: txhHash.trim(),
-      amount: Number(amount)
-    };
+    const payload: VerifyTransactionRequest = { txhHash: txhHash.trim(), amount: Number(amount) };
     return await api.post<PaymentVerificationResult>('/payment/verify', payload);
   },
 

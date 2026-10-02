@@ -1,23 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert, } from 'react-native';
 import { colors } from '../../theme/colors';
 import { Badge } from '../../types';
 import { getRarityConfig } from './BadgeCard';
 import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
-interface BadgeDetailModalProps {
-  badge: Badge | null;
-  isOpen: boolean;
-  onClose: () => void;
-}
+interface BadgeDetailModalProps { badge: Badge | null; isOpen: boolean; onClose: () => void; }
 
 export const BadgeDetailModal: React.FC<BadgeDetailModalProps> = ({
   badge,
@@ -46,10 +35,7 @@ export const BadgeDetailModal: React.FC<BadgeDetailModalProps> = ({
     >
       <View style={styles.overlay}>
         <View
-          style={[
-            styles.modalContent,
-            { borderColor: rarityCfg.borderColor },
-          ]}
+          style={[ styles.modalContent, { borderColor: rarityCfg.borderColor }, ]}
         >
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
             <Ionicons name="close" size={20} color={colors.textMuted} />
@@ -165,17 +151,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontFamily: 'monospace',
   },
-  rarityPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  rarityLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
+  rarityPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, },
+  rarityLabel: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', },
   imageBox: {
     width: 140,
     height: 140,
@@ -188,17 +165,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  badgeImage: {
-    width: '100%',
-    height: '100%',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
+  badgeImage: { width: '100%', height: '100%', },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6, },
   description: {
     fontSize: 13,
     color: colors.textMuted,
@@ -217,20 +185,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  infoCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  infoLabel: {
-    fontSize: 10,
-    color: colors.textDim,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
-  },
+  infoCol: { flex: 1, alignItems: 'center', },
+  infoLabel: { fontSize: 10, color: colors.textDim, marginBottom: 2, },
+  infoValue: { fontSize: 12, fontWeight: '700', color: colors.text, },
   contractSection: {
     width: '100%',
     backgroundColor: colors.background,
@@ -239,12 +196,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  contractHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
+  contractHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, },
   contractTitle: {
     fontSize: 10,
     fontWeight: '700',
@@ -261,11 +213,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  contractAddressText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontFamily: 'monospace',
-    flex: 1,
-    marginRight: 8,
-  },
+  contractAddressText: { fontSize: 11, color: colors.textMuted, fontFamily: 'monospace', flex: 1, marginRight: 8, },
 });

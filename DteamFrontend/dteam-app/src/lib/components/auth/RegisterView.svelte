@@ -20,9 +20,7 @@
     if (typeof window === 'undefined') return [];
     const eth = (window as any).ethereum;
     if (!eth) return [];
-    if (Array.isArray(eth.providers) && eth.providers.length > 0) {
-      return eth.providers;
-    }
+    if (Array.isArray(eth.providers) && eth.providers.length > 0) { return eth.providers; }
     return [eth];
   }
 
@@ -59,9 +57,7 @@
     } catch (err) {
       console.warn('[RegisterView] Error syncing accounts:', err);
     } finally {
-      setTimeout(() => {
-        isSyncingWallet = false;
-      }, 300);
+      setTimeout(() => { isSyncingWallet = false; }, 300);
     }
   }
 
@@ -90,26 +86,17 @@
     attachProviderListeners();
     syncAccounts();
 
-    const handleWindowFocus = () => {
-      syncAccounts();
-    };
+    const handleWindowFocus = () => { syncAccounts(); };
 
-    const handleVisibility = () => {
-      if (!document.hidden) {
-        syncAccounts();
-      }
-    };
+    const handleVisibility = () => { if (!document.hidden) { syncAccounts(); } };
 
-    const handleInit = () => {
-      attachProviderListeners();
-      syncAccounts();
-    };
+    const handleInit = () => { attachProviderListeners(); syncAccounts(); };
 
     window.addEventListener('focus', handleWindowFocus);
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('ethereum#initialized', handleInit, { once: true });
 
-    // Fallback polling every 2s for instant UI feedback on MetaMask account changes
+    
     const interval = setInterval(syncAccounts, 2000);
 
     return () => {
@@ -180,15 +167,9 @@
       return;
     }
 
-    if (password !== confirmPassword) {
-      errorMessage = 'Паролі не співпадають';
-      return;
-    }
+    if (password !== confirmPassword) { errorMessage = 'Паролі не співпадають'; return; }
 
-    if (password.length < 6) {
-      errorMessage = 'Пароль має бути не менше 6 символів';
-      return;
-    }
+    if (password.length < 6) { errorMessage = 'Пароль має бути не менше 6 символів'; return; }
 
     if (!acceptTerms) {
       errorMessage = 'Необхідно погодитися з умовами використання та політикою конфіденційності';

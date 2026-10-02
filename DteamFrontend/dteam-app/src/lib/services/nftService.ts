@@ -7,13 +7,7 @@ export const HARDHAT_RPC_URL =
   import.meta.env.VITE_HARDHAT_RPC_URL ||
   'https://dteam-backend-production.up.railway.app/api/rpc';
 
-export enum NftRarity {
-  Common = 0,
-  Uncommon = 1,
-  Rare = 2,
-  Epic = 3,
-  Legendary = 4
-}
+export enum NftRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4 }
 
 export interface NftGift {
   id: string;
@@ -92,12 +86,7 @@ export function getRarityInfo(rarity: NftRarity | number) {
 }
 
 export async function getUserNftsFromContract(walletAddress: string, userId?: string): Promise<NftGift[]> {
-  if (!walletAddress) {
-    if (userId) {
-      return await getUserGiftsByUserId(userId);
-    }
-    return [];
-  }
+  if (!walletAddress) { if (userId) { return await getUserGiftsByUserId(userId); } return []; }
 
   let provider: any = null;
 
@@ -105,17 +94,13 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     try {
       const browserProvider = new BrowserProvider((window as any).ethereum);
       const network = await browserProvider.getNetwork();
-      if (Number(network.chainId) === 31337) {
-        provider = browserProvider;
-      }
+      if (Number(network.chainId) === 31337) { provider = browserProvider; }
     } catch {
       provider = null;
     }
   }
 
-  if (!provider) {
-    provider = new JsonRpcProvider(HARDHAT_RPC_URL);
-  }
+  if (!provider) { provider = new JsonRpcProvider(HARDHAT_RPC_URL); }
 
   const contract = new Contract(DTEAM_NFT_CONTRACT_ADDRESS, DTEAM_NFT_ABI as any, provider);
   const targetAddr = walletAddress.toLowerCase();
@@ -136,9 +121,7 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     for (const id of candidateIds) {
       try {
         const currentOwner = await contract.ownerOf(id);
-        if (currentOwner.toLowerCase() === targetAddr) {
-          ownedTokenIds.push(id);
-        }
+        if (currentOwner.toLowerCase() === targetAddr) { ownedTokenIds.push(id); }
       } catch (err) {
         console.warn(`[NFT Service] Error checking ownerOf for #${id}:`, err);
       }
@@ -147,9 +130,7 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
     console.warn('[NFT Service] Error querying Transfer events on chain, trying fallback to backend:', err);
   }
 
-  if (ownedTokenIds.length === 0 && userId) {
-    return await getUserGiftsByUserId(userId);
-  }
+  if (ownedTokenIds.length === 0 && userId) { return await getUserGiftsByUserId(userId); }
 
   const gifts: NftGift[] = [];
   for (const tokenId of ownedTokenIds) {
@@ -160,25 +141,12 @@ export async function getUserNftsFromContract(walletAddress: string, userId?: st
       if (idMatch && idMatch[1]) {
         try {
           const giftData = await api.get<NftGift>(`/nft/${idMatch[1]}`);
-          if (giftData) {
-            gifts.push({
-              ...giftData,
-              tokenId: tokenId,
-              onChainTokenId: tokenId
-            });
-            continue;
-          }
+          if (giftData) { gifts.push({ ...giftData, tokenId: tokenId, onChainTokenId: tokenId }); continue; }
         } catch {}
       }
 
       const giftData = await api.get<NftGift>(`/nft/token/${tokenId}`);
-      if (giftData) {
-        gifts.push({
-          ...giftData,
-          tokenId: tokenId,
-          onChainTokenId: tokenId
-        });
-      }
+      if (giftData) { gifts.push({ ...giftData, tokenId: tokenId, onChainTokenId: tokenId }); }
     } catch (err) {
       console.warn(`[NFT Service] Failed to load data for token #${tokenId}:`, err);
     }
@@ -207,9 +175,7 @@ export async function getUserNftsHybrid(
   if (isMetaMaskConnected && walletAddress) {
     try {
       const onChainGfts = await getUserNftsFromContract(walletAddress, userId ?? undefined);
-      if (onChainGfts && onChainGfts.length > 0) {
-        return onChainGfts;
-      }
+      if (onChainGfts && onChainGfts.length > 0) { return onChainGfts; }
     } catch (err) {
       console.warn('[NFT Service] On-chain query failed, falling back to Backend:', err);
     }
@@ -218,9 +184,7 @@ export async function getUserNftsHybrid(
   if (userId) {
     try {
       const backendGifts = await getUserGiftsByUserId(userId);
-      if (backendGifts && backendGifts.length > 0) {
-        return backendGifts;
-      }
+      if (backendGifts && backendGifts.length > 0) { return backendGifts; }
     } catch (err) {
       console.warn('[NFT Service] Backend gifts query failed:', err);
     }

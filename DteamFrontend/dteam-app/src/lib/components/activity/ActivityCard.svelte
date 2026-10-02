@@ -38,25 +38,15 @@
     }
   }
 
-  function handleOpenUser(e: MouseEvent) {
-    e.stopPropagation();
-    profileStore.viewProfile(activity.userId);
-  }
+  function handleOpenUser(e: MouseEvent) { e.stopPropagation(); profileStore.viewProfile(activity.userId); }
 
   function handleOpenGame(gameId?: string | null) {
-    if (gameId) {
-      gamesStore.selectGame(gameId);
-      uiStore.setTab('game');
-    }
+    if (gameId) { gamesStore.selectGame(gameId); uiStore.setTab('game'); }
   }
 
   const parsedDetails = $derived.by(() => {
     if (!activity.details) return null;
-    try {
-      return JSON.parse(activity.details);
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(activity.details); } catch { return null; }
   });
 </script>
 

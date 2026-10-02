@@ -127,19 +127,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  header: { marginBottom: 20, },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 4, },
+  subtitle: { fontSize: 12, color: colors.textMuted, },
   walletCard: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 20,
@@ -148,12 +138,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 24,
   },
-  walletTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
+  walletTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, },
   chainRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,18 +150,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(34, 211, 238, 0.3)',
   },
-  chainDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-  },
-  chainText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
+  chainDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, },
+  chainText: { fontSize: 10, fontWeight: '800', color: colors.primary, fontFamily: 'monospace', },
   copyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,11 +163,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  copyBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-  },
+  copyBtnText: { fontSize: 11, fontWeight: '700', color: colors.primary, },
   addressText: {
     fontSize: 12,
     color: colors.textDim,
@@ -214,32 +185,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  balanceBlock: {
-    flex: 1,
-  },
-  balanceLabel: {
-    fontSize: 10,
-    color: colors.textDim,
-    marginBottom: 4,
-  },
-  balanceDtp: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
-  balanceUah: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.accentEmerald,
-    fontFamily: 'monospace',
-  },
-  balanceDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.border,
-    marginHorizontal: 12,
-  },
+  balanceBlock: { flex: 1, },
+  balanceLabel: { fontSize: 10, color: colors.textDim, marginBottom: 4, },
+  balanceDtp: { fontSize: 16, fontWeight: '900', color: colors.primary, fontFamily: 'monospace', },
+  balanceUah: { fontSize: 16, fontWeight: '900', color: colors.accentEmerald, fontFamily: 'monospace', },
+  balanceDivider: { width: 1, height: 32, backgroundColor: colors.border, marginHorizontal: 12, },
   depositBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,27 +199,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 12,
   },
-  depositBtnText: {
-    color: '#021118',
-    fontWeight: '800',
-    fontSize: 13,
-  },
+  depositBtnText: { color: '#021118', fontWeight: '800', fontSize: 13, },
   historySection: {},
-  historyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  historyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  historyCount: {
-    fontSize: 12,
-    color: colors.textDim,
-  },
+  historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, },
+  historyTitle: { fontSize: 16, fontWeight: '800', color: colors.text, },
+  historyCount: { fontSize: 12, color: colors.textDim, },
   transactionsList: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 16,
@@ -293,20 +227,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  txInfo: {
-    flex: 1,
-  },
-  txTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  txDate: {
-    fontSize: 10,
-    color: colors.textDim,
-    marginTop: 2,
-    fontFamily: 'monospace',
-  },
+  txInfo: { flex: 1, },
+  txTitle: { fontSize: 12, fontWeight: '700', color: colors.text, },
+  txDate: { fontSize: 10, color: colors.textDim, marginTop: 2, fontFamily: 'monospace', },
   emptyHistoryBox: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 16,
@@ -316,17 +239,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 8,
   },
-  emptyHistoryTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.text,
-    marginTop: 4,
-  },
-  emptyHistorySubtitle: {
-    fontSize: 11,
-    color: colors.textDim,
-    textAlign: 'center',
-    lineHeight: 16,
-    maxWidth: 260,
-  },
+  emptyHistoryTitle: { fontSize: 14, fontWeight: '800', color: colors.text, marginTop: 4, },
+  emptyHistorySubtitle: { fontSize: 11, color: colors.textDim, textAlign: 'center', lineHeight: 16, maxWidth: 260, },
 });

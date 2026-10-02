@@ -57,25 +57,18 @@
   let isBanned = $state(false);
 
   async function checkUserBanStatus() {
-    if (!$currentUser?.id) {
-      isBanned = false;
-      return;
-    }
+    if (!$currentUser?.id) { isBanned = false; return; }
     try {
       const res = await userService.checkIsBanned($currentUser.id);
       if (res?.isBanned) {
         isBanned = true;
-        if ($currentUser) {
-          authStore.setUser({ ...$currentUser, isBanned: true });
-        }
+        if ($currentUser) { authStore.setUser({ ...$currentUser, isBanned: true }); }
         friendsHubService.stop();
         chatHubService.stop();
         onlineHubService.stopConnection();
       } else {
         isBanned = false;
-        if ($currentUser?.isBanned) {
-          authStore.setUser({ ...$currentUser, isBanned: false });
-        }
+        if ($currentUser?.isBanned) { authStore.setUser({ ...$currentUser, isBanned: false }); }
       }
     } catch (e: any) {
       if (
@@ -85,9 +78,7 @@
         e?.message?.toLowerCase()?.includes('banned')
       ) {
         isBanned = true;
-        if ($currentUser) {
-          authStore.setUser({ ...$currentUser, isBanned: true });
-        }
+        if ($currentUser) { authStore.setUser({ ...$currentUser, isBanned: true }); }
         friendsHubService.stop();
         chatHubService.stop();
         onlineHubService.stopConnection();
@@ -139,9 +130,7 @@
 
     const onUserBannedEvent = () => {
       isBanned = true;
-      if ($currentUser) {
-        authStore.setUser({ ...$currentUser, isBanned: true });
-      }
+      if ($currentUser) { authStore.setUser({ ...$currentUser, isBanned: true }); }
       friendsHubService.stop();
       chatHubService.stop();
       onlineHubService.stopConnection();
@@ -150,10 +139,7 @@
     window.addEventListener('dteam:user_banned', onUserBannedEvent);
     const interval = setInterval(checkUserBanStatus, 5000);
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('dteam:user_banned', onUserBannedEvent);
-    };
+    return () => { clearInterval(interval); window.removeEventListener('dteam:user_banned', onUserBannedEvent); };
   });
 
   onDestroy(() => {

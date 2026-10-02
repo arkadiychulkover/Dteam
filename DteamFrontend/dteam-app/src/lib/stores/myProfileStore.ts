@@ -10,26 +10,12 @@ function createMyProfileStore() {
     reviews: MyReview[];
     isLoadingPosts: boolean;
     isLoadingReviews: boolean;
-  }>({
-    posts: [],
-    reviews: [],
-    isLoadingPosts: false,
-    isLoadingReviews: false,
-  });
-
-  return {
+  }>({ posts: [], reviews: [], isLoadingPosts: false, isLoadingReviews: false, }); return {
     subscribe,
 
-    viewMyProfile: () => {
-      uiStore.setTab('my-profile');
-      loadMyPosts();
-      loadMyReviews();
-    },
+    viewMyProfile: () => { uiStore.setTab('my-profile'); loadMyPosts(); loadMyReviews(); },
 
-    reload: () => {
-      loadMyPosts();
-      loadMyReviews();
-    },
+    reload: () => { loadMyPosts(); loadMyReviews(); },
   };
 
   async function loadMyPosts() {

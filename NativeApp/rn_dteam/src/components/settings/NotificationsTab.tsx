@@ -116,19 +116,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  header: { marginBottom: 20, },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 4, },
+  subtitle: { fontSize: 12, color: colors.textMuted, },
   card: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 20,
@@ -144,13 +134,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  toggleInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    marginRight: 10,
-  },
+  toggleInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 10, },
   iconBox: {
     width: 38,
     height: 38,
@@ -161,17 +145,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
-  textContainer: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  itemSubtitle: {
-    fontSize: 11,
-    color: colors.textDim,
-  },
+  textContainer: { flex: 1, },
+  itemTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 2, },
+  itemSubtitle: { fontSize: 11, color: colors.textDim, },
 });

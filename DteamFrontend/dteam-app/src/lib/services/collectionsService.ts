@@ -7,16 +7,7 @@ import type {
 } from '../types';
 
 export function normalizeCollection(col: any): GameCollection {
-  if (!col) {
-    return {
-      id: '',
-      name: '',
-      createdAt: new Date().toISOString(),
-      items: [],
-      games: [],
-      gamesCount: 0,
-    };
-  }
+  if (!col) { return { id: '', name: '', createdAt: new Date().toISOString(), items: [], games: [], gamesCount: 0, }; }
 
   let items: GameCollectionItem[] = [];
   if (Array.isArray(col.items)) {
@@ -74,23 +65,17 @@ export const collectionsService = {
     return normalizeCollection(res);
   },
 
-  async deleteCollection(id: string): Promise<void> {
-    await api.delete(`/collections/${id}`);
-  },
+  async deleteCollection(id: string): Promise<void> { await api.delete(`/collections/${id}`); },
 
   async addGameToCollection(collectionId: string, gameId: string): Promise<GameCollection> {
     const res = await api.post<any>(`/collections/${collectionId}/games`, { gameId });
-    if (res && (res.id || Array.isArray(res.items))) {
-      return normalizeCollection(res);
-    }
+    if (res && (res.id || Array.isArray(res.items))) { return normalizeCollection(res); }
     return await collectionsService.getCollection(collectionId);
   },
 
   async removeGameFromCollection(collectionId: string, gameId: string): Promise<GameCollection> {
     const res = await api.delete<any>(`/collections/${collectionId}/games/${gameId}`);
-    if (res && (res.id || Array.isArray(res.items))) {
-      return normalizeCollection(res);
-    }
+    if (res && (res.id || Array.isArray(res.items))) { return normalizeCollection(res); }
     return await collectionsService.getCollection(collectionId);
   },
 };

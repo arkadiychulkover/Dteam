@@ -47,11 +47,7 @@
 
   async function handleDeleteCollection(col: GameCollection) {
     if (!confirm(`Ви дійсно бажаєте видалити колекцію "${col.name}"?`)) return;
-    try {
-      await libraryStore.deleteCollection(col.id);
-    } catch (e) {
-      console.error(e);
-    }
+    try { await libraryStore.deleteCollection(col.id); } catch (e) { console.error(e); }
   }
 
   async function loadNews() {
@@ -83,17 +79,12 @@
   function startNewsAutoplay() {
     stopNewsAutoplay();
     newsAutoplayHandle = setInterval(() => {
-      if (newsPosts.length > 1) {
-        newsIndex = (newsIndex + 1) % newsPosts.length;
-      }
+      if (newsPosts.length > 1) { newsIndex = (newsIndex + 1) % newsPosts.length; }
     }, 5000);
   }
 
   function stopNewsAutoplay() {
-    if (newsAutoplayHandle) {
-      clearInterval(newsAutoplayHandle);
-      newsAutoplayHandle = undefined;
-    }
+    if (newsAutoplayHandle) { clearInterval(newsAutoplayHandle); newsAutoplayHandle = undefined; }
   }
 
   function nextNews() {
@@ -117,24 +108,13 @@
     return items;
   });
 
-  onMount(() => {
-    libraryStore.loadLibrary();
-    loadNews().then(startNewsAutoplay);
-    loadCommunityFeed();
-  });
+  onMount(() => { libraryStore.loadLibrary(); loadNews().then(startNewsAutoplay); loadCommunityFeed(); });
 
-  onDestroy(() => {
-    stopNewsAutoplay();
-  });
+  onDestroy(() => { stopNewsAutoplay(); });
 
-  function openGame(item: UserGame) {
-    if (!item.game) return;
-    openedItem = item;
-  }
+  function openGame(item: UserGame) { if (!item.game) return; openedItem = item; }
 
-  function closeGameDetails() {
-    openedItem = null;
-  }
+  function closeGameDetails() { openedItem = null; }
 
   function handleToggleFavorite(e: MouseEvent, gameId: string) {
     e.stopPropagation();

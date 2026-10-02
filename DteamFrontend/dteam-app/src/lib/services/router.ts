@@ -8,11 +8,7 @@ import type { Game } from '../types';
 let isNavigatingFromUrl = false;
 let isInitialized = false;
 
-export interface RouteState {
-  tab: MainTab;
-  gameId?: string;
-  userId?: string;
-}
+export interface RouteState { tab: MainTab; gameId?: string; userId?: string; }
 
 function getPathForState(tab: MainTab, game?: Game | null, userId?: string | null): string {
   switch (tab) {
@@ -64,14 +60,10 @@ function getPathForState(tab: MainTab, game?: Game | null, userId?: string | nul
 }
 
 function parseLocation(): RouteState {
-  if (typeof window === 'undefined') {
-    return { tab: 'store' };
-  }
+  if (typeof window === 'undefined') { return { tab: 'store' }; }
 
   let path = window.location.pathname;
-  if (window.location.hash && window.location.hash.startsWith('#/')) {
-    path = window.location.hash.slice(1);
-  }
+  if (window.location.hash && window.location.hash.startsWith('#/')) { path = window.location.hash.slice(1); }
 
   path = path.replace(/\/+$/, '') || '/';
 
@@ -142,18 +134,14 @@ async function applyRoute(route: RouteState) {
       if (!currentSelected || currentSelected.id !== route.gameId) {
         try {
           const loadedGame = await gamesService.getGameById(route.gameId);
-          if (loadedGame) {
-            gamesStore.selectGame(loadedGame);
-          }
+          if (loadedGame) { gamesStore.selectGame(loadedGame); }
         } catch (e) {
           console.warn('[Router] Could not fetch game by ID:', route.gameId, e);
         }
       }
     }
 
-    if (route.tab === 'profile' && route.userId) {
-      profileStore.viewProfile(route.userId);
-    }
+    if (route.tab === 'profile' && route.userId) { profileStore.viewProfile(route.userId); }
 
     uiStore.setTab(route.tab);
   } finally {
@@ -169,10 +157,7 @@ export const router = {
     const initialRoute = parseLocation();
     applyRoute(initialRoute);
 
-    window.addEventListener('popstate', () => {
-      const route = parseLocation();
-      applyRoute(route);
-    });
+    window.addEventListener('popstate', () => { const route = parseLocation(); applyRoute(route); });
 
     let lastUrl = window.location.pathname;
 
@@ -205,33 +190,23 @@ export const router = {
 
   navigate(tab: MainTab) {
     uiStore.setTab(tab);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   },
 
   navigateToGame(game: Game) {
     gamesStore.selectGame(game);
     uiStore.setTab('game');
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   },
 
   navigateToAllDlcs(game: Game | string) {
-    if (typeof game === 'object' && game !== null) {
-      gamesStore.selectGame(game);
-    }
+    if (typeof game === 'object' && game !== null) { gamesStore.selectGame(game); }
     uiStore.setTab('all-dlcs');
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   },
 
   navigateToProfile(userId: string) {
     profileStore.viewProfile(userId);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
 };

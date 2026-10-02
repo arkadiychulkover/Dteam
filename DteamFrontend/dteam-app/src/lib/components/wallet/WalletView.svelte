@@ -39,12 +39,7 @@
 
   const presets = [0.5, 1, 3, 5, 10, 25];
 
-  onMount(async () => {
-    await Promise.all([
-      loadTransactions(),
-      loadDepositAddress()
-    ]);
-  });
+  onMount(async () => { await Promise.all([ loadTransactions(), loadDepositAddress() ]); });
 
   async function loadDepositAddress() {
     try {
@@ -69,15 +64,8 @@
     isRefreshing = true;
     try {
       transactions = await paymentService.getTransactions();
-      if ($currentUser?.id) {
-
-        await authStore.fetchProfile();
-      }
-      uiStore.addToast({
-        title: 'Оновлено',
-        message: 'Історію транзакцій та баланс оновлено',
-        type: 'info'
-      });
+      if ($currentUser?.id) { await authStore.fetchProfile(); }
+      uiStore.addToast({ title: 'Оновлено', message: 'Історію транзакцій та баланс оновлено', type: 'info' });
     } catch (e) {
       console.warn('[WalletView] Failed to refresh:', e);
     } finally {
@@ -90,14 +78,8 @@
     try {
       await navigator.clipboard.writeText(depositAddress);
       isAddressCopied = true;
-      uiStore.addToast({
-        title: 'Скопійовано',
-        message: 'Адресу для поповнення скопійовано в буфер',
-        type: 'success'
-      });
-      setTimeout(() => {
-        isAddressCopied = false;
-      }, 2500);
+      uiStore.addToast({ title: 'Скопійовано', message: 'Адресу для поповнення скопійовано в буфер', type: 'success' });
+      setTimeout(() => { isAddressCopied = false; }, 2500);
     } catch (e) {
       console.warn('Copy failed', e);
     }
@@ -107,30 +89,19 @@
     try {
       await navigator.clipboard.writeText(txHash);
       copiedTxId = id;
-      uiStore.addToast({
-        title: 'Скопійовано',
-        message: 'Хеш транзакції скопійовано',
-        type: 'info'
-      });
-      setTimeout(() => {
-        if (copiedTxId === id) copiedTxId = null;
-      }, 2000);
+      uiStore.addToast({ title: 'Скопійовано', message: 'Хеш транзакції скопійовано', type: 'info' });
+      setTimeout(() => { if (copiedTxId === id) copiedTxId = null; }, 2000);
     } catch (e) {
       console.warn('Copy failed', e);
     }
   }
 
-  function handleOpenDepositModal() {
-    uiStore.setDepositModal(true);
-  }
+  function handleOpenDepositModal() { uiStore.setDepositModal(true); }
 
   function handleOpenGame(gameId?: string | null) {
     if (!gameId) return;
     gamesService.getGameById(gameId).then(game => {
-      if (game) {
-        gamesStore.selectGame(game);
-        uiStore.setTab('game');
-      }
+      if (game) { gamesStore.selectGame(game); uiStore.setTab('game'); }
     }).catch(err => {
       console.warn('Could not navigate to game:', err);
     });
@@ -152,9 +123,7 @@
 
   const filteredTransactions = $derived.by(() => {
     let list = transactions;
-    if (filterType !== 'all') {
-      list = list.filter(t => t.type === filterType);
-    }
+    if (filterType !== 'all') { list = list.filter(t => t.type === filterType); }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(t =>

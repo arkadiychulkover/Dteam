@@ -1,11 +1,6 @@
 import { create } from 'zustand';
 import type { Dialog, ChatMessage } from '../types';
-import {
-  chatService,
-  mapBackendMessage,
-  mapBackendConversation,
-  BackendChatMessage,
-} from '../services/chatService';
+import { chatService, mapBackendMessage, mapBackendConversation, BackendChatMessage, } from '../services/chatService';
 import { chatHubService } from '../services/chatHubService';
 import { friendsHubService } from '../services/friendsHubService';
 import { useAuthStore } from './useAuthStore';
@@ -50,9 +45,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     const normalized = peerId ? peerId.toLowerCase() : null;
     if (get().activePeerId === normalized) return;
     set({ activePeerId: normalized });
-    if (normalized) {
-      get().markAsRead(normalized);
-    }
+    if (normalized) { get().markAsRead(normalized); }
   },
 
   loadConversations: async () => {
@@ -63,11 +56,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     try {
       const convs = await chatService.getConversations(user.id);
       const totalUnread = convs.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
-      set({
-        conversations: convs,
-        unreadTotal: totalUnread,
-        isLoadingConversations: false,
-      });
+      set({ conversations: convs, unreadTotal: totalUnread, isLoadingConversations: false, });
     } catch (err) {
       console.warn('[useChatStore] Error loading conversations:', err);
       set({ isLoadingConversations: false });
@@ -78,9 +67,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     const user = useAuthStore.getState().user;
     const peerKey = friendId.toLowerCase();
 
-    set((state) => ({
-      isLoadingHistory: { ...state.isLoadingHistory, [peerKey]: true },
-    }));
+    set((state) => ({ isLoadingHistory: { ...state.isLoadingHistory, [peerKey]: true }, }));
 
     try {
       const msgs = await chatService.getHistory(friendId, user?.id);
@@ -89,14 +76,12 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
         isLoadingHistory: { ...state.isLoadingHistory, [peerKey]: false },
       }));
 
-      // Mark unread messages as read
+      
       get().markAsRead(friendId);
       return msgs;
     } catch (err) {
       console.warn(`[useChatStore] Failed to load history for ${friendId}:`, err);
-      set((state) => ({
-        isLoadingHistory: { ...state.isLoadingHistory, [peerKey]: false },
-      }));
+      set((state) => ({ isLoadingHistory: { ...state.isLoadingHistory, [peerKey]: false }, }));
       return [];
     }
   },
@@ -105,12 +90,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     const peerKey = msg.dialogId.toLowerCase();
     set((state) => {
       const currentList = state.messages[peerKey] || [];
-      return {
-        messages: {
-          ...state.messages,
-          [peerKey]: [...currentList, msg],
-        },
-      };
+      return { messages: { ...state.messages, [peerKey]: [...currentList, msg], }, };
     });
   },
 
@@ -121,30 +101,19 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     try {
       const savedMsg = await chatService.sendMessage(friendId, content, user?.id);
 
-      // Оновлюємо список повідомлень у сторі
+      
       set((state) => {
         const currentList = state.messages[peerKey] || [];
-        // Якщо було оптимістичне повідомлення, оновлюємо його або додаємо
-        const filtered = currentList.filter(
-          (m) => !m.id.startsWith('temp-') || m.text !== savedMsg.text
-        );
-        return {
-          messages: {
-            ...state.messages,
-            [peerKey]: [...filtered, savedMsg],
-          },
-        };
+        
+        const filtered = currentList.filter( (m) => !m.id.startsWith('temp-') || m.text !== savedMsg.text );
+        return { messages: { ...state.messages, [peerKey]: [...filtered, savedMsg], }, };
       });
 
-      // Оновлюємо останнє повідомлення в діалогах
+      
       set((state) => {
         const updatedConvs = state.conversations.map((c) => {
           if (c.friendId.toLowerCase() === peerKey) {
-            return {
-              ...c,
-              lastMessage: savedMsg.text,
-              lastMessageTime: savedMsg.timestamp,
-            };
+            return { ...c, lastMessage: savedMsg.text, lastMessageTime: savedMsg.timestamp, };
           }
           return c;
         });
@@ -167,25 +136,14 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
       set((state) => {
         const currentList = state.messages[peerKey] || [];
-        const filtered = currentList.filter(
-          (m) => !m.id.startsWith('temp-voice-') && m.id !== savedMsg.id
-        );
-        return {
-          messages: {
-            ...state.messages,
-            [peerKey]: [...filtered, savedMsg],
-          },
-        };
+        const filtered = currentList.filter( (m) => !m.id.startsWith('temp-voice-') && m.id !== savedMsg.id );
+        return { messages: { ...state.messages, [peerKey]: [...filtered, savedMsg], }, };
       });
 
       set((state) => {
         const updatedConvs = state.conversations.map((c) => {
           if (c.friendId.toLowerCase() === peerKey) {
-            return {
-              ...c,
-              lastMessage: '🎤 Голосове повідомлення',
-              lastMessageTime: savedMsg.timestamp,
-            };
+            return { ...c, lastMessage: '🎤 Голосове повідомлення', lastMessageTime: savedMsg.timestamp, };
           }
           return c;
         });
@@ -208,25 +166,14 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
       set((state) => {
         const currentList = state.messages[peerKey] || [];
-        const filtered = currentList.filter(
-          (m) => !m.id.startsWith('temp-img-') && m.id !== savedMsg.id
-        );
-        return {
-          messages: {
-            ...state.messages,
-            [peerKey]: [...filtered, savedMsg],
-          },
-        };
+        const filtered = currentList.filter( (m) => !m.id.startsWith('temp-img-') && m.id !== savedMsg.id );
+        return { messages: { ...state.messages, [peerKey]: [...filtered, savedMsg], }, };
       });
 
       set((state) => {
         const updatedConvs = state.conversations.map((c) => {
           if (c.friendId.toLowerCase() === peerKey) {
-            return {
-              ...c,
-              lastMessage: '📷 Зображення',
-              lastMessageTime: savedMsg.timestamp,
-            };
+            return { ...c, lastMessage: '📷 Зображення', lastMessageTime: savedMsg.timestamp, };
           }
           return c;
         });
@@ -249,25 +196,14 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
       set((state) => {
         const currentList = state.messages[peerKey] || [];
-        const filtered = currentList.filter(
-          (m) => !m.id.startsWith('temp-file-') && m.id !== savedMsg.id
-        );
-        return {
-          messages: {
-            ...state.messages,
-            [peerKey]: [...filtered, savedMsg],
-          },
-        };
+        const filtered = currentList.filter( (m) => !m.id.startsWith('temp-file-') && m.id !== savedMsg.id );
+        return { messages: { ...state.messages, [peerKey]: [...filtered, savedMsg], }, };
       });
 
       set((state) => {
         const updatedConvs = state.conversations.map((c) => {
           if (c.friendId.toLowerCase() === peerKey) {
-            return {
-              ...c,
-              lastMessage: `📎 ${fileName}`,
-              lastMessageTime: savedMsg.timestamp,
-            };
+            return { ...c, lastMessage: `📎 ${fileName}`, lastMessageTime: savedMsg.timestamp, };
           }
           return c;
         });
@@ -289,24 +225,20 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     const conv = get().conversations.find((c) => c.friendId.toLowerCase() === peerKey);
     const hasUnreadCounter = conv && (conv.unreadCount ?? 0) > 0;
 
-    if (unread.length === 0 && !hasUnreadCounter) {
-      return;
-    }
+    if (unread.length === 0 && !hasUnreadCounter) { return; }
 
     for (const m of unread) {
       chatService.markAsRead(m.id).catch(() => {});
     }
 
-    // Оновлюємо статус повідомлень на 'read'
+    
     set((state) => {
       const msgs = state.messages[peerKey];
       const updated = msgs
         ? msgs.map((m) => (!m.isMine && m.status !== 'read' ? { ...m, status: 'read' as const } : m))
         : [];
       const convs = state.conversations.map((c) => {
-        if (c.friendId.toLowerCase() === peerKey) {
-          return { ...c, unreadCount: 0 };
-        }
+        if (c.friendId.toLowerCase() === peerKey) { return { ...c, unreadCount: 0 }; }
         return c;
       });
 
@@ -338,11 +270,11 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
     console.log('[useChatStore] ⚡ handleIncomingMessage for peer:', peerKey, 'isChatActive:', isChatActive);
 
-    // 1. Оновлюємо повідомлення активного діалогу
+    
     set((state) => {
       const currentList = state.messages[peerKey] || [];
 
-      // Перевіряємо чи повідомлення вже є (за id або за clientMessageId)
+      
       const existingIdx = currentList.findIndex(
         (m) =>
           m.id === mapped.id ||
@@ -358,24 +290,17 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
         nextList = [...currentList, mapped];
       }
 
-      return {
-        messages: {
-          ...state.messages,
-          [peerKey]: nextList,
-        },
-      };
+      return { messages: { ...state.messages, [peerKey]: nextList, }, };
     });
 
-    // 2. Якщо користувач прямо зараз дивиться цей чат, автоматично позначаємо прочитаним
+    
     if (isChatActive && !isMine) {
       chatService.markAsRead(msg.id).catch(() => {});
     }
 
-    // 3. Оновлюємо список діалогів
+    
     set((state) => {
-      const existingConvIdx = state.conversations.findIndex(
-        (c) => c.friendId.toLowerCase() === peerKey
-      );
+      const existingConvIdx = state.conversations.findIndex( (c) => c.friendId.toLowerCase() === peerKey );
 
       if (existingConvIdx !== -1) {
         const existingConv = state.conversations[existingConvIdx];
@@ -390,18 +315,13 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
           messages: [mapped],
         };
 
-        const rest = state.conversations.filter(
-          (c) => c.friendId.toLowerCase() !== peerKey
-        );
+        const rest = state.conversations.filter( (c) => c.friendId.toLowerCase() !== peerKey );
         const nextConvs = [updatedConv, ...rest];
         const totalUnread = nextConvs.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
 
-        return {
-          conversations: nextConvs,
-          unreadTotal: totalUnread,
-        };
+        return { conversations: nextConvs, unreadTotal: totalUnread, };
       } else {
-        // Якщо діалог ще не існував у списку, оновлюємо весь список
+        
         get().loadConversations();
         return state;
       }
@@ -436,54 +356,35 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
   handleUserTyping: (data) => {
     const peerKey = data.userId.toLowerCase();
-    set((state) => ({
-      typingUsers: {
-        ...state.typingUsers,
-        [peerKey]: data.isTyping,
-      },
-    }));
+    set((state) => ({ typingUsers: { ...state.typingUsers, [peerKey]: data.isTyping, }, }));
   },
 
   startRealtime: async () => {
-    if (isRealtimeStarted) {
-      return;
-    }
+    if (isRealtimeStarted) { return; }
     isRealtimeStarted = true;
     console.log('[useChatStore] 🚀 Starting real-time ChatHub and FriendsHub listeners...');
 
     chatHubService.clearHandlers();
 
-    // Підписуємося на події ChatHub
-    chatHubService.onReceiveMessage((msg) => {
-      get().handleIncomingMessage(msg);
-    });
+    
+    chatHubService.onReceiveMessage((msg) => { get().handleIncomingMessage(msg); });
 
-    chatHubService.onMessageRead((data) => {
-      get().handleMessageRead(data);
-    });
+    chatHubService.onMessageRead((data) => { get().handleMessageRead(data); });
 
-    chatHubService.onUserTyping((data) => {
-      get().handleUserTyping(data);
-    });
+    chatHubService.onUserTyping((data) => { get().handleUserTyping(data); });
 
     chatHubService.onReconnected(() => {
       console.log('[useChatStore] 🔄 Reconnected, refreshing conversations...');
       get().loadConversations();
     });
 
-    // Запускаємо підключення
-    await Promise.all([
-      chatHubService.start(),
-      friendsHubService.start(),
-    ]);
+    
+    await Promise.all([ chatHubService.start(), friendsHubService.start(), ]);
   },
 
   stopRealtime: async () => {
     isRealtimeStarted = false;
     console.log('[useChatStore] ⏹️ Stopping real-time hubs...');
-    await Promise.all([
-      chatHubService.stop(),
-      friendsHubService.stop(),
-    ]);
+    await Promise.all([ chatHubService.stop(), friendsHubService.stop(), ]);
   },
 }));

@@ -11,35 +11,21 @@ function createCartStore() {
     items: CartItem[];
     cartGameIds: Set<string>;
     isLoading: boolean;
-  }>({
-    items: [],
-    cartGameIds: new Set<string>(),
-    isLoading: false,
-  });
-
-  return {
+  }>({ items: [], cartGameIds: new Set<string>(), isLoading: false, }); return {
     subscribe,
 
     isInCart: (gameId: string) => get({ subscribe }).cartGameIds.has(gameId),
 
     loadCart: async () => {
       const user = get(currentUser);
-      if (!user?.id) {
-        update((s) => ({ ...s, items: [], cartGameIds: new Set(), isLoading: false }));
-        return;
-      }
+      if (!user?.id) { update((s) => ({ ...s, items: [], cartGameIds: new Set(), isLoading: false })); return; }
 
       update((s) => ({ ...s, isLoading: true }));
       try {
         const summary = await cartService.getCart();
         const items = summary.items || [];
         const gameIds = new Set(items.map((i) => i.gameId));
-        update((s) => ({
-          ...s,
-          items,
-          cartGameIds: gameIds,
-          isLoading: false,
-        }));
+        update((s) => ({ ...s, items, cartGameIds: gameIds, isLoading: false, }));
       } catch (err) {
         console.warn('[cartStore] Failed to load cart:', err);
         update((s) => ({ ...s, isLoading: false }));
@@ -77,35 +63,21 @@ function createCartStore() {
           message: `Гру '${game.title}' вже додано до вашого кошика.`,
           type: 'info',
         });
-        if (redirectToCart) {
-          uiStore.setTab('cart');
-        }
+        if (redirectToCart) { uiStore.setTab('cart'); }
         return true;
       }
 
-      const dummyItem: CartItem = {
-        userId: user.id,
-        gameId: game.id,
-        game,
-        addedAt: new Date().toISOString(),
-      };
+      const dummyItem: CartItem = { userId: user.id, gameId: game.id, game, addedAt: new Date().toISOString(), };
 
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
         nextGameIds.add(game.id);
-        return {
-          ...s,
-          items: [dummyItem, ...s.items],
-          cartGameIds: nextGameIds,
-        };
+        return { ...s, items: [dummyItem, ...s.items], cartGameIds: nextGameIds, };
       });
 
       try {
         const newItem = await cartService.addToCart(game.id);
-        update((s) => ({
-          ...s,
-          items: [newItem, ...s.items.filter((i) => i.gameId !== game.id)],
-        }));
+        update((s) => ({ ...s, items: [newItem, ...s.items.filter((i) => i.gameId !== game.id)], }));
 
         uiStore.addToast({
           title: 'Додано в кошик 🛒',
@@ -113,20 +85,14 @@ function createCartStore() {
           type: 'success',
         });
 
-        if (redirectToCart) {
-          uiStore.setTab('cart');
-        }
+        if (redirectToCart) { uiStore.setTab('cart'); }
         return true;
       } catch (err: any) {
         uiStore.addToast({ title: 'Помилка', message: err.message || 'Не вдалося додати до кошика', type: 'error' });
         update((s) => {
           const nextGameIds = new Set(s.cartGameIds);
           nextGameIds.delete(game.id);
-          return {
-            ...s,
-            items: s.items.filter((i) => i.gameId !== game.id),
-            cartGameIds: nextGameIds,
-          };
+          return { ...s, items: s.items.filter((i) => i.gameId !== game.id), cartGameIds: nextGameIds, };
         });
         return false;
       }
@@ -174,12 +140,7 @@ function createCartStore() {
         const summary = await cartService.getCart();
         const items = summary.items || [];
         const gameIds = new Set(items.map((i) => i.gameId));
-        update((s) => ({
-          ...s,
-          items,
-          cartGameIds: gameIds,
-          isLoading: false,
-        }));
+        update((s) => ({ ...s, items, cartGameIds: gameIds, isLoading: false, }));
       } catch {}
 
       uiStore.addToast({
@@ -188,9 +149,7 @@ function createCartStore() {
         type: 'success',
       });
 
-      if (redirectToCart) {
-        uiStore.setTab('cart');
-      }
+      if (redirectToCart) { uiStore.setTab('cart'); }
       return true;
     },
 
@@ -203,11 +162,7 @@ function createCartStore() {
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
         nextGameIds.delete(gameId);
-        return {
-          ...s,
-          items: s.items.filter((i) => i.gameId !== gameId),
-          cartGameIds: nextGameIds,
-        };
+        return { ...s, items: s.items.filter((i) => i.gameId !== gameId), cartGameIds: nextGameIds, };
       });
 
       try {
@@ -219,11 +174,7 @@ function createCartStore() {
         });
       } catch (err: any) {
         uiStore.addToast({ title: 'Помилка видалення', message: err.message, type: 'error' });
-        update((s) => ({
-          ...s,
-          items: prevItems,
-          cartGameIds: new Set(prevItems.map((i) => i.gameId)),
-        }));
+        update((s) => ({ ...s, items: prevItems, cartGameIds: new Set(prevItems.map((i) => i.gameId)), }));
       }
     },
 
@@ -234,11 +185,7 @@ function createCartStore() {
       try {
         await cartService.clearCart();
         update((s) => ({ ...s, items: [], cartGameIds: new Set() }));
-        uiStore.addToast({
-          title: 'Кошик очищено',
-          message: 'Усі товари успішно видалено з кошика.',
-          type: 'info',
-        });
+        uiStore.addToast({ title: 'Кошик очищено', message: 'Усі товари успішно видалено з кошика.', type: 'info', });
       } catch (err: any) {
         uiStore.addToast({ title: 'Помилка', message: err.message, type: 'error' });
       }
@@ -254,11 +201,7 @@ function createCartStore() {
       update((s) => {
         const nextGameIds = new Set(s.cartGameIds);
         nextGameIds.delete(gameId);
-        return {
-          ...s,
-          items: s.items.filter((i) => i.gameId !== gameId),
-          cartGameIds: nextGameIds,
-        };
+        return { ...s, items: s.items.filter((i) => i.gameId !== gameId), cartGameIds: nextGameIds, };
       });
 
       try {
@@ -316,11 +259,7 @@ function createCartStore() {
           });
           uiStore.setDepositModal(true);
         } else {
-          uiStore.addToast({
-            title: 'Помилка покупки',
-            message: errorMessage,
-            type: 'error',
-          });
+          uiStore.addToast({ title: 'Помилка покупки', message: errorMessage, type: 'error', });
         }
         throw err;
       }
@@ -330,9 +269,7 @@ function createCartStore() {
 
 export const cartStore = createCartStore();
 
-export const isGameInCart = (gameId: string) => {
-  return derived(cartStore, ($s) => $s.cartGameIds.has(gameId));
-};
+export const isGameInCart = (gameId: string) => { return derived(cartStore, ($s) => $s.cartGameIds.has(gameId)); };
 
 export const cartTotals = derived(cartStore, ($s) => {
   const items = $s.items;
@@ -345,10 +282,5 @@ export const cartTotals = derived(cartStore, ($s) => {
   }, 0);
   const totalSavingsInNanoTons = Math.max(0, totalBasePriceInNanoTons - totalEffectivePriceInNanoTons);
 
-  return {
-    totalBasePriceInNanoTons,
-    totalEffectivePriceInNanoTons,
-    totalSavingsInNanoTons,
-    itemsCount: items.length,
-  };
+  return { totalBasePriceInNanoTons, totalEffectivePriceInNanoTons, totalSavingsInNanoTons, itemsCount: items.length, };
 });

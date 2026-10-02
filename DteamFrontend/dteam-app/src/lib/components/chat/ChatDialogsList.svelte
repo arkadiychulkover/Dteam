@@ -5,18 +5,13 @@
   import { currentUser } from '../../stores/authStore';
   import type { ChatConversation } from '../../types/chat';
 
-  interface Props {
-    conversations: ChatConversation[];
-    activeFriendId: string | null;
-  }
+  interface Props { conversations: ChatConversation[]; activeFriendId: string | null; }
 
   let { conversations = [], activeFriendId = null }: Props = $props();
 
   let searchQuery = $state('');
 
-  function handleSelect(friendId: string) {
-    chatStore.selectConversation(friendId);
-  }
+  function handleSelect(friendId: string) { chatStore.selectConversation(friendId); }
 
   function formatConversationTime(isoString?: string | null): string {
     if (!isoString) return '';
@@ -48,15 +43,9 @@
     const isMine = msg.senderId === $currentUser?.id;
     const prefix = isMine ? 'Ви: ' : '';
 
-    if (msg.type === 1) {
-      return `${prefix}${msg.content || 'Фото'}`;
-    }
-    if (msg.type === 2) {
-      return `${prefix}${msg.originalFileName || 'Файл'}`;
-    }
-    if (msg.type === 3) {
-      return `${prefix}Голосове повідомлення`;
-    }
+    if (msg.type === 1) { return `${prefix}${msg.content || 'Фото'}`; }
+    if (msg.type === 2) { return `${prefix}${msg.originalFileName || 'Файл'}`; }
+    if (msg.type === 3) { return `${prefix}Голосове повідомлення`; }
     return `${prefix}${msg.content || 'Повідомлення'}`;
   }
 

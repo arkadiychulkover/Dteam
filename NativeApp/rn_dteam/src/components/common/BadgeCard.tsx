@@ -5,10 +5,7 @@ import { Badge } from '../../types';
 import { BackendImage } from '../BackendImage';
 import { Ionicons } from '@expo/vector-icons';
 
-interface BadgeCardProps {
-  badge: Badge;
-  onPress: (badge: Badge) => void;
-}
+interface BadgeCardProps { badge: Badge; onPress: (badge: Badge) => void; }
 
 export const getRarityConfig = (rarity: Badge['rarity']) => {
   switch (rarity) {
@@ -55,13 +52,7 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ badge, onPress }) => {
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          borderColor: rarityCfg.borderColor,
-          backgroundColor: rarityCfg.bgColor,
-        },
-      ]}
+      style={[ styles.card, { borderColor: rarityCfg.borderColor, backgroundColor: rarityCfg.bgColor, }, ]}
       onPress={() => onPress(badge)}
       activeOpacity={0.8}
     >
@@ -108,29 +99,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginRight: 10,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  tokenIdText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: colors.textDim,
-    fontFamily: 'monospace',
-  },
-  rarityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 6,
-    borderWidth: 0.8,
-  },
-  rarityText: {
-    fontSize: 9,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, },
+  tokenIdText: { fontSize: 10, fontWeight: '900', color: colors.textDim, fontFamily: 'monospace', },
+  rarityBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, borderWidth: 0.8, },
+  rarityText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', },
   imageContainer: {
     width: '100%',
     aspectRatio: 1,
@@ -141,23 +113,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeImage: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholderIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  dateText: {
-    fontSize: 10,
-    color: colors.textDim,
-    fontFamily: 'monospace',
-  },
+  badgeImage: { width: '100%', height: '100%', },
+  placeholderIcon: { alignItems: 'center', justifyContent: 'center', },
+  title: { fontSize: 12, fontWeight: '800', color: colors.text, marginBottom: 2, },
+  dateText: { fontSize: 10, color: colors.textDim, fontFamily: 'monospace', },
 });

@@ -1,11 +1,6 @@
-export interface DepositAddressResponse {
-  address: string;
-}
+export interface DepositAddressResponse { address: string; }
 
-export interface VerifyTransactionRequest {
-  txhHash: string;
-  amount: number;
-}
+export interface VerifyTransactionRequest { txhHash: string; amount: number; }
 
 export interface PaymentVerificationResult {
   success: boolean;

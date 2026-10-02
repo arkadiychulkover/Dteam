@@ -17,18 +17,12 @@ class NotificationHubService {
   }
 
   public async start(): Promise<void> {
-    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
-      return;
-    }
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) { return; }
 
-    if (this.isStarting) {
-      return;
-    }
+    if (this.isStarting) { return; }
 
     const state = get(authStore);
-    if (!state.token) {
-      return;
-    }
+    if (!state.token) { return; }
 
     this.isStarting = true;
 
@@ -54,9 +48,7 @@ class NotificationHubService {
         });
 
         this.connection.onclose((err) => {
-          if (err) {
-            console.warn('[NotificationHub] Connection closed with error:', err);
-          }
+          if (err) { console.warn('[NotificationHub] Connection closed with error:', err); }
         });
       }
 
@@ -70,14 +62,7 @@ class NotificationHubService {
   }
 
   public async stop(): Promise<void> {
-    if (this.connection) {
-      try {
-        await this.connection.stop();
-      } catch {
-      } finally {
-        this.connection = null;
-      }
-    }
+    if (this.connection) { try { await this.connection.stop(); } catch { } finally { this.connection = null; } }
   }
 }
 

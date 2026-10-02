@@ -4,11 +4,7 @@
   import { MOCK_AVATARS } from '../../utils/constants';
   import { X, UserPlus, Shield, Wallet, Mail, Lock, User, Sparkles } from 'lucide-svelte';
 
-  interface Props {
-    isOpen: boolean;
-    onClose: () => void;
-    onUserCreated: () => void;
-  }
+  interface Props { isOpen: boolean; onClose: () => void; onUserCreated: () => void; }
 
   let { isOpen, onClose, onUserCreated }: Props = $props();
 
@@ -26,10 +22,7 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (!email || !username || !password) {
-      errorMessage = 'Email, username, and password are required.';
-      return;
-    }
+    if (!email || !username || !password) { errorMessage = 'Email, username, and password are required.'; return; }
 
     isSubmitting = true;
     errorMessage = '';

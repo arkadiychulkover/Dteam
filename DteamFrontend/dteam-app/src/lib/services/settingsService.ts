@@ -11,9 +11,7 @@ import type {
 } from '../types/settings';
 
 class SettingsService {
-  public async getSettings(): Promise<SettingsResponse> {
-    return api.get<SettingsResponse>('/users/settings');
-  }
+  public async getSettings(): Promise<SettingsResponse> { return api.get<SettingsResponse>('/users/settings'); }
 
   public async updateGeneralSettings(dto: UpdateGeneralSettings): Promise<UserProfileSettings> {
     return api.put<UserProfileSettings>('/users/settings/general', dto);
@@ -32,9 +30,7 @@ class SettingsService {
   }
 
   public async deleteAccount(dto: DeleteAccountRequest): Promise<{ message: string }> {
-    return api.delete<{ message: string }>('/users/me', {
-      body: JSON.stringify(dto),
-    });
+    return api.delete<{ message: string }>('/users/me', { body: JSON.stringify(dto), });
   }
 }
 

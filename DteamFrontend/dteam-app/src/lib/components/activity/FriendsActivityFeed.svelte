@@ -8,19 +8,13 @@
 
   let isRefreshing = $state(false);
 
-  onMount(() => {
-    activityStore.loadFriendsActivities();
-  });
+  onMount(() => { activityStore.loadFriendsActivities(); });
 
   async function handleRefresh() {
     isRefreshing = true;
     try {
       await activityStore.loadFriendsActivities(true);
-      uiStore.addToast({
-        title: 'Оновлено',
-        message: 'Стрічку активностей оновлено',
-        type: 'info'
-      });
+      uiStore.addToast({ title: 'Оновлено', message: 'Стрічку активностей оновлено', type: 'info' });
     } catch {
 
     } finally {
@@ -65,9 +59,7 @@
     list.forEach((act) => {
       const label = formatDateDivider(act.createdAt);
       if (label !== currentLabel) {
-        if (currentItems.length > 0) {
-          groups.push({ dateLabel: currentLabel, items: currentItems });
-        }
+        if (currentItems.length > 0) { groups.push({ dateLabel: currentLabel, items: currentItems }); }
         currentLabel = label;
         currentItems = [act];
       } else {
@@ -75,9 +67,7 @@
       }
     });
 
-    if (currentItems.length > 0) {
-      groups.push({ dateLabel: currentLabel, items: currentItems });
-    }
+    if (currentItems.length > 0) { groups.push({ dateLabel: currentLabel, items: currentItems }); }
 
     return groups;
   });

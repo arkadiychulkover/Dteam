@@ -12,15 +12,9 @@
   import { renderDecoratedText, resolveMediaUrl } from '../../utils/textDecorator';
   import BackendImage from '../ui/BackendImage.svelte';
 
-  interface Props {
-    gameId?: string | null;
-    gameName?: string;
-  }
+  interface Props { gameId?: string | null; gameName?: string; }
 
-  let {
-    gameId = null,
-    gameName = "Онлайн людей на сайті"
-  }: Props = $props();
+  let { gameId = null, gameName = "Онлайн людей на сайті" }: Props = $props();
 
   let selectedGame = $state<{ id: string; title: string; bannerUrl?: string } | null>(null);
   let isSelectGameModalOpen = $state(false);
@@ -76,32 +70,23 @@
     isDraggingOver = false;
   }
 
-  function expectedMediaKind(): 'image' | 'video' {
-    return activeTab === 'video' ? 'video' : 'image';
-  }
+  function expectedMediaKind(): 'image' | 'video' { return activeTab === 'video' ? 'video' : 'image'; }
 
-  function openFilePicker() {
-    if (isUploadingMedia) return;
-    fileInputEl?.click();
-  }
+  function openFilePicker() { if (isUploadingMedia) return; fileInputEl?.click(); }
 
   function validateFile(file: File, kind: 'image' | 'video'): string | null {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
     if (kind === 'image') {
       const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
       const isValid = allowedExts.includes(ext) || file.type.startsWith('image/') || ALLOWED_IMAGE_TYPES.includes(file.type);
-      if (!isValid) {
-        return 'Непідтримуваний формат зображення. Дозволені: JPG, PNG, WEBP, GIF.';
-      }
+      if (!isValid) { return 'Непідтримуваний формат зображення. Дозволені: JPG, PNG, WEBP, GIF.'; }
       if (file.size > MAX_IMAGE_SIZE_BYTES) {
         return `Розмір зображення перевищує ліміт ${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)} МБ.`;
       }
     } else {
       const allowedExts = ['mp4', 'webm', 'mov', 'm4v'];
       const isValid = allowedExts.includes(ext) || file.type.startsWith('video/') || ALLOWED_VIDEO_TYPES.includes(file.type);
-      if (!isValid) {
-        return 'Непідтримуваний формат відео. Дозволені: MP4, WEBM, MOV.';
-      }
+      if (!isValid) { return 'Непідтримуваний формат відео. Дозволені: MP4, WEBM, MOV.'; }
       if (file.size > MAX_VIDEO_SIZE_BYTES) {
         return `Розмір відео перевищує ліміт ${MAX_VIDEO_SIZE_BYTES / (1024 * 1024)} МБ.`;
       }
@@ -159,9 +144,7 @@
   function handleFileInputChange(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (file) {
-      uploadFile(file);
-    }
+    if (file) { uploadFile(file); }
     input.value = '';
   }
 
@@ -169,20 +152,12 @@
     e.preventDefault();
     isDraggingOver = false;
     const file = e.dataTransfer?.files?.[0];
-    if (file) {
-      uploadFile(file);
-    }
+    if (file) { uploadFile(file); }
   }
 
-  function handleDragOver(e: DragEvent) {
-    e.preventDefault();
-    isDraggingOver = true;
-  }
+  function handleDragOver(e: DragEvent) { e.preventDefault(); isDraggingOver = true; }
 
-  function handleDragLeave(e: DragEvent) {
-    e.preventDefault();
-    isDraggingOver = false;
-  }
+  function handleDragLeave(e: DragEvent) { e.preventDefault(); isDraggingOver = false; }
 
   const feedCategoryLabels: Record<'all' | 'forum' | 'artwork' | 'screenshots' | 'videos' | 'guides', string> = {
     all: 'Усі',
@@ -210,10 +185,7 @@
     }
   }
 
-  function setFeedCategory(category: keyof typeof feedCategoryLabels) {
-    activeFeedCategory = category;
-    loadPosts();
-  }
+  function setFeedCategory(category: keyof typeof feedCategoryLabels) { activeFeedCategory = category; loadPosts(); }
 
   async function handleToggleLike(post: CommunityPost) {
     post.stats.isLiked = !post.stats.isLiked;
@@ -229,9 +201,7 @@
   onMount(() => {
     loadPosts();
 
-    const unsubscribeOnline = onlineHubService.onOnlineCountChanged((count) => {
-      onlineCount = count;
-    });
+    const unsubscribeOnline = onlineHubService.onOnlineCountChanged((count) => { onlineCount = count; });
 
     onDestroy(unsubscribeOnline);
   });
@@ -245,9 +215,7 @@
       .replace(/'/g, '&#39;');
   }
 
-  function renderPostContent(raw: string): string {
-    return renderDecoratedText(raw);
-  }
+  function renderPostContent(raw: string): string { return renderDecoratedText(raw); }
 
   function applyFormatting(format: 'bold' | 'italic' | 'underline' | 'image') {
     if (!contentTextareaEl) return;
@@ -330,11 +298,7 @@
 
     try {
       await communityService.createPost(selectedGame.id, postPayload);
-      uiStore.addToast({
-        title: 'Успіх! 🎉',
-        message: 'Пост успішно опубліковано!',
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Успіх! 🎉', message: 'Пост успішно опубліковано!', type: 'success' });
 
       setTab('discussion');
       loadPosts();
@@ -350,9 +314,7 @@
     }
   }
 
-  function handleCancel() {
-    setTab('discussion');
-  }
+  function handleCancel() { setTab('discussion'); }
 </script>
 
 <input
@@ -1132,9 +1094,6 @@
 <SelectGameModal
   isOpen={isSelectGameModalOpen}
   selectedGameId={selectedGame?.id}
-  onSelect={(game) => {
-    selectedGame = game;
-    loadPosts();
-  }}
+  onSelect={(game) => { selectedGame = game; loadPosts(); }}
   onClose={() => isSelectGameModalOpen = false}
 />

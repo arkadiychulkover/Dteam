@@ -61,21 +61,14 @@
     return url;
   });
 
-  const letterFallback = $derived(
-    initial || (alt && alt !== 'Зображення' ? alt.charAt(0).toUpperCase() : 'U')
-  );
+  const letterFallback = $derived( initial || (alt && alt !== 'Зображення' ? alt.charAt(0).toUpperCase() : 'U') );
 
   $effect(() => {
     let active = true;
     let createdUrl: string | null = null;
 
     async function fetchImageBlob(url: string | null) {
-      if (!url) {
-        blobUrl = null;
-        isLoaded = false;
-        isError = false;
-        return;
-      }
+      if (!url) { blobUrl = null; isLoaded = false; isError = false; return; }
 
       if (url.startsWith('blob:') || url.startsWith('data:')) {
         blobUrl = url;
@@ -88,10 +81,7 @@
                            url.startsWith('/') ||
                            (BACKEND_URL && url.startsWith(BACKEND_URL));
 
-      if (!isBackendUrl) {
-        blobUrl = url;
-        return;
-      }
+      if (!isBackendUrl) { blobUrl = url; return; }
 
       isLoaded = false;
       isError = false;
@@ -122,12 +112,7 @@
 
     fetchImageBlob(resolvedSrc);
 
-    return () => {
-      active = false;
-      if (createdUrl) {
-        URL.revokeObjectURL(createdUrl);
-      }
-    };
+    return () => { active = false; if (createdUrl) { URL.revokeObjectURL(createdUrl); } };
   });
 </script>
 

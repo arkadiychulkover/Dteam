@@ -40,11 +40,7 @@
       confirmNewPassword: confirmNewPassword.trim(),
     });
 
-    if (success) {
-      oldPassword = '';
-      newPassword = '';
-      confirmNewPassword = '';
-    }
+    if (success) { oldPassword = ''; newPassword = ''; confirmNewPassword = ''; }
   }
 </script>
 

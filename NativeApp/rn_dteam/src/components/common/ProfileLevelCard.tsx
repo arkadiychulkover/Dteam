@@ -4,20 +4,13 @@ import { colors } from '../../theme/colors';
 import { ProfileLevelHexagon } from './ProfileLevelHexagon';
 import { Ionicons } from '@expo/vector-icons';
 
-interface ProfileLevelCardProps {
-  level: number;
-  currentXp: number;
-  nextLevelXp: number;
-}
+interface ProfileLevelCardProps { level: number; currentXp: number; nextLevelXp: number; }
 
 export const ProfileLevelCard: React.FC<ProfileLevelCardProps> = ({
   level,
   currentXp,
   nextLevelXp,
-}) => {
-  const percent = Math.min(100, Math.round((currentXp / Math.max(1, nextLevelXp)) * 100));
-
-  return (
+}) => { const percent = Math.min(100, Math.round((currentXp / Math.max(1, nextLevelXp)) * 100)); return (
     <View style={styles.card}>
       <View style={styles.topRow}>
         <ProfileLevelHexagon level={level} size={46} />
@@ -63,24 +56,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 16,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  levelInfo: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  levelTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text,
-  },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 12, },
+  levelInfo: { flex: 1, },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
+  levelTitle: { fontSize: 16, fontWeight: '800', color: colors.text, },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -90,31 +69,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
   },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.accentEmerald,
-  },
-  levelSubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  xpTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  xpValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
-  xpMax: {
-    fontSize: 11,
-    color: colors.textDim,
-    fontFamily: 'monospace',
-  },
+  statusBadgeText: { fontSize: 10, fontWeight: '700', color: colors.accentEmerald, },
+  levelSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2, },
+  xpTextContainer: { flexDirection: 'row', alignItems: 'baseline', },
+  xpValue: { fontSize: 14, fontWeight: '800', color: colors.primary, fontFamily: 'monospace', },
+  xpMax: { fontSize: 11, color: colors.textDim, fontFamily: 'monospace', },
   progressBarTrack: {
     height: 8,
     backgroundColor: colors.background,
@@ -133,20 +92,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 4,
   },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  percentText: {
-    fontSize: 11,
-    color: colors.textDim,
-    fontWeight: '600',
-  },
-  rewardText: {
-    fontSize: 11,
-    color: colors.accentAmber,
-    fontWeight: '700',
-  },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, },
+  percentText: { fontSize: 11, color: colors.textDim, fontWeight: '600', },
+  rewardText: { fontSize: 11, color: colors.accentAmber, fontWeight: '700', },
 });

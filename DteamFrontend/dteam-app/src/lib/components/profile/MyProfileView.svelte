@@ -54,9 +54,7 @@
     try {
       await navigator.clipboard.writeText(DTEAM_POINTS_CONTRACT_ADDRESS);
       copiedPointsAddress = true;
-      setTimeout(() => {
-        copiedPointsAddress = false;
-      }, 2000);
+      setTimeout(() => { copiedPointsAddress = false; }, 2000);
     } catch (err) {
       console.warn('Failed to copy points contract address:', err);
     }
@@ -154,10 +152,7 @@
   async function connectMetaMask() {
     if (typeof window === 'undefined') return;
     const eth = (window as any).ethereum;
-    if (!eth) {
-      metaMaskNotDetected = true;
-      return;
-    }
+    if (!eth) { metaMaskNotDetected = true; return; }
 
     try {
       isCheckingWallet = true;
@@ -197,17 +192,9 @@
     $currentUser ? ($activityStore.userActivities[$currentUser.id.toLowerCase()] || []) : []
   );
 
-  function handleAccountsChanged() {
-    checkMetaMaskAndSync();
-    loadMyNfts();
-  }
+  function handleAccountsChanged() { checkMetaMaskAndSync(); loadMyNfts(); }
 
-  $effect(() => {
-    if (activeTab === 'значки') {
-      checkMetaMaskAndSync();
-      loadMyNfts();
-    }
-  });
+  $effect(() => { if (activeTab === 'значки') { checkMetaMaskAndSync(); loadMyNfts(); } });
 
   let unsubReward: (() => void) | null = null;
 
@@ -217,24 +204,16 @@
     wishlistStore.loadWishlist();
     loadMyNfts();
     friendsStore.loadFriends();
-    if ($currentUser) {
-      activityStore.loadUserActivities($currentUser.id);
-    }
+    if ($currentUser) { activityStore.loadUserActivities($currentUser.id); }
 
     checkMetaMaskAndSync();
-    if (tokenBalance === null) {
-      fetchFallbackTokenBalance();
-    }
+    if (tokenBalance === null) { fetchFallbackTokenBalance(); }
 
-    unsubReward = onlineHubService.onRewardMinted(() => {
-      loadMyNfts();
-    });
+    unsubReward = onlineHubService.onRewardMinted(() => { loadMyNfts(); });
 
     if (typeof window !== 'undefined') {
       const eth = (window as any).ethereum;
-      if (eth && eth.on) {
-        eth.on('accountsChanged', handleAccountsChanged);
-      }
+      if (eth && eth.on) { eth.on('accountsChanged', handleAccountsChanged); }
     }
   });
 
@@ -242,9 +221,7 @@
     unsubReward?.();
     if (typeof window !== 'undefined') {
       const eth = (window as any).ethereum;
-      if (eth && eth.removeListener) {
-        eth.removeListener('accountsChanged', handleAccountsChanged);
-      }
+      if (eth && eth.removeListener) { eth.removeListener('accountsChanged', handleAccountsChanged); }
     }
   });
 
@@ -324,9 +301,7 @@
       selectedPostFile = file;
       const uploaded = await mediaService.upload(file);
       postMediaUrl = uploaded.url;
-      if (isVideo) {
-        postMediaThumbnailUrl = await mediaService.generateAndUploadVideoThumbnail(file);
-      }
+      if (isVideo) { postMediaThumbnailUrl = await mediaService.generateAndUploadVideoThumbnail(file); }
     } catch (err: any) {
       uiStore.addToast({ title: 'Помилка завантаження', message: err?.message || 'Не вдалося завантажити файл.', type: 'error' });
       resetPostMedia();
@@ -335,9 +310,7 @@
     }
   }
 
-  function removePostMedia() {
-    resetPostMedia();
-  }
+  function removePostMedia() { resetPostMedia(); }
 
   async function submitPost() {
     if (!selectedPostGame?.id) {
@@ -812,10 +785,7 @@
                 {#each myNfts as nft (nft.id || nft.tokenId)}
                   <BadgeCard
                     gift={nft}
-                    onclick={(g) => {
-                      selectedBadgeForModal = g;
-                      isBadgeModalOpen = true;
-                    }}
+                    onclick={(g) => { selectedBadgeForModal = g; isBadgeModalOpen = true; }}
                   />
                 {/each}
               </div>

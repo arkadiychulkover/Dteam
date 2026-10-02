@@ -21,9 +21,7 @@ export function resolveMediaUrl(url?: string | null): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
 
-  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
-    return trimmed;
-  }
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) { return trimmed; }
 
   let fullUrl: string;
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
@@ -33,7 +31,7 @@ export function resolveMediaUrl(url?: string | null): string | null {
     fullUrl = `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}`;
   }
 
-  // Attach auth token to protected backend endpoints if not already attached
+  
   if (
     (fullUrl.includes('/api/chat/media/') || fullUrl.includes('/api/chat/uploads/')) &&
     !fullUrl.includes('token=') &&

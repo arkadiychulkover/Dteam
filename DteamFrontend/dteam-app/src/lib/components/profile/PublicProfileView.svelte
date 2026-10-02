@@ -36,14 +36,10 @@
 
   const profile = $derived($profileStore.profile);
   const friends = $derived($profileStore.friends);
-  const uniqueFriends = $derived(
-    Array.from(new Map(friends.map((f) => [f.id, f])).values())
-  );
+  const uniqueFriends = $derived( Array.from(new Map(friends.map((f) => [f.id, f])).values()) );
   const isLoading = $derived($profileStore.isLoading);
   const error = $derived($profileStore.error);
-  const userActivities = $derived(
-    profile ? ($activityStore.userActivities[profile.id.toLowerCase()] || []) : []
-  );
+  const userActivities = $derived( profile ? ($activityStore.userActivities[profile.id.toLowerCase()] || []) : [] );
 
   let userGifts = $state<NftGift[]>([]);
   let isLoadingGifts = $state(false);
@@ -57,10 +53,7 @@
 
   async function loadPublicTokenBalance() {
     const addr = profile?.hardhatAddress || profile?.walletAddress;
-    if (!addr) {
-      publicTokenBalance = 0;
-      return;
-    }
+    if (!addr) { publicTokenBalance = 0; return; }
     isLoadingPublicBalance = true;
     try {
       publicTokenBalance = await getTdpBalanceHybrid(addr, false);
@@ -84,11 +77,7 @@
   }
 
   $effect(() => {
-    if (profile?.id) {
-      activityStore.loadUserActivities(profile.id);
-      loadUserGifts();
-      loadPublicTokenBalance();
-    }
+    if (profile?.id) { activityStore.loadUserActivities(profile.id); loadUserGifts(); loadPublicTokenBalance(); }
   });
 
   const menuItems: { id: TabId; label: string; count: (() => number | null) }[] = [
@@ -105,16 +94,8 @@
   async function navigateToGame(game: { id: string; title?: string; description?: string }) {
     if (!game?.id) return;
     const existing = $gamesStore.games.find((g) => g.id === game.id);
-    if (existing) {
-      gamesStore.selectGame(existing);
-      uiStore.setTab('game');
-      return;
-    }
-    if (game.title && game.description) {
-      gamesStore.selectGame(game as any);
-      uiStore.setTab('game');
-      return;
-    }
+    if (existing) { gamesStore.selectGame(existing); uiStore.setTab('game'); return; }
+    if (game.title && game.description) { gamesStore.selectGame(game as any); uiStore.setTab('game'); return; }
     try {
       const fullGame = await gamesService.getGameById(game.id);
       gamesStore.selectGame(fullGame);
@@ -146,9 +127,7 @@
   const videoPosts = $derived(allPosts.filter((p) => p.category === 'videos'));
   const guidePosts = $derived(allPosts.filter((p) => p.category === 'guides'));
 
-  $effect(() => {
-    if (profile) loadUserPosts();
-  });
+  $effect(() => { if (profile) loadUserPosts(); });
 
   let isSendingRequest = $state(false);
 
@@ -178,16 +157,10 @@
         const incomings = await friendsService.getFriendRequests('incoming');
         reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
       }
-      if (reqId) {
-        await friendsStore.acceptRequest(reqId, profile.username);
-      }
+      if (reqId) { await friendsStore.acceptRequest(reqId, profile.username); }
       profileStore.reload();
     } catch (e: any) {
-      uiStore.addToast({
-        title: 'Помилка',
-        message: e?.message || 'Не вдалося прийняти запит.',
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: e?.message || 'Не вдалося прийняти запит.', type: 'error', });
     } finally {
       isSendingRequest = false;
     }
@@ -202,16 +175,10 @@
         const incomings = await friendsService.getFriendRequests('incoming');
         reqId = incomings.find(r => r.senderId === profile.id || r.senderUsername.toLowerCase() === profile.username.toLowerCase())?.id;
       }
-      if (reqId) {
-        await friendsStore.rejectRequest(reqId, profile.username);
-      }
+      if (reqId) { await friendsStore.rejectRequest(reqId, profile.username); }
       profileStore.reload();
     } catch (e: any) {
-      uiStore.addToast({
-        title: 'Помилка',
-        message: e?.message || 'Не вдалося відхилити запит.',
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: e?.message || 'Не вдалося відхилити запит.', type: 'error', });
     } finally {
       isSendingRequest = false;
     }
@@ -260,11 +227,7 @@
         type: 'success',
       });
     } catch {
-      uiStore.addToast({
-        title: 'Помилка',
-        message: 'Не вдалося скопіювати посилання.',
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Помилка', message: 'Не вдалося скопіювати посилання.', type: 'error', });
     }
   }
 
@@ -498,10 +461,7 @@
                   {#each userGifts as gift (gift.id || gift.tokenId)}
                     <BadgeCard
                       {gift}
-                      onclick={(g) => {
-                        selectedGiftForModal = g;
-                        isGiftModalOpen = true;
-                      }}
+                      onclick={(g) => { selectedGiftForModal = g; isGiftModalOpen = true; }}
                     />
                   {/each}
                 </div>

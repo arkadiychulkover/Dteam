@@ -8,7 +8,7 @@ export interface BackendNftItem {
   name: string;
   description?: string | null;
   giftMessage?: string | null;
-  rarity: number; // 0=common, 1=uncommon/rare, 2=rare, 3=epic, 4=legendary
+  rarity: number; 
   imageUrl: string;
   contractAddress: string;
   ownerAddress?: string | null;
@@ -41,11 +41,7 @@ export function mapBackendNftToBadge(item: BackendNftItem): Badge {
     rarity: mapRarity(item.rarity),
     level: item.tokenId != null ? Math.min(5, Math.max(1, (item.tokenId % 5) + 1)) : 1,
     earnedDate: item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString('uk-UA', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
+      ? new Date(item.createdAt).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short', day: 'numeric', })
       : '2026',
     contractAddress: item.contractAddress || '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
     tokenId: item.tokenId != null ? String(item.tokenId).padStart(3, '0') : '001',
@@ -53,16 +49,13 @@ export function mapBackendNftToBadge(item: BackendNftItem): Badge {
 }
 
 export const nftService = {
-  /**
-   * Отримати NFT користувача з сервера (без використання блокчейну на клієнті)
-   */
+  
+
   async getUserNfts(userId: string): Promise<Badge[]> {
     if (!userId) return [];
     try {
       const items = await api.get<BackendNftItem[]>(`/nft/user/${userId}/gifts`);
-      if (items && Array.isArray(items)) {
-        return items.map(mapBackendNftToBadge);
-      }
+      if (items && Array.isArray(items)) { return items.map(mapBackendNftToBadge); }
       return [];
     } catch (err) {
       console.warn('[nftService] Failed to fetch user gifts from backend:', err);
@@ -70,15 +63,12 @@ export const nftService = {
     }
   },
 
-  /**
-   * Отримати загальний каталог NFT з сервера (fallback, якщо у користувача ще немає подарунків)
-   */
+  
+
   async getAllNfts(): Promise<Badge[]> {
     try {
       const items = await api.get<BackendNftItem[]>('/nft');
-      if (items && Array.isArray(items)) {
-        return items.map(mapBackendNftToBadge);
-      }
+      if (items && Array.isArray(items)) { return items.map(mapBackendNftToBadge); }
       return [];
     } catch (err) {
       console.warn('[nftService] Failed to fetch all NFTs from backend:', err);
@@ -86,9 +76,8 @@ export const nftService = {
     }
   },
 
-  /**
-   * Отримати баланс TDP токенів користувача з сервера (REST API)
-   */
+  
+
   async getTdpBalance(address?: string | null): Promise<number> {
     if (!address || !address.trim()) return 0;
     try {

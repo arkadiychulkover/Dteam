@@ -30,9 +30,7 @@ class ApiClient {
 
   public async refreshAccessToken(): Promise<string | null> {
     const refreshToken = await tokenStorage.getRefreshToken();
-    if (!refreshToken) {
-      return null;
-    }
+    if (!refreshToken) { return null; }
 
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
@@ -84,9 +82,7 @@ class ApiClient {
     }
 
     const token = tokenStorage.getSyncToken() || (await tokenStorage.getToken());
-    if (token && !headers['Authorization']) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    if (token && !headers['Authorization']) { headers['Authorization'] = `Bearer ${token}`; }
 
     try {
       const response = await fetch(url, {
@@ -104,9 +100,7 @@ class ApiClient {
           (await tokenStorage.getRefreshToken())
         ) {
           const newAccessToken = await this.refreshAccessToken();
-          if (newAccessToken) {
-            return this.request<T>(endpoint, options, true);
-          }
+          if (newAccessToken) { return this.request<T>(endpoint, options, true); }
         }
 
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
@@ -131,15 +125,11 @@ class ApiClient {
         throw new ApiError(errorMessage, response.status, details);
       }
 
-      if (response.status === 204) {
-        return {} as T;
-      }
+      if (response.status === 204) { return {} as T; }
 
       return (await response.json()) as T;
     } catch (err: any) {
-      if (err instanceof ApiError) {
-        throw err;
-      }
+      if (err instanceof ApiError) { throw err; }
       console.warn(`[API] Network error requesting ${url}:`, err.message);
       throw new ApiError(err.message || 'Помилка мережі при запиті до сервера', 0);
     }

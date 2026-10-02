@@ -1,14 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Platform, Alert, } from 'react-native';
 import { colors } from '../../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,9 +34,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   const durationTimerRef = useRef<any>(null);
 
   useEffect(() => {
-    return () => {
-      if (durationTimerRef.current) clearInterval(durationTimerRef.current);
-    };
+    return () => { if (durationTimerRef.current) clearInterval(durationTimerRef.current); };
   }, []);
 
   const handlePickImage = async () => {
@@ -78,15 +67,9 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
     setIsAttachModalVisible(false);
     try {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert('Потрібен дозвіл', 'Надайте додатку доступ до камери.');
-        return;
-      }
+      if (!permissionResult.granted) { Alert.alert('Потрібен дозвіл', 'Надайте додатку доступ до камери.'); return; }
 
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8, });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
@@ -102,10 +85,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   const handlePickDocument = async () => {
     setIsAttachModalVisible(false);
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: true,
-      });
+      const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true, });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const doc = result.assets[0];
@@ -134,9 +114,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 
         const mediaRecorder = new (window as any).MediaRecorder(stream);
         mediaRecorder.ondataavailable = (event: any) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
+          if (event.data.size > 0) { audioChunksRef.current.push(event.data); }
         };
 
         mediaRecorder.start(200);
@@ -148,10 +126,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           return;
         }
 
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-        });
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true, });
 
         const recording = new Audio.Recording();
         await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
@@ -161,9 +136,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 
       setIsRecording(true);
 
-      durationTimerRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
-      }, 1000);
+      durationTimerRef.current = setInterval(() => { setRecordingDuration((prev) => prev + 1); }, 1000);
     } catch (err) {
       console.warn('Failed to start recording:', err);
       Alert.alert('Помилка запису', 'Не вдалося активувати мікрофон.');
@@ -177,17 +150,13 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      if (streamRef.current) { streamRef.current.getTracks().forEach((track) => track.stop()); }
       mediaRecorderRef.current = null;
       streamRef.current = null;
       audioChunksRef.current = [];
     } else {
       if (recordingRef.current) {
-        try {
-          await recordingRef.current.stopAndUnloadAsync();
-        } catch (_) {}
+        try { await recordingRef.current.stopAndUnloadAsync(); } catch (_) {}
         recordingRef.current = null;
       }
     }
@@ -208,9 +177,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           const audioUrl = URL.createObjectURL(audioBlob);
           onSendVoice(audioUrl, finalDuration);
 
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
-          }
+          if (streamRef.current) { streamRef.current.getTracks().forEach((track) => track.stop()); }
           mediaRecorderRef.current = null;
           streamRef.current = null;
           audioChunksRef.current = [];
@@ -239,11 +206,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
     setRecordingDuration(0);
   };
 
-  const handleSendText = () => {
-    if (!text.trim()) return;
-    onSendMessage(text.trim());
-    setText('');
-  };
+  const handleSendText = () => { if (!text.trim()) return; onSendMessage(text.trim()); setText(''); };
 
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -429,33 +392,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.4)',
   },
-  recordingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  recordingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.danger,
-  },
-  recordingText: {
-    fontSize: 13,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  recordingTimer: {
-    fontSize: 12,
-    color: colors.danger,
-    fontFamily: 'monospace',
-    fontWeight: '800',
-  },
-  recordingActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  recordingLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, },
+  recordingDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.danger, },
+  recordingText: { fontSize: 13, color: colors.text, fontWeight: '700', },
+  recordingTimer: { fontSize: 12, color: colors.danger, fontFamily: 'monospace', fontWeight: '800', },
+  recordingActions: { flexDirection: 'row', alignItems: 'center', gap: 10, },
   cancelRecordBtn: {
     width: 32,
     height: 32,
@@ -472,12 +413,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'flex-end', padding: 16, },
   modalContent: {
     backgroundColor: colors.surface,
     borderRadius: 24,
@@ -486,13 +422,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 12,
   },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
+  modalTitle: { fontSize: 15, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6, },
   modalOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -503,26 +433,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  modalOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalOptionTextWrapper: {
-    flex: 1,
-  },
-  modalOptionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  modalOptionSub: {
-    fontSize: 11,
-    color: colors.textDim,
-  },
+  modalOptionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', },
+  modalOptionTextWrapper: { flex: 1, },
+  modalOptionLabel: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 2, },
+  modalOptionSub: { fontSize: 11, color: colors.textDim, },
   modalCancelBtn: {
     marginTop: 4,
     paddingVertical: 12,
@@ -530,9 +444,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: colors.surfaceCardLight,
   },
-  modalCancelText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
+  modalCancelText: { fontSize: 13, fontWeight: '700', color: colors.textMuted, },
 });

@@ -16,10 +16,7 @@
     isSubmitting = true;
     try {
       const success = await friendsStore.sendRequest(usernameOrId.trim());
-      if (success) {
-        usernameOrId = '';
-        isOpen = false;
-      }
+      if (success) { usernameOrId = ''; isOpen = false; }
     } finally {
       isSubmitting = false;
     }
@@ -31,20 +28,13 @@
       await navigator.clipboard.writeText($currentUser.id);
       isCopied = true;
       setTimeout(() => isCopied = false, 2500);
-      uiStore.addToast({
-        title: 'ID скопійовано',
-        message: 'Ваш ID скопійовано в буфер обміну.',
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'ID скопійовано', message: 'Ваш ID скопійовано в буфер обміну.', type: 'success' });
     } catch (e) {
       console.warn('Copy failed', e);
     }
   }
 
-  function handleClose() {
-    isOpen = false;
-    usernameOrId = '';
-  }
+  function handleClose() { isOpen = false; usernameOrId = ''; }
 </script>
 
 {#if isOpen}

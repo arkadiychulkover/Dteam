@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Image,
-  ImageStyle,
-  StyleProp,
-  StyleSheet,
-  ActivityIndicator,
-  Text,
-} from 'react-native';
+import { View, Image, ImageStyle, StyleProp, StyleSheet, ActivityIndicator, Text, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveMediaUrl } from '../utils/constants';
 import { theme } from '../styles/theme';
@@ -36,11 +28,7 @@ export const BackendImage: React.FC<BackendImageProps> = ({
     return (
       <View style={[styles.fallbackContainer, style]}>
         <Ionicons name="image-outline" size={fallbackIconSize} color={theme.colors.textDim} />
-        {fallbackText ? (
-          <Text style={styles.fallbackText} numberOfLines={1}>
-            {fallbackText}
-          </Text>
-        ) : null}
+        {fallbackText ? ( <Text style={styles.fallbackText} numberOfLines={1}> {fallbackText} </Text> ) : null}
       </View>
     );
   }
@@ -55,16 +43,10 @@ export const BackendImage: React.FC<BackendImageProps> = ({
 
       <Image
         source={{ uri: resolvedSrc }}
-        style={[
-          StyleSheet.absoluteFill,
-          { opacity: isLoaded ? 1 : 0 },
-        ]}
+        style={[ StyleSheet.absoluteFill, { opacity: isLoaded ? 1 : 0 }, ]}
         resizeMode={resizeMode}
         onLoad={() => setIsLoaded(true)}
-        onError={() => {
-          setIsError(true);
-          setIsLoaded(true);
-        }}
+        onError={() => { setIsError(true); setIsLoaded(true); }}
       />
     </View>
   );
@@ -94,11 +76,5 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderSubtle,
     overflow: 'hidden',
   },
-  fallbackText: {
-    fontSize: 10,
-    color: theme.colors.textDim,
-    marginTop: 4,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
+  fallbackText: { fontSize: 10, color: theme.colors.textDim, marginTop: 4, textAlign: 'center', fontWeight: '500', },
 });

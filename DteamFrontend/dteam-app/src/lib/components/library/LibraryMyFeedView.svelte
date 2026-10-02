@@ -26,9 +26,7 @@
   let activeCategory = $state<'all' | 'news' | 'screenshots' | 'forum'>('all');
   let lightboxMedia = $state<{ src: string; title?: string; author?: { username: string; avatarUrl?: string } } | null>(null);
 
-  const ownedGameIds = $derived(
-    new Set($libraryStore.items.map((i) => i.gameId.toLowerCase()))
-  );
+  const ownedGameIds = $derived( new Set($libraryStore.items.map((i) => i.gameId.toLowerCase())) );
 
   async function loadFeed() {
     isLoading = true;
@@ -53,14 +51,9 @@
     }
   }
 
-  onMount(() => {
-    loadFeed();
-  });
+  onMount(() => { loadFeed(); });
 
-  function setCategory(cat: 'all' | 'news' | 'screenshots' | 'forum') {
-    activeCategory = cat;
-    loadFeed();
-  }
+  function setCategory(cat: 'all' | 'news' | 'screenshots' | 'forum') { activeCategory = cat; loadFeed(); }
 
   async function toggleLike(post: CommunityPost) {
     const prevLiked = post.stats.isLiked;

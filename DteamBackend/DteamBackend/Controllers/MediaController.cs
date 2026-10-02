@@ -104,7 +104,6 @@ namespace DteamBackend.Controllers
 
             var cleanKey = key.TrimStart('/', '\\');
 
-            // 1. Check local static storage / wwwroot first
             var webRoot = _webHostEnvironment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
             var localFilePath = Path.Combine(webRoot, cleanKey.Replace('/', Path.DirectorySeparatorChar));
             if (System.IO.File.Exists(localFilePath))
@@ -117,7 +116,6 @@ namespace DteamBackend.Controllers
                 return PhysicalFile(Path.GetFullPath(localFilePath), contentType, enableRangeProcessing: true);
             }
 
-            // 2. Check remote S3 storage service
             try
             {
                 var s3Result = await _storageService.GetFileAsync(cleanKey, cancellationToken);
@@ -128,7 +126,7 @@ namespace DteamBackend.Controllers
             }
             catch
             {
-                // S3 not configured or client threw
+
             }
 
             return NotFound(new { message = $"Файл '{cleanKey}' не знайдено." });

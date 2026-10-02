@@ -3,15 +3,11 @@
   import { chatStore } from '../../stores/chatStore';
   import type { ChatMonthGroup } from '../../types/chat';
 
-  interface Props {
-    filesByMonth?: ChatMonthGroup[];
-  }
+  interface Props { filesByMonth?: ChatMonthGroup[]; }
 
   let { filesByMonth = [] }: Props = $props();
 
-  function handleBack() {
-    chatStore.setRightSidebarTab('profile');
-  }
+  function handleBack() { chatStore.setRightSidebarTab('profile'); }
 
   function formatFileSize(bytes: number): string {
     if (!bytes || bytes === 0) return '0 Б';

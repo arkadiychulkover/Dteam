@@ -53,18 +53,12 @@ class ChatHubService {
   }
 
   public async start(): Promise<void> {
-    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
-      return;
-    }
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) { return; }
 
-    if (this.isStarting) {
-      return;
-    }
+    if (this.isStarting) { return; }
 
     const state = get(authStore);
-    if (!state.token) {
-      return;
-    }
+    if (!state.token) { return; }
 
     this.isStarting = true;
 
@@ -85,9 +79,7 @@ class ChatHubService {
           .configureLogging(signalR.LogLevel.Warning)
           .build();
 
-        this.connection.on('ReceiveMessage', (msg: ChatMessage) => {
-          this.messageHandlers.forEach(h => h(msg));
-        });
+        this.connection.on('ReceiveMessage', (msg: ChatMessage) => { this.messageHandlers.forEach(h => h(msg)); });
 
         this.connection.on('MessageRead', (data: { messageId: string; readerUserId: string; readAt: string }) => {
           this.readHandlers.forEach(h => h(data));
@@ -105,14 +97,10 @@ class ChatHubService {
           this.messageDeletedHandlers.forEach(h => h(data));
         });
 
-        this.connection.onreconnected(() => {
-          this.reconnectedHandlers.forEach(h => h());
-        });
+        this.connection.onreconnected(() => { this.reconnectedHandlers.forEach(h => h()); });
       }
 
-      if (this.connection.state === signalR.HubConnectionState.Disconnected) {
-        await this.connection.start();
-      }
+      if (this.connection.state === signalR.HubConnectionState.Disconnected) { await this.connection.start(); }
     } catch (err) {
       console.warn('ChatHub connection error:', err);
     } finally {
@@ -122,18 +110,12 @@ class ChatHubService {
 
   public async stop(): Promise<void> {
     if (this.connection) {
-      try {
-        await this.connection.stop();
-      } catch (err) {
-        console.warn('ChatHub stop error:', err);
-      }
+      try { await this.connection.stop(); } catch (err) { console.warn('ChatHub stop error:', err); }
       this.connection = null;
     }
   }
 
-  public isConnected(): boolean {
-    return this.connection?.state === signalR.HubConnectionState.Connected;
-  }
+  public isConnected(): boolean { return this.connection?.state === signalR.HubConnectionState.Connected; }
 }
 
 export const chatHubService = new ChatHubService();

@@ -2,33 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
 
-interface ProfileLevelHexagonProps {
-  level: number;
-  size?: number;
-}
+interface ProfileLevelHexagonProps { level: number; size?: number; }
 
 export const ProfileLevelHexagon: React.FC<ProfileLevelHexagonProps> = ({
   level,
   size = 44,
-}) => {
-  return (
+}) => { return (
     <View
-      style={[
-        styles.container,
-        {
-          width: size,
-          height: size,
-          borderRadius: size * 0.28,
-        },
-      ]}
+      style={[ styles.container, { width: size, height: size, borderRadius: size * 0.28, }, ]}
     >
       <View
-        style={[
-          styles.inner,
-          {
-            borderRadius: size * 0.24,
-          },
-        ]}
+        style={[ styles.inner, { borderRadius: size * 0.24, }, ]}
       >
         <Text style={[styles.levelText, { fontSize: size * 0.42 }]}>{level}</Text>
       </View>
@@ -49,16 +33,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  inner: {
-    width: '84%',
-    height: '84%',
-    backgroundColor: '#021118',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  levelText: {
-    fontWeight: '900',
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
+  inner: { width: '84%', height: '84%', backgroundColor: '#021118', alignItems: 'center', justifyContent: 'center', },
+  levelText: { fontWeight: '900', color: colors.primary, fontFamily: 'monospace', },
 });

@@ -50,9 +50,7 @@
 
   let tagsInput = $state('Web3, TON, Cyberpunk');
 
-  function close() {
-    uiStore.setPublishGameModal(false);
-  }
+  function close() { uiStore.setPublishGameModal(false); }
 
   function toggleGenre(genre: string) {
     if (selectedGenres.includes(genre)) {
@@ -64,9 +62,7 @@
 
   function togglePlatform(platform: string) {
     if (selectedPlatforms.includes(platform)) {
-      if (selectedPlatforms.length > 1) {
-        selectedPlatforms = selectedPlatforms.filter((p) => p !== platform);
-      }
+      if (selectedPlatforms.length > 1) { selectedPlatforms = selectedPlatforms.filter((p) => p !== platform); }
     } else {
       selectedPlatforms = [...selectedPlatforms, platform];
     }
@@ -106,11 +102,7 @@
         const res = await mediaService.upload(files[i]);
         screenshotUrls = [...screenshotUrls, res.url];
       }
-      uiStore.addToast({
-        title: 'Скріншот додано',
-        message: 'Зображення додано до галереї гри.',
-        type: 'success',
-      });
+      uiStore.addToast({ title: 'Скріншот додано', message: 'Зображення додано до галереї гри.', type: 'success', });
     } catch (err: any) {
       uiStore.addToast({
         title: 'Помилка завантаження',
@@ -122,16 +114,11 @@
     }
   }
 
-  function removeScreenshot(index: number) {
-    screenshotUrls = screenshotUrls.filter((_, i) => i !== index);
-  }
+  function removeScreenshot(index: number) { screenshotUrls = screenshotUrls.filter((_, i) => i !== index); }
 
   function handleArchiveChange(e: Event) {
     const files = (e.target as HTMLInputElement).files;
-    if (files && files.length > 0) {
-      archiveFileName = files[0].name;
-      archivePath = `/storage/games/${files[0].name}`;
-    }
+    if (files && files.length > 0) { archiveFileName = files[0].name; archivePath = `/storage/games/${files[0].name}`; }
   }
 
   async function handleSubmit() {

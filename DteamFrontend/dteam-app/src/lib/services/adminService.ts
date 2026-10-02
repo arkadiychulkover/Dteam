@@ -73,10 +73,7 @@ export interface UpdateGameDto {
   trailerUrl?: string;
 }
 
-export interface CreditBalanceDto {
-  amountInNanoTons: number;
-  reason?: string;
-}
+export interface CreditBalanceDto { amountInNanoTons: number; reason?: string; }
 
 export interface HealthCheckResponse {
   status: string;
@@ -94,24 +91,18 @@ export const activeAdminIdStore = writable<string>(
 );
 
 class AdminService {
-  public getActiveAdminId(): string {
-    return get(activeAdminIdStore) || '';
-  }
+  public getActiveAdminId(): string { return get(activeAdminIdStore) || ''; }
 
   public setActiveAdminId(id: string) {
     activeAdminIdStore.set(id);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('dteam_admin_guid', id);
-    }
+    if (typeof localStorage !== 'undefined') { localStorage.setItem('dteam_admin_guid', id); }
   }
 
   public async checkHealth(): Promise<HealthCheckResponse> {
     return await api.get<HealthCheckResponse>('/health/check-status');
   }
 
-  public async getUsers(_customAdminId?: string): Promise<Duser[]> {
-    return await api.get<Duser[]>('/admin/users');
-  }
+  public async getUsers(_customAdminId?: string): Promise<Duser[]> { return await api.get<Duser[]>('/admin/users'); }
 
   public async getUserById(id: string, _customAdminId?: string): Promise<Duser> {
     return await api.get<Duser>(`/admin/users/${id}`);
@@ -133,9 +124,7 @@ class AdminService {
     return await api.post<Duser>(`/admin/users/${id}/credit-balance`, dto);
   }
 
-  public async getGames(_customAdminId?: string): Promise<Game[]> {
-    return await api.get<Game[]>('/admin/games');
-  }
+  public async getGames(_customAdminId?: string): Promise<Game[]> { return await api.get<Game[]>('/admin/games'); }
 
   public async getGameById(id: string, _customAdminId?: string): Promise<Game> {
     return await api.get<Game>(`/admin/games/${id}`);
@@ -169,10 +158,6 @@ export interface RewardSettingsDto {
   updatedAt?: string;
 }
 
-export interface UpdateRewardSettingsDto {
-  rewardIntervalMinutes: number;
-  tokensPerHour: number;
-  isEnabled: boolean;
-}
+export interface UpdateRewardSettingsDto { rewardIntervalMinutes: number; tokensPerHour: number; isEnabled: boolean; }
 
 export const adminService = new AdminService();

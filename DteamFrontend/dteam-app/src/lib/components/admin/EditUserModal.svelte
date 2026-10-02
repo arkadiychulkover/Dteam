@@ -4,12 +4,7 @@
   import type { Duser } from '../../types';
   import { X, Edit, Shield, Wallet, Mail, Lock, User, Ban, CheckCircle2 } from 'lucide-svelte';
 
-  interface Props {
-    user: Duser | null;
-    isOpen: boolean;
-    onClose: () => void;
-    onUserUpdated: () => void;
-  }
+  interface Props { user: Duser | null; isOpen: boolean; onClose: () => void; onUserUpdated: () => void; }
 
   let { user, isOpen, onClose, onUserUpdated }: Props = $props();
 

@@ -10,27 +10,18 @@
   let isSubmitting = $state(false);
   let errorMessage = $state('');
 
-  function closeModal() {
-    uiStore.setLoginModal(false);
-  }
+  function closeModal() { uiStore.setLoginModal(false); }
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!identifier.trim() || !password) {
-      errorMessage = 'Будь ласка, заповніть усі поля';
-      return;
-    }
+    if (!identifier.trim() || !password) { errorMessage = 'Будь ласка, заповніть усі поля'; return; }
 
     errorMessage = '';
     isSubmitting = true;
 
     try {
       await authStore.login(identifier, password);
-      uiStore.addToast({
-        title: 'Авторизація успішна',
-        message: `Вітаємо, ${identifier}!`,
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Авторизація успішна', message: `Вітаємо, ${identifier}!`, type: 'success' });
       closeModal();
     } catch (err: any) {
       errorMessage = err.message || 'Помилка входу. Перевірте введені дані.';
@@ -39,11 +30,7 @@
     }
   }
 
-  function handleBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
-  }
+  function handleBackdropClick(e: MouseEvent) { if (e.target === e.currentTarget) { closeModal(); } }
 </script>
 
 {#if $uiStore.isLoginModalOpen}

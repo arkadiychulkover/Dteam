@@ -90,9 +90,7 @@ function createGamesStore() {
       update((s) => ({ ...s, catalogLoading: true }));
       let currentFilters: CatalogFilterState;
       update((s) => {
-        if (customFilters) {
-          s.filters = { ...s.filters, ...customFilters };
-        }
+        if (customFilters) { s.filters = { ...s.filters, ...customFilters }; }
         currentFilters = s.filters;
         return s;
       });

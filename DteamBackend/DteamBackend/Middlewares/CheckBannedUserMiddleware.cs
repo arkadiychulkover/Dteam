@@ -35,14 +35,14 @@ namespace DteamBackend.Middlewares
                     {
                         var path = httpContext.Request.Path.Value ?? string.Empty;
 
-                        // 1. Never block logout
+                        
                         if (path.StartsWith("/api/auth/logout", StringComparison.OrdinalIgnoreCase))
                         {
                             await _next(httpContext);
                             return;
                         }
 
-                        // 2. Never block ban or admin check queries
+                        
                         if (path.Contains("/is-banned", StringComparison.OrdinalIgnoreCase) ||
                             path.Contains("/is-admin", StringComparison.OrdinalIgnoreCase))
                         {
@@ -50,7 +50,7 @@ namespace DteamBackend.Middlewares
                             return;
                         }
 
-                        // 3. If user is Admin, never block admin paths or essential dashboard data
+                        
                         if (userRecord.IsAdmin)
                         {
                             bool isAdminPath =

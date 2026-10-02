@@ -68,10 +68,7 @@ function createAuthStore() {
 
   return {
     subscribe,
-    setUser: (user: Duser | null) => {
-      saveStoredUser(user);
-      update((s) => ({ ...s, user }));
-    },
+    setUser: (user: Duser | null) => { saveStoredUser(user); update((s) => ({ ...s, user })); },
     setStatus: (status: UserStatus) => {
       update((s) => {
         if (!s.user) return s;
@@ -143,9 +140,7 @@ function createAuthStore() {
         const res = await authService.requestPasswordReset(identifier.trim());
         const resolvedEmail = (res as any)?.userEmail || identifier.trim();
         if (typeof window !== 'undefined' && window.sessionStorage) {
-          try {
-            sessionStorage.setItem('dteam_reset_email', resolvedEmail);
-          } catch {}
+          try { sessionStorage.setItem('dteam_reset_email', resolvedEmail); } catch {}
         }
         update((s) => ({ ...s, resetEmail: resolvedEmail, isLoading: false, error: null }));
         return res;
@@ -162,9 +157,7 @@ function createAuthStore() {
       unsubscribe();
 
       if (!currentEmail && typeof window !== 'undefined' && window.sessionStorage) {
-        try {
-          currentEmail = sessionStorage.getItem('dteam_reset_email') || '';
-        } catch {}
+        try { currentEmail = sessionStorage.getItem('dteam_reset_email') || ''; } catch {}
       }
 
       try {
@@ -194,9 +187,7 @@ function createAuthStore() {
       unsubscribe();
 
       if (!currentToken && typeof window !== 'undefined' && window.sessionStorage) {
-        try {
-          currentToken = sessionStorage.getItem('dteam_reset_token') || '';
-        } catch {}
+        try { currentToken = sessionStorage.getItem('dteam_reset_token') || ''; } catch {}
       }
 
       try {

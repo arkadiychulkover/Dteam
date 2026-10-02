@@ -1,11 +1,5 @@
 <script lang="ts">
-  let {
-    category,
-    class: className = "w-7 h-7",
-  }: {
-    category: string;
-    class?: string;
-  } = $props();
+  let { category, class: className = "w-7 h-7", }: { category: string; class?: string; } = $props();
 </script>
 
 {#if category === 'Action'}

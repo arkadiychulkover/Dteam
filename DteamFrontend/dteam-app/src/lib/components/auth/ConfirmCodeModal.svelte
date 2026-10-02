@@ -7,29 +7,20 @@
   let isSubmitting = $state(false);
   let errorMessage = $state('');
 
-  function closeModal() {
-    uiStore.setConfirmCodeModal(false);
-  }
+  function closeModal() { uiStore.setConfirmCodeModal(false); }
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     const trimmedCode = resetCode.trim();
 
-    if (!trimmedCode) {
-      errorMessage = 'Введіть код підтвердження (GUID)';
-      return;
-    }
+    if (!trimmedCode) { errorMessage = 'Введіть код підтвердження (GUID)'; return; }
 
     errorMessage = '';
     isSubmitting = true;
 
     try {
       await authStore.verifyResetCode(trimmedCode);
-      uiStore.addToast({
-        title: 'Код підтверджено',
-        message: 'Успішна верифікація!',
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Код підтверджено', message: 'Успішна верифікація!', type: 'success' });
       closeModal();
       uiStore.setTab('reset-password');
     } catch (err: any) {
@@ -39,11 +30,7 @@
     }
   }
 
-  function handleBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
-  }
+  function handleBackdropClick(e: MouseEvent) { if (e.target === e.currentTarget) { closeModal(); } }
 </script>
 
 {#if $uiStore.isConfirmCodeModalOpen}

@@ -12,14 +12,7 @@
     onViewAll: () => void;
   }
 
-  let {
-    recommendations,
-    isOpen,
-    isLoading,
-    searchQuery,
-    onSelect,
-    onViewAll
-  }: Props = $props();
+  let { recommendations, isOpen, isLoading, searchQuery, onSelect, onViewAll }: Props = $props();
 </script>
 
 {#if isOpen && searchQuery.trim().length > 0}

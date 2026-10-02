@@ -84,7 +84,7 @@ export const initialProfile: UserProfile = {
   email: 'arkadii@dteam.io',
   avatarUrl: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=300&auto=format&fit=crop&q=80',
   bio: '🎮 Hardcore gamer & Web3 developer. Фанат якісних українських ігор та кіберспорту.',
-  status: 1, // online
+  status: 1, 
   gameStatus: 'Грає в S.T.A.L.K.E.R. 2',
   level: 42,
   currentXp: 3450,
@@ -92,12 +92,7 @@ export const initialProfile: UserProfile = {
   tokensBalance: 1250,
   balanceUah: 1840.50,
   walletAddress: 'UQDhASj63VVDIjKTv7UaW-NWliNSmRbqLIvup3F5XC1EyyCg',
-  stats: {
-    gamesCount: 28,
-    badgesCount: initialBadges.length,
-    reviewsCount: 14,
-    friendsCount: 42,
-  },
+  stats: { gamesCount: 28, badgesCount: initialBadges.length, reviewsCount: 14, friendsCount: 42, },
   badges: initialBadges,
   recentActivity: initialActivities,
 };

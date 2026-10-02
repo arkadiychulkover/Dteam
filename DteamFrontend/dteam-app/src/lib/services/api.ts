@@ -20,11 +20,7 @@ class ApiClient {
     this.token = token;
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        if (token) {
-          localStorage.setItem('dteam_token', token);
-        } else {
-          localStorage.removeItem('dteam_token');
-        }
+        if (token) { localStorage.setItem('dteam_token', token); } else { localStorage.removeItem('dteam_token'); }
       } catch (e) {
         console.warn('[API] Failed to save token to localStorage:', e);
       }
@@ -33,10 +29,7 @@ class ApiClient {
 
   public getToken(): string | null {
     if (!this.token && typeof window !== 'undefined' && window.localStorage) {
-      try {
-        this.token = localStorage.getItem('dteam_token');
-      } catch {
-      }
+      try { this.token = localStorage.getItem('dteam_token'); } catch { }
     }
     return this.token;
   }
@@ -58,10 +51,7 @@ class ApiClient {
 
   public getRefreshToken(): string | null {
     if (!this.refreshToken && typeof window !== 'undefined' && window.localStorage) {
-      try {
-        this.refreshToken = localStorage.getItem('dteam_refresh_token');
-      } catch {
-      }
+      try { this.refreshToken = localStorage.getItem('dteam_refresh_token'); } catch { }
     }
     return this.refreshToken;
   }
@@ -100,9 +90,7 @@ class ApiClient {
 
   public async refreshAccessToken(): Promise<string | null> {
     const currentRefreshToken = this.getRefreshToken();
-    if (!currentRefreshToken) {
-      return null;
-    }
+    if (!currentRefreshToken) { return null; }
 
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
@@ -123,9 +111,7 @@ class ApiClient {
           const newAccessToken: string | null = data?.accessToken ?? null;
           const newRefreshToken: string | null = data?.refreshToken ?? null;
           this.setTokens(newAccessToken, newRefreshToken);
-          if (newAccessToken) {
-            this.tokenRefreshListeners.forEach(cb => cb(newAccessToken));
-          }
+          if (newAccessToken) { this.tokenRefreshListeners.forEach(cb => cb(newAccessToken)); }
           return newAccessToken;
         } catch (e) {
           console.warn('[API] Failed to refresh access token:', e);
@@ -149,9 +135,7 @@ class ApiClient {
     }
 
     const currentToken = this.getToken();
-    if (currentToken && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${currentToken}`);
-    }
+    if (currentToken && !headers.has('Authorization')) { headers.set('Authorization', `Bearer ${currentToken}`); }
 
     try {
       const response = await fetch(url, {
@@ -169,9 +153,7 @@ class ApiClient {
           this.getRefreshToken()
         ) {
           const newAccessToken = await this.refreshAccessToken();
-          if (newAccessToken) {
-            return this.request<T>(endpoint, options, true);
-          }
+          if (newAccessToken) { return this.request<T>(endpoint, options, true); }
         }
 
         let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
@@ -205,15 +187,11 @@ class ApiClient {
         const err: any = new Error(errorMessage);
         err.status = status;
         err.isBanned = isBanned;
-        if (isBanned && typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('dteam:user_banned'));
-        }
+        if (isBanned && typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('dteam:user_banned')); }
         throw err;
       }
 
-      if (response.status === 204) {
-        return {} as T;
-      }
+      if (response.status === 204) { return {} as T; }
 
       return await response.json();
     } catch (err: any) {

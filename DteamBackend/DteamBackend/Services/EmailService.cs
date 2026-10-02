@@ -69,7 +69,6 @@ namespace DteamBackend.Services
             }
         }
 
-
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
             var frontendUrl = _configuration["FrontendUrl"] ?? _configuration["FRONTEND_URL"] ?? "https://dteam-app.vercel.app";

@@ -55,10 +55,7 @@ const navigationTheme = {
   },
 };
 
-interface MainTabsScreenProps {
-  navigation: any;
-  route?: any;
-}
+interface MainTabsScreenProps { navigation: any; route?: any; }
 
 function MainTabsScreen({ navigation, route }: MainTabsScreenProps) {
   const [activeTab, setActiveTab] = useState<TabId>(route?.params?.initialTab || 'store');
@@ -68,14 +65,9 @@ function MainTabsScreen({ navigation, route }: MainTabsScreenProps) {
   const stopRealtime = useChatStore((s) => s.stopRealtime);
   const loadConversations = useChatStore((s) => s.loadConversations);
 
-  // Запускаємо реалтайм хаби SignalR (ChatHub + FriendsHub) при авторизації
+  
   useEffect(() => {
-    if (isAuthenticated) {
-      loadConversations();
-      startRealtime();
-    } else {
-      stopRealtime();
-    }
+    if (isAuthenticated) { loadConversations(); startRealtime(); } else { stopRealtime(); }
   }, [isAuthenticated]);
 
   return (
@@ -130,13 +122,9 @@ function MainTabsScreen({ navigation, route }: MainTabsScreenProps) {
 
 export default function App() {
   useEffect(() => {
-    tokenStorage.init().catch((err) => {
-      console.warn('[App] Failed to initialize token storage:', err);
-    });
+    tokenStorage.init().catch((err) => { console.warn('[App] Failed to initialize token storage:', err); });
 
-    useAuthStore.getState().checkAuth().catch((err) => {
-      console.warn('[App] Failed to check auth session:', err);
-    });
+    useAuthStore.getState().checkAuth().catch((err) => { console.warn('[App] Failed to check auth session:', err); });
   }, []);
 
   return (
@@ -158,12 +146,7 @@ export default function App() {
           <Stack.Screen name="Cart" component={CartScreen} />
 
           <Stack.Screen name="Settings">
-            {(props) => (
-              <SettingsScreen
-                navigation={props.navigation}
-                onBack={() => props.navigation.goBack()}
-              />
-            )}
+            {(props) => ( <SettingsScreen navigation={props.navigation} onBack={() => props.navigation.goBack()} /> )}
           </Stack.Screen>
 
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -180,7 +163,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  tabContent: {
-    flex: 1,
-  },
+  tabContent: { flex: 1, },
 });

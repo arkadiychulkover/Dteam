@@ -65,20 +65,13 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
   const setActivePeerId = useChatStore((s) => s.setActivePeerId);
 
   useEffect(() => {
-    if (friendId) {
-      setActivePeerId(friendId);
-      loadHistory(friendId);
-    }
-    return () => {
-      setActivePeerId(null);
-    };
+    if (friendId) { setActivePeerId(friendId); loadHistory(friendId); }
+    return () => { setActivePeerId(null); };
   }, [friendId, setActivePeerId, loadHistory]);
 
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: true }); }, 100);
     }
   }, [messages.length]);
 
@@ -99,13 +92,7 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
     );
   }
 
-  const handleGoBack = () => {
-    if (onBack) {
-      onBack();
-    } else if (navigation?.goBack) {
-      navigation.goBack();
-    }
-  };
+  const handleGoBack = () => { if (onBack) { onBack(); } else if (navigation?.goBack) { navigation.goBack(); } };
 
   const getCurrentTimeFormatted = () => {
     const now = new Date();
@@ -134,9 +121,7 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
 
     try {
       await sendMessage(friendId, text);
-      if (onSendMessage) {
-        onSendMessage(friendId, text);
-      }
+      if (onSendMessage) { onSendMessage(friendId, text); }
     } catch (err) {
       console.warn('[ChatDetailScreen] Error sending message to server:', err);
     } finally {
@@ -164,9 +149,7 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
 
     try {
       await sendVoiceMessage(friendId, voiceUri, duration);
-      if (onSendVoice) {
-        onSendVoice(friendId, voiceUri, duration);
-      }
+      if (onSendVoice) { onSendVoice(friendId, voiceUri, duration); }
     } catch (err) {
       console.warn('[ChatDetailScreen] Error sending voice message:', err);
     }
@@ -191,9 +174,7 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
 
     try {
       await sendImageMessage(friendId, imageUri, caption);
-      if (onSendImage) {
-        onSendImage(friendId, imageUri, caption);
-      }
+      if (onSendImage) { onSendImage(friendId, imageUri, caption); }
     } catch (err) {
       console.warn('[ChatDetailScreen] Error sending image:', err);
     }
@@ -219,9 +200,7 @@ export const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
 
     try {
       await sendFileMessage(friendId, fileUri, fileName);
-      if (onSendFile) {
-        onSendFile(friendId, fileName, fileSize, fileUri);
-      }
+      if (onSendFile) { onSendFile(friendId, fileName, fileSize, fileUri); }
     } catch (err) {
       console.warn('[ChatDetailScreen] Error sending file:', err);
     }
@@ -329,20 +308,9 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 12,
   },
-  backButton: {
-    padding: 6,
-    borderRadius: 8,
-  },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
-  },
+  backButton: { padding: 6, borderRadius: 8, },
+  avatarWrapper: { position: 'relative', },
+  avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: colors.borderLight, },
   statusDot: {
     position: 'absolute',
     bottom: 0,
@@ -353,43 +321,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.surfaceCard,
   },
-  headerInfo: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  callButton: {
-    padding: 8,
-  },
-  messagesList: {
-    paddingVertical: 16,
-    flexGrow: 1,
-  },
-  centerLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    marginTop: 60,
-  },
+  headerInfo: { flex: 1, },
+  username: { fontSize: 16, fontWeight: '800', color: colors.text, },
+  statusText: { fontSize: 11, fontWeight: '600', marginTop: 1, },
+  callButton: { padding: 8, },
+  messagesList: { paddingVertical: 16, flexGrow: 1, },
+  centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', },
+  loadingText: { color: colors.textMuted, fontSize: 12, marginTop: 8, },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, marginTop: 60, },
   emptyIconCircle: {
     width: 60,
     height: 60,
@@ -399,17 +338,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 240,
-  },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 4, },
+  emptySubtitle: { fontSize: 12, color: colors.textMuted, textAlign: 'center', lineHeight: 18, maxWidth: 240, },
 });

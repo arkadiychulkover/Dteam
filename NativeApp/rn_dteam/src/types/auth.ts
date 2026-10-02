@@ -14,11 +14,7 @@ export interface UserDto {
   isAdmin?: boolean;
 }
 
-export interface AuthResponseDto {
-  accessToken: string;
-  refreshToken: string;
-  user: UserDto;
-}
+export interface AuthResponseDto { accessToken: string; refreshToken: string; user: UserDto; }
 
 export interface UserGame {
   userId: string;

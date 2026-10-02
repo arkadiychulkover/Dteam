@@ -1,6 +1,6 @@
 export type TabId = 'chats' | 'profile' | 'settings' | 'library' | 'store';
 
-export type UserStatus = 0 | 1 | 2; // 0 = offline, 1 = online, 2 = inGame
+export type UserStatus = 0 | 1 | 2; 
 
 export interface Badge {
   id: string;
@@ -37,15 +37,10 @@ export interface UserProfile {
   level: number;
   currentXp: number;
   nextLevelXp: number;
-  tokensBalance: number; // DTP
+  tokensBalance: number; 
   balanceUah: number;
   walletAddress: string;
-  stats: {
-    gamesCount: number;
-    badgesCount: number;
-    reviewsCount: number;
-    friendsCount: number;
-  };
+  stats: { gamesCount: number; badgesCount: number; reviewsCount: number; friendsCount: number; };
   badges: Badge[];
   recentActivity: ActivityItem[];
 }
@@ -60,7 +55,7 @@ export interface ChatMessage {
   type: MessageType;
   timestamp: string;
   isMine: boolean;
-  voiceDuration?: number; // seconds
+  voiceDuration?: number; 
   voiceUri?: string;
   imageUrl?: string;
   fileName?: string;

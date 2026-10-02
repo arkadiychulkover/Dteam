@@ -1,25 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import {
-    Paperclip,
-    Type,
-    Mic,
-    Send,
-    X,
-    Loader2,
-    FileText,
-    Square,
-    Check
-  } from 'lucide-svelte';
+  import { Paperclip, Type, Mic, Send, X, Loader2, FileText, Square, Check } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
   import { chatService } from '../../services/chatService';
   import { uiStore } from '../../stores/uiStore';
   import type { ChatUploadResponse } from '../../types/chat';
 
-  interface Props {
-    receiverId: string;
-    onMessageSent?: () => void;
-  }
+  interface Props { receiverId: string; onMessageSent?: () => void; }
 
   let { receiverId, onMessageSent }: Props = $props();
 
@@ -56,46 +43,29 @@
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }
 
   function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      setFileAttachment(input.files[0]);
-    }
+    if (input.files && input.files[0]) { setFileAttachment(input.files[0]); }
   }
 
   function setFileAttachment(file: File) {
     selectedFile = file;
-    if (file.type.startsWith('image/')) {
-      filePreviewUrl = URL.createObjectURL(file);
-    } else {
-      filePreviewUrl = null;
-    }
+    if (file.type.startsWith('image/')) { filePreviewUrl = URL.createObjectURL(file); } else { filePreviewUrl = null; }
   }
 
   function clearAttachment() {
     selectedFile = null;
-    if (filePreviewUrl) {
-      URL.revokeObjectURL(filePreviewUrl);
-      filePreviewUrl = null;
-    }
-    if (fileInputElement) {
-      fileInputElement.value = '';
-    }
+    if (filePreviewUrl) { URL.revokeObjectURL(filePreviewUrl); filePreviewUrl = null; }
+    if (fileInputElement) { fileInputElement.value = ''; }
   }
 
   function handlePaste(e: ClipboardEvent) {
     if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
-      if (file.type.startsWith('image/')) {
-        e.preventDefault();
-        setFileAttachment(file);
-      }
+      if (file.type.startsWith('image/')) { e.preventDefault(); setFileAttachment(file); }
     }
   }
 
@@ -169,11 +139,7 @@
       mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       audioChunks = [];
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          audioChunks.push(e.data);
-        }
-      };
+      mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) { audioChunks.push(e.data); } };
 
       mediaRecorder.start(200);
       isRecording = true;
@@ -181,25 +147,16 @@
 
       recordingTimerInterval = setInterval(() => {
         recordingSeconds += 1;
-        if (recordingSeconds >= 300) {
-          stopAndSendRecording();
-        }
+        if (recordingSeconds >= 300) { stopAndSendRecording(); }
       }, 1000);
     } catch (err) {
       console.warn('[Voice] Microphone access error:', err);
-      uiStore.addToast({
-        title: 'Мікрофон',
-        message: 'Не вдалося отримати доступ до мікрофона',
-        type: 'error'
-      });
+      uiStore.addToast({ title: 'Мікрофон', message: 'Не вдалося отримати доступ до мікрофона', type: 'error' });
     }
   }
 
   function cancelRecording() {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
+    if (mediaRecorder && isRecording) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); }
     clearInterval(recordingTimerInterval);
     isRecording = false;
     audioChunks = [];
@@ -216,9 +173,7 @@
     mediaRecorder.onstop = async () => {
       mediaRecorder?.stream.getTracks().forEach(t => t.stop());
 
-      if (audioChunks.length === 0 || duration < 1) {
-        return;
-      }
+      if (audioChunks.length === 0 || duration < 1) { return; }
 
       const audioBlob = new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
       isUploading = true;
@@ -260,13 +215,8 @@
   onDestroy(() => {
     if (typingTimeout) clearTimeout(typingTimeout);
     if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
-    if (filePreviewUrl) {
-      URL.revokeObjectURL(filePreviewUrl);
-    }
+    if (mediaRecorder && isRecording) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); }
+    if (filePreviewUrl) { URL.revokeObjectURL(filePreviewUrl); }
   });
 </script>
 

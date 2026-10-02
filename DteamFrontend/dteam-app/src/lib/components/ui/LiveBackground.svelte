@@ -37,16 +37,10 @@
       height = canvas.height = window.innerHeight;
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.targetX = e.clientX;
-      mouse.targetY = e.clientY;
-    };
+    const handleMouseMove = (e: MouseEvent) => { mouse.targetX = e.clientX; mouse.targetY = e.clientY; };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        mouse.targetX = e.touches[0].clientX;
-        mouse.targetY = e.touches[0].clientY;
-      }
+      if (e.touches.length > 0) { mouse.targetX = e.touches[0].clientX; mouse.targetY = e.touches[0].clientY; }
     };
 
     window.addEventListener('resize', handleResize);
@@ -133,10 +127,7 @@
         const offset = Math.sin(t * vert.speed + vert.noiseOffset) * (r * 0.35);
         const curR = r + offset;
         const curAngle = vert.baseAngle + shape.angle;
-        return {
-          x: cx + Math.cos(curAngle) * curR,
-          y: cy + Math.sin(curAngle) * curR,
-        };
+        return { x: cx + Math.cos(curAngle) * curR, y: cy + Math.sin(curAngle) * curR, };
       });
 
       ctx.beginPath();

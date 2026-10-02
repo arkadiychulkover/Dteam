@@ -1,12 +1,7 @@
 import { api } from './api';
 import type { Game, Review, GameFilterParams, GameRecommendation  } from '../types';
 
-export interface UploadImageResponse {
-  url: string;
-  fileName: string;
-  size: number;
-  message: string;
-}
+export interface UploadImageResponse { url: string; fileName: string; size: number; message: string; }
 
 export const gamesService = {
   async getGames(filters?: GameFilterParams): Promise<Game[]> {
@@ -31,13 +26,9 @@ export const gamesService = {
     return await api.get<Game[]>(`/games${query}`);
   },
 
-  async getGameById(id: string): Promise<Game> {
-    return await api.get<Game>(`/games/${id}`);
-  },
+  async getGameById(id: string): Promise<Game> { return await api.get<Game>(`/games/${id}`); },
 
-  async getGenres(): Promise<string[]> {
-    return await api.get<string[]>('/games/genres');
-  },
+  async getGenres(): Promise<string[]> { return await api.get<string[]>('/games/genres'); },
 
   async uploadImage(file: File): Promise<UploadImageResponse> {
     const formData = new FormData();
@@ -45,13 +36,9 @@ export const gamesService = {
     return await api.post<UploadImageResponse>('/games/upload-image', formData);
   },
 
-  async getReviews(gameId: string): Promise<Review[]> {
-    return await api.get<Review[]>(`/games/${gameId}/reviews`);
-  },
+  async getReviews(gameId: string): Promise<Review[]> { return await api.get<Review[]>(`/games/${gameId}/reviews`); },
 
-  async getDlcs(gameId: string): Promise<Game[]> {
-    return await api.get<Game[]>(`/games/${gameId}/dlcs`);
-  },
+  async getDlcs(gameId: string): Promise<Game[]> { return await api.get<Game[]>(`/games/${gameId}/dlcs`); },
 
   async getReviewDetails(gameId: string, reviewId: string): Promise<Review> {
     return await api.get<Review>(`/games/${gameId}/reviews/${reviewId}`);

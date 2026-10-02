@@ -11,9 +11,7 @@
 
   let selectedScreenshot = $state<string | null>(null);
 
-  function close() {
-    gamesStore.selectGame(null);
-  }
+  function close() { gamesStore.selectGame(null); }
 
   function handleDecorativeBuy() {
     uiStore.addToast({
@@ -23,11 +21,7 @@
     });
   }
 
-  function handleToggleWishlist() {
-    if (game) {
-      wishlistStore.toggleWishlist(game);
-    }
-  }
+  function handleToggleWishlist() { if (game) { wishlistStore.toggleWishlist(game); } }
 </script>
 
 {#if game}

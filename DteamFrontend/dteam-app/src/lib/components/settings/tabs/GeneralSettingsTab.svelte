@@ -12,22 +12,15 @@
 
   function handleAvatarChange(e: Event) {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      settingsStore.uploadAvatar(input.files[0]);
-    }
+    if (input.files && input.files[0]) { settingsStore.uploadAvatar(input.files[0]); }
   }
 
   function handleBannerChange(e: Event) {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      settingsStore.uploadBanner(input.files[0]);
-    }
+    if (input.files && input.files[0]) { settingsStore.uploadBanner(input.files[0]); }
   }
 
-  const languages = [
-    { code: 'uk', label: 'Українська', flag: '🇺🇦' },
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-  ];
+  const languages = [ { code: 'uk', label: 'Українська', flag: '🇺🇦' }, { code: 'en', label: 'English', flag: '🇬🇧' }, ];
 </script>
 
 <div>

@@ -16,9 +16,7 @@
 
   onMount(() => {
 
-    if (!window.matchMedia('(pointer: fine)').matches) {
-      return;
-    }
+    if (!window.matchMedia('(pointer: fine)').matches) { return; }
 
     document.body.classList.add('hidecur');
 
@@ -33,21 +31,13 @@
       if (isHidden) isHidden = false;
     };
 
-    const handleMouseDown = () => {
-      isClicking = true;
-    };
+    const handleMouseDown = () => { isClicking = true; };
 
-    const handleMouseUp = () => {
-      isClicking = false;
-    };
+    const handleMouseUp = () => { isClicking = false; };
 
-    const handleMouseLeave = () => {
-      isHidden = true;
-    };
+    const handleMouseLeave = () => { isHidden = true; };
 
-    const handleMouseEnter = () => {
-      isHidden = false;
-    };
+    const handleMouseEnter = () => { isHidden = false; };
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = (e.target as HTMLElement)?.closest(
@@ -67,9 +57,7 @@
       ringX += (mouseX - ringX) * 0.18;
       ringY += (mouseY - ringY) * 0.18;
 
-      if (dotEl) {
-        dotEl.style.transform = `translate3d(${mouseX - 3}px, ${mouseY - 3}px, 0)`;
-      }
+      if (dotEl) { dotEl.style.transform = `translate3d(${mouseX - 3}px, ${mouseY - 3}px, 0)`; }
 
       if (ringEl) {
         const halfSize = ringEl.offsetWidth / 2;

@@ -3,10 +3,7 @@
   import type { ToastMessage } from '../../stores/uiStore';
   import { CheckCircle2, Info, AlertTriangle, AlertCircle, X } from 'lucide-svelte';
 
-  interface Props {
-    toast: ToastMessage;
-    onRemove: (id: string) => void;
-  }
+  interface Props { toast: ToastMessage; onRemove: (id: string) => void; }
 
   let { toast, onRemove }: Props = $props();
 
@@ -72,9 +69,7 @@
   function triggerExit() {
     if (isExiting) return;
     isExiting = true;
-    setTimeout(() => {
-      onRemove(toast.id);
-    }, 260);
+    setTimeout(() => { onRemove(toast.id); }, 260);
   }
 
   function tick(timestamp: number) {
@@ -86,23 +81,15 @@
       remainingMs -= delta;
       progressPercent = Math.max(0, (remainingMs / totalMs) * 100);
 
-      if (remainingMs <= 0) {
-        triggerExit();
-        return;
-      }
+      if (remainingMs <= 0) { triggerExit(); return; }
     }
 
     animFrameId = requestAnimationFrame(tick);
   }
 
-  function handleMouseEnter() {
-    isPaused = true;
-  }
+  function handleMouseEnter() { isPaused = true; }
 
-  function handleMouseLeave() {
-    isPaused = false;
-    lastTimestamp = performance.now();
-  }
+  function handleMouseLeave() { isPaused = false; lastTimestamp = performance.now(); }
 
   onMount(() => {
     remainingMs = totalMs;
@@ -110,11 +97,7 @@
     animFrameId = requestAnimationFrame(tick);
   });
 
-  onDestroy(() => {
-    if (animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-    }
-  });
+  onDestroy(() => { if (animFrameId !== null) { cancelAnimationFrame(animFrameId); } });
 </script>
 
 <div

@@ -7,9 +7,7 @@
   import { Star, ShoppingCart, Heart } from 'lucide-svelte';
   import BackendImage from '../ui/BackendImage.svelte';
 
-  interface Props {
-    game: Game;
-  }
+  interface Props { game: Game; }
 
   let { game }: Props = $props();
 
@@ -17,21 +15,11 @@
 
   function handleDecorativeBuy(e: MouseEvent) {
     e.stopPropagation();
-    uiStore.addToast({
-      title: 'Демо-режим',
-      message: `Кнопка покупки для '${game.title}' бутафорная.`,
-      type: 'info',
-    });
+    uiStore.addToast({ title: 'Демо-режим', message: `Кнопка покупки для '${game.title}' бутафорная.`, type: 'info', });
   }
 
-  function handleToggleWishlist(e: MouseEvent) {
-    e.stopPropagation();
-    wishlistStore.toggleWishlist(game);
-  }
-  function openGame() {
-    gamesStore.selectGame(game);
-    uiStore.setTab('game');
-  }
+  function handleToggleWishlist(e: MouseEvent) { e.stopPropagation(); wishlistStore.toggleWishlist(game); }
+  function openGame() { gamesStore.selectGame(game); uiStore.setTab('game'); }
 </script>
 
 <div

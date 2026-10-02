@@ -6,11 +6,7 @@ export type NotificationType =
   | 'system'
   | 'security_alert';
 
-export interface NotificationActor {
-  id: string;
-  username: string;
-  avatarUrl: string | null;
-}
+export interface NotificationActor { id: string; username: string; avatarUrl: string | null; }
 
 export interface AppNotification {
   id: string;

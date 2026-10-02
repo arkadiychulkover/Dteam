@@ -3,17 +3,13 @@
   import { chatStore } from '../../stores/chatStore';
   import type { ChatMonthGroup, ChatMediaItem } from '../../types/chat';
 
-  interface Props {
-    photosByMonth?: ChatMonthGroup[];
-  }
+  interface Props { photosByMonth?: ChatMonthGroup[]; }
 
   let { photosByMonth = [] }: Props = $props();
 
   let selectedImage = $state<ChatMediaItem | null>(null);
 
-  function handleBack() {
-    chatStore.setRightSidebarTab('profile');
-  }
+  function handleBack() { chatStore.setRightSidebarTab('profile'); }
 </script>
 
 <div class="h-full flex flex-col">

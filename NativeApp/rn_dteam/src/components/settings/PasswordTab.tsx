@@ -19,18 +19,12 @@ export const PasswordTab: React.FC = () => {
   const isMatch = newPassword.length > 0 && newPassword === confirmPassword;
 
   const handleSave = async () => {
-    if (!oldPassword.trim()) {
-      setErrorMessage('Введіть поточний пароль');
-      return;
-    }
+    if (!oldPassword.trim()) { setErrorMessage('Введіть поточний пароль'); return; }
     if (!hasMinLength || !hasLetter || !hasDigit || !hasNoSpaces) {
       setErrorMessage('Новий пароль не відповідає всім вимогам безпеки');
       return;
     }
-    if (!isMatch) {
-      setErrorMessage('Нові паролі не співпадають');
-      return;
-    }
+    if (!isMatch) { setErrorMessage('Нові паролі не співпадають'); return; }
 
     setErrorMessage('');
     setIsSubmitting(true);
@@ -178,19 +172,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  header: { marginBottom: 20, },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 4, },
+  subtitle: { fontSize: 12, color: colors.textMuted, },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,14 +186,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  errorText: {
-    fontSize: 12,
-    color: colors.accentRose,
-    fontWeight: '600',
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
+  errorText: { fontSize: 12, color: colors.accentRose, fontWeight: '600', },
+  inputGroup: { marginBottom: 16, },
   inputLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -218,9 +196,7 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     letterSpacing: 0.5,
   },
-  inputWrapper: {
-    position: 'relative',
-  },
+  inputWrapper: { position: 'relative', },
   input: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 14,
@@ -232,11 +208,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  eyeBtn: {
-    position: 'absolute',
-    right: 14,
-    top: 14,
-  },
+  eyeBtn: { position: 'absolute', right: 14, top: 14, },
   checklistCard: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 14,
@@ -246,25 +218,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 8,
   },
-  checklistTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  checkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  checkText: {
-    fontSize: 12,
-    color: colors.textDim,
-  },
-  checkTextDone: {
-    color: colors.text,
-    fontWeight: '600',
-  },
+  checklistTitle: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 4, },
+  checkItem: { flexDirection: 'row', alignItems: 'center', gap: 8, },
+  checkText: { fontSize: 12, color: colors.textDim, },
+  checkTextDone: { color: colors.text, fontWeight: '600', },
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: 14,
@@ -272,9 +229,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveBtnText: {
-    color: '#021118',
-    fontWeight: '800',
-    fontSize: 14,
-  },
+  saveBtnText: { color: '#021118', fontWeight: '800', fontSize: 14, },
 });

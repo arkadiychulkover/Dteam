@@ -34,8 +34,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   navigation,
   onNavigateLibrary,
   onNavigateLogin,
-}) => {
-  const {
+}) => { const {
     games,
     selectedGenre,
     isLoading,
@@ -49,49 +48,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const { user, isAuthenticated, logout } = useAuthStore();
   const { items: cartItems, loadCart } = useCartStore();
 
-  useEffect(() => {
-    loadGames();
-    if (isAuthenticated) {
-      loadCart();
-    }
-  }, [loadGames, loadCart, isAuthenticated]);
+  useEffect(() => { loadGames(); if (isAuthenticated) { loadCart(); } }, [loadGames, loadCart, isAuthenticated]);
 
   const discountedGames = games.filter((g) => (g.discountPercentage || 0) > 0);
 
   const goToLibrary = () => {
-    if (onNavigateLibrary) {
-      onNavigateLibrary();
-    } else if (navigation?.navigate) {
-      navigation.navigate('Library');
-    }
+    if (onNavigateLibrary) { onNavigateLibrary(); } else if (navigation?.navigate) { navigation.navigate('Library'); }
   };
 
-  const goToCart = () => {
-    if (navigation?.navigate) {
-      navigation.navigate('Cart');
-    }
-  };
+  const goToCart = () => { if (navigation?.navigate) { navigation.navigate('Cart'); } };
 
   const goToLogin = () => {
-    if (onNavigateLogin) {
-      onNavigateLogin();
-    } else if (navigation?.navigate) {
-      navigation.navigate('Login');
-    }
+    if (onNavigateLogin) { onNavigateLogin(); } else if (navigation?.navigate) { navigation.navigate('Login'); }
   };
 
   const handleLogoutConfirm = () => {
     Alert.alert(
       'Вихід з акаунта',
       `Ви дійсно бажаєте вийти з акаунта ${user?.username || ''}?`,
-      [
-        { text: 'Скасувати', style: 'cancel' },
-        {
-          text: 'Вийти',
-          style: 'destructive',
-          onPress: () => logout(),
-        },
-      ]
+      [ { text: 'Скасувати', style: 'cancel' }, { text: 'Вийти', style: 'destructive', onPress: () => logout(), }, ]
     );
   };
 
@@ -183,18 +158,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             return (
               <TouchableOpacity
                 key={genre}
-                style={[
-                  styles.genrePill,
-                  isSelected && styles.genrePillActive,
-                ]}
+                style={[ styles.genrePill, isSelected && styles.genrePillActive, ]}
                 onPress={() => setSelectedGenre(genre)}
                 activeOpacity={0.7}
               >
                 <Text
-                  style={[
-                    styles.genrePillText,
-                    isSelected && styles.genrePillTextActive,
-                  ]}
+                  style={[ styles.genrePillText, isSelected && styles.genrePillTextActive, ]}
                 >
                   {genre}
                 </Text>
@@ -292,13 +261,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   </TouchableOpacity>
                 </View>
               ) : (
-                games.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    onPress={onSelectGame}
-                  />
-                ))
+                games.map((game) => ( <GameCard key={game.id} game={game} onPress={onSelectGame} /> ))
               )}
             </View>
           </>
@@ -323,11 +286,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.borderSubtle,
     backgroundColor: theme.colors.surface,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, },
   logoIcon: {
     width: 32,
     height: 32,
@@ -336,23 +295,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: 1,
-  },
-  logoSubtitle: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    letterSpacing: 0.8,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  logoTitle: { fontSize: 16, fontWeight: '900', color: theme.colors.text, letterSpacing: 1, },
+  logoSubtitle: { fontSize: 8, fontWeight: '700', color: theme.colors.primary, letterSpacing: 0.8, },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, },
   cartIconBtn: {
     width: 30,
     height: 30,
@@ -376,11 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  cartBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#000',
-  },
+  cartBadgeText: { fontSize: 9, fontWeight: '900', color: '#000', },
   headerActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,11 +333,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
   },
-  headerActionBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
+  headerActionBtnText: { fontSize: 11, fontWeight: '700', color: theme.colors.text, },
   userChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -416,21 +353,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  userAvatarText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  userNameText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.text,
-    maxWidth: 90,
-  },
-  logoutBtn: {
-    paddingLeft: 2,
-    paddingVertical: 2,
-  },
+  userAvatarText: { color: '#000', fontSize: 10, fontWeight: '900', },
+  userNameText: { fontSize: 11, fontWeight: '800', color: theme.colors.text, maxWidth: 90, },
+  logoutBtn: { paddingLeft: 2, paddingVertical: 2, },
   networkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,27 +367,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: theme.borderRadius.full,
   },
-  networkDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.tonBlue,
-  },
-  networkText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.tonBlue,
-  },
+  networkDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.tonBlue, },
+  networkText: { fontSize: 11, fontWeight: '800', color: theme.colors.tonBlue, },
   genreFilterContainer: {
     backgroundColor: theme.colors.surface,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderSubtle,
   },
-  genreScrollContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
+  genreScrollContent: { paddingHorizontal: 16, gap: 8, },
   genrePill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -471,34 +384,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  genrePillActive: {
-    backgroundColor: 'rgba(0, 242, 254, 0.18)',
-    borderColor: theme.colors.primary,
-  },
-  genrePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-  },
-  genrePillTextActive: {
-    color: theme.colors.primary,
-    fontWeight: '800',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  loaderCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    gap: 12,
-  },
-  loaderText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    fontWeight: '600',
-  },
+  genrePillActive: { backgroundColor: 'rgba(0, 242, 254, 0.18)', borderColor: theme.colors.primary, },
+  genrePillText: { fontSize: 12, fontWeight: '600', color: theme.colors.textMuted, },
+  genrePillTextActive: { color: theme.colors.primary, fontWeight: '800', },
+  scrollContent: { padding: 16, paddingBottom: 40, },
+  loaderCenter: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12, },
+  loaderText: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '600', },
   errorContainer: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
@@ -508,19 +399,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(244, 63, 94, 0.3)',
     marginVertical: 40,
   },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginTop: 10,
-  },
-  errorSubtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 16,
-  },
+  errorTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text, marginTop: 10, },
+  errorSubtitle: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'center', marginTop: 6, marginBottom: 16, },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -530,30 +410,11 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: theme.borderRadius.md,
   },
-  retryText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#000',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: theme.colors.text,
-  },
+  retryText: { fontSize: 12, fontWeight: '800', color: '#000', },
+  section: { marginBottom: 24, },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+  sectionTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.text, },
   discountCounter: {
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
     paddingHorizontal: 8,
@@ -562,19 +423,9 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(16, 185, 129, 0.4)',
   },
-  discountCounterText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: theme.colors.discount,
-  },
-  gameCountText: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    fontWeight: '600',
-  },
-  horizontalList: {
-    paddingRight: 16,
-  },
+  discountCounterText: { fontSize: 10, fontWeight: '800', color: theme.colors.discount, },
+  gameCountText: { fontSize: 12, color: theme.colors.textMuted, fontWeight: '600', },
+  horizontalList: { paddingRight: 16, },
   emptyContainer: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
@@ -583,12 +434,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  emptyText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    marginTop: 8,
-    marginBottom: 14,
-  },
+  emptyText: { fontSize: 13, color: theme.colors.textMuted, marginTop: 8, marginBottom: 14, },
   resetFilterButton: {
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -597,9 +443,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.primary,
   },
-  resetFilterText: {
-    fontSize: 12,
-    color: theme.colors.primary,
-    fontWeight: '700',
-  },
+  resetFilterText: { fontSize: 12, color: theme.colors.primary, fontWeight: '700', },
 });

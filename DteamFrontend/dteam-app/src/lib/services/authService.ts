@@ -33,9 +33,7 @@ export const authService = {
     }
   },
 
-  async getProfile(): Promise<Duser> {
-    return await api.get<Duser>('/auth/me');
-  },
+  async getProfile(): Promise<Duser> { return await api.get<Duser>('/auth/me'); },
 
   async requestPasswordReset(email: string): Promise<{ message: string; debugCode?: string }> {
     return await api.post<{ message: string; debugCode?: string }>('/auth/forgot-password', { email });

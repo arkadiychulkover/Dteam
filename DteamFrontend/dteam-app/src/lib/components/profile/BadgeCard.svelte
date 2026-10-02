@@ -4,13 +4,7 @@
   import { Sparkles, Calendar } from 'lucide-svelte';
   import { formatDate } from '../../utils/formatters';
 
-  let {
-    gift,
-    onclick
-  }: {
-    gift: NftGift;
-    onclick?: (gift: NftGift) => void;
-  } = $props();
+  let { gift, onclick }: { gift: NftGift; onclick?: (gift: NftGift) => void; } = $props();
 
   const rarityInfo = $derived(getRarityInfo(gift.rarity));
   const badgeNumber = $derived(formatBadgeNumber(gift.onChainTokenId !== undefined && gift.onChainTokenId !== null ? gift.onChainTokenId : gift.tokenId));

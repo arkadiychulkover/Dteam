@@ -4,21 +4,15 @@ import type { DeveloperStats, CreateDeveloperGameRequest, UpdateDeveloperGameReq
 import type { CommunityPost } from './communityService';
 
 export const developerService = {
-  async getStats(): Promise<DeveloperStats> {
-    return await api.get<DeveloperStats>('/developer/stats');
-  },
+  async getStats(): Promise<DeveloperStats> { return await api.get<DeveloperStats>('/developer/stats'); },
 
   async getSalesDynamics(days: number = 30): Promise<Array<{ date: string; downloads: number; earningsInTon: number }>> {
     return await api.get<Array<{ date: string; downloads: number; earningsInTon: number }>>(`/developer/sales-dynamics?days=${days}`);
   },
 
-  async getMyGames(): Promise<Game[]> {
-    return await api.get<Game[]>('/developer/games');
-  },
+  async getMyGames(): Promise<Game[]> { return await api.get<Game[]>('/developer/games'); },
 
-  async getMyGame(id: string): Promise<Game> {
-    return await api.get<Game>(`/developer/games/${id}`);
-  },
+  async getMyGame(id: string): Promise<Game> { return await api.get<Game>(`/developer/games/${id}`); },
 
   async createGame(data: CreateDeveloperGameRequest): Promise<Game> {
     return await api.post<Game>('/developer/games', data);
@@ -40,9 +34,7 @@ export const developerService = {
     return await api.get<CommunityPost[]>(`/developer/games/${gameId}/news`);
   },
 
-  async getMyNews(): Promise<CommunityPost[]> {
-    return await api.get<CommunityPost[]>('/developer/news');
-  },
+  async getMyNews(): Promise<CommunityPost[]> { return await api.get<CommunityPost[]>('/developer/news'); },
 
   async createGameNews(
     gameId: string,

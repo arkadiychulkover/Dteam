@@ -31,11 +31,7 @@ function stripEmojis(text: string): string {
 }
 
 function sanitizeNotification(notification: AppNotification): AppNotification {
-  return {
-    ...notification,
-    title: stripEmojis(notification.title),
-    message: stripEmojis(notification.message),
-  };
+  return { ...notification, title: stripEmojis(notification.title), message: stripEmojis(notification.message), };
 }
 
 function createNotificationStore() {
@@ -48,18 +44,12 @@ function createNotificationStore() {
 
       update(state => {
 
-        if (state.notifications.some(n => n.id === notification.id)) {
-          return state;
-        }
+        if (state.notifications.some(n => n.id === notification.id)) { return state; }
 
         const nextNotifications = [notification, ...state.notifications];
         const nextUnreadCount = notification.isRead ? state.unreadCount : state.unreadCount + 1;
 
-        return {
-          ...state,
-          notifications: nextNotifications,
-          unreadCount: nextUnreadCount,
-        };
+        return { ...state, notifications: nextNotifications, unreadCount: nextUnreadCount, };
       });
 
       const chatState = get(chatStore);
@@ -75,11 +65,7 @@ function createNotificationStore() {
           toastType = 'success';
         }
 
-        uiStore.addToast({
-          type: toastType,
-          title: notification.title,
-          message: notification.message,
-        });
+        uiStore.addToast({ type: toastType, title: notification.title, message: notification.message, });
       }
     });
   };
@@ -88,19 +74,13 @@ function createNotificationStore() {
     subscribe,
 
     init: async () => {
-      if (!initialized) {
-        initialized = true;
-        initRealtimeListener();
-      }
+      if (!initialized) { initialized = true; initRealtimeListener(); }
 
       await notificationHubService.start();
       await notificationStore.loadFeed();
     },
 
-    reset: () => {
-      notificationHubService.stop();
-      set(initialState);
-    },
+    reset: () => { notificationHubService.stop(); set(initialState); },
 
     loadFeed: async () => {
       update(s => ({ ...s, isLoading: true }));
@@ -123,9 +103,7 @@ function createNotificationStore() {
 
     loadMore: async () => {
       const state = get({ subscribe });
-      if (state.isLoading || !state.hasMore || !state.nextCursor) {
-        return;
-      }
+      if (state.isLoading || !state.hasMore || !state.nextCursor) { return; }
 
       update(s => ({ ...s, isLoading: true }));
       try {
@@ -205,13 +183,9 @@ function createNotificationStore() {
       }
     },
 
-    toggleDropdown: () => {
-      update(s => ({ ...s, isDropdownOpen: !s.isDropdownOpen }));
-    },
+    toggleDropdown: () => { update(s => ({ ...s, isDropdownOpen: !s.isDropdownOpen })); },
 
-    closeDropdown: () => {
-      update(s => ({ ...s, isDropdownOpen: false }));
-    },
+    closeDropdown: () => { update(s => ({ ...s, isDropdownOpen: false })); },
   };
 }
 

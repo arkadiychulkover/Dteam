@@ -51,11 +51,7 @@ export function formatBytes(bytes: number): string {
 export function formatDate(isoDate?: string | null): string {
   if (!isoDate) return '';
   try {
-    return new Date(isoDate).toLocaleDateString('uk-UA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    return new Date(isoDate).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short', day: 'numeric', });
   } catch {
     return isoDate;
   }

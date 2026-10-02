@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, } from 'react-native';
 import { colors } from '../theme/colors';
 import { useAuthStore } from '../store/useAuthStore';
 import { AuthRequiredView } from '../components/common/AuthRequiredView';
@@ -18,10 +11,7 @@ import { WalletTab } from '../components/settings/WalletTab';
 import { DeleteAccountTab } from '../components/settings/DeleteAccountTab';
 import { Ionicons } from '@expo/vector-icons';
 
-interface SettingsScreenProps {
-  onBack?: () => void;
-  navigation?: any;
-}
+interface SettingsScreenProps { onBack?: () => void; navigation?: any; }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onBack,
@@ -38,11 +28,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         icon="settings-outline"
         title="Потрібна авторизація"
         description="Увійдіть у ваш акаунт DTEAM, щоб переглядати та змінювати налаштування профілю."
-        onLogin={() => {
-          if (navigation?.navigate) {
-            navigation.navigate('Login');
-          }
-        }}
+        onLogin={() => { if (navigation?.navigate) { navigation.navigate('Login'); } }}
       />
     );
   }
@@ -108,20 +94,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  headerTitleBlock: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    color: colors.textDim,
-    marginTop: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+  headerTitleBlock: { flex: 1, },
+  headerTitle: { fontSize: 18, fontWeight: '900', color: colors.text, },
+  headerSubtitle: { fontSize: 11, color: colors.textDim, marginTop: 1, },
+  scrollContent: { paddingBottom: 40, },
 });

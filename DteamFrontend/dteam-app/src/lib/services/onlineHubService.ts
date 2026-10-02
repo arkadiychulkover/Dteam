@@ -17,9 +17,7 @@ class OnlineHubService {
     const hubUrl = `${BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : ''}/hubs/online`;
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl, {
-        accessTokenFactory: async () => (await api.getValidToken()) || '',
-      })
+      .withUrl(hubUrl, { accessTokenFactory: async () => (await api.getValidToken()) || '', })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build();
@@ -70,9 +68,7 @@ class OnlineHubService {
     if (!this.connection) return;
     try {
       this.stopHeartbeat();
-      if (this.connection.state !== signalR.HubConnectionState.Disconnected) {
-        await this.connection.stop();
-      }
+      if (this.connection.state !== signalR.HubConnectionState.Disconnected) { await this.connection.stop(); }
       await this.connection.start();
       console.log('🔄 [OnlineHub] Перепідключення з новим токеном виконано');
       this.startHeartbeat();
@@ -100,10 +96,7 @@ class OnlineHubService {
   }
 
   private stopHeartbeat() {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
+    if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
   }
 
   private async sendHeartbeat() {
@@ -120,25 +113,17 @@ class OnlineHubService {
     this.listeners.add(callback);
     callback(this.currentCount);
 
-    return () => {
-      this.listeners.delete(callback);
-    };
+    return () => { this.listeners.delete(callback); };
   }
 
   onRewardMinted(callback: RewardMintedCallback): () => void {
     this.rewardListeners.add(callback);
-    return () => {
-      this.rewardListeners.delete(callback);
-    };
+    return () => { this.rewardListeners.delete(callback); };
   }
 
-  getOnlineCount(): number {
-    return this.currentCount;
-  }
+  getOnlineCount(): number { return this.currentCount; }
 
-  private notify(): void {
-    this.listeners.forEach((callback) => callback(this.currentCount));
-  }
+  private notify(): void { this.listeners.forEach((callback) => callback(this.currentCount)); }
 }
 
 export const onlineHubService = new OnlineHubService();

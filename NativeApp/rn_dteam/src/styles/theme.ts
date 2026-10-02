@@ -22,19 +22,6 @@ export const theme = {
     glassBg: 'rgba(6, 24, 32, 0.85)',
     inputBg: '#04131a',
   },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    xxl: 24,
-  },
-  borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    full: 9999,
-  },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, },
+  borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 9999, },
 };

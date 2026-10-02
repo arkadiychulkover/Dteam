@@ -9,13 +9,6 @@ export interface WishlistItem {
   notes?: string | null;
 }
 
-export interface AddToWishlistPayload {
-  gameId: string;
-  priority?: number;
-  notes?: string;
-}
+export interface AddToWishlistPayload { gameId: string; priority?: number; notes?: string; }
 
-export interface UpdateWishlistItemPayload {
-  priority?: number;
-  notes?: string;
-}
+export interface UpdateWishlistItemPayload { priority?: number; notes?: string; }

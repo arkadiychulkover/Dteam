@@ -65,12 +65,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchLibrary();
-    } else {
-      setIsLoading(false);
-      setItems([]);
-    }
+    if (isAuthenticated) { fetchLibrary(); } else { setIsLoading(false); setItems([]); }
   }, [fetchLibrary, isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -82,20 +77,13 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
         title="Потрібна авторизація"
         description="Увійдіть у ваш акаунт DTEAM, щоб переглядати, завантажувати та грати у придбані ігри."
         onLogin={() => {
-          if (onNavigateLogin) {
-            onNavigateLogin();
-          } else if (navigation?.navigate) {
-            navigation.navigate('Login');
-          }
+          if (onNavigateLogin) { onNavigateLogin(); } else if (navigation?.navigate) { navigation.navigate('Login'); }
         }}
       />
     );
   }
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchLibrary();
-  };
+  const handleRefresh = () => { setIsRefreshing(true); fetchLibrary(); };
 
   const handleToggleFavorite = async (gameId: string) => {
     setItems((prev) =>
@@ -131,20 +119,13 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   };
 
   const goToCatalog = () => {
-    if (onNavigateCatalog) {
-      onNavigateCatalog();
-    } else if (navigation?.navigate) {
-      navigation.navigate('Home');
-    }
+    if (onNavigateCatalog) { onNavigateCatalog(); } else if (navigation?.navigate) { navigation.navigate('Home'); }
   };
 
   const filteredItems = items.filter((item) => {
     if (!item.game) return false;
     if (activeTab === 'favorites' && !item.isFavorite) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return item.game.title.toLowerCase().includes(q);
-    }
+    if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); return item.game.title.toLowerCase().includes(q); }
     return true;
   });
 
@@ -319,10 +300,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                       resizeMode="cover"
                     />
                     <TouchableOpacity
-                      style={[
-                        styles.favoriteHeartBtn,
-                        item.isFavorite && styles.favoriteHeartBtnActive,
-                      ]}
+                      style={[ styles.favoriteHeartBtn, item.isFavorite && styles.favoriteHeartBtnActive, ]}
                       onPress={() => handleToggleFavorite(item.gameId)}
                       activeOpacity={0.8}
                     >
@@ -374,10 +352,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   </View>
 
                   <TouchableOpacity
-                    style={[
-                      styles.listFavBtn,
-                      item.isFavorite && styles.listFavBtnActive,
-                    ]}
+                    style={[ styles.listFavBtn, item.isFavorite && styles.listFavBtnActive, ]}
                     onPress={() => handleToggleFavorite(item.gameId)}
                     activeOpacity={0.8}
                   >
@@ -412,15 +387,8 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.borderSubtle,
     backgroundColor: theme.colors.surface,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backBtn: {
-    paddingRight: 4,
-    paddingVertical: 4,
-  },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, },
+  backBtn: { paddingRight: 4, paddingVertical: 4, },
   logoIcon: {
     width: 32,
     height: 32,
@@ -429,18 +397,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoTitle: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: 0.8,
-  },
-  logoSubtitle: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: theme.colors.primary,
-    letterSpacing: 0.8,
-  },
+  logoTitle: { fontSize: 15, fontWeight: '900', color: theme.colors.text, letterSpacing: 0.8, },
+  logoSubtitle: { fontSize: 8, fontWeight: '800', color: theme.colors.primary, letterSpacing: 0.8, },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -451,14 +409,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  viewModeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  viewModeBtnActive: {
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
-  },
+  viewModeBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, },
+  viewModeBtnActive: { backgroundColor: 'rgba(0, 242, 254, 0.15)', },
   controlsSection: {
     backgroundColor: theme.colors.surface,
     paddingHorizontal: 16,
@@ -477,18 +429,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 40,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: theme.colors.text,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  searchIcon: { marginRight: 8, },
+  searchInput: { flex: 1, fontSize: 13, color: theme.colors.text, },
+  tabsRow: { flexDirection: 'row', gap: 8, },
   tabPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -499,34 +442,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  tabPillActive: {
-    backgroundColor: 'rgba(0, 242, 254, 0.18)',
-    borderColor: theme.colors.primary,
-  },
-  tabPillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-  },
-  tabPillTextActive: {
-    color: theme.colors.primary,
-    fontWeight: '800',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  loaderCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    gap: 12,
-  },
-  loaderText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    fontWeight: '600',
-  },
+  tabPillActive: { backgroundColor: 'rgba(0, 242, 254, 0.18)', borderColor: theme.colors.primary, },
+  tabPillText: { fontSize: 12, fontWeight: '600', color: theme.colors.textMuted, },
+  tabPillTextActive: { color: theme.colors.primary, fontWeight: '800', },
+  scrollContent: { padding: 16, paddingBottom: 40, },
+  loaderCenter: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12, },
+  loaderText: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '600', },
   errorContainer: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
@@ -536,19 +457,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(244, 63, 94, 0.3)',
     marginVertical: 40,
   },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginTop: 10,
-  },
-  errorSubtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 16,
-  },
+  errorTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text, marginTop: 10, },
+  errorSubtitle: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'center', marginTop: 6, marginBottom: 16, },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -558,11 +468,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: theme.borderRadius.md,
   },
-  retryText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#000',
-  },
+  retryText: { fontSize: 12, fontWeight: '800', color: '#000', },
   emptyContainer: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.xl,
@@ -583,12 +489,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
+  emptyTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.text, marginBottom: 6, },
   emptySubtitle: {
     fontSize: 12,
     color: theme.colors.textMuted,
@@ -606,16 +507,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
   },
-  catalogButtonText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#000',
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
+  catalogButtonText: { fontSize: 13, fontWeight: '900', color: '#000', },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, },
   gridCard: {
     width: GRID_ITEM_WIDTH,
     backgroundColor: theme.colors.card,
@@ -624,15 +517,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  gridImageWrapper: {
-    width: '100%',
-    height: 140,
-    position: 'relative',
-  },
-  gridImage: {
-    width: '100%',
-    height: '100%',
-  },
+  gridImageWrapper: { width: '100%', height: 140, position: 'relative', },
+  gridImage: { width: '100%', height: '100%', },
   favoriteHeartBtn: {
     position: 'absolute',
     top: 8,
@@ -646,27 +532,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  favoriteHeartBtnActive: {
-    backgroundColor: 'rgba(244, 63, 94, 0.2)',
-    borderColor: 'rgba(244, 63, 94, 0.5)',
-  },
-  gridInfo: {
-    padding: 10,
-  },
-  gridTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  gridPlayTime: {
-    fontSize: 11,
-    color: theme.colors.textDim,
-    fontWeight: '600',
-  },
-  listContainer: {
-    gap: 12,
-  },
+  favoriteHeartBtnActive: { backgroundColor: 'rgba(244, 63, 94, 0.2)', borderColor: 'rgba(244, 63, 94, 0.5)', },
+  gridInfo: { padding: 10, },
+  gridTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.text, marginBottom: 4, },
+  gridPlayTime: { fontSize: 11, color: theme.colors.textDim, fontWeight: '600', },
+  listContainer: { gap: 12, },
   listCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -677,30 +547,11 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderSubtle,
     gap: 12,
   },
-  listImage: {
-    width: 80,
-    height: 52,
-    borderRadius: 8,
-  },
-  listInfo: {
-    flex: 1,
-  },
-  listTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  listMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  listPlayTime: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    fontWeight: '500',
-  },
+  listImage: { width: 80, height: 52, borderRadius: 8, },
+  listInfo: { flex: 1, },
+  listTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.text, marginBottom: 4, },
+  listMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, },
+  listPlayTime: { fontSize: 11, color: theme.colors.textMuted, fontWeight: '500', },
   listFavBtn: {
     width: 36,
     height: 36,
@@ -709,7 +560,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  listFavBtnActive: {
-    backgroundColor: 'rgba(244, 63, 94, 0.15)',
-  },
+  listFavBtnActive: { backgroundColor: 'rgba(244, 63, 94, 0.15)', },
 });

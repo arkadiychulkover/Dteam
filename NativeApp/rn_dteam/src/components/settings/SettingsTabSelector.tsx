@@ -5,10 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export type SettingsTabType = 'general' | 'password' | 'notifications' | 'wallet' | 'delete';
 
-interface SettingsTabSelectorProps {
-  activeTab: SettingsTabType;
-  onSelectTab: (tab: SettingsTabType) => void;
-}
+interface SettingsTabSelectorProps { activeTab: SettingsTabType; onSelectTab: (tab: SettingsTabType) => void; }
 
 const TABS: { id: SettingsTabType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: 'general', label: 'Загальні', icon: 'person-outline' },
@@ -21,8 +18,7 @@ const TABS: { id: SettingsTabType; label: string; icon: keyof typeof Ionicons.gl
 export const SettingsTabSelector: React.FC<SettingsTabSelectorProps> = ({
   activeTab,
   onSelectTab,
-}) => {
-  return (
+}) => { return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -35,22 +31,14 @@ export const SettingsTabSelector: React.FC<SettingsTabSelectorProps> = ({
         return (
           <TouchableOpacity
             key={tab.id}
-            style={[
-              styles.tab,
-              isActive && styles.tabActive,
-              isDelete && isActive && styles.tabDeleteActive,
-            ]}
+            style={[ styles.tab, isActive && styles.tabActive, isDelete && isActive && styles.tabDeleteActive, ]}
             onPress={() => onSelectTab(tab.id)}
             activeOpacity={0.7}
           >
             <Ionicons
               name={tab.icon}
               size={15}
-              color={
-                isActive
-                  ? (isDelete ? colors.danger : colors.primary)
-                  : colors.textDim
-              }
+              color={ isActive ? (isDelete ? colors.danger : colors.primary) : colors.textDim }
             />
             <Text
               style={[
@@ -85,23 +73,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  tabActive: {
-    backgroundColor: 'rgba(34, 211, 238, 0.12)',
-    borderColor: colors.primary,
-  },
-  tabDeleteActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderColor: colors.danger,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
-  tabLabelActive: {
-    color: colors.primary,
-  },
-  tabLabelDelete: {
-    color: colors.danger,
-  },
+  tabActive: { backgroundColor: 'rgba(34, 211, 238, 0.12)', borderColor: colors.primary, },
+  tabDeleteActive: { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: colors.danger, },
+  tabLabel: { fontSize: 12, fontWeight: '700', color: colors.textMuted, },
+  tabLabelActive: { color: colors.primary, },
+  tabLabelDelete: { color: colors.danger, },
 });

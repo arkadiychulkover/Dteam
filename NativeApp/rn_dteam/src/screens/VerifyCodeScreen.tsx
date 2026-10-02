@@ -49,13 +49,9 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
   useEffect(() => {
     let interval: any = null;
     if (resendCountdown > 0) {
-      interval = setInterval(() => {
-        setResendCountdown((prev) => prev - 1);
-      }, 1000);
+      interval = setInterval(() => { setResendCountdown((prev) => prev - 1); }, 1000);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [resendCountdown]);
 
   const handleResend = async () => {
@@ -71,10 +67,7 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
 
   const handleVerifyCode = async () => {
     const trimmed = resetCode.trim();
-    if (!trimmed) {
-      setErrorMessage('Введіть код підтвердження (GUID)');
-      return;
-    }
+    if (!trimmed) { setErrorMessage('Введіть код підтвердження (GUID)'); return; }
 
     setErrorMessage('');
     setIsSubmitting(true);
@@ -91,36 +84,17 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      setErrorMessage('Заповніть обидва поля пароля');
-      return;
-    }
+    if (!newPassword || !confirmPassword) { setErrorMessage('Заповніть обидва поля пароля'); return; }
 
-    if (newPassword !== confirmPassword) {
-      setErrorMessage('Паролі не співпадають');
-      return;
-    }
+    if (newPassword !== confirmPassword) { setErrorMessage('Паролі не співпадають'); return; }
 
-    if (newPassword.length < 7) {
-      setErrorMessage('Новий пароль має містити щонайменше 7 символів');
-      return;
-    }
+    if (newPassword.length < 7) { setErrorMessage('Новий пароль має містити щонайменше 7 символів'); return; }
 
-    if (!/[a-zA-Z]/.test(newPassword)) {
-      setErrorMessage('Пароль має містити щонайменше одну літеру');
-      return;
-    }
+    if (!/[a-zA-Z]/.test(newPassword)) { setErrorMessage('Пароль має містити щонайменше одну літеру'); return; }
 
-    if (!/\d/.test(newPassword)) {
-      setErrorMessage('Пароль має містити щонайменше одну цифру');
-      return;
-    }
+    if (!/\d/.test(newPassword)) { setErrorMessage('Пароль має містити щонайменше одну цифру'); return; }
 
-    if (/\s/.test(newPassword)) {
-      setErrorMessage('Пароль не повинен містити пробілів');
-      return;
-    }
-
+    if (/\s/.test(newPassword)) { setErrorMessage('Пароль не повинен містити пробілів'); return; }
 
     setErrorMessage('');
     setIsSubmitting(true);
@@ -128,10 +102,7 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
     try {
       await authService.resetPassword(resetToken, newPassword);
       Alert.alert('Пароль змінено', 'Ваш пароль успішно оновлено. Увійдіть з новим паролем.', [
-        {
-          text: 'ОК',
-          onPress: () => goToLogin(),
-        },
+        { text: 'ОК', onPress: () => goToLogin(), },
       ]);
     } catch (err: any) {
       setErrorMessage(err.message || 'Не вдалося оновити пароль.');
@@ -141,11 +112,7 @@ export const VerifyCodeScreen: React.FC<VerifyCodeScreenProps> = ({
   };
 
   const goToLogin = () => {
-    if (onNavigateLogin) {
-      onNavigateLogin();
-    } else if (navigation?.navigate) {
-      navigation.navigate('Login');
-    }
+    if (onNavigateLogin) { onNavigateLogin(); } else if (navigation?.navigate) { navigation.navigate('Login'); }
   };
 
   return (
@@ -364,25 +331,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderSubtle,
   },
-  topBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  topBackBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
+  topBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, },
+  topBackBtnText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, },
+  keyboardContainer: { flex: 1, },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 16, paddingVertical: 20, },
   cardContainer: {
     backgroundColor: theme.colors.glassBg,
     borderRadius: theme.borderRadius.xl,
@@ -395,10 +347,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
+  header: { alignItems: 'center', marginBottom: 24, },
   logoBadge: {
     width: 56,
     height: 56,
@@ -410,18 +359,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginTop: 6,
-    textAlign: 'center',
-  },
+  title: { fontSize: 22, fontWeight: '900', color: theme.colors.text, letterSpacing: 0.5, },
+  subtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: 6, textAlign: 'center', },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -433,22 +372,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  errorText: {
-    fontSize: 12,
-    color: theme.colors.error,
-    fontWeight: '600',
-    flex: 1,
-  },
-  formGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.8,
-  },
+  errorText: { fontSize: 12, color: theme.colors.error, fontWeight: '600', flex: 1, },
+  formGroup: { marginBottom: 16, },
+  label: { fontSize: 11, fontWeight: '800', color: theme.colors.textSecondary, marginBottom: 8, letterSpacing: 0.8, },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,53 +384,24 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 46,
-    fontSize: 14,
-    color: theme.colors.text,
-  },
+  inputIcon: { marginRight: 10, },
+  input: { flex: 1, height: 46, fontSize: 14, color: theme.colors.text, },
   monoInput: {
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     fontSize: 13,
     color: theme.colors.primary,
   },
-  passwordInput: {
-    paddingRight: 36,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 12,
-    padding: 4,
-  },
-  resendContainer: {
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  resendTimerText: {
-    fontSize: 12,
-    color: theme.colors.textDim,
-  },
+  passwordInput: { paddingRight: 36, },
+  eyeButton: { position: 'absolute', right: 12, padding: 4, },
+  resendContainer: { alignItems: 'center', marginVertical: 12, },
+  resendTimerText: { fontSize: 12, color: theme.colors.textDim, },
   resendSecondsText: {
     color: theme.colors.primary,
     fontWeight: '800',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  resendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  resendButtonText: {
-    fontSize: 12,
-    color: theme.colors.primary,
-    fontWeight: '700',
-  },
+  resendButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, },
+  resendButtonText: { fontSize: 12, color: theme.colors.primary, fontWeight: '700', },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -520,15 +417,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#000',
-    letterSpacing: 0.5,
-  },
+  disabledButton: { opacity: 0.6, },
+  submitButtonText: { fontSize: 15, fontWeight: '900', color: '#000', letterSpacing: 0.5, },
   footer: {
     marginTop: 24,
     paddingTop: 16,
@@ -536,14 +426,6 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.borderSubtle,
     alignItems: 'center',
   },
-  backLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  backLinkText: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    fontWeight: '700',
-  },
+  backLink: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+  backLinkText: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '700', },
 });

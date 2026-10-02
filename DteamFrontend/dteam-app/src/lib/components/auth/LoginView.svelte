@@ -12,21 +12,14 @@
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!identifier.trim() || !password) {
-      errorMessage = 'Будь ласка, заповніть усі поля';
-      return;
-    }
+    if (!identifier.trim() || !password) { errorMessage = 'Будь ласка, заповніть усі поля'; return; }
 
     errorMessage = '';
     isSubmitting = true;
 
     try {
       await authStore.login(identifier, password);
-      uiStore.addToast({
-        title: 'Успішний вхід',
-        message: `З поверненням, ${identifier}!`,
-        type: 'success'
-      });
+      uiStore.addToast({ title: 'Успішний вхід', message: `З поверненням, ${identifier}!`, type: 'success' });
       uiStore.setTab('store');
     } catch (err: any) {
       errorMessage = err.message || 'Помилка входу. Перевірте введені дані.';

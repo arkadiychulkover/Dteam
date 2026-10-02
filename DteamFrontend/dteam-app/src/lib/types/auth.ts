@@ -1,9 +1,6 @@
 import type { Duser } from './user';
 
-export interface LoginRequest {
-  emailOrUsername: string;
-  password: string;
-}
+export interface LoginRequest { emailOrUsername: string; password: string; }
 
 export interface RegisterRequest {
   email: string;
@@ -13,17 +10,8 @@ export interface RegisterRequest {
   hardhatAddress?: string;
 }
 
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: Duser;
-}
+export interface AuthResponse { accessToken: string; refreshToken: string; user: Duser; }
 
-export interface ResetPasswordRequest {
-  email: string;
-}
+export interface ResetPasswordRequest { email: string; }
 
-export interface ConfirmResetPasswordRequest {
-  token: string;
-  newPassword: string;
-}
+export interface ConfirmResetPasswordRequest { token: string; newPassword: string; }

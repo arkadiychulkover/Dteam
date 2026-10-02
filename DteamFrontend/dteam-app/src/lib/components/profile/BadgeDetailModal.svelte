@@ -4,15 +4,7 @@
   import { X, ExternalLink, Calendar, Hash, ShieldCheck, Sparkles, Copy, Check } from 'lucide-svelte';
   import { formatDate } from '../../utils/formatters';
 
-  let {
-    gift,
-    isOpen = false,
-    onClose
-  }: {
-    gift: NftGift | null;
-    isOpen: boolean;
-    onClose: () => void;
-  } = $props();
+  let { gift, isOpen = false, onClose }: { gift: NftGift | null; isOpen: boolean; onClose: () => void; } = $props();
 
   let copied = $state(false);
 
@@ -20,9 +12,7 @@
     try {
       await navigator.clipboard.writeText(DTEAM_NFT_CONTRACT_ADDRESS);
       copied = true;
-      setTimeout(() => {
-        copied = false;
-      }, 2000);
+      setTimeout(() => { copied = false; }, 2000);
     } catch (err) {
       console.warn('Failed to copy contract address:', err);
     }

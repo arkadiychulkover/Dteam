@@ -18,16 +18,11 @@
   import CreateCollectionModal from './CreateCollectionModal.svelte';
   import BackendImage from '../ui/BackendImage.svelte';
 
-  interface Props {
-    game: Game;
-    onBack: () => void;
-  }
+  interface Props { game: Game; onBack: () => void; }
 
   let { game, onBack }: Props = $props();
 
-  const libraryItem = $derived(
-    $libraryStore.items.find((i) => i.gameId === game.id) as UserGame | undefined
-  );
+  const libraryItem = $derived( $libraryStore.items.find((i) => i.gameId === game.id) as UserGame | undefined );
   const isFavorite = $derived(libraryItem?.isFavorite ?? false);
 
   let activeTab = $state<'store' | 'dlc' | 'developer' | 'community'>('store');
@@ -43,9 +38,7 @@
 
   let allReviews = $state<Review[]>([]);
   let isLoadingReviews = $state(false);
-  const myReviews = $derived(
-    $currentUser ? allReviews.filter((r) => r.userId === $currentUser!.id) : []
-  );
+  const myReviews = $derived( $currentUser ? allReviews.filter((r) => r.userId === $currentUser!.id) : [] );
 
   let dlcs = $state<Game[]>([]);
   let isLoadingDlcs = $state(false);
@@ -77,14 +70,9 @@
     }
   }
 
-  function formatReviewDate(dateStr: string): string {
-    return formatDate(dateStr);
-  }
+  function formatReviewDate(dateStr: string): string { return formatDate(dateStr); }
 
-  function openDlc(dlc: Game) {
-    gamesStore.selectGame(dlc);
-    uiStore.setTab('game');
-  }
+  function openDlc(dlc: Game) { gamesStore.selectGame(dlc); uiStore.setTab('game'); }
 
   async function loadNews() {
     isLoadingNews = true;
@@ -114,10 +102,7 @@
 
   async function loadFriendsWithGame() {
     const allFriends = $friendsStore.friends;
-    if (allFriends.length === 0) {
-      friendsWithGame = [];
-      return;
-    }
+    if (allFriends.length === 0) { friendsWithGame = []; return; }
 
     isLoadingFriends = true;
     try {
@@ -163,10 +148,7 @@
 
       if (!res.ok) {
         let errMsg = 'Помилка завантаження гри';
-        try {
-          const errData = await res.json();
-          if (errData.message) errMsg = errData.message;
-        } catch {}
+        try { const errData = await res.json(); if (errData.message) errMsg = errData.message; } catch {}
         throw new Error(errMsg);
       }
 
@@ -196,16 +178,10 @@
     }
   }
 
-  function handleToggleFavorite() {
-    libraryStore.toggleFavorite(game.id);
-  }
+  function handleToggleFavorite() { libraryStore.toggleFavorite(game.id); }
 
   function handleShare(post: CommunityPost) {
-    uiStore.addToast({
-      title: 'Поділитись',
-      message: 'Посилання на пост скопійовано.',
-      type: 'info',
-    });
+    uiStore.addToast({ title: 'Поділитись', message: 'Посилання на пост скопійовано.', type: 'info', });
   }
 
   async function handleToggleLike(post: CommunityPost) {
@@ -219,18 +195,9 @@
     }
   }
 
-  onMount(() => {
-    loadNews();
-    loadCommunityFeed();
-    loadFriendsWithGame();
-  });
+  onMount(() => { loadNews(); loadCommunityFeed(); loadFriendsWithGame(); });
 
-  $effect(() => {
-    if (game?.id) {
-      loadReviews(game.id);
-      loadDlcs(game.id);
-    }
-  });
+  $effect(() => { if (game?.id) { loadReviews(game.id); loadDlcs(game.id); } });
 </script>
 
 <div class="space-y-6 animate-in fade-in duration-300">

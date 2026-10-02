@@ -24,22 +24,13 @@ function createThemeStore() {
     }
   }
 
-  if (isBrowser) {
-    applyTheme(initialTheme);
-  }
+  if (isBrowser) { applyTheme(initialTheme); }
 
   return {
     subscribe,
-    setTheme(theme: Theme) {
-      applyTheme(theme);
-      set(theme);
-    },
+    setTheme(theme: Theme) { applyTheme(theme); set(theme); },
     toggleTheme() {
-      update(current => {
-        const next: Theme = current === 'dark' ? 'light' : 'dark';
-        applyTheme(next);
-        return next;
-      });
+      update(current => { const next: Theme = current === 'dark' ? 'light' : 'dark'; applyTheme(next); return next; });
     },
     init() {
       if (!isBrowser) return;

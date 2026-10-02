@@ -1,9 +1,4 @@
-export interface GameLanguageSupport {
-  language: string;
-  interface: boolean;
-  fullAudio: boolean;
-  subtitles: boolean;
-}
+export interface GameLanguageSupport { language: string; interface: boolean; fullAudio: boolean; subtitles: boolean; }
 
 export interface ReviewParentInfo {
   id: string;

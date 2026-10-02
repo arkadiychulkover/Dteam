@@ -11,12 +11,7 @@
     onClose: () => void;
   }
 
-  let {
-    isOpen,
-    selectedGameId = null,
-    onSelect,
-    onClose
-  }: Props = $props();
+  let { isOpen, selectedGameId = null, onSelect, onClose }: Props = $props();
 
   let searchQuery = $state('');
   let recommendations = $state<GameRecommendation[]>([]);
@@ -40,15 +35,10 @@
     const val = (e.target as HTMLInputElement).value;
     searchQuery = val;
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => {
-      fetchGames(val);
-    }, 250);
+    debounceTimeout = setTimeout(() => { fetchGames(val); }, 250);
   }
 
-  function handleClear() {
-    searchQuery = '';
-    fetchGames('');
-  }
+  function handleClear() { searchQuery = ''; fetchGames(''); }
 
   function handleSelect(game: GameRecommendation) {
     onSelect({
@@ -59,22 +49,11 @@
     onClose();
   }
 
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  }
+  function handleKeyDown(e: KeyboardEvent) { if (e.key === 'Escape') { onClose(); } }
 
-  $effect(() => {
-    if (isOpen) {
-      searchQuery = '';
-      fetchGames('');
-    }
-  });
+  $effect(() => { if (isOpen) { searchQuery = ''; fetchGames(''); } });
 
-  onMount(() => {
-    return () => clearTimeout(debounceTimeout);
-  });
+  onMount(() => { return () => clearTimeout(debounceTimeout); });
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />

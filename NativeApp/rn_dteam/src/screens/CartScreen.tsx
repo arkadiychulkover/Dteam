@@ -21,9 +21,7 @@ import { colors } from '../theme/colors';
 import { theme } from '../styles/theme';
 import type { CheckoutResult } from '../types';
 
-interface CartScreenProps {
-  navigation: any;
-}
+interface CartScreenProps { navigation: any; }
 
 export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   const { user, isAuthenticated, checkAuth } = useAuthStore();
@@ -47,11 +45,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successData, setSuccessData] = useState<CheckoutResult | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadCart();
-    }
-  }, [isAuthenticated, loadCart]);
+  useEffect(() => { if (isAuthenticated) { loadCart(); } }, [isAuthenticated, loadCart]);
 
   if (!isAuthenticated) {
     return (
@@ -71,9 +65,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   const totalTon = (totalEffectivePriceInNanoTons / 1e9).toFixed(2);
   const isBalanceSufficient = userBalanceNanoTons >= totalEffectivePriceInNanoTons;
 
-  const handleClearConfirm = () => {
-    setModalType('clear');
-  };
+  const handleClearConfirm = () => { setModalType('clear'); };
 
   const handleCheckoutPress = () => {
     console.log('[CartScreen] handleCheckoutPress clicked', {
@@ -85,10 +77,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
       isBalanceSufficient,
     });
 
-    if (items.length === 0) {
-      console.warn('[CartScreen] Cart is empty, ignoring checkout press');
-      return;
-    }
+    if (items.length === 0) { console.warn('[CartScreen] Cart is empty, ignoring checkout press'); return; }
 
     if (!isBalanceSufficient) {
       console.warn('[CartScreen] Insufficient balance for checkout');
@@ -109,9 +98,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
       setModalType('success');
     } catch (err: any) {
       console.error('[CartScreen] Checkout error:', err);
-      setErrorMessage(
-        err.message || 'Не вдалося здійснити покупку. Перевірте баланс або спробуйте пізніше.'
-      );
+      setErrorMessage( err.message || 'Не вдалося здійснити покупку. Перевірте баланс або спробуйте пізніше.' );
       setModalType('error');
     } finally {
       setIsProcessing(false);
@@ -122,7 +109,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
-      {/* Верхня панель */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -184,7 +171,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Список товарів */}
+          {}
           <View style={styles.itemsSection}>
             <Text style={styles.sectionTitle}>Обрані ігри ({items.length})</Text>
 
@@ -219,10 +206,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                         </Text>
                       )}
                       <Text
-                        style={[
-                          styles.cartCardFinalPrice,
-                          hasDiscount && styles.cartCardDiscountedPrice,
-                        ]}
+                        style={[ styles.cartCardFinalPrice, hasDiscount && styles.cartCardDiscountedPrice, ]}
                       >
                         {formatPrice(game.priceInNanoTons, game.discountPercentage)}
                       </Text>
@@ -249,7 +233,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             })}
           </View>
 
-          {/* Підсумок замовлення */}
+          {}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>Підсумок замовлення</Text>
 
@@ -274,12 +258,9 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
               <Text style={styles.summaryTotalValue}>{totalTon} TON</Text>
             </View>
 
-            {/* Баланс користувача */}
+            {}
             <View
-              style={[
-                styles.balanceBanner,
-                !isBalanceSufficient && styles.balanceBannerWarning,
-              ]}
+              style={[ styles.balanceBanner, !isBalanceSufficient && styles.balanceBannerWarning, ]}
             >
               <View style={styles.balanceBannerLeft}>
                 <Ionicons
@@ -299,12 +280,9 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
               )}
             </View>
 
-            {/* Велика кнопка покупки */}
+            {}
             <TouchableOpacity
-              style={[
-                styles.checkoutBtn,
-                (isProcessing || isCheckingOut) && styles.checkoutBtnDisabled,
-              ]}
+              style={[ styles.checkoutBtn, (isProcessing || isCheckingOut) && styles.checkoutBtnDisabled, ]}
               onPress={handleCheckoutPress}
               disabled={isProcessing || isCheckingOut}
               activeOpacity={0.8}
@@ -341,14 +319,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
         </ScrollView>
       )}
 
-      {/* Інтерактивні модальні діалоги замість ненадійних браузерних Alert */}
+      {}
       <Modal
         visible={modalType !== 'none'}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          if (!isProcessing) setModalType('none');
-        }}
+        onRequestClose={() => { if (!isProcessing) setModalType('none'); }}
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
@@ -357,10 +333,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View
                   style={[
                     styles.modalIconWrap,
-                    {
-                      backgroundColor: 'rgba(0, 242, 254, 0.15)',
-                      borderColor: colors.primary,
-                    },
+                    { backgroundColor: 'rgba(0, 242, 254, 0.15)', borderColor: colors.primary, },
                   ]}
                 >
                   <Ionicons name="card-outline" size={32} color={colors.primary} />
@@ -386,9 +359,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   <View style={styles.modalInfoRow}>
                     <Text style={styles.modalInfoLabel}>Залишок після покупки:</Text>
                     <Text style={[styles.modalInfoVal, { color: colors.accentEmerald }]}>
-                      {(
-                        Math.max(0, userBalanceNanoTons - totalEffectivePriceInNanoTons) / 1e9
-                      ).toFixed(2)}{' '}
+                      {( Math.max(0, userBalanceNanoTons - totalEffectivePriceInNanoTons) / 1e9 ).toFixed(2)}{' '}
                       TON
                     </Text>
                   </View>
@@ -428,10 +399,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View
                   style={[
                     styles.modalIconWrap,
-                    {
-                      backgroundColor: 'rgba(255, 75, 75, 0.15)',
-                      borderColor: colors.accentRose,
-                    },
+                    { backgroundColor: 'rgba(255, 75, 75, 0.15)', borderColor: colors.accentRose, },
                   ]}
                 >
                   <Ionicons name="warning-outline" size={32} color={colors.accentRose} />
@@ -446,9 +414,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   <View style={styles.modalInfoRow}>
                     <Text style={styles.modalInfoLabel}>Не вистачає:</Text>
                     <Text style={[styles.modalInfoVal, { color: colors.accentRose }]}>
-                      {(
-                        Math.max(0, totalEffectivePriceInNanoTons - userBalanceNanoTons) / 1e9
-                      ).toFixed(2)}{' '}
+                      {( Math.max(0, totalEffectivePriceInNanoTons - userBalanceNanoTons) / 1e9 ).toFixed(2)}{' '}
                       TON
                     </Text>
                   </View>
@@ -456,10 +422,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
                 <TouchableOpacity
                   style={[styles.modalActionBtn, styles.modalActionBtnPrimary]}
-                  onPress={() => {
-                    setModalType('none');
-                    navigation.navigate('Settings');
-                  }}
+                  onPress={() => { setModalType('none'); navigation.navigate('Settings'); }}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="wallet-outline" size={18} color="#000" />
@@ -481,10 +444,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View
                   style={[
                     styles.modalIconWrap,
-                    {
-                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      borderColor: colors.accentEmerald,
-                    },
+                    { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: colors.accentEmerald, },
                   ]}
                 >
                   <Ionicons name="trophy-outline" size={34} color={colors.accentEmerald} />
@@ -512,9 +472,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   <View style={styles.modalInfoRow}>
                     <Text style={styles.modalInfoLabel}>Новий баланс TON:</Text>
                     <Text style={[styles.modalInfoVal, { color: colors.primary }]}>
-                      {(
-                        (successData?.newBalanceInNanoTons ?? userBalanceNanoTons) / 1e9
-                      ).toFixed(2)}{' '}
+                      {( (successData?.newBalanceInNanoTons ?? userBalanceNanoTons) / 1e9 ).toFixed(2)}{' '}
                       TON
                     </Text>
                   </View>
@@ -522,10 +480,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
                 <TouchableOpacity
                   style={[styles.modalActionBtn, styles.modalActionBtnPrimary]}
-                  onPress={() => {
-                    setModalType('none');
-                    navigation.navigate('MainTabs', { initialTab: 'store' });
-                  }}
+                  onPress={() => { setModalType('none'); navigation.navigate('MainTabs', { initialTab: 'store' }); }}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="game-controller-outline" size={18} color="#000" />
@@ -534,17 +489,11 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
                 <TouchableOpacity
                   style={styles.modalActionBtnCancel}
-                  onPress={() => {
-                    setModalType('none');
-                    navigation.navigate('Library');
-                  }}
+                  onPress={() => { setModalType('none'); navigation.navigate('Library'); }}
                   activeOpacity={0.7}
                 >
                   <Text
-                    style={[
-                      styles.modalActionBtnCancelText,
-                      { color: colors.primary, fontWeight: '700' },
-                    ]}
+                    style={[ styles.modalActionBtnCancelText, { color: colors.primary, fontWeight: '700' }, ]}
                   >
                     Переглянути бібліотеку →
                   </Text>
@@ -557,10 +506,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View
                   style={[
                     styles.modalIconWrap,
-                    {
-                      backgroundColor: 'rgba(255, 75, 75, 0.15)',
-                      borderColor: colors.accentRose,
-                    },
+                    { backgroundColor: 'rgba(255, 75, 75, 0.15)', borderColor: colors.accentRose, },
                   ]}
                 >
                   <Ionicons name="alert-circle-outline" size={32} color={colors.accentRose} />
@@ -583,10 +529,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View
                   style={[
                     styles.modalIconWrap,
-                    {
-                      backgroundColor: 'rgba(255, 75, 75, 0.15)',
-                      borderColor: colors.accentRose,
-                    },
+                    { backgroundColor: 'rgba(255, 75, 75, 0.15)', borderColor: colors.accentRose, },
                   ]}
                 >
                   <Ionicons name="trash-outline" size={32} color={colors.accentRose} />
@@ -598,10 +541,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
                 <TouchableOpacity
                   style={[styles.modalActionBtn, { backgroundColor: colors.accentRose }]}
-                  onPress={async () => {
-                    await clearCart();
-                    setModalType('none');
-                  }}
+                  onPress={async () => { await clearCart(); setModalType('none'); }}
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.modalActionBtnPrimaryText, { color: '#fff' }]}>
@@ -640,58 +580,16 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     backgroundColor: colors.surfaceCard,
   },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-  },
-  backBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: colors.text,
-  },
-  badgeCount: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  badgeCountText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#000',
-  },
-  clearBtn: {
-    padding: 6,
-  },
-  centerBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
-  },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, },
+  backBtnText: { fontSize: 14, fontWeight: '700', color: colors.primary, },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
+  headerTitle: { fontSize: 18, fontWeight: '900', color: colors.text, },
+  badgeCount: { backgroundColor: colors.primary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, },
+  badgeCountText: { fontSize: 11, fontWeight: '900', color: '#000', },
+  clearBtn: { padding: 6, },
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, },
+  loadingText: { color: colors.textMuted, fontSize: 13, },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, gap: 12, },
   emptyIconCircle: {
     width: 88,
     height: 88,
@@ -703,17 +601,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(34, 211, 238, 0.25)',
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
+  emptyTitle: { fontSize: 18, fontWeight: '900', color: colors.text, },
+  emptySubtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 18, },
   exploreCatalogBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -724,24 +613,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginTop: 12,
   },
-  exploreCatalogBtnText: {
-    color: '#000',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  itemsSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 12,
-  },
+  exploreCatalogBtnText: { color: '#000', fontSize: 14, fontWeight: '800', },
+  scrollContent: { padding: 16, paddingBottom: 40, },
+  itemsSection: { marginBottom: 20, },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 12, },
   cartCard: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceCard,
@@ -753,59 +628,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  cartCardImage: {
-    width: 72,
-    height: 52,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-  },
-  cartCardInfo: {
-    flex: 1,
-  },
-  cartCardTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  cartCardGenre: {
-    fontSize: 11,
-    color: colors.textDim,
-    marginBottom: 4,
-  },
-  cartCardPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  cartCardOriginalPrice: {
-    fontSize: 11,
-    color: colors.textDim,
-    textDecorationLine: 'line-through',
-  },
-  cartCardFinalPrice: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.text,
-    fontFamily: 'monospace',
-  },
-  cartCardDiscountedPrice: {
-    color: colors.accentEmerald,
-  },
+  cartCardImage: { width: 72, height: 52, borderRadius: 10, backgroundColor: colors.surface, },
+  cartCardInfo: { flex: 1, },
+  cartCardTitle: { fontSize: 14, fontWeight: '800', color: colors.text, marginBottom: 2, },
+  cartCardGenre: { fontSize: 11, color: colors.textDim, marginBottom: 4, },
+  cartCardPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+  cartCardOriginalPrice: { fontSize: 11, color: colors.textDim, textDecorationLine: 'line-through', },
+  cartCardFinalPrice: { fontSize: 13, fontWeight: '800', color: colors.text, fontFamily: 'monospace', },
+  cartCardDiscountedPrice: { color: colors.accentEmerald, },
   cartCardDiscountBadge: {
     backgroundColor: colors.accentEmerald,
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
   },
-  cartCardDiscountText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#000',
-  },
-  removeBtn: {
-    padding: 6,
-  },
+  cartCardDiscountText: { fontSize: 9, fontWeight: '900', color: '#000', },
+  removeBtn: { padding: 6, },
   summaryCard: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 20,
@@ -813,54 +651,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.text,
-    marginBottom: 14,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  summaryValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  summarySavings: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.accentEmerald,
-  },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 12,
-  },
-  summaryRowTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  summaryTotalLabel: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.text,
-  },
-  summaryTotalValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: colors.primary,
-    fontFamily: 'monospace',
-  },
+  summaryTitle: { fontSize: 16, fontWeight: '900', color: colors.text, marginBottom: 14, },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, },
+  summaryLabel: { fontSize: 13, color: colors.textMuted, },
+  summaryValue: { fontSize: 13, fontWeight: '700', color: colors.text, },
+  summarySavings: { fontSize: 13, fontWeight: '700', color: colors.accentEmerald, },
+  summaryDivider: { height: 1, backgroundColor: colors.border, marginVertical: 12, },
+  summaryRowTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, },
+  summaryTotalLabel: { fontSize: 16, fontWeight: '900', color: colors.text, },
+  summaryTotalValue: { fontSize: 20, fontWeight: '900', color: colors.primary, fontFamily: 'monospace', },
   balanceBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -872,24 +671,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(34, 211, 238, 0.25)',
   },
-  balanceBannerWarning: {
-    backgroundColor: 'rgba(244, 63, 94, 0.1)',
-    borderColor: 'rgba(244, 63, 94, 0.3)',
-  },
-  balanceBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  balanceBannerText: {
-    fontSize: 12,
-    color: colors.text,
-  },
-  balanceBannerShortfall: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.accentRose,
-  },
+  balanceBannerWarning: { backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: 'rgba(244, 63, 94, 0.3)', },
+  balanceBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+  balanceBannerText: { fontSize: 12, color: colors.text, },
+  balanceBannerShortfall: { fontSize: 11, fontWeight: '700', color: colors.accentRose, },
   checkoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -899,24 +684,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
   },
-  checkoutBtnDisabled: {
-    opacity: 0.6,
-  },
-  checkoutBtnText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#000',
-  },
-  depositLinkBtn: {
-    alignItems: 'center',
-    marginTop: 10,
-    paddingVertical: 6,
-  },
-  depositLinkText: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: '700',
-  },
+  checkoutBtnDisabled: { opacity: 0.6, },
+  checkoutBtnText: { fontSize: 15, fontWeight: '900', color: '#000', },
+  depositLinkBtn: { alignItems: 'center', marginTop: 10, paddingVertical: 6, },
+  depositLinkText: { fontSize: 12, color: colors.primary, fontWeight: '700', },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -948,20 +719,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 14,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  modalDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 8, },
+  modalDesc: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 18, marginBottom: 16, },
   modalInfoBox: {
     width: '100%',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -972,25 +731,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 18,
   },
-  modalInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalInfoLabel: {
-    fontSize: 12,
-    color: colors.textDim,
-  },
-  modalInfoVal: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  modalInfoDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    marginVertical: 4,
-  },
+  modalInfoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', },
+  modalInfoLabel: { fontSize: 12, color: colors.textDim, },
+  modalInfoVal: { fontSize: 13, fontWeight: '700', color: colors.text, },
+  modalInfoDivider: { height: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', marginVertical: 4, },
   modalActionBtn: {
     width: '100%',
     height: 46,
@@ -1001,26 +745,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  modalActionBtnPrimary: {
-    backgroundColor: colors.primary,
-  },
-  modalActionBtnPrimaryText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#000',
-  },
-  modalActionBtnCancel: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  modalActionBtnCancelText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  modalActionBtnPrimary: { backgroundColor: colors.primary, },
+  modalActionBtnPrimaryText: { fontSize: 14, fontWeight: '800', color: '#000', },
+  modalActionBtnCancel: { paddingVertical: 8, paddingHorizontal: 16, },
+  modalActionBtnCancelText: { fontSize: 13, fontWeight: '600', color: colors.textMuted, },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
 });

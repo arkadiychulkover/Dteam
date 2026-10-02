@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Store,
-    Gamepad2,
-    MessageSquare,
-    ShoppingCart,
-    Users,
-    User,
-  } from 'lucide-svelte';
+  import { Store, Gamepad2, MessageSquare, ShoppingCart, Users, User, } from 'lucide-svelte';
   import { uiStore } from '../../stores/uiStore';
   import { cartStore } from '../../stores/cartStore';
   import { currentUser } from '../../stores/authStore';
@@ -14,9 +7,7 @@
   const cartCount = $derived($cartStore.items.length);
 
   function navigate(tab: any) {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) { navigator.vibrate(10); }
     uiStore.setTab(tab);
   }
 </script>

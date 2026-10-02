@@ -5,12 +5,7 @@
   import type { Game } from '../../types';
   import { X, Gamepad2, Sparkles, Image, Film, FileArchive, Tag, DollarSign, Layers, Percent, Upload, Trash2, CheckCircle2 } from 'lucide-svelte';
 
-  interface Props {
-    allGames?: Game[];
-    isOpen: boolean;
-    onClose: () => void;
-    onGameCreated: () => void;
-  }
+  interface Props { allGames?: Game[]; isOpen: boolean; onClose: () => void; onGameCreated: () => void; }
 
   let { allGames = [], isOpen, onClose, onGameCreated }: Props = $props();
 
@@ -131,9 +126,7 @@
     }
   }
 
-  function removeScreenshot(index: number) {
-    screenshotUrls = screenshotUrls.filter((_, i) => i !== index);
-  }
+  function removeScreenshot(index: number) { screenshotUrls = screenshotUrls.filter((_, i) => i !== index); }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();

@@ -5,11 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { resolveMediaUrl } from '../../utils/constants';
 
-interface AudioPlayerProps {
-  duration?: number;
-  voiceUri?: string;
-  isMine?: boolean;
-}
+interface AudioPlayerProps { duration?: number; voiceUri?: string; isMine?: boolean; }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   duration = 14,
@@ -22,10 +18,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const webAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (webAudioRef.current) {
-      webAudioRef.current.pause();
-      webAudioRef.current = null;
-    }
+    if (webAudioRef.current) { webAudioRef.current.pause(); webAudioRef.current = null; }
     if (soundRef.current) {
       soundRef.current.unloadAsync().catch(() => {});
       soundRef.current = null;
@@ -39,10 +32,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       if (soundRef.current) {
         soundRef.current.unloadAsync().catch(() => {});
       }
-      if (webAudioRef.current) {
-        webAudioRef.current.pause();
-        webAudioRef.current = null;
-      }
+      if (webAudioRef.current) { webAudioRef.current.pause(); webAudioRef.current = null; }
     };
   }, []);
 
@@ -64,17 +54,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         if (Platform.OS === 'web') {
           if (!webAudioRef.current) {
             const audio = new window.Audio(targetUri);
-            audio.onended = () => {
-              setIsPlaying(false);
-              setCurrentSeconds(0);
-            };
-            audio.ontimeupdate = () => {
-              setCurrentSeconds(Math.floor(audio.currentTime));
-            };
-            audio.onerror = (e) => {
-              console.warn('[AudioPlayer] Audio load error:', e);
-              setIsPlaying(false);
-            };
+            audio.onended = () => { setIsPlaying(false); setCurrentSeconds(0); };
+            audio.ontimeupdate = () => { setCurrentSeconds(Math.floor(audio.currentTime)); };
+            audio.onerror = (e) => { console.warn('[AudioPlayer] Audio load error:', e); setIsPlaying(false); };
             webAudioRef.current = audio;
           }
           await webAudioRef.current.play();
@@ -82,10 +64,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           return;
         } else {
           if (!soundRef.current) {
-            await Audio.setAudioModeAsync({
-              playsInSilentModeIOS: true,
-              allowsRecordingIOS: false,
-            });
+            await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, allowsRecordingIOS: false, });
             const { sound } = await Audio.Sound.createAsync(
               { uri: targetUri },
               { shouldPlay: true },
@@ -119,13 +98,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     let interval: any = null;
     if (isPlaying && (!voiceUri || (!webAudioRef.current && !soundRef.current))) {
       interval = setInterval(() => {
-        setCurrentSeconds((prev) => {
-          if (prev >= duration) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + 1;
-        });
+        setCurrentSeconds((prev) => { if (prev >= duration) { setIsPlaying(false); return 0; } return prev + 1; });
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -200,54 +173,14 @@ const styles = StyleSheet.create({
     gap: 10,
     minWidth: 200,
   },
-  playButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playButtonMine: {
-    backgroundColor: colors.primary,
-  },
-  playButtonOther: {
-    backgroundColor: 'rgba(34, 211, 238, 0.15)',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  waveformContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  waveformRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    height: 32,
-  },
-  waveBar: {
-    width: 3,
-    borderRadius: 2,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  durationText: {
-    fontSize: 10,
-    fontFamily: 'monospace',
-    fontWeight: '600',
-  },
-  micRealBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    opacity: 0.8,
-  },
-  realLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    fontFamily: 'monospace',
-  },
+  playButton: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', },
+  playButtonMine: { backgroundColor: colors.primary, },
+  playButtonOther: { backgroundColor: 'rgba(34, 211, 238, 0.15)', borderWidth: 1, borderColor: colors.primary, },
+  waveformContainer: { flex: 1, gap: 4, },
+  waveformRow: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 32, },
+  waveBar: { width: 3, borderRadius: 2, },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
+  durationText: { fontSize: 10, fontFamily: 'monospace', fontWeight: '600', },
+  micRealBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, opacity: 0.8, },
+  realLabel: { fontSize: 9, fontWeight: '700', fontFamily: 'monospace', },
 });

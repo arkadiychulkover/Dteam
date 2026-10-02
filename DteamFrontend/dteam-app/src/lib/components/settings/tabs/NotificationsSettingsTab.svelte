@@ -19,11 +19,7 @@
     chatSoundEnabled: true,
   });
 
-  $effect(() => {
-    if ($serverState.preferences) {
-      prefs = { ...$serverState.preferences };
-    }
-  });
+  $effect(() => { if ($serverState.preferences) { prefs = { ...$serverState.preferences }; } });
 
   function updatePreference(key: keyof NotificationPreferences, val: boolean) {
     prefs[key] = val;

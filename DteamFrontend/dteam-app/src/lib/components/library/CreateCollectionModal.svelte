@@ -3,13 +3,7 @@
   import { libraryStore } from '../../stores/libraryStore';
   import type { GameCollection, UserGame } from '../../types';
 
-  let {
-    collection = null,
-    onClose,
-  }: {
-    collection?: GameCollection | null;
-    onClose: () => void;
-  } = $props();
+  let { collection = null, onClose, }: { collection?: GameCollection | null; onClose: () => void; } = $props();
 
   let name = $state('');
   let description = $state('');
@@ -33,10 +27,7 @@
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      errorMessage = 'Введіть назву колекції';
-      return;
-    }
+    if (!name.trim()) { errorMessage = 'Введіть назву колекції'; return; }
 
     isSubmitting = true;
     errorMessage = '';
@@ -51,22 +42,14 @@
         const newIds = new Set(selectedGameIds);
 
         for (const gId of selectedGameIds) {
-          if (!currentIds.has(gId)) {
-            await libraryStore.toggleGameInCollection(collection.id, gId);
-          }
+          if (!currentIds.has(gId)) { await libraryStore.toggleGameInCollection(collection.id, gId); }
         }
 
         for (const cItem of colItems) {
-          if (!newIds.has(cItem.gameId)) {
-            await libraryStore.toggleGameInCollection(collection.id, cItem.gameId);
-          }
+          if (!newIds.has(cItem.gameId)) { await libraryStore.toggleGameInCollection(collection.id, cItem.gameId); }
         }
       } else {
-        await libraryStore.createCollection(
-          name.trim(),
-          description.trim() || undefined,
-          selectedGameIds
-        );
+        await libraryStore.createCollection( name.trim(), description.trim() || undefined, selectedGameIds );
       }
       onClose();
     } catch (err: any) {

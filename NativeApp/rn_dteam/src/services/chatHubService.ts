@@ -52,19 +52,12 @@ class ChatHubService {
   }
 
   public async start(): Promise<void> {
-    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
-      return;
-    }
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) { return; }
 
-    if (this.isStarting) {
-      return;
-    }
+    if (this.isStarting) { return; }
 
     const token = tokenStorage.getSyncToken() || (await tokenStorage.getToken());
-    if (!token) {
-      console.log('[ChatHubService] Cannot start hub: No auth token present.');
-      return;
-    }
+    if (!token) { console.log('[ChatHubService] Cannot start hub: No auth token present.'); return; }
 
     this.isStarting = true;
 
@@ -89,11 +82,7 @@ class ChatHubService {
         this.connection.on('ReceiveMessage', (msg: BackendChatMessage) => {
           console.log('[ChatHubService] 📩 Received real-time message:', msg?.id, msg?.content);
           this.messageHandlers.forEach((h) => {
-            try {
-              h(msg);
-            } catch (err) {
-              console.error('[ChatHubService] Error in message handler:', err);
-            }
+            try { h(msg); } catch (err) { console.error('[ChatHubService] Error in message handler:', err); }
           });
         });
 
@@ -102,61 +91,39 @@ class ChatHubService {
           (data: { messageId: string; readerUserId: string; readAt: string }) => {
             console.log('[ChatHubService] 👁️ MessageRead:', data);
             this.readHandlers.forEach((h) => {
-              try {
-                h(data);
-              } catch (err) {
-                console.error('[ChatHubService] Error in read handler:', err);
-              }
+              try { h(data); } catch (err) { console.error('[ChatHubService] Error in read handler:', err); }
             });
           }
         );
 
         this.connection.on('UserTyping', (data: { userId: string; isTyping: boolean }) => {
           this.typingHandlers.forEach((h) => {
-            try {
-              h(data);
-            } catch (err) {
-              console.error('[ChatHubService] Error in typing handler:', err);
-            }
+            try { h(data); } catch (err) { console.error('[ChatHubService] Error in typing handler:', err); }
           });
         });
 
         this.connection.on('HistoryCleared', (data: { clearedWithUserId: string }) => {
           console.log('[ChatHubService] 🧹 HistoryCleared:', data);
           this.historyClearedHandlers.forEach((h) => {
-            try {
-              h(data);
-            } catch (err) {
-              console.error('[ChatHubService] Error in history cleared handler:', err);
-            }
+            try { h(data); } catch (err) { console.error('[ChatHubService] Error in history cleared handler:', err); }
           });
         });
 
         this.connection.on('MessageDeleted', (data: { messageId: string; peerId: string }) => {
           console.log('[ChatHubService] 🗑️ MessageDeleted:', data);
           this.messageDeletedHandlers.forEach((h) => {
-            try {
-              h(data);
-            } catch (err) {
-              console.error('[ChatHubService] Error in message deleted handler:', err);
-            }
+            try { h(data); } catch (err) { console.error('[ChatHubService] Error in message deleted handler:', err); }
           });
         });
 
         this.connection.onreconnected(() => {
           console.log('[ChatHubService] 🔄 Reconnected to ChatHub');
           this.reconnectedHandlers.forEach((h) => {
-            try {
-              h();
-            } catch (err) {
-              console.error('[ChatHubService] Error in reconnected handler:', err);
-            }
+            try { h(); } catch (err) { console.error('[ChatHubService] Error in reconnected handler:', err); }
           });
         });
 
-        this.connection.onclose((err) => {
-          console.log('[ChatHubService] Connection closed:', err);
-        });
+        this.connection.onclose((err) => { console.log('[ChatHubService] Connection closed:', err); });
       }
 
       if (this.connection.state === signalR.HubConnectionState.Disconnected) {
@@ -192,9 +159,7 @@ class ChatHubService {
     this.clearHandlers();
   }
 
-  public isConnected(): boolean {
-    return this.connection?.state === signalR.HubConnectionState.Connected;
-  }
+  public isConnected(): boolean { return this.connection?.state === signalR.HubConnectionState.Connected; }
 }
 
 export const chatHubService = new ChatHubService();

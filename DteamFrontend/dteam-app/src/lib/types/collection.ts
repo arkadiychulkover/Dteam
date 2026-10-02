@@ -1,9 +1,4 @@
-export interface GameCollectionItem {
-  gameId: string;
-  title?: string;
-  coverImageUrl?: string | null;
-  addedAt?: string;
-}
+export interface GameCollectionItem { gameId: string; title?: string; coverImageUrl?: string | null; addedAt?: string; }
 
 export interface GameCollection {
   id: string;
@@ -24,7 +19,4 @@ export interface CreateGameCollectionPayload {
   initialGameIds?: string[];
 }
 
-export interface UpdateGameCollectionPayload {
-  name: string;
-  description?: string;
-}
+export interface UpdateGameCollectionPayload { name: string; description?: string; }

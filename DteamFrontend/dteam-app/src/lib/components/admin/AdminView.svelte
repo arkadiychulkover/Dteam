@@ -146,9 +146,7 @@
       backendLatency = Math.round(endTime - startTime);
       isBackendOnline = res.status === 'Healthy';
 
-      if (res.adminId && !$activeAdminIdStore) {
-        adminService.setActiveAdminId(res.adminId);
-      }
+      if (res.adminId && !$activeAdminIdStore) { adminService.setActiveAdminId(res.adminId); }
     } catch {
       isBackendOnline = false;
       backendLatency = null;
@@ -161,9 +159,7 @@
       await pollHealth();
 
       let adminId = adminService.getActiveAdminId();
-      if (!adminId) {
-        adminId = await adminService.autoDiscoverAdminGuid();
-      }
+      if (!adminId) { adminId = await adminService.autoDiscoverAdminGuid(); }
 
       const [fetchedUsers, fetchedGames] = await Promise.all([
         adminService.getUsers(adminId).catch((err) => {
@@ -193,31 +189,16 @@
     loadData();
     loadRewardSettings();
     pollHealth();
-    healthPollTimer = setInterval(() => {
-      pollHealth();
-    }, 3000);
+    healthPollTimer = setInterval(() => { pollHealth(); }, 3000);
   });
 
-  onDestroy(() => {
-    if (healthPollTimer) {
-      clearInterval(healthPollTimer);
-    }
-  });
+  onDestroy(() => { if (healthPollTimer) { clearInterval(healthPollTimer); } });
 
-  function openEditUser(user: Duser) {
-    selectedUser = user;
-    isEditUserOpen = true;
-  }
+  function openEditUser(user: Duser) { selectedUser = user; isEditUserOpen = true; }
 
-  function openEditGame(game: Game) {
-    selectedGame = game;
-    isEditGameOpen = true;
-  }
+  function openEditGame(game: Game) { selectedGame = game; isEditGameOpen = true; }
 
-  function openCreditBalance(user: Duser) {
-    selectedUser = user;
-    isCreditBalanceOpen = true;
-  }
+  function openCreditBalance(user: Duser) { selectedUser = user; isCreditBalanceOpen = true; }
 
   function confirmDelete(type: 'user' | 'game', id: string, name: string) {
     itemToDelete = { type, id, name };
@@ -246,11 +227,7 @@
       itemToDelete = null;
       await loadData();
     } catch (err: any) {
-      uiStore.addToast({
-        title: 'Delete Failed',
-        message: err.message || 'Could not delete item.',
-        type: 'error',
-      });
+      uiStore.addToast({ title: 'Delete Failed', message: err.message || 'Could not delete item.', type: 'error', });
     }
   }
 

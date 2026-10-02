@@ -52,13 +52,9 @@
   const availablePlatforms = ['Windows', 'MacOS', 'Linux'];
   const availableFeatures = ['SinglePlayer', 'MultiPlayer', 'CoOp', 'VR', 'Achievements', 'CloudSaves'];
 
-  const availableBaseGames = $derived(
-    allGames.filter((g) => !g.isDlc && g.id !== game?.id)
-  );
+  const availableBaseGames = $derived( allGames.filter((g) => !g.isDlc && g.id !== game?.id) );
 
-  const attachedDlcs = $derived(
-    game ? allGames.filter((g) => g.isDlc && g.parentGameId === game.id) : []
-  );
+  const attachedDlcs = $derived( game ? allGames.filter((g) => g.isDlc && g.parentGameId === game.id) : [] );
 
   $effect(() => {
     if (game) {
@@ -161,9 +157,7 @@
     }
   }
 
-  function removeScreenshot(index: number) {
-    screenshotUrls = screenshotUrls.filter((_, i) => i !== index);
-  }
+  function removeScreenshot(index: number) { screenshotUrls = screenshotUrls.filter((_, i) => i !== index); }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -204,11 +198,7 @@
 
       await adminService.updateGame(game.id, payload);
 
-      uiStore.addToast({
-        title: 'Гра оновлена',
-        message: `Гра '${title}' успішно оновлена!`,
-        type: 'success',
-      });
+      uiStore.addToast({ title: 'Гра оновлена', message: `Гра '${title}' успішно оновлена!`, type: 'success', });
 
       onGameUpdated();
       onClose();

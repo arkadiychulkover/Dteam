@@ -46,13 +46,5 @@ export function calculateProfileLevel(rawTokens: number | null | undefined): Pro
     ? Math.min(100, Math.max(0, ((tokens - xpForCurrentLevel) / xpRequiredForStep) * 100))
     : 0;
 
-  return {
-    level,
-    nextLevel,
-    currentXp: tokens,
-    xpForCurrentLevel,
-    xpForNextLevel,
-    xpRemaining,
-    progressPercent
-  };
+  return { level, nextLevel, currentXp: tokens, xpForCurrentLevel, xpForNextLevel, xpRemaining, progressPercent };
 }

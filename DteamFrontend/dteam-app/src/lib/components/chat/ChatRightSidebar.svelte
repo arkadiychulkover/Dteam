@@ -1,14 +1,5 @@
 <script lang="ts">
-  import {
-    Bell,
-    Image as ImageIcon,
-    FileText,
-    Mic,
-    UserMinus,
-    RotateCcw,
-    Ban,
-    AlertTriangle
-  } from 'lucide-svelte';
+  import { Bell, Image as ImageIcon, FileText, Mic, UserMinus, RotateCcw, Ban, AlertTriangle } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
   import { friendsStore } from '../../stores/friendsStore';
   import { uiStore } from '../../stores/uiStore';
@@ -17,9 +8,7 @@
   import ChatVoiceGallery from './ChatVoiceGallery.svelte';
   import type { ChatConversation } from '../../types/chat';
 
-  interface Props {
-    conversation?: ChatConversation | null;
-  }
+  interface Props { conversation?: ChatConversation | null; }
 
   let { conversation }: Props = $props();
 
@@ -57,11 +46,7 @@
     if (confirm(`Видалити ${conversation.friendUsername} зі списку друзів?`)) {
       try {
         await friendsStore.removeFriend(conversation.friendId);
-        uiStore.addToast({
-          title: 'Друзі',
-          message: `${conversation.friendUsername} видалено з друзів`,
-          type: 'info'
-        });
+        uiStore.addToast({ title: 'Друзі', message: `${conversation.friendUsername} видалено з друзів`, type: 'info' });
       } catch (e) {
         console.warn('Remove friend failed:', e);
       }

@@ -1,15 +1,8 @@
 import { api } from './api';
-import type {
-  FriendDto,
-  FriendRequestDto,
-  SendFriendRequestDto,
-  FriendActionResponseDto
-} from '../types/friend';
+import type { FriendDto, FriendRequestDto, SendFriendRequestDto, FriendActionResponseDto } from '../types/friend';
 
 export const friendsService = {
-  async getFriends(): Promise<FriendDto[]> {
-    return await api.get<FriendDto[]>('/friends/list');
-  },
+  async getFriends(): Promise<FriendDto[]> { return await api.get<FriendDto[]>('/friends/list'); },
 
   async getFriendRequests(type: 'incoming' | 'outgoing' | 'all' = 'incoming'): Promise<FriendRequestDto[]> {
     return await api.get<FriendRequestDto[]>(`/friends/requests?type=${type}`);
@@ -43,9 +36,7 @@ export const friendsService = {
     return await api.post<FriendActionResponseDto>(`/friends/${friendId}/unblock`, {});
   },
 
-  async getBlocked(): Promise<FriendDto[]> {
-    return await api.get<FriendDto[]>('/friends/blocked');
-  },
+  async getBlocked(): Promise<FriendDto[]> { return await api.get<FriendDto[]>('/friends/blocked'); },
 
   async getFriendsGameStatus(gameId: string): Promise<import('../types/friend').FriendsGameStatusDto> {
     return await api.get<import('../types/friend').FriendsGameStatusDto>(`/friends/game/${gameId}`);

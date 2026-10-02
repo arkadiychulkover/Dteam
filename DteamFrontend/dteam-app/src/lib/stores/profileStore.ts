@@ -9,15 +9,7 @@ function createProfileStore() {
     friends: PublicFriend[];
     isLoading: boolean;
     error: string | null;
-  }>({
-    viewedUserId: null,
-    profile: null,
-    friends: [],
-    isLoading: false,
-    error: null,
-  });
-
-  return {
+  }>({ viewedUserId: null, profile: null, friends: [], isLoading: false, error: null, }); return {
     subscribe,
 
     viewProfile: (userId: string) => {
@@ -27,10 +19,7 @@ function createProfileStore() {
     },
 
     reload: () => {
-      update((s) => {
-        if (s.viewedUserId) loadProfile(s.viewedUserId);
-        return s;
-      });
+      update((s) => { if (s.viewedUserId) loadProfile(s.viewedUserId); return s; });
     },
 
     clear: () => set({ viewedUserId: null, profile: null, friends: [], isLoading: false, error: null }),

@@ -32,12 +32,7 @@
   const newReleases = $derived([...allGames].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3));
   const freeGames = $derived(allGames.filter(g => Number(g.priceInNanoTons) === 0 || g.discountPercentage === 100).slice(0, 3));
 
-  function goToCatalog(filters?: any) {
-    if (filters) {
-      gamesStore.setFilters(filters);
-    }
-    uiStore.setTab('catalog');
-  }
+  function goToCatalog(filters?: any) { if (filters) { gamesStore.setFilters(filters); } uiStore.setTab('catalog'); }
 
   function openGame(game: Game) {
     recommendationService.track(game.id, 'ViewGame');
@@ -45,9 +40,7 @@
     uiStore.setTab('game');
   }
 
-  function calculateOriginalPrice(game: Game): string {
-    return formatBasePrice(game.priceInNanoTons);
-  }
+  function calculateOriginalPrice(game: Game): string { return formatBasePrice(game.priceInNanoTons); }
 
   async function loadRecommended() {
     try {
@@ -60,10 +53,7 @@
     }
   }
 
-  onMount(() => {
-    gamesStore.loadGames();
-    loadRecommended();
-  });
+  onMount(() => { gamesStore.loadGames(); loadRecommended(); });
 </script>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-12 animate-in fade-in">

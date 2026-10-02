@@ -5,12 +5,7 @@
   import type { Duser } from '../../types';
   import { X, Wallet, PlusCircle, MinusCircle, CheckCircle2 } from 'lucide-svelte';
 
-  interface Props {
-    user: Duser | null;
-    isOpen: boolean;
-    onClose: () => void;
-    onBalanceChanged: () => void;
-  }
+  interface Props { user: Duser | null; isOpen: boolean; onClose: () => void; onBalanceChanged: () => void; }
 
   let { user, isOpen, onClose, onBalanceChanged }: Props = $props();
 
@@ -22,14 +17,7 @@
   let isSubmitting = $state(false);
   let errorMessage = $state('');
 
-  $effect(() => {
-    if (isOpen) {
-      direction = 'credit';
-      amountTon = '';
-      reason = '';
-      errorMessage = '';
-    }
-  });
+  $effect(() => { if (isOpen) { direction = 'credit'; amountTon = ''; reason = ''; errorMessage = ''; } });
 
   const currentBalanceLabel = $derived(user ? formatBalance(user.balanceInNanoTons) : '');
 
@@ -50,10 +38,7 @@
     if (!user) return;
 
     const parsed = parseFloat(amountTon);
-    if (!parsed || parsed <= 0 || isNaN(parsed)) {
-      errorMessage = 'Введіть коректну суму більшу за нуль.';
-      return;
-    }
+    if (!parsed || parsed <= 0 || isNaN(parsed)) { errorMessage = 'Введіть коректну суму більшу за нуль.'; return; }
 
     isSubmitting = true;
     errorMessage = '';

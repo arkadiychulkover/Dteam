@@ -12,36 +12,17 @@
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
 
-    if (!newPassword || !confirmPassword) {
-      errorMessage = 'Заповніть обидва поля';
-      return;
-    }
+    if (!newPassword || !confirmPassword) { errorMessage = 'Заповніть обидва поля'; return; }
 
-    if (newPassword !== confirmPassword) {
-      errorMessage = 'Паролі не співпадають';
-      return;
-    }
+    if (newPassword !== confirmPassword) { errorMessage = 'Паролі не співпадають'; return; }
 
-    if (newPassword.length < 7) {
-      errorMessage = 'Новий пароль має містити щонайменше 7 символів';
-      return;
-    }
+    if (newPassword.length < 7) { errorMessage = 'Новий пароль має містити щонайменше 7 символів'; return; }
 
-    if (!/[a-zA-Z]/.test(newPassword)) {
-      errorMessage = 'Пароль має містити щонайменше одну літеру';
-      return;
-    }
+    if (!/[a-zA-Z]/.test(newPassword)) { errorMessage = 'Пароль має містити щонайменше одну літеру'; return; }
 
-    if (!/\d/.test(newPassword)) {
-      errorMessage = 'Пароль має містити щонайменше одну цифру';
-      return;
-    }
+    if (!/\d/.test(newPassword)) { errorMessage = 'Пароль має містити щонайменше одну цифру'; return; }
 
-    if (/\s/.test(newPassword)) {
-      errorMessage = 'Пароль не повинен містити пробілів';
-      return;
-    }
-
+    if (/\s/.test(newPassword)) { errorMessage = 'Пароль не повинен містити пробілів'; return; }
 
     errorMessage = '';
     isSubmitting = true;

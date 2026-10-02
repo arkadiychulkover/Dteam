@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, StyleProp, ViewStyle, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
@@ -33,8 +25,7 @@ export const AuthRequiredView: React.FC<AuthRequiredViewProps> = ({
   onLogin,
   style,
   showHeader = true,
-}) => {
-  return (
+}) => { return (
     <SafeAreaView style={[styles.safeArea, style]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
@@ -80,23 +71,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.text,
-    letterSpacing: 0.3,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: colors.text, letterSpacing: 0.3, },
+  headerSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2, },
+  contentContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, },
   card: {
     width: '100%',
     maxWidth: 360,
@@ -152,10 +129,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
   },
-  loginButtonText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#021118',
-    letterSpacing: 0.3,
-  },
+  loginButtonText: { fontSize: 15, fontWeight: '900', color: '#021118', letterSpacing: 0.3, },
 });

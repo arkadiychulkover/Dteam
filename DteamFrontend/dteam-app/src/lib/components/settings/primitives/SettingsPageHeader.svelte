@@ -1,8 +1,5 @@
 <script lang="ts">
-  interface Props {
-    title: string;
-    subtitle?: string;
-  }
+  interface Props { title: string; subtitle?: string; }
   let { title, subtitle }: Props = $props();
 </script>
 

@@ -16,10 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDemoMode,
   onNavigateLogin,
   onNavigateProfile,
-}) => {
-  const { user, isAuthenticated } = useAuthStore();
-
-  return (
+}) => { const { user, isAuthenticated } = useAuthStore(); return (
     <View style={styles.container}>
       <View style={styles.logoRow}>
         <View style={styles.logoIcon}>
@@ -86,11 +83,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, },
   logoIcon: {
     width: 32,
     height: 32,
@@ -104,24 +97,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  logoTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.text,
-    letterSpacing: 1.5,
-  },
-  logoSubtitle: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 1,
-    fontFamily: 'monospace',
-  },
-  rightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  logoTitle: { fontSize: 16, fontWeight: '900', color: colors.text, letterSpacing: 1.5, },
+  logoSubtitle: { fontSize: 8, fontWeight: '800', color: colors.primary, letterSpacing: 1, fontFamily: 'monospace', },
+  rightActions: { flexDirection: 'row', alignItems: 'center', gap: 10, },
   demoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -133,28 +111,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  demoBadgeActive: {
-    borderColor: colors.accentAmber,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-  },
-  demoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.accentEmerald,
-  },
-  demoDotActive: {
-    backgroundColor: colors.accentAmber,
-  },
-  demoText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.textDim,
-    fontFamily: 'monospace',
-  },
-  demoTextActive: {
-    color: colors.accentAmber,
-  },
+  demoBadgeActive: { borderColor: colors.accentAmber, backgroundColor: 'rgba(245, 158, 11, 0.1)', },
+  demoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accentEmerald, },
+  demoDotActive: { backgroundColor: colors.accentAmber, },
+  demoText: { fontSize: 10, fontWeight: '800', color: colors.textDim, fontFamily: 'monospace', },
+  demoTextActive: { color: colors.accentAmber, },
   userChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -174,17 +135,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLetter: {
-    color: '#021118',
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  userName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
-    maxWidth: 90,
-  },
+  avatarLetter: { color: '#021118', fontSize: 11, fontWeight: '900', },
+  userName: { fontSize: 12, fontWeight: '700', color: colors.text, maxWidth: 90, },
   loginBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,9 +148,5 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
-  loginBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.primary,
-  },
+  loginBtnText: { fontSize: 12, fontWeight: '800', color: colors.primary, },
 });
