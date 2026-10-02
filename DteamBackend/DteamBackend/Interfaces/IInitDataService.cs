@@ -15,5 +15,7 @@ namespace DteamBackend.Interfaces
         Task EnsureNotificationAndSettingsSchemaAsync(AppDbContext context);
         Task EnsureCollectionSchemaAsync(AppDbContext context);
         Task EnsureGamesSeededAsync(AppDbContext context);
+        Task EnsureDemoUsersAsync(AppDbContext context);
+        Task EnsureGameReviewsAndCommentsAsync(AppDbContext context);
     }
 }

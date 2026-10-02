@@ -235,8 +235,8 @@
 
 <div class="space-y-6 animate-in fade-in duration-300">
   <div class="relative w-full aspect-[16/6] min-h-[280px] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-500/20 shadow-2xl shadow-cyan-950/40">
-    <img
-      src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'}
+    <BackendImage
+      src={game.headerImageUrl || game.coverImageUrl}
       alt={game.title}
       class="w-full h-full object-cover"
     />

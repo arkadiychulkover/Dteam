@@ -130,7 +130,7 @@
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                <img
+                <BackendImage
                   src={game.headerImageUrl || game.coverImageUrl}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -289,7 +289,7 @@
               class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             >
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-                <img
+                <BackendImage
                   src={game.coverImageUrl || game.headerImageUrl}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -348,7 +348,7 @@
                 class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
               >
                 <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                  <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <BackendImage src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div class="p-3 space-y-1">
                   <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
@@ -394,7 +394,7 @@
                 class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
               >
                 <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                  <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <BackendImage src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div class="p-3 space-y-1">
                   <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
@@ -441,7 +441,7 @@
                   class="group flex flex-col rounded-2xl bg-[#061d26] hover:bg-[#082733] border border-[#0d3b4b] hover:border-cyan-400/80 overflow-hidden shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                 >
                   <div class="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
-                    <img src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <BackendImage src={game.headerImageUrl || game.coverImageUrl} alt={game.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div class="p-3 space-y-1">
                     <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 transition-colors truncate">

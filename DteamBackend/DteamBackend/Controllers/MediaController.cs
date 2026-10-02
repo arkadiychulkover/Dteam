@@ -21,10 +21,12 @@ namespace DteamBackend.Controllers
         private const long MaxVideoSizeBytes = 150L * 1024 * 1024;
 
         private readonly IS3StorageService _storageService;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _webHostEnvironment;
 
-        public MediaController(IS3StorageService storageService)
+        public MediaController(IS3StorageService storageService, Microsoft.AspNetCore.Hosting.IWebHostEnvironment webHostEnvironment)
         {
             _storageService = storageService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpPost("upload")]
@@ -101,13 +103,35 @@ namespace DteamBackend.Controllers
             }
 
             var cleanKey = key.TrimStart('/', '\\');
-            var s3Result = await _storageService.GetFileAsync(cleanKey, cancellationToken);
-            if (s3Result == null)
+
+            // 1. Check local static storage / wwwroot first
+            var webRoot = _webHostEnvironment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var localFilePath = Path.Combine(webRoot, cleanKey.Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(localFilePath))
             {
-                return NotFound(new { message = $"Файл '{cleanKey}' не знайдено." });
+                var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(localFilePath, out var contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
+                return PhysicalFile(Path.GetFullPath(localFilePath), contentType, enableRangeProcessing: true);
             }
 
-            return File(s3Result.Value.Stream, s3Result.Value.ContentType, enableRangeProcessing: true);
+            // 2. Check remote S3 storage service
+            try
+            {
+                var s3Result = await _storageService.GetFileAsync(cleanKey, cancellationToken);
+                if (s3Result != null)
+                {
+                    return File(s3Result.Value.Stream, s3Result.Value.ContentType, enableRangeProcessing: true);
+                }
+            }
+            catch
+            {
+                // S3 not configured or client threw
+            }
+
+            return NotFound(new { message = $"Файл '{cleanKey}' не знайдено." });
         }
 
         [HttpDelete("{*key}")]

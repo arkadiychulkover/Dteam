@@ -37,7 +37,9 @@
         cleanPath.startsWith('/community/') ||
         cleanPath.startsWith('/comunity/') ||
         cleanPath.startsWith('/uploads/') ||
-        cleanPath.startsWith('/storage/')
+        cleanPath.startsWith('/storage/') ||
+        cleanPath.startsWith('/game_images/') ||
+        cleanPath.startsWith('/nft/')
       ) {
         cleanPath = `/api/media${cleanPath}`;
       }
@@ -49,7 +51,9 @@
         path.startsWith('/community/') ||
         path.startsWith('/comunity/') ||
         path.startsWith('/uploads/') ||
-        path.startsWith('/storage/')
+        path.startsWith('/storage/') ||
+        path.startsWith('/game_images/') ||
+        path.startsWith('/nft/')
       ) {
         url = `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
       }

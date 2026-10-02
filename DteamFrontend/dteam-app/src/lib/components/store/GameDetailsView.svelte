@@ -473,7 +473,7 @@
         <div class="lg:col-span-8 space-y-6">
 
           <div class="relative w-full aspect-[16/9] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-500/20 shadow-2xl shadow-cyan-950/40 group">
-            <img
+            <BackendImage
               src={activeMedia.url}
               alt={game.title}
               class="w-full h-full object-cover transition-all duration-300"
@@ -516,7 +516,7 @@
                       ? 'border-cyan-400 scale-105 shadow-md shadow-cyan-500/30'
                       : 'border-transparent opacity-60 hover:opacity-100'}"
                 >
-                  <img src={item.thumb} alt="Preview {idx}" class="w-full h-full object-cover" />
+                  <BackendImage src={item.thumb} alt="Preview {idx}" class="w-full h-full object-cover" />
                 </button>
               {/each}
 
@@ -578,8 +578,8 @@
           <div class="bg-[#061820]/90 backdrop-blur-xl border border-cyan-500/25 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-cyan-950/50 space-y-5">
 
             <div class="w-full aspect-[21/9] rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 shadow-inner">
-              <img
-                src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'}
+              <BackendImage
+                src={game.coverImageUrl || game.headerImageUrl}
                 alt={game.title}
                 class="w-full h-full object-cover"
               />

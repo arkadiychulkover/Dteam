@@ -5,6 +5,7 @@
   import { cartStore } from '../../stores/cartStore';
   import { formatPrice, formatBasePrice } from '../../utils/formatters';
   import { ChevronLeft, ChevronRight, Heart, ShoppingBag, ShoppingCart } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let currentIndex = $state(0);
 
@@ -78,10 +79,9 @@
       onkeydown={(e) => { if (e.key === 'Enter') { gamesStore.selectGame(activeGame); uiStore.setTab('game'); } }}
       class="group relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[16/7] min-h-[260px] sm:min-h-[320px] rounded-3xl overflow-hidden border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 cursor-pointer text-left bg-slate-950"
     >
-      <img
-        src={activeGame.headerImageUrl || activeGame.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'}
+      <BackendImage
+        src={activeGame.headerImageUrl || activeGame.coverImageUrl}
         alt={activeGame.title}
-        onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&auto=format&fit=crop&q=80'; }}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
       />
 
@@ -169,10 +169,9 @@
             class="relative w-16 sm:w-20 aspect-[16/9] rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0
               {currentIndex === idx ? 'border-cyan-400 scale-105 shadow-lg shadow-cyan-500/30' : 'border-transparent opacity-60 hover:opacity-100'}"
           >
-            <img
-              src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'}
+            <BackendImage
+              src={game.headerImageUrl || game.coverImageUrl}
               alt={game.title}
-              onerror={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200'; }}
               class="w-full h-full object-cover"
             />
           </button>

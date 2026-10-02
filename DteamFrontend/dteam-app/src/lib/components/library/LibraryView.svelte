@@ -244,8 +244,8 @@
               class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-colors cursor-pointer
                 {openedItem?.gameId === item.gameId ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-300 hover:bg-[#0a2733] hover:text-white'}"
             >
-              <img
-                src={item.game.coverImageUrl || item.game.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
+              <BackendImage
+                src={item.game.coverImageUrl || item.game.headerImageUrl}
                 alt={item.game.title}
                 class="w-6 h-6 rounded-md object-cover shrink-0"
               />

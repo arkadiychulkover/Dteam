@@ -31,6 +31,7 @@ FROM base AS final
 WORKDIR /app
 RUN mkdir -p /app/wwwroot/uploads /app/wwwroot/game_images /app/wwwroot/comunity /app/wwwroot/icons /app/blockchain
 COPY --from=publish /app/publish .
+COPY DteamBackend/wwwroot /app/wwwroot
 COPY blockchain /app/blockchain
 RUN cd /app/blockchain && (npm ci || npm install)
 ENTRYPOINT ["dotnet", "DteamBackend.dll"]

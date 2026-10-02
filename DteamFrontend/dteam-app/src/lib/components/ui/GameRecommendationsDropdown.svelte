@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameRecommendation } from '../../types';
   import { Sparkles, Loader2, Search, ChevronRight } from 'lucide-svelte';
+  import BackendImage from './BackendImage.svelte';
 
   interface Props {
     recommendations: GameRecommendation[];
@@ -48,8 +49,8 @@
             onclick={() => onSelect(rec)}
             class="w-full px-3.5 py-2.5 flex items-center gap-3 hover:bg-cyan-500/10 text-left transition-colors cursor-pointer group"
           >
-            <img
-              src={rec.bannerUrl || rec.headerImageUrl || rec.coverImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80'}
+            <BackendImage
+              src={rec.bannerUrl || rec.headerImageUrl || rec.coverImageUrl}
               alt={rec.title}
               class="w-12 h-8 rounded-lg object-cover bg-slate-900 border border-cyan-500/20 shrink-0 group-hover:scale-105 transition-transform"
             />

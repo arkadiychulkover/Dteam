@@ -10,6 +10,7 @@ import { onMount } from 'svelte';
   import GameRecommendationsDropdown from '../ui/GameRecommendationsDropdown.svelte';
   import GameDetailsModal from './GameDetailsModal.svelte';
   import CategoryIcon from '../ui/CategoryIcon.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import {
     Search,
     SlidersHorizontal,
@@ -545,8 +546,8 @@ import { onMount } from 'svelte';
                 class="group relative flex flex-col rounded-2xl bg-[#061820]/90 hover:bg-[#08202b] border border-cyan-500/20 hover:border-cyan-400/80 overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left"
               >
                 <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-                  <img
-                    src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800'}
+                  <BackendImage
+                    src={game.coverImageUrl || game.headerImageUrl}
                     alt={game.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -618,8 +619,8 @@ import { onMount } from 'svelte';
               >
                 <div class="flex items-center gap-4 flex-1 min-w-0 pr-4">
                   <div class="w-24 sm:w-36 aspect-[16/7] rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-cyan-500/20">
-                    <img
-                      src={game.headerImageUrl || game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600'}
+                    <BackendImage
+                      src={game.headerImageUrl || game.coverImageUrl}
                       alt={game.title}
                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

@@ -4,6 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { formatPrice, formatBasePrice, formatBytes } from '../../utils/formatters';
   import { X, Star, ShoppingCart, Download, Check, Sparkles, HardDrive, Shield, Heart } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   const game = $derived($gamesStore.selectedGame);
   const isWishlisted = $derived(game ? $wishlistStore.wishlistGameIds.has(game.id) : false);
@@ -42,8 +43,8 @@
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div class="md:col-span-7 flex flex-col gap-3">
           <div class="rounded-xl overflow-hidden aspect-video bg-black border border-cyan-500/20 shadow-lg">
-            <img
-              src={selectedScreenshot || game.headerImageUrl || game.coverImageUrl || ''}
+            <BackendImage
+              src={selectedScreenshot || game.headerImageUrl || game.coverImageUrl}
               alt={game.title}
               class="w-full h-full object-cover"
             />
@@ -55,14 +56,14 @@
                 onclick={() => selectedScreenshot = (game.headerImageUrl || game.coverImageUrl || null)}
                 class="w-20 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer {selectedScreenshot === (game.headerImageUrl || game.coverImageUrl) || !selectedScreenshot ? 'border-cyan-400' : 'border-transparent opacity-60'}"
               >
-                <img src={game.headerImageUrl || game.coverImageUrl || ''} alt="Header" class="w-full h-full object-cover" />
+                <BackendImage src={game.headerImageUrl || game.coverImageUrl} alt="Header" class="w-full h-full object-cover" />
               </button>
               {#each game.screenshotUrls as shot}
                 <button
                   onclick={() => selectedScreenshot = shot}
                   class="w-20 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer {selectedScreenshot === shot ? 'border-cyan-400' : 'border-transparent opacity-60'}"
                 >
-                  <img src={shot} alt="Screenshot" class="w-full h-full object-cover" />
+                  <BackendImage src={shot} alt="Screenshot" class="w-full h-full object-cover" />
                 </button>
               {/each}
             </div>

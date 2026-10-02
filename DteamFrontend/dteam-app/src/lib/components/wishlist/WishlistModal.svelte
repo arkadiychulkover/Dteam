@@ -15,6 +15,7 @@
     Gamepad2,
     ExternalLink
   } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let search = $state('');
   let sortBy = $state<'date' | 'price_asc' | 'price_desc' | 'title'>('date');
@@ -130,8 +131,8 @@
             >
               <div class="flex items-center gap-3.5 min-w-0 pr-2">
                 <div class="relative aspect-[16/10] w-24 sm:w-28 rounded-xl overflow-hidden bg-slate-950 border border-cyan-500/30 shrink-0">
-                  <img
-                    src={item.game.headerImageUrl || item.game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400'}
+                  <BackendImage
+                    src={item.game.headerImageUrl || item.game.coverImageUrl}
                     alt={item.game.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
