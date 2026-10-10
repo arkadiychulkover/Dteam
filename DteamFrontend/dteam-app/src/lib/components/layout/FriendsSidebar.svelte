@@ -5,6 +5,7 @@
   import { chatStore } from '../../stores/chatStore';
   import { UserStatus } from '../../types';
   import { X, UserPlus, Users, MessageSquare } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let newFriendInput = $state('');
   let isAdding = $state(false);
@@ -82,17 +83,15 @@
             class="flex items-center gap-2.5 min-w-0 text-left cursor-pointer flex-1"
           >
             <div class="relative">
-              {#if f.avatarUrl}
-                <img
+              <div class="w-8 h-8 rounded-lg overflow-hidden">
+                <BackendImage
                   src={f.avatarUrl}
                   alt={f.username}
-                  class="w-8 h-8 rounded-lg object-cover ring-1 ring-cyan-500/30"
+                  avatar={true}
+                  initial={f.username.charAt(0).toUpperCase()}
+                  class="w-full h-full object-cover ring-1 ring-cyan-500/30"
                 />
-              {:else}
-                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-xs">
-                  {f.username.charAt(0).toUpperCase()}
-                </div>
-              {/if}
+              </div>
               <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#061820]
                 {f.status === UserStatus.Online ? 'bg-emerald-500' : ''}
                 {f.status === UserStatus.InGame ? 'bg-cyan-400' : ''}

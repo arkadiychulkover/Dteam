@@ -47,7 +47,10 @@ export function getRarityInfo(rarity: NftRarity | number) {
         label: 'Легендарний',
         color: 'text-amber-400',
         badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
-        glowColor: 'shadow-amber-500/20'
+        glowColor: 'shadow-amber-500/20',
+        cardBg: 'from-amber-950/40 via-[#0a1f29] to-[#040e14]',
+        borderColor: 'border-amber-500/40 hover:border-amber-400',
+        glow: 'shadow-amber-500/10 hover:shadow-amber-500/25'
       };
     case 3:
     case NftRarity.Epic:
@@ -55,7 +58,10 @@ export function getRarityInfo(rarity: NftRarity | number) {
         label: 'Епічний',
         color: 'text-purple-400',
         badgeBg: 'bg-purple-500/20 border-purple-500/40 text-purple-300',
-        glowColor: 'shadow-purple-500/20'
+        glowColor: 'shadow-purple-500/20',
+        cardBg: 'from-purple-950/40 via-[#0a1f29] to-[#040e14]',
+        borderColor: 'border-purple-500/40 hover:border-purple-400',
+        glow: 'shadow-purple-500/10 hover:shadow-purple-500/25'
       };
     case 2:
     case NftRarity.Rare:
@@ -63,7 +69,10 @@ export function getRarityInfo(rarity: NftRarity | number) {
         label: 'Рідкісний',
         color: 'text-blue-400',
         badgeBg: 'bg-blue-500/20 border-blue-500/40 text-blue-300',
-        glowColor: 'shadow-blue-500/20'
+        glowColor: 'shadow-blue-500/20',
+        cardBg: 'from-blue-950/40 via-[#0a1f29] to-[#040e14]',
+        borderColor: 'border-blue-500/40 hover:border-blue-400',
+        glow: 'shadow-blue-500/10 hover:shadow-blue-500/25'
       };
     case 1:
     case NftRarity.Uncommon:
@@ -71,7 +80,10 @@ export function getRarityInfo(rarity: NftRarity | number) {
         label: 'Незвичайний',
         color: 'text-emerald-400',
         badgeBg: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
-        glowColor: 'shadow-emerald-500/20'
+        glowColor: 'shadow-emerald-500/20',
+        cardBg: 'from-emerald-950/40 via-[#0a1f29] to-[#040e14]',
+        borderColor: 'border-emerald-500/40 hover:border-emerald-400',
+        glow: 'shadow-emerald-500/10 hover:shadow-emerald-500/25'
       };
     case 0:
     case NftRarity.Common:
@@ -80,7 +92,10 @@ export function getRarityInfo(rarity: NftRarity | number) {
         label: 'Звичайний',
         color: 'text-slate-400',
         badgeBg: 'bg-slate-500/20 border-slate-500/40 text-slate-300',
-        glowColor: 'shadow-slate-500/10'
+        glowColor: 'shadow-slate-500/10',
+        cardBg: 'from-slate-900/60 via-[#0a1f29] to-[#040e14]',
+        borderColor: 'border-cyan-500/20 hover:border-cyan-500/40',
+        glow: 'shadow-cyan-500/5 hover:shadow-cyan-500/15'
       };
   }
 }

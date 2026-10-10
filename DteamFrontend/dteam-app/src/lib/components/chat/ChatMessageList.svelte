@@ -200,11 +200,11 @@
                   <AlertCircle class="w-3.5 h-3.5" />
                 </span>
               {:else if msg.isOptimistic}
-                <Clock class="w-3 h-3 text-slate-400 animate-pulse" title="Відправлення..." />
+                <span title="Відправлення..."><Clock class="w-3 h-3 text-slate-400 animate-pulse" /></span>
               {:else if msg.status === 2}
-                <CheckCheck class="w-3.5 h-3.5 text-cyan-400" title="Прочитано" />
+                <span title="Прочитано"><CheckCheck class="w-3.5 h-3.5 text-cyan-400" /></span>
               {:else}
-                <Check class="w-3.5 h-3.5 text-slate-400" title="Відправлено" />
+                <span title="Відправлено"><Check class="w-3.5 h-3.5 text-slate-400" /></span>
               {/if}
               <span>{formatTime(msg.createdAt)}</span>
             </div>

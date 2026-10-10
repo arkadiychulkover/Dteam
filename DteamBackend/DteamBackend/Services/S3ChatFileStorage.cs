@@ -43,8 +43,30 @@ namespace DteamBackend.Services
             var storageKey = $"{Guid.NewGuid():N}{safeExt}";
             var s3Key = $"chat/{storageKey}";
 
-            await _s3Storage.UploadAsync(stream, s3Key, contentType ?? "application/octet-stream", cancellationToken);
-            return storageKey;
+            try
+            {
+                await _s3Storage.UploadAsync(stream, s3Key, contentType ?? "application/octet-stream", cancellationToken);
+                return storageKey;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[S3ChatFileStorage] Failed to upload chat file '{Key}' to S3. Falling back to local storage.", s3Key);
+
+                if (stream.CanSeek)
+                {
+                    stream.Position = 0;
+                }
+
+                Directory.CreateDirectory(_legacyStorageDirectory);
+                var localFilePath = Path.Combine(_legacyStorageDirectory, storageKey);
+                await using var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+                await stream.CopyToAsync(fileStream, cancellationToken);
+
+                var metaPath = localFilePath + ".meta";
+                await File.WriteAllTextAsync(metaPath, contentType ?? "application/octet-stream", cancellationToken);
+
+                return storageKey;
+            }
         }
 
         public async Task<(Stream Stream, string ContentType)?> GetFileStreamAsync(string storageKey, CancellationToken cancellationToken = default)
@@ -55,10 +77,17 @@ namespace DteamBackend.Services
             }
 
             var s3Key = $"chat/{storageKey}";
-            var s3Result = await _s3Storage.GetFileAsync(s3Key, cancellationToken);
-            if (s3Result != null)
+            try
             {
-                return (s3Result.Value.Stream, s3Result.Value.ContentType);
+                var s3Result = await _s3Storage.GetFileAsync(s3Key, cancellationToken);
+                if (s3Result != null)
+                {
+                    return (s3Result.Value.Stream, s3Result.Value.ContentType);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[S3ChatFileStorage] Error fetching '{Key}' from S3. Falling back to local storage.", s3Key);
             }
 
             if (Directory.Exists(_legacyStorageDirectory))

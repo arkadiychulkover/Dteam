@@ -7,6 +7,7 @@
   import ChatFilesGallery from './ChatFilesGallery.svelte';
   import ChatVoiceGallery from './ChatVoiceGallery.svelte';
   import type { ChatConversation } from '../../types/chat';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props { conversation?: ChatConversation | null; }
 
@@ -89,17 +90,13 @@
 
       <div class="flex flex-col items-center text-center">
         <div class="relative w-40 h-40 rounded-3xl overflow-hidden p-1 bg-gradient-to-b from-cyan-400/40 via-teal-500/20 to-transparent border border-cyan-400/40 shadow-[0_0_25px_rgba(0,242,254,0.15)] group">
-          {#if conversation.friendAvatarUrl}
-            <img
-              src={conversation.friendAvatarUrl}
-              alt={conversation.friendUsername}
-              class="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
-            />
-          {:else}
-            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-cyan-900 to-slate-900 flex items-center justify-center text-cyan-300 text-4xl font-black font-display">
-              {conversation.friendUsername.charAt(0).toUpperCase()}
-            </div>
-          {/if}
+          <BackendImage
+            src={conversation.friendAvatarUrl}
+            alt={conversation.friendUsername}
+            avatar={true}
+            initial={conversation.friendUsername.charAt(0).toUpperCase()}
+            class="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
 
         <h2 class="mt-4 text-base font-bold text-white tracking-wide">

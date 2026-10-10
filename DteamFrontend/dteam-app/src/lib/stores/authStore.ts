@@ -49,6 +49,10 @@ function createAuthStore() {
     error: null,
   });
 
+  api.onTokenRefreshed((newToken) => {
+    update((s) => ({ ...s, token: newToken }));
+  });
+
   if (initialToken) {
     authService.getProfile()
       .then((freshUser) => {

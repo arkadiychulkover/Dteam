@@ -273,13 +273,13 @@
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
 
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shrink-0">
-            {#if profile.avatarUrl}
-              <BackendImage src={profile.avatarUrl} alt={profile.username} class="w-full h-full object-cover" />
-            {:else}
-              <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
-                {profile.username.charAt(0).toUpperCase()}
-              </div>
-            {/if}
+            <BackendImage
+              src={profile.avatarUrl}
+              alt={profile.username}
+              avatar={true}
+              initial={profile.username.charAt(0).toUpperCase()}
+              class="w-full h-full object-cover"
+            />
           </div>
 
           <div class="pb-2">
@@ -726,7 +726,9 @@
                   class="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-cyan-900/20 transition-colors text-left cursor-pointer"
                 >
                   <div class="relative shrink-0">
-                    <img src={f.avatarUrl || undefined} alt={f.username} class="w-9 h-9 rounded-full object-cover bg-slate-800 border border-cyan-900/60" />
+                    <div class="w-9 h-9 rounded-full overflow-hidden">
+                      <BackendImage src={f.avatarUrl} alt={f.username} avatar={true} initial={f.username?.charAt(0).toUpperCase()} class="w-full h-full object-cover bg-slate-800 border border-cyan-900/60" />
+                    </div>
                     <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#03232c]
                       {f.status === UserStatus.Online ? 'bg-emerald-500' : ''}
                       {f.status === UserStatus.InGame ? 'bg-cyan-400' : ''}

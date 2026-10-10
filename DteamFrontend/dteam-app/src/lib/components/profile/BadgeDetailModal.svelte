@@ -78,7 +78,7 @@
           </div>
           <div>
             <span class="text-[10px] text-slate-500 block">Отримано</span>
-            <span class="text-slate-200 font-medium">{formatDate(gift.lastTransferredAt || gift.createdAt)}</span>
+            <span class="text-slate-200 font-medium">{formatDate(gift.lastTransferredAt || gift.createdAt || '')}</span>
           </div>
         </div>
       </div>

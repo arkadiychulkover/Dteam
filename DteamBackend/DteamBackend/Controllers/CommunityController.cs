@@ -347,7 +347,20 @@ namespace DteamBackend.Controllers
             var key = $"community/{uniqueFileName}";
 
             await using var stream = file.OpenReadStream();
-            await _storageService.UploadAsync(stream, key, file.ContentType);
+            try
+            {
+                await _storageService.UploadAsync(stream, key, file.ContentType);
+            }
+            catch
+            {
+                var webRoot = _environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+                var localFilePath = Path.Combine(webRoot, "community", uniqueFileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
+
+                if (stream.CanSeek) stream.Position = 0;
+                await using var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+                await stream.CopyToAsync(localFileStream);
+            }
 
             return $"/api/media/{key}";
         }

@@ -27,41 +27,64 @@
   let isError = $state(false);
   let blobUrl = $state<string | null>(null);
 
+  const isAvatar = $derived(
+    avatar ||
+    Boolean(initial) ||
+    Boolean(src && (src.includes('avatar') || src.includes('icons/avatar') || src.includes('/icons/')))
+  );
+
+  const letterFallback = $derived(
+    initial || (alt && alt !== 'Зображення' && alt !== 'Avatar' && alt !== 'Avatar preview' ? alt.charAt(0).toUpperCase() : 'U')
+  );
+
   const resolvedSrc = $derived.by(() => {
     if (!src || !src.trim()) return null;
     let url = src.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:')) {
-      let cleanPath = url.startsWith('/') ? url : `/${url}`;
-      if (
-        cleanPath.startsWith('/icons/') ||
-        cleanPath.startsWith('/community/') ||
-        cleanPath.startsWith('/comunity/') ||
-        cleanPath.startsWith('/uploads/') ||
-        cleanPath.startsWith('/storage/') ||
-        cleanPath.startsWith('/game_images/') ||
-        cleanPath.startsWith('/nft/')
-      ) {
-        cleanPath = `/api/media${cleanPath}`;
-      }
-      url = BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
-    } else if (BACKEND_URL && url.startsWith(BACKEND_URL)) {
-      const path = url.slice(BACKEND_URL.length);
-      if (
-        path.startsWith('/icons/') ||
-        path.startsWith('/community/') ||
-        path.startsWith('/comunity/') ||
-        path.startsWith('/uploads/') ||
-        path.startsWith('/storage/') ||
-        path.startsWith('/game_images/') ||
-        path.startsWith('/nft/')
-      ) {
-        url = `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
-      }
-    }
-    return url;
-  });
 
-  const letterFallback = $derived( initial || (alt && alt !== 'Зображення' ? alt.charAt(0).toUpperCase() : 'U') );
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      return url;
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (BACKEND_URL && url.startsWith(BACKEND_URL)) {
+        let path = url.slice(BACKEND_URL.length);
+        if (
+          path.startsWith('/icons/') ||
+          path.startsWith('/community/') ||
+          path.startsWith('/comunity/') ||
+          path.startsWith('/uploads/') ||
+          path.startsWith('/storage/') ||
+          path.startsWith('/game_images/') ||
+          path.startsWith('/nft/')
+        ) {
+          return `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
+        }
+        if (path.startsWith('/avatar_') || path.startsWith('/avatars/')) {
+          const cleanAvatar = path.startsWith('/avatars/') ? path.slice('/avatars'.length) : path;
+          return `${BACKEND_URL.replace(/\/+$/, '')}/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+        }
+      }
+      return url;
+    }
+
+    let cleanPath = url.startsWith('/') ? url : `/${url}`;
+    if (
+      cleanPath.startsWith('/icons/') ||
+      cleanPath.startsWith('/community/') ||
+      cleanPath.startsWith('/comunity/') ||
+      cleanPath.startsWith('/uploads/') ||
+      cleanPath.startsWith('/storage/') ||
+      cleanPath.startsWith('/game_images/') ||
+      cleanPath.startsWith('/nft/')
+    ) {
+      cleanPath = `/api/media${cleanPath}`;
+    } else if (cleanPath.startsWith('/avatar_') || cleanPath.startsWith('/avatars/')) {
+      const cleanAvatar = cleanPath.startsWith('/avatars/') ? cleanPath.slice('/avatars'.length) : cleanPath;
+      cleanPath = `/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+    }
+
+    return BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
+  });
 
   $effect(() => {
     let active = true;
@@ -81,21 +104,42 @@
                            url.startsWith('/') ||
                            (BACKEND_URL && url.startsWith(BACKEND_URL));
 
-      if (!isBackendUrl) { blobUrl = url; return; }
+      if (!isBackendUrl) { blobUrl = url; isLoaded = true; isError = false; return; }
 
       isLoaded = false;
       isError = false;
 
       try {
-        const headers: Record<string, string> = {};
-        const token = api.getToken();
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+        let response: Response | null = null;
+        let lastError: any = null;
+
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (!active) return;
+          try {
+            const headers: Record<string, string> = {};
+            const token = await api.getValidToken();
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            response = await fetch(url, { headers });
+            if (response.ok) {
+              lastError = null;
+              break;
+            }
+          } catch (fetchErr) {
+            lastError = fetchErr;
+          }
+
+          if (attempt === 0 && active) {
+            await new Promise((r) => setTimeout(r, 400));
+          }
         }
 
-        const response = await fetch(url, { headers });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+        if (!active) return;
+
+        if (!response || !response.ok) {
+          throw lastError || new Error(`HTTP ${response?.status ?? 'failed'}`);
         }
 
         const blob = await response.blob();
@@ -107,6 +151,7 @@
         if (!active) return;
         isError = true;
         isLoaded = true;
+        blobUrl = null;
       }
     }
 
@@ -124,12 +169,12 @@
   {/if}
 
   {#if !blobUrl || isError}
-    {#if avatar || initial}
+    {#if isAvatar}
       <div class="w-full h-full flex items-center justify-center bg-gradient-to-tr from-cyan-600 via-teal-600 to-blue-600 text-white font-bold select-none text-xs">
         {letterFallback}
       </div>
     {:else}
-      <div class="w-full h-full min-h-[100px] flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-900/80 text-slate-400 border border-slate-800 rounded-xl">
+      <div class="w-full h-full min-h-0 flex flex-col items-center justify-center gap-1.5 p-2 bg-slate-900/80 text-slate-400 border border-slate-800 rounded-xl">
         <ImageOff class="{fallbackIconSize} text-slate-500" />
         {#if fallbackText}
           <span class="text-[10px] text-slate-400 text-center font-medium line-clamp-1">{fallbackText}</span>

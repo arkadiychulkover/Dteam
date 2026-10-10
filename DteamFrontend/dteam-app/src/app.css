@@ -6,7 +6,6 @@
 @import "./styles/cursor.css";
 @import "./styles/light-theme.css";
 
-/* Base reset & defaults */
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;

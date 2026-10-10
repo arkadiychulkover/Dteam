@@ -2889,7 +2889,7 @@ namespace DteamBackend.Services
                     "Неймовірне відчуття першовідкривача та легкий страх глибини. Чудовий підводний світ!"
                 );
                 GetOrAddDlc(subnautica.Id, "Subnautica: Below Zero", "Зануртеся в крижану експедицію на арктичному регіоні планети 4546B.", "Окрема арктична історія у всесвіті Subnautica.", 2_400_000_000, 30, "/storage/games/subnautica-bz.zip", 21000, 4.7, 5, new List<string> { "Adventure", "SciFi", "Simulation", "DLC" }, new List<string> { "Windows", "MacOS" }, "/game_images/subnautica-below-zero_header.jpg", "/game_images/subnautica-below-zero_cover.jpg");
-                GetOrAddDlc(subnautica.Id, "Subnautica: Deep Sea Pack", "Додаткові креслення підводних модулів та екзокостюмів для глибоководних занурень.", "Набір глибоководного спорядження та креслень.", 900_000_000, 0, "/storage/games/subnautica-deepsea.zip", 14000, 4.8, 3, new List<string> { "Adventure", "SciFi", "DLC" }, new List<string> { "Windows", "MacOS" }, "/game_images/subnautica-deepsea_header.jpg", "/game_images/subnautica-deepsea_cover.jpg");
+                GetOrAddDlc(subnautica.Id, "Subnautica: Deep Sea Pack", "Додаткові креслення підводних модулів та екзокостюмів для глибоководних занурень.", "Набір глибоководного спорядження та креслень.", 900_000_000, 0, "/storage/games/subnautica-deepsea.zip", 14000, 4.8, 3, new List<string> { "Adventure", "SciFi", "DLC" }, new List<string> { "Windows", "MacOS" }, "/game_images/subnautica-deep-sea_header.jpg", "/game_images/subnautica-deep-sea_cover.jpg");
 
                 if (reviewsToSave.Count > 0)
                 {

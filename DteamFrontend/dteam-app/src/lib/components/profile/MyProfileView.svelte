@@ -498,13 +498,13 @@
       <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
         <div class="relative group shrink-0">
           <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#05181e] overflow-hidden bg-[#03232c] shadow-2xl">
-            {#if $currentUser.avatarUrl}
-              <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
-            {:else}
-              <div class="w-full h-full flex items-center justify-center text-4xl font-black text-white bg-gradient-to-tr from-cyan-500 to-blue-600">
-                {$currentUser.username.charAt(0).toUpperCase()}
-              </div>
-            {/if}
+            <BackendImage
+              src={$currentUser.avatarUrl}
+              alt={$currentUser.username}
+              avatar={true}
+              initial={$currentUser.username.charAt(0).toUpperCase()}
+              class="w-full h-full object-cover"
+            />
           </div>
 
           <button
@@ -1181,11 +1181,13 @@
         <label class="block text-xs text-slate-400 mb-1.5 font-medium">Аватар профілю</label>
         <div class="flex items-center gap-4 p-3 bg-[#02171d] rounded-2xl border border-cyan-900/40">
           <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500/40 shrink-0 bg-[#061820] flex items-center justify-center">
-            {#if editAvatarUrl || $currentUser.avatarUrl}
-              <BackendImage src={editAvatarUrl || $currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full object-cover" />
-            {:else}
-              <span class="text-xl font-bold text-white">{$currentUser.username.charAt(0).toUpperCase()}</span>
-            {/if}
+            <BackendImage
+              src={editAvatarUrl || $currentUser.avatarUrl}
+              alt={$currentUser.username}
+              avatar={true}
+              initial={$currentUser.username.charAt(0).toUpperCase()}
+              class="w-full h-full object-cover"
+            />
           </div>
           <div class="flex-1 flex flex-wrap gap-2 items-center">
             <button

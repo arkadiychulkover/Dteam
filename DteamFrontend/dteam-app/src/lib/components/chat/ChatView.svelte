@@ -6,6 +6,7 @@
   import ChatMessageList from './ChatMessageList.svelte';
   import ChatInputBar from './ChatInputBar.svelte';
   import ChatRightSidebar from './ChatRightSidebar.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   let isMobileProfileDrawerOpen = $state(false);
 
@@ -66,11 +67,13 @@
           </button>
 
           <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0">
-            {#if activeConversation.friendAvatarUrl}
-              <img src={activeConversation.friendAvatarUrl} alt={activeConversation.friendUsername} class="w-full h-full object-cover" />
-            {:else}
-              {activeConversation.friendUsername.charAt(0).toUpperCase()}
-            {/if}
+            <BackendImage
+              src={activeConversation.friendAvatarUrl}
+              alt={activeConversation.friendUsername}
+              avatar={true}
+              initial={activeConversation.friendUsername.charAt(0).toUpperCase()}
+              class="w-full h-full object-cover"
+            />
           </div>
 
           <div class="min-w-0">

@@ -3,6 +3,7 @@
   import { uiStore } from '../../stores/uiStore';
   import type { Duser } from '../../types';
   import { X, Edit, Shield, Wallet, Mail, Lock, User, Ban, CheckCircle2 } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props { user: Duser | null; isOpen: boolean; onClose: () => void; onUserUpdated: () => void; }
 
@@ -182,7 +183,15 @@
         <div>
           <label for="edit-avatar" class="block text-xs font-semibold text-slate-300 mb-1">Avatar Image URL</label>
           <div class="flex items-center gap-3">
-            <img src={avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150'} alt="Avatar preview" class="w-10 h-10 rounded-xl object-cover border border-cyan-500/40" />
+            <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-cyan-500/40">
+              <BackendImage
+                src={avatarUrl}
+                alt="Avatar preview"
+                avatar={true}
+                initial={(username || 'U').charAt(0).toUpperCase()}
+                class="w-full h-full object-cover"
+              />
+            </div>
             <input
               id="edit-avatar"
               type="text"

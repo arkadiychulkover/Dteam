@@ -3,6 +3,7 @@ import { authStore } from '../stores/authStore';
 import { friendsStore } from '../stores/friendsStore';
 import { uiStore } from '../stores/uiStore';
 import { get } from 'svelte/store';
+import { api } from './api';
 import { BACKEND_URL } from '../utils/constants';
 
 class FriendsHubService {
@@ -25,10 +26,7 @@ class FriendsHubService {
 
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(hubUrl, {
-            accessTokenFactory: () => {
-              const current = get(authStore);
-              return current.token || localStorage.getItem('dteam_token') || '';
-            },
+            accessTokenFactory: async () => (await api.getValidToken()) || '',
             skipNegotiation: false,
             transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
           })

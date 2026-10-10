@@ -2,7 +2,7 @@ import { writable, get, derived } from 'svelte/store';
 import { chatService } from '../services/chatService';
 import { chatHubService } from '../services/chatHubService';
 import { authStore, currentUser } from './authStore';
-import type { ChatConversation, ChatMessage, ChatMediaSummary } from '../types/chat';
+import type { ChatConversation, ChatMessage, ChatMediaSummary, ChatMonthGroup, ChatMediaItem } from '../types/chat';
 
 export type RightSidebarTab = 'profile' | 'photos' | 'files' | 'voice';
 
@@ -162,7 +162,7 @@ function createChatStore() {
   function filterMediaGroups(groups: ChatMonthGroup[] | undefined, messageId: string): ChatMonthGroup[] {
     if (!groups) return [];
     return groups
-      .map(g => ({ ...g, items: g.items.filter(item => item.messageId !== messageId) }))
+      .map(g => ({ ...g, items: g.items.filter((item: ChatMediaItem) => item.messageId !== messageId) }))
       .filter(g => g.items.length > 0);
   }
 

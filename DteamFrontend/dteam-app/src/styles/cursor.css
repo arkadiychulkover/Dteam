@@ -1,10 +1,8 @@
-/* Hide native cursor when custom cursor is active */
 body.hidecur,
 body.hidecur * {
   cursor: none !important;
 }
 
-/* Custom interactive cursor elements */
 #custom-cursor-dot,
 #custom-cursor-ring {
   position: fixed;

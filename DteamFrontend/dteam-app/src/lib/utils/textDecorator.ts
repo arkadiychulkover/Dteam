@@ -13,10 +13,45 @@ export function escapeHtml(str: string): string {
 export function resolveMediaUrl(url: string): string {
   if (!url) return '';
   const trimmed = url.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
     return trimmed;
   }
-  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    if (BACKEND_URL && trimmed.startsWith(BACKEND_URL)) {
+      const path = trimmed.slice(BACKEND_URL.length);
+      if (
+        path.startsWith('/icons/') ||
+        path.startsWith('/community/') ||
+        path.startsWith('/comunity/') ||
+        path.startsWith('/uploads/') ||
+        path.startsWith('/storage/') ||
+        path.startsWith('/game_images/') ||
+        path.startsWith('/nft/')
+      ) {
+        return `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
+      }
+      if (path.startsWith('/avatar_') || path.startsWith('/avatars/')) {
+        const cleanAvatar = path.startsWith('/avatars/') ? path.slice('/avatars'.length) : path;
+        return `${BACKEND_URL.replace(/\/+$/, '')}/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+      }
+    }
+    return trimmed;
+  }
+  let cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (
+    cleanPath.startsWith('/icons/') ||
+    cleanPath.startsWith('/community/') ||
+    cleanPath.startsWith('/comunity/') ||
+    cleanPath.startsWith('/uploads/') ||
+    cleanPath.startsWith('/storage/') ||
+    cleanPath.startsWith('/game_images/') ||
+    cleanPath.startsWith('/nft/')
+  ) {
+    cleanPath = `/api/media${cleanPath}`;
+  } else if (cleanPath.startsWith('/avatar_') || cleanPath.startsWith('/avatars/')) {
+    const cleanAvatar = cleanPath.startsWith('/avatars/') ? cleanPath.slice('/avatars'.length) : cleanPath;
+    cleanPath = `/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+  }
   return BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
 }
 

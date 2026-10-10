@@ -1,4 +1,3 @@
-/* Global default scrollbars (WebKit) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -19,7 +18,6 @@
   box-shadow: 0 0 10px rgba(13, 242, 201, 0.5);
 }
 
-/* Custom scrollbar utility for modal dialogs and dropdown containers */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(34, 211, 238, 0.3) transparent;
@@ -43,14 +41,13 @@
   background: rgba(34, 211, 238, 0.45);
 }
 
-/* Hide scrollbar utilities */
 .no-scrollbar,
 .scrollbar-none {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none;    /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .no-scrollbar::-webkit-scrollbar,
 .scrollbar-none::-webkit-scrollbar {
-  display: none;            /* Chrome, Safari and Opera */
+  display: none;
 }

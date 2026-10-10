@@ -46,7 +46,22 @@ function createGamesStore() {
 
   return {
     subscribe,
-    selectGame: (game: Game | null) => update((s) => ({ ...s, selectedGame: game })),
+    selectGame: (gameOrId: Game | string | null) => {
+      if (typeof gameOrId === 'string') {
+        update((s) => {
+          const found = s.games.find((g) => g.id === gameOrId) || s.catalogGames.find((g) => g.id === gameOrId);
+          if (found) {
+            return { ...s, selectedGame: found };
+          }
+          gamesService.getGameById(gameOrId).then((g) => {
+            if (g) update((st) => ({ ...st, selectedGame: g }));
+          }).catch(() => {});
+          return s;
+        });
+      } else {
+        update((s) => ({ ...s, selectedGame: gameOrId }));
+      }
+    },
 
     loadGames: async () => {
       update((s) => ({ ...s, isLoading: true }));

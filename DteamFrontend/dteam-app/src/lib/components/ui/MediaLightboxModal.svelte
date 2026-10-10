@@ -1,5 +1,6 @@
 <script lang="ts">
   import { X, ZoomIn, ZoomOut, Download, ExternalLink } from 'lucide-svelte';
+  import BackendImage from './BackendImage.svelte';
 
   let {
     src,
@@ -36,11 +37,15 @@
   >
     <div class="flex items-center gap-3 min-w-0">
       {#if author}
-        <img
-          src={author.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.username)}`}
-          alt={author.username}
-          class="w-9 h-9 rounded-full border border-cyan-500/40 object-cover shrink-0"
-        />
+        <div class="w-9 h-9 rounded-full overflow-hidden border border-cyan-500/40 shrink-0">
+          <BackendImage
+            src={author.avatarUrl}
+            alt={author.username}
+            avatar={true}
+            initial={author.username?.charAt(0).toUpperCase()}
+            class="w-full h-full object-cover"
+          />
+        </div>
         <div class="min-w-0">
           <span class="text-xs font-bold text-white block truncate">{author.username}</span>
           {#if title}

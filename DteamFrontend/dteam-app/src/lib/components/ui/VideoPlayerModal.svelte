@@ -12,6 +12,7 @@
     ExternalLink,
     Loader2
   } from 'lucide-svelte';
+  import BackendImage from './BackendImage.svelte';
 
   let {
     isOpen = false,
@@ -209,12 +210,16 @@
           : 'opacity-0 pointer-events-none'}"
       >
         <div class="flex items-center gap-3 min-w-0 pr-4">
-          {#if authorAvatarUrl}
-            <img
-              src={authorAvatarUrl}
-              alt={authorUsername}
-              class="w-8 h-8 rounded-full object-cover border border-cyan-500/40 shrink-0"
-            />
+          {#if authorAvatarUrl || authorUsername}
+            <div class="w-8 h-8 rounded-full overflow-hidden border border-cyan-500/40 shrink-0">
+              <BackendImage
+                src={authorAvatarUrl}
+                alt={authorUsername}
+                avatar={true}
+                initial={authorUsername?.charAt(0).toUpperCase()}
+                class="w-full h-full object-cover"
+              />
+            </div>
           {/if}
           <div class="min-w-0">
             <h3 class="text-sm md:text-base font-bold text-white truncate drop-shadow-sm">

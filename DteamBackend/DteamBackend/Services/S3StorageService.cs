@@ -26,12 +26,12 @@ namespace DteamBackend.Services
 
             var r2 = options.Value ?? new R2Options();
 
-            var accessKey = Environment.GetEnvironmentVariable("R2_ACCESS_KEY") ?? r2.AccessKey;
-            var secretKey = Environment.GetEnvironmentVariable("R2_SECRET_KEY") ?? r2.SecretKey;
-            var accountId = Environment.GetEnvironmentVariable("R2_ACCOUNT_ID") ?? r2.AccountId;
-            _bucketName = Environment.GetEnvironmentVariable("R2_BUCKET_NAME") ?? r2.BucketName;
-            var serviceUrl = Environment.GetEnvironmentVariable("R2_SERVICE_URL")
-                ?? (!string.IsNullOrWhiteSpace(accountId) ? $"https://{accountId}.r2.cloudflarestorage.com" : r2.ServiceUrl);
+            var accessKey = (Environment.GetEnvironmentVariable("R2_ACCESS_KEY") ?? r2.AccessKey)?.Trim().Trim('"', '\'');
+            var secretKey = (Environment.GetEnvironmentVariable("R2_SECRET_KEY") ?? r2.SecretKey)?.Trim().Trim('"', '\'');
+            var accountId = (Environment.GetEnvironmentVariable("R2_ACCOUNT_ID") ?? r2.AccountId)?.Trim().Trim('"', '\'');
+            _bucketName = (Environment.GetEnvironmentVariable("R2_BUCKET_NAME") ?? r2.BucketName)?.Trim().Trim('"', '\'') ?? string.Empty;
+            var serviceUrl = (Environment.GetEnvironmentVariable("R2_SERVICE_URL")
+                ?? (!string.IsNullOrWhiteSpace(accountId) ? $"https://{accountId}.r2.cloudflarestorage.com" : r2.ServiceUrl))?.Trim().Trim('"', '\'');
 
             if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
             {
@@ -46,7 +46,9 @@ namespace DteamBackend.Services
                     ServiceURL = serviceUrl,
                     UseHttp = false,
                     AuthenticationRegion = "auto",
-                    ForcePathStyle = true
+                    ForcePathStyle = true,
+                    RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                    ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
                 };
 
                 _s3Client = new AmazonS3Client(credentials, config);
@@ -85,7 +87,8 @@ namespace DteamBackend.Services
                 Key = cleanKey,
                 InputStream = stream,
                 ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
-                DisablePayloadSigning = true
+                DisablePayloadSigning = true,
+                DisableDefaultChecksumValidation = true
             };
 
             await client.PutObjectAsync(putRequest, cancellationToken);
@@ -127,6 +130,11 @@ namespace DteamBackend.Services
             catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.ErrorCode == "NoSuchKey")
             {
                 _logger.LogDebug("[S3StorageService] Object '{Key}' not found in bucket '{Bucket}'.", cleanKey, _bucketName);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[S3StorageService] Failed to retrieve object '{Key}' from bucket '{Bucket}'.", cleanKey, _bucketName);
                 return null;
             }
         }

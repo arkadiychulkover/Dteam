@@ -79,7 +79,7 @@ class ApiClient {
         const exp = payload.exp * 1000;
         if (Date.now() > exp - 30000) {
           const refreshed = await this.refreshAccessToken();
-          if (refreshed) return refreshed;
+          return refreshed;
         }
       }
     } catch {
@@ -134,7 +134,10 @@ class ApiClient {
       headers.set('Content-Type', 'application/json');
     }
 
-    const currentToken = this.getToken();
+    let currentToken = this.getToken();
+    if (!endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      currentToken = await this.getValidToken();
+    }
     if (currentToken && !headers.has('Authorization')) { headers.set('Authorization', `Bearer ${currentToken}`); }
 
     try {

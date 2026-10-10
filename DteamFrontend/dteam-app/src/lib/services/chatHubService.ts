@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { authStore } from '../stores/authStore';
 import { get } from 'svelte/store';
+import { api } from './api';
 import type { ChatMessage } from '../types/chat';
 import { BACKEND_URL } from '../utils/constants';
 
@@ -68,10 +69,7 @@ class ChatHubService {
 
         this.connection = new signalR.HubConnectionBuilder()
           .withUrl(hubUrl, {
-            accessTokenFactory: () => {
-              const current = get(authStore);
-              return current.token || localStorage.getItem('dteam_token') || '';
-            },
+            accessTokenFactory: async () => (await api.getValidToken()) || '',
             skipNegotiation: false,
             transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
           })

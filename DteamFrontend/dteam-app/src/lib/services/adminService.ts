@@ -102,6 +102,19 @@ class AdminService {
     return await api.get<HealthCheckResponse>('/health/check-status');
   }
 
+  public async autoDiscoverAdminGuid(): Promise<string> {
+    try {
+      const health = await this.checkHealth();
+      if (health.adminId) {
+        this.setActiveAdminId(health.adminId);
+        return health.adminId;
+      }
+    } catch (e) {
+      console.warn('[AdminService] Health check auto-discovery warning:', e);
+    }
+    return this.getActiveAdminId();
+  }
+
   public async getUsers(_customAdminId?: string): Promise<Duser[]> { return await api.get<Duser[]>('/admin/users'); }
 
   public async getUserById(id: string, _customAdminId?: string): Promise<Duser> {

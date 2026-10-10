@@ -52,7 +52,7 @@
     {#if gift.createdAt || gift.lastTransferredAt}
       <div class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-white/5">
         <Calendar class="w-3 h-3 text-slate-500" />
-        <span>{formatDate(gift.lastTransferredAt || gift.createdAt)}</span>
+        <span>{formatDate(gift.lastTransferredAt || gift.createdAt || '')}</span>
       </div>
     {/if}
   </div>

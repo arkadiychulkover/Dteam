@@ -24,7 +24,6 @@ async function fetchBufferWithFallback(urls) {
         }
       }
     } catch (e) {
-      // try next url
     }
   }
   return null;
@@ -216,7 +215,6 @@ const dlcs = [
 async function processMainGame(g) {
   console.log(`\nProcessing Main Game: ${g.title} (${g.slug}, appId ${g.appId})...`);
   
-  // 1. Fetch Steam Store Details for screenshots and details
   let screenshots = [];
   let storeHeader = null;
   try {
@@ -235,7 +233,6 @@ async function processMainGame(g) {
     console.warn(`  Failed to get store details for ${g.appId}:`, e.message);
   }
 
-  // 2. Cover image (600x900)
   const coverUrls = [
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${g.appId}/library_600x900.jpg`,
     `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appId}/library_600x900.jpg`,
@@ -250,7 +247,6 @@ async function processMainGame(g) {
     console.error(`  ✗ FAILED to get cover for ${g.title}`);
   }
 
-  // 3. Header image (hero widescreen 1920x620 or header.jpg)
   const headerUrls = [
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${g.appId}/library_hero.jpg`,
     `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appId}/library_hero.jpg`,
@@ -265,7 +261,6 @@ async function processMainGame(g) {
     console.error(`  ✗ FAILED to get header for ${g.title}`);
   }
 
-  // 4. Screenshots 1, 2, 3
   for (let i = 0; i < 3; i++) {
     const ssUrl = screenshots[i] || (screenshots.length > 0 ? screenshots[0] : null);
     if (ssUrl) {
@@ -276,7 +271,6 @@ async function processMainGame(g) {
         continue;
       }
     }
-    // Fallback screenshot if none available
     if (headerRes) {
       saveFile(`${g.slug}_ss${i + 1}.jpg`, headerRes.buffer);
       console.log(`  ✓ Screenshot ${i + 1} copied from header`);
@@ -287,7 +281,6 @@ async function processMainGame(g) {
 async function processDlc(d) {
   console.log(`\nProcessing DLC: ${d.title} (${d.slug}, appId ${d.appId})...`);
 
-  // 1. Fetch store details if possible
   let dlcScreenshots = [];
   let dlcStoreHeader = null;
   try {
@@ -304,7 +297,6 @@ async function processDlc(d) {
     }
   } catch (e) {}
 
-  // 2. DLC Header
   const headerUrls = [
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${d.appId}/header.jpg`,
     `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${d.appId}/header.jpg`,
@@ -314,7 +306,6 @@ async function processDlc(d) {
   ];
   let headerRes = await fetchBufferWithFallback(headerUrls);
   if (!headerRes) {
-    // fallback to parent header
     const parentHeaderPath = path.join(targetDirs[0], `${d.parentSlug}_header.jpg`);
     if (fs.existsSync(parentHeaderPath)) {
       headerRes = { buffer: fs.readFileSync(parentHeaderPath) };
@@ -325,7 +316,6 @@ async function processDlc(d) {
     console.log(`  ✓ DLC Header saved (${headerRes.buffer.length} bytes)`);
   }
 
-  // 3. DLC Cover
   const coverUrls = [
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${d.appId}/library_600x900.jpg`,
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${d.appId}/capsule_616x353.jpg`,
@@ -348,7 +338,6 @@ async function processDlc(d) {
     console.log(`  ✓ DLC Cover saved (${coverRes.buffer.length} bytes)`);
   }
 
-  // 4. DLC Screenshot
   const ssUrls = [
     ...(dlcScreenshots.length > 0 ? [dlcScreenshots[0]] : []),
     `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${d.appId}/ss_1.jpg`

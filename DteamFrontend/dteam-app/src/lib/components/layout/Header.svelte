@@ -512,7 +512,7 @@
 
                       <div class="relative shrink-0 mt-0.5">
                         {#if item.actor?.avatarUrl}
-                          <BackendImage src={item.actor.avatarUrl} alt={item.actor.username} class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30" />
+                          <BackendImage src={item.actor.avatarUrl} alt={item.actor.username} avatar={true} initial={item.actor.username?.charAt(0).toUpperCase()} class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30" />
                         {:else if item.type === 'wallet_deposit'}
                           <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                             <TonIcon class="w-4 h-4" />
@@ -615,7 +615,7 @@
           >
             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0 overflow-hidden">
               {#if $currentUser.avatarUrl}
-                <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} class="w-full h-full rounded-lg object-cover" />
+                <BackendImage src={$currentUser.avatarUrl} alt={$currentUser.username} avatar={true} initial={$currentUser.username?.charAt(0).toUpperCase()} class="w-full h-full rounded-lg object-cover" />
               {:else}
                 {$currentUser.username.charAt(0).toUpperCase()}
               {/if}

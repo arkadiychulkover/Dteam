@@ -4,6 +4,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { currentUser } from '../../stores/authStore';
   import type { ChatConversation } from '../../types/chat';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props { conversations: ChatConversation[]; activeFriendId: string | null; }
 
@@ -110,15 +111,13 @@
 
           <div class="relative shrink-0">
             <div class="w-11 h-11 rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-900 to-slate-900 border border-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-sm shadow-md">
-              {#if conv.friendAvatarUrl}
-                <img
-                  src={conv.friendAvatarUrl}
-                  alt={conv.friendUsername}
-                  class="w-full h-full object-cover"
-                />
-              {:else}
-                {conv.friendUsername.charAt(0).toUpperCase()}
-              {/if}
+              <BackendImage
+                src={conv.friendAvatarUrl}
+                alt={conv.friendUsername}
+                avatar={true}
+                initial={conv.friendUsername.charAt(0).toUpperCase()}
+                class="w-full h-full object-cover"
+              />
             </div>
 
             {#if conv.friendStatus === 1}
