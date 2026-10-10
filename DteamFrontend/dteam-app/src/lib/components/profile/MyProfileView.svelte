@@ -15,6 +15,7 @@
   import { formatDate } from '../../utils/formatters';
   import { renderDecoratedText } from '../../utils/textDecorator';
   import BackendImage from '../ui/BackendImage.svelte';
+  import { resolveMediaUrl } from '../../utils/constants';
   import { UserStatus } from '../../types';
   import {
     Edit3, ThumbsUp, MessageSquare, Loader2, Plus, X, Star, Camera, ImagePlus, Gamepad2, Activity,
@@ -470,7 +471,7 @@
 
   <div
     class="w-full h-48 md:h-64 relative bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e] bg-cover bg-center"
-    style={$currentUser.bannerUrl ? `background-image: url('${$currentUser.bannerUrl}')` : ''}
+    style={$currentUser.bannerUrl ? `background-image: url('${resolveMediaUrl($currentUser.bannerUrl)}')` : ''}
   >
     <input
       bind:this={bannerFileInput}

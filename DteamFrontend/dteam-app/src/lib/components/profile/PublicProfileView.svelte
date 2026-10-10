@@ -10,6 +10,7 @@
   import { formatPrice, formatDate } from '../../utils/formatters';
   import { renderDecoratedText } from '../../utils/textDecorator';
   import BackendImage from '../ui/BackendImage.svelte';
+  import { resolveMediaUrl } from '../../utils/constants';
   import { UserStatus } from '../../types';
   import {
     UserPlus, UserCheck, Clock, MessageSquare, MoreHorizontal,
@@ -264,7 +265,7 @@
 
     <div
       class="w-full h-48 md:h-64 bg-cover bg-center bg-gradient-to-br from-[#0b4e63] via-[#03232c] to-[#05181e]"
-      style={profile.bannerUrl ? `background-image: url('${profile.bannerUrl}')` : ''}
+      style={profile.bannerUrl ? `background-image: url('${resolveMediaUrl(profile.bannerUrl)}')` : ''}
     ></div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
