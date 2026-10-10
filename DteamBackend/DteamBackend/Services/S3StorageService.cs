@@ -88,7 +88,8 @@ namespace DteamBackend.Services
                 InputStream = stream,
                 ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
                 DisablePayloadSigning = true,
-                DisableDefaultChecksumValidation = true
+                DisableDefaultChecksumValidation = true,
+                AutoCloseStream = false
             };
 
             await client.PutObjectAsync(putRequest, cancellationToken);

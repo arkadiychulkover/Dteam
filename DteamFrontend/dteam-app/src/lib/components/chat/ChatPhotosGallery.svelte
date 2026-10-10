@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ArrowLeft, Image as ImageIcon, X } from 'lucide-svelte';
   import { chatStore } from '../../stores/chatStore';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { ChatMonthGroup, ChatMediaItem } from '../../types/chat';
 
   interface Props { photosByMonth?: ChatMonthGroup[]; }
@@ -52,11 +53,10 @@
                 onclick={() => selectedImage = item}
                 class="aspect-square rounded-xl overflow-hidden bg-slate-900/60 border border-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_12px_rgba(13,242,201,0.3)] transition-all cursor-pointer group relative"
               >
-                <img
+                <BackendImage
                   src={item.mediaUrl}
                   alt={item.originalFileName}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
                 />
               </button>
             {/each}
@@ -77,7 +77,7 @@
       <X class="w-6 h-6" />
     </button>
     <div class="max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden border border-cyan-500/30 shadow-2xl bg-black">
-      <img
+      <BackendImage
         src={selectedImage.mediaUrl}
         alt={selectedImage.originalFileName}
         class="max-w-full max-h-[85vh] object-contain"

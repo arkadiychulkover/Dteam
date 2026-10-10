@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Search, X, Gamepad2, Loader2, Sparkles, Check } from 'lucide-svelte';
   import { gamesService } from '../../services/gamesService';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { GameRecommendation } from '../../types';
 
   interface Props {
@@ -162,7 +163,7 @@
 
                 <div class="w-16 h-12 sm:w-20 sm:h-14 rounded-xl overflow-hidden shrink-0 bg-slate-900 border border-cyan-900/60 relative">
                   {#if banner}
-                    <img
+                    <BackendImage
                       src={banner}
                       alt={game.title}
                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

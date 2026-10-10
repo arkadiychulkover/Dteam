@@ -346,20 +346,23 @@ namespace DteamBackend.Controllers
             var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
             var key = $"community/{uniqueFileName}";
 
-            await using var stream = file.OpenReadStream();
+            var webRoot = _environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var localFilePath = Path.Combine(webRoot, "community", uniqueFileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
+
+            await using (var stream = file.OpenReadStream())
+            await using (var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            {
+                await stream.CopyToAsync(localFileStream);
+            }
+
             try
             {
-                await _storageService.UploadAsync(stream, key, file.ContentType);
+                await using var s3Stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                await _storageService.UploadAsync(s3Stream, key, file.ContentType);
             }
             catch
             {
-                var webRoot = _environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
-                var localFilePath = Path.Combine(webRoot, "community", uniqueFileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
-
-                if (stream.CanSeek) stream.Position = 0;
-                await using var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-                await stream.CopyToAsync(localFileStream);
             }
 
             return $"/api/media/{key}";

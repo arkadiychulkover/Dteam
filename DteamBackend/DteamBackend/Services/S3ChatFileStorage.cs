@@ -43,30 +43,28 @@ namespace DteamBackend.Services
             var storageKey = $"{Guid.NewGuid():N}{safeExt}";
             var s3Key = $"chat/{storageKey}";
 
+            Directory.CreateDirectory(_legacyStorageDirectory);
+            var localFilePath = Path.Combine(_legacyStorageDirectory, storageKey);
+            var metaPath = localFilePath + ".meta";
+
+            await using (var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            {
+                await stream.CopyToAsync(fileStream, cancellationToken);
+            }
+
+            await File.WriteAllTextAsync(metaPath, contentType ?? "application/octet-stream", cancellationToken);
+
             try
             {
-                await _s3Storage.UploadAsync(stream, s3Key, contentType ?? "application/octet-stream", cancellationToken);
-                return storageKey;
+                await using var s3Stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                await _s3Storage.UploadAsync(s3Stream, s3Key, contentType ?? "application/octet-stream", cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[S3ChatFileStorage] Failed to upload chat file '{Key}' to S3. Falling back to local storage.", s3Key);
-
-                if (stream.CanSeek)
-                {
-                    stream.Position = 0;
-                }
-
-                Directory.CreateDirectory(_legacyStorageDirectory);
-                var localFilePath = Path.Combine(_legacyStorageDirectory, storageKey);
-                await using var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-                await stream.CopyToAsync(fileStream, cancellationToken);
-
-                var metaPath = localFilePath + ".meta";
-                await File.WriteAllTextAsync(metaPath, contentType ?? "application/octet-stream", cancellationToken);
-
-                return storageKey;
+                _logger.LogWarning(ex, "[S3ChatFileStorage] Failed to upload chat file '{Key}' to S3. Local fallback saved at '{LocalPath}'.", s3Key, localFilePath);
             }
+
+            return storageKey;
         }
 
         public async Task<(Stream Stream, string ContentType)?> GetFileStreamAsync(string storageKey, CancellationToken cancellationToken = default)

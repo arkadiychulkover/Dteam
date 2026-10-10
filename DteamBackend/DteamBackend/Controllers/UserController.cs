@@ -204,9 +204,23 @@ namespace DteamBackend.Controllers
             var fileName = $"avatar_{user.Id:N}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{extension}";
             var key = $"icons/{fileName}";
 
+            var webRoot = _environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var localIconPath = Path.Combine(webRoot, "icons", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(localIconPath)!);
+
             await using (var stream = file.OpenReadStream())
             {
-                await _storageService.UploadAsync(stream, key, file.ContentType);
+                await using var localFileStream = new FileStream(localIconPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+                await stream.CopyToAsync(localFileStream);
+            }
+
+            try
+            {
+                await using var s3Stream = new FileStream(localIconPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                await _storageService.UploadAsync(s3Stream, key, file.ContentType);
+            }
+            catch
+            {
             }
 
             user.AvatarUrl = $"/api/media/{key}";

@@ -1072,7 +1072,7 @@
           {#if selectedPostGame}
             <div class="w-11 h-8 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
               {#if selectedPostGame.bannerUrl}
-                <img src={selectedPostGame.bannerUrl} alt={selectedPostGame.title} class="w-full h-full object-cover" />
+                <BackendImage src={selectedPostGame.bannerUrl} alt={selectedPostGame.title} class="w-full h-full object-cover" />
               {:else}
                 <div class="w-full h-full bg-gradient-to-tr from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400">
                   <Gamepad2 class="w-4 h-4" />
@@ -1130,7 +1130,7 @@
 
                 <video src={postMediaPreviewUrl} class="w-full max-h-56 object-cover" muted controls></video>
               {:else}
-                <img src={postMediaPreviewUrl} alt="" class="w-full max-h-56 object-cover" />
+                <BackendImage src={postMediaPreviewUrl} alt="" class="w-full max-h-56 object-cover" />
               {/if}
               {#if isUploadingMedia}
                 <div class="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 text-white text-sm">

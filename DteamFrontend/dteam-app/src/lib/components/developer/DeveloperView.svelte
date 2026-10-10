@@ -5,6 +5,7 @@
   import { gamesStore } from '../../stores/gamesStore';
   import { formatTon, nanoTonToTon, formatDate } from '../../utils/formatters';
   import TonIcon from '../ui/TonIcon.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { Game } from '../../types';
   import {
     Gamepad2,
@@ -543,8 +544,8 @@
             <div class="rounded-2xl bg-[#061923] border border-cyan-500/15 hover:border-cyan-500/30 transition-all overflow-hidden flex flex-col group shadow-md">
 
               <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
-                <img
-                  src={game.coverImageUrl || game.headerImageUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'}
+                <BackendImage
+                  src={game.coverImageUrl || game.headerImageUrl}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -721,7 +722,7 @@
                     {#if news.media.type === 'video'}
                       <video src={news.media.url} class="w-full max-h-36 object-cover" controls></video>
                     {:else}
-                      <img src={news.media.url} alt="" class="w-full max-h-36 object-cover" />
+                      <BackendImage src={news.media.url} alt="" class="w-full max-h-36 object-cover" />
                     {/if}
                   </div>
                 {/if}

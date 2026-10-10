@@ -929,7 +929,7 @@
 
                 {#if newsItem.media?.url}
                   <div class="relative rounded-xl overflow-hidden max-h-36 bg-black/40 border border-cyan-950">
-                    <img src={newsItem.media.url} alt={newsItem.title} class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <BackendImage src={newsItem.media.url} alt={newsItem.title} class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
                 {/if}
 
@@ -1318,7 +1318,7 @@
           {#if selectedNewsModal.media.type === 'video'}
             <video src={selectedNewsModal.media.url} class="w-full rounded-2xl max-h-64 object-cover" controls></video>
           {:else}
-            <img src={selectedNewsModal.media.url} alt="" class="w-full rounded-2xl max-h-64 object-cover" />
+            <BackendImage src={selectedNewsModal.media.url} alt="" class="w-full rounded-2xl max-h-64 object-cover" />
           {/if}
         {/if}
         <p>{@html renderDecoratedText(selectedNewsModal.content)}</p>

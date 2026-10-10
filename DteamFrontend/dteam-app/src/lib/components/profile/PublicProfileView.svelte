@@ -575,7 +575,7 @@
                     <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>
                     <p class="text-sm text-slate-400 mb-3 whitespace-pre-line">{@html renderDecoratedText(post.content)}</p>
                     {#if post.media?.type === 'image' && post.media.url}
-                      <img src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
+                      <BackendImage src={post.media.url} alt="" class="w-full h-auto rounded-xl mb-3 object-cover max-h-96" />
                     {/if}
                     <div class="flex gap-4 text-xs font-medium text-slate-400">
                       <span class="flex items-center gap-1.5 bg-[#03232c] px-3 py-1.5 rounded-full border border-cyan-900/40">
@@ -601,7 +601,7 @@
                 {#each screenshotPosts as post (post.id)}
                   <div class="aspect-[16/10] rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-slate-800">
                     {#if post.media?.url}
-                      <img src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
+                      <BackendImage src={post.media.url} alt={post.title} class="w-full h-full object-cover" />
                     {/if}
                   </div>
                 {/each}
@@ -623,7 +623,7 @@
                     class="aspect-[16/10] rounded-xl overflow-hidden relative cursor-pointer group bg-slate-800 border border-cyan-900/40 hover:border-cyan-400/60 transition-all text-left shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   >
                     {#if post.media?.thumbnailUrl || post.media?.url}
-                      <img src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <BackendImage src={post.media.thumbnailUrl || post.media.url} alt={post.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     {/if}
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-between p-3 group-hover:from-black/90 transition-all">
                       <div class="self-end">
@@ -663,7 +663,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row gap-5 mb-4">
                       {#if post.media?.url}
-                        <img src={post.media.url} alt={post.title} class="w-full sm:w-48 h-32 object-cover rounded-xl shrink-0 bg-slate-800" />
+                        <BackendImage src={post.media.url} alt={post.title} class="w-full sm:w-48 h-32 object-cover rounded-xl shrink-0 bg-slate-800" />
                       {/if}
                       <div>
                         <h3 class="text-lg font-bold text-white mb-2">{post.title}</h3>

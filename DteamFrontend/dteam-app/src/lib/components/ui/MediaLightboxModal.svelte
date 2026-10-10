@@ -98,11 +98,11 @@
     class="w-full h-full p-4 sm:p-10 flex items-center justify-center overflow-auto cursor-pointer"
     onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
   >
-    <img
+    <BackendImage
       {src}
       {alt}
       class="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl transition-transform duration-300 {isZoomed ? 'scale-125 cursor-zoom-out' : 'cursor-zoom-in'}"
-      onclick={(e) => { e.stopPropagation(); isZoomed = !isZoomed; }}
+      onclick={(e: MouseEvent) => { e.stopPropagation(); isZoomed = !isZoomed; }}
     />
   </div>
 

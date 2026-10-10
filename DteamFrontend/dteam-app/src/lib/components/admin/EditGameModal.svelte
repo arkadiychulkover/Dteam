@@ -5,6 +5,7 @@
   import { formatPrice } from '../../utils/formatters';
   import type { Game } from '../../types';
   import { X, Edit, CheckCircle2, Film, FileArchive, DollarSign, Layers, Plus, ExternalLink, Unlink, Percent, Tag, Upload, Trash2, Image } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props {
     game: Game | null;
@@ -447,7 +448,7 @@
               <div class="flex items-center gap-3">
                 <div class="relative w-14 h-20 rounded-lg overflow-hidden bg-slate-950 border border-cyan-500/40 shrink-0">
                   {#if coverImageUrl}
-                    <img src={coverImageUrl} alt="Cover preview" class="w-full h-full object-cover" />
+                    <BackendImage src={coverImageUrl} alt="Cover preview" class="w-full h-full object-cover" />
                   {:else}
                     <div class="w-full h-full flex items-center justify-center text-slate-500 text-[10px]">3:4</div>
                   {/if}
@@ -482,7 +483,7 @@
               <div class="flex items-center gap-3">
                 <div class="relative w-24 h-14 rounded-lg overflow-hidden bg-slate-950 border border-cyan-500/40 shrink-0">
                   {#if headerImageUrl}
-                    <img src={headerImageUrl} alt="Header preview" class="w-full h-full object-cover" />
+                    <BackendImage src={headerImageUrl} alt="Header preview" class="w-full h-full object-cover" />
                   {:else}
                     <div class="w-full h-full flex items-center justify-center text-slate-500 text-[10px]">16:9</div>
                   {/if}
@@ -527,7 +528,7 @@
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-36 overflow-y-auto pr-1">
                 {#each screenshotUrls as url, idx}
                   <div class="relative group rounded-lg overflow-hidden border border-cyan-500/30 aspect-video bg-slate-950">
-                    <img src={url} alt="Screenshot {idx + 1}" class="w-full h-full object-cover" />
+                    <BackendImage src={url} alt="Screenshot {idx + 1}" class="w-full h-full object-cover" />
                     <button
                       type="button"
                       onclick={() => removeScreenshot(idx)}
@@ -621,7 +622,7 @@
                 {#each attachedDlcs as dlc}
                   <div class="p-2.5 rounded-xl bg-[#0a232c] border border-purple-500/30 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5">
-                      <img src={dlc.coverImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'} alt={dlc.title} class="w-8 h-10 rounded-lg object-cover border border-purple-500/40 shrink-0" />
+                      <BackendImage src={dlc.coverImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'} alt={dlc.title} class="w-8 h-10 rounded-lg object-cover border border-purple-500/40 shrink-0" />
                       <div>
                         <div class="text-xs font-bold text-white flex items-center gap-1.5">
                           <span>{dlc.title}</span>

@@ -655,8 +655,24 @@ namespace DteamBackend.Controllers
             var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
             var key = $"game_images/{uniqueFileName}";
 
-            await using var stream = file.OpenReadStream();
-            await _storageService.UploadAsync(stream, key, file.ContentType);
+            var webRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var localFilePath = Path.Combine(webRoot, "game_images", uniqueFileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
+
+            await using (var stream = file.OpenReadStream())
+            {
+                await using var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+                await stream.CopyToAsync(localFileStream);
+            }
+
+            try
+            {
+                await using var s3Stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                await _storageService.UploadAsync(s3Stream, key, file.ContentType);
+            }
+            catch
+            {
+            }
 
             var relativeUrl = $"/api/media/{key}";
 

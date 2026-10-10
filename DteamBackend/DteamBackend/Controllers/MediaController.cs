@@ -85,24 +85,23 @@ namespace DteamBackend.Controllers
             var key = $"uploads/{subfolder}/{uniqueFileName}";
 
             await using var stream = file.OpenReadStream();
+            var webRoot = _webHostEnvironment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            var localFilePath = Path.Combine(webRoot, "uploads", subfolder, uniqueFileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
+
+            await using (var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            {
+                await stream.CopyToAsync(localFileStream, cancellationToken);
+            }
+
             try
             {
-                await _storageService.UploadAsync(stream, key, file.ContentType, cancellationToken);
+                await using var s3Stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                await _storageService.UploadAsync(s3Stream, key, file.ContentType, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[MediaController] S3 upload failed for '{Key}', falling back to local wwwroot.", key);
-                var webRoot = _webHostEnvironment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
-                var localFilePath = Path.Combine(webRoot, "uploads", subfolder, uniqueFileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath)!);
-
-                if (stream.CanSeek)
-                {
-                    stream.Position = 0;
-                }
-
-                await using var localFileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-                await stream.CopyToAsync(localFileStream, cancellationToken);
             }
 
             var mediaUrl = $"/api/media/{key}";

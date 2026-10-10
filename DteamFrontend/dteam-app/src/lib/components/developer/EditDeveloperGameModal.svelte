@@ -3,6 +3,7 @@
   import { developerStore } from '../../stores/developerStore';
   import { tonToNanoTon, nanoTonToTon } from '../../utils/formatters';
   import { mediaService } from '../../services/mediaService';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { X, Upload, Edit3, Sparkles, FileArchive, Loader2 } from 'lucide-svelte';
 
   let title = $state('');
@@ -301,7 +302,7 @@
           </span>
           <div class="flex items-center gap-4">
             {#if coverImageUrl}
-              <img
+              <BackendImage
                 src={coverImageUrl}
                 alt="Cover Preview"
                 class="w-24 h-16 rounded-xl object-cover border border-cyan-500/40 shadow"
@@ -339,7 +340,7 @@
             <div class="flex flex-wrap gap-2 pt-1">
               {#each screenshotUrls as url, idx}
                 <div class="relative group w-20 h-14 rounded-lg overflow-hidden border border-cyan-500/30">
-                  <img src={url} alt="Screenshot" class="w-full h-full object-cover" />
+                  <BackendImage src={url} alt="Screenshot" class="w-full h-full object-cover" />
                   <button
                     type="button"
                     onclick={() => removeScreenshot(idx)}

@@ -3,6 +3,7 @@
   import { uiStore } from '../../stores/uiStore';
   import { MOCK_AVATARS } from '../../utils/constants';
   import { X, UserPlus, Shield, Wallet, Mail, Lock, User, Sparkles } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props { isOpen: boolean; onClose: () => void; onUserCreated: () => void; }
 
@@ -172,7 +173,7 @@
         <div>
           <label for="create-avatar" class="block text-xs font-semibold text-slate-300 mb-1">Avatar Image URL</label>
           <div class="flex items-center gap-3">
-            <img src={avatarUrl || MOCK_AVATARS[0]} alt="Avatar preview" class="w-10 h-10 rounded-xl object-cover border border-cyan-500/40" />
+            <BackendImage src={avatarUrl || MOCK_AVATARS[0]} alt="Avatar preview" avatar={true} initial={username?.charAt(0)?.toUpperCase() || 'U'} class="w-10 h-10 rounded-xl object-cover border border-cyan-500/40" />
             <input
               id="create-avatar"
               type="text"
@@ -189,7 +190,7 @@
                 onclick={() => avatarUrl = preset}
                 class="w-6 h-6 rounded-lg overflow-hidden border border-cyan-500/30 hover:border-cyan-400 cursor-pointer"
               >
-                <img src={preset} alt="preset" class="w-full h-full object-cover" />
+                <BackendImage src={preset} alt="preset" class="w-full h-full object-cover" avatar={true} />
               </button>
             {/each}
           </div>

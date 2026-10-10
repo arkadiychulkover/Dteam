@@ -2,6 +2,7 @@
   import type { Game } from '../../types';
   import { developerService } from '../../services/developerService';
   import { uiStore } from '../../stores/uiStore';
+  import BackendImage from '../ui/BackendImage.svelte';
   import { X, Newspaper, Upload, Image, Film, Loader2, Gamepad2, AlertCircle } from 'lucide-svelte';
 
   interface Props { game: Game; isOpen: boolean; onClose: () => void; onCreated?: () => void; }
@@ -161,7 +162,7 @@
       <div class="mt-4 p-3 rounded-2xl bg-[#021319] border border-cyan-900/40 flex items-center gap-3 shrink-0">
         <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-cyan-500/20">
           {#if game.coverImageUrl || game.headerImageUrl}
-            <img src={game.coverImageUrl || game.headerImageUrl} alt={game.title} class="w-full h-full object-cover" />
+            <BackendImage src={game.coverImageUrl || game.headerImageUrl} alt={game.title} class="w-full h-full object-cover" />
           {:else}
             <div class="w-full h-full flex items-center justify-center text-cyan-500">
               <Gamepad2 class="w-6 h-6" />
@@ -219,7 +220,7 @@
               {#if selectedFile?.type.startsWith('video/')}
                 <video src={mediaPreviewUrl} class="w-full max-h-56 object-cover" controls></video>
               {:else}
-                <img src={mediaPreviewUrl} alt="Preview" class="w-full max-h-56 object-cover" />
+                <BackendImage src={mediaPreviewUrl} alt="Preview" class="w-full max-h-56 object-cover" />
               {/if}
               <button
                 type="button"

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { X, FolderPlus, Trash2, Check } from 'lucide-svelte';
   import { libraryStore } from '../../stores/libraryStore';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { GameCollection, UserGame } from '../../types';
 
   let { collection = null, onClose, }: { collection?: GameCollection | null; onClose: () => void; } = $props();
@@ -158,8 +159,8 @@
                   class="w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors cursor-pointer {isSelected ? 'bg-cyan-950/60 border border-cyan-500/40 text-cyan-200' : 'hover:bg-white/5 text-slate-300 border border-transparent'}"
                 >
                   <div class="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src={item.game.coverImageUrl || item.game.headerImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'}
+                    <BackendImage
+                      src={item.game.coverImageUrl || item.game.headerImageUrl}
                       alt={item.game.title}
                       class="w-7 h-7 rounded object-cover shrink-0"
                     />

@@ -7,6 +7,7 @@
   import { currentUser } from '../../stores/authStore';
   import { formatPrice, formatBasePrice, formatTon, nanoTonToTon, formatBalance } from '../../utils/formatters';
   import TonIcon from '../ui/TonIcon.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import type { Game, CartItem } from '../../types';
   import {
     ShoppingCart,
@@ -148,8 +149,8 @@
               onclick={() => openGame(item.game)}
               class="w-full sm:w-44 h-28 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 relative cursor-pointer group-hover:scale-[1.02] transition-transform text-left border border-cyan-500/20"
             >
-              <img
-                src={item.game.headerImageUrl || item.game.coverImageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80'}
+              <BackendImage
+                src={item.game.headerImageUrl || item.game.coverImageUrl}
                 alt={item.game.title}
                 class="w-full h-full object-cover"
               />

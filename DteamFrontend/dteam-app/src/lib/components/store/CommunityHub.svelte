@@ -461,7 +461,7 @@
                     <div
                       class="w-full sm:w-44 h-24 rounded-2xl overflow-hidden shrink-0 border border-cyan-500/25"
                     >
-                      <img
+                      <BackendImage
                         src={post.media.url}
                         alt={post.title}
                         class="w-full h-full object-cover"
@@ -487,7 +487,7 @@
                     <div
                       class="w-full aspect-[21/9] rounded-2xl overflow-hidden border border-cyan-500/20 shadow-inner"
                     >
-                      <img
+                      <BackendImage
                         src={post.media.url}
                         alt={post.title}
                         class="w-full h-full object-cover"
@@ -524,7 +524,7 @@
                     <div
                       class="w-full max-h-96 rounded-2xl overflow-hidden border border-cyan-500/20"
                     >
-                      <img
+                      <BackendImage
                         src={post.media.url}
                         alt={post.title}
                         class="w-full h-full object-cover"
@@ -540,7 +540,7 @@
                       }}
                       class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-cyan-500/20 group/vid cursor-pointer hover:border-cyan-400/60 transition-all"
                     >
-                      <img
+                      <BackendImage
                         src={post.media.thumbnailUrl ||
                           "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"}
                         alt={post.title}
@@ -757,7 +757,7 @@
               <div
                 class="w-full rounded-2xl overflow-hidden border border-cyan-500/20"
               >
-                <img
+                <BackendImage
                   src={selectedPost.media.url}
                   alt={selectedPost.title}
                   class="w-full h-auto max-h-[500px] object-cover"
@@ -1044,7 +1044,7 @@
                   <div
                     class="w-16 h-12 rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-cyan-500/20"
                   >
-                    <img
+                    <BackendImage
                       src={op.media.url}
                       alt={op.title}
                       class="w-full h-full object-cover"
@@ -1263,7 +1263,7 @@
                       controls
                     ></video>
                   {:else}
-                    <img
+                    <BackendImage
                       src={hubFilePreview}
                       alt="Preview"
                       class="max-h-48 w-full object-contain"

@@ -10,6 +10,7 @@
   import EditGameModal from './EditGameModal.svelte';
   import AdminGuidModal from './AdminGuidModal.svelte';
   import CreditBalanceModal from './CreditBalanceModal.svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
   import {
     Gamepad2,
     Users,
@@ -491,7 +492,7 @@
           {#each filteredGames as game (game.id)}
             <div class="group relative rounded-2xl bg-[#061820]/90 border {game.isDlc ? 'border-purple-500/40 hover:border-purple-400' : 'border-cyan-500/20 hover:border-cyan-400/60'} overflow-hidden shadow-xl hover:shadow-cyan-500/20 transition-all flex flex-col">
               <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-                <img
+                <BackendImage
                   src={game.coverImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800'}
                   alt={game.title}
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -620,9 +621,11 @@
               <tr class="hover:bg-cyan-950/20 transition-colors">
                 <td class="py-3.5 px-4">
                   <div class="flex items-center gap-3">
-                    <img
-                      src={user.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150'}
+                    <BackendImage
+                      src={user.avatarUrl}
                       alt={user.username}
+                      avatar={true}
+                      initial={user.username?.charAt(0)?.toUpperCase() || 'U'}
                       class="w-8 h-8 rounded-xl object-cover border border-cyan-500/30"
                     />
                     <div>

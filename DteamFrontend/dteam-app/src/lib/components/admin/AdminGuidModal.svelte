@@ -3,6 +3,7 @@
   import { uiStore } from '../../stores/uiStore';
   import type { Duser } from '../../types';
   import { X, KeyRound, Wand2, Copy, Check, ShieldCheck, UserCheck } from 'lucide-svelte';
+  import BackendImage from '../ui/BackendImage.svelte';
 
   interface Props { isOpen: boolean; onClose: () => void; users: Duser[]; onGuidChanged: () => void; }
 
@@ -135,7 +136,7 @@
                   class="w-full text-left p-2 rounded-xl bg-[#0a232c] hover:bg-[#0d303c] border border-cyan-500/20 hover:border-cyan-400/50 flex items-center justify-between transition-all cursor-pointer group"
                 >
                   <div class="flex items-center gap-2.5">
-                    <img src={adminUser.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150'} alt="avatar" class="w-6 h-6 rounded-lg object-cover" />
+                    <BackendImage src={adminUser.avatarUrl} alt={adminUser.username} avatar={true} initial={adminUser.username?.charAt(0)?.toUpperCase() || 'U'} class="w-6 h-6 rounded-lg object-cover" />
                     <div>
                       <div class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
                         {adminUser.username}

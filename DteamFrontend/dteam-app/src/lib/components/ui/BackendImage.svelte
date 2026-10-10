@@ -1,6 +1,5 @@
 <script lang="ts">
   import { ImageOff, Loader2 } from 'lucide-svelte';
-  import { api } from '../../services/api';
   import { BACKEND_URL } from '../../utils/constants';
 
   let {
@@ -25,7 +24,7 @@
 
   let isLoaded = $state(false);
   let isError = $state(false);
-  let blobUrl = $state<string | null>(null);
+  let currentSrc = $state<string | null>(null);
 
   const isAvatar = $derived(
     avatar ||
@@ -37,17 +36,19 @@
     initial || (alt && alt !== 'Зображення' && alt !== 'Avatar' && alt !== 'Avatar preview' ? alt.charAt(0).toUpperCase() : 'U')
   );
 
-  const resolvedSrc = $derived.by(() => {
-    if (!src || !src.trim()) return null;
+  const resolvedTarget = $derived.by(() => {
+    if (!src || !src.trim()) return { primary: null, fallback: null };
     let url = src.trim();
 
     if (url.startsWith('blob:') || url.startsWith('data:')) {
-      return url;
+      return { primary: url, fallback: null };
     }
 
+    const backendBase = BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : '';
+
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      if (BACKEND_URL && url.startsWith(BACKEND_URL)) {
-        let path = url.slice(BACKEND_URL.length);
+      if (backendBase && url.startsWith(backendBase)) {
+        let path = url.slice(backendBase.length);
         if (
           path.startsWith('/icons/') ||
           path.startsWith('/community/') ||
@@ -57,17 +58,39 @@
           path.startsWith('/game_images/') ||
           path.startsWith('/nft/')
         ) {
-          return `${BACKEND_URL.replace(/\/+$/, '')}/api/media${path}`;
+          return {
+            primary: `${backendBase}/api/media${path}`,
+            fallback: `${backendBase}${path}`
+          };
         }
         if (path.startsWith('/avatar_') || path.startsWith('/avatars/')) {
           const cleanAvatar = path.startsWith('/avatars/') ? path.slice('/avatars'.length) : path;
-          return `${BACKEND_URL.replace(/\/+$/, '')}/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+          const iconPath = `/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+          return {
+            primary: `${backendBase}/api/media${iconPath}`,
+            fallback: `${backendBase}${iconPath}`
+          };
         }
       }
-      return url;
+      return { primary: url, fallback: null };
     }
 
     let cleanPath = url.startsWith('/') ? url : `/${url}`;
+
+    // Захищені чат-медіа: додаємо токен авторизації у параметри запиту
+    if (cleanPath.startsWith('/api/chat/media') || cleanPath.startsWith('/api/chat/uploads')) {
+      let token = '';
+      if (typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('dteam_token') || '';
+      }
+      const separator = cleanPath.includes('?') ? '&' : '?';
+      const authenticatedPath = token ? `${cleanPath}${separator}access_token=${encodeURIComponent(token)}` : cleanPath;
+      return {
+        primary: backendBase ? `${backendBase}${authenticatedPath}` : authenticatedPath,
+        fallback: null
+      };
+    }
+
     if (
       cleanPath.startsWith('/icons/') ||
       cleanPath.startsWith('/community/') ||
@@ -77,98 +100,63 @@
       cleanPath.startsWith('/game_images/') ||
       cleanPath.startsWith('/nft/')
     ) {
-      cleanPath = `/api/media${cleanPath}`;
+      return {
+        primary: backendBase ? `${backendBase}/api/media${cleanPath}` : `/api/media${cleanPath}`,
+        fallback: backendBase ? `${backendBase}${cleanPath}` : cleanPath
+      };
     } else if (cleanPath.startsWith('/avatar_') || cleanPath.startsWith('/avatars/')) {
       const cleanAvatar = cleanPath.startsWith('/avatars/') ? cleanPath.slice('/avatars'.length) : cleanPath;
-      cleanPath = `/api/media/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+      const iconPath = `/icons${cleanAvatar.startsWith('/') ? cleanAvatar : `/${cleanAvatar}`}`;
+      return {
+        primary: backendBase ? `${backendBase}/api/media${iconPath}` : `/api/media${iconPath}`,
+        fallback: backendBase ? `${backendBase}${iconPath}` : iconPath
+      };
     }
 
-    return BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}${cleanPath}` : cleanPath;
+    return {
+      primary: backendBase ? `${backendBase}${cleanPath}` : cleanPath,
+      fallback: null
+    };
   });
 
   $effect(() => {
-    let active = true;
-    let createdUrl: string | null = null;
-
-    async function fetchImageBlob(url: string | null) {
-      if (!url) { blobUrl = null; isLoaded = false; isError = false; return; }
-
-      if (url.startsWith('blob:') || url.startsWith('data:')) {
-        blobUrl = url;
-        isLoaded = true;
-        isError = false;
-        return;
-      }
-
-      const isBackendUrl = url.includes('/api/') ||
-                           url.startsWith('/') ||
-                           (BACKEND_URL && url.startsWith(BACKEND_URL));
-
-      if (!isBackendUrl) { blobUrl = url; isLoaded = true; isError = false; return; }
-
+    const target = resolvedTarget;
+    if (!target.primary) {
+      currentSrc = null;
       isLoaded = false;
       isError = false;
-
-      try {
-        let response: Response | null = null;
-        let lastError: any = null;
-
-        for (let attempt = 0; attempt < 2; attempt++) {
-          if (!active) return;
-          try {
-            const headers: Record<string, string> = {};
-            const token = await api.getValidToken();
-            if (token) {
-              headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            response = await fetch(url, { headers });
-            if (response.ok) {
-              lastError = null;
-              break;
-            }
-          } catch (fetchErr) {
-            lastError = fetchErr;
-          }
-
-          if (attempt === 0 && active) {
-            await new Promise((r) => setTimeout(r, 400));
-          }
-        }
-
-        if (!active) return;
-
-        if (!response || !response.ok) {
-          throw lastError || new Error(`HTTP ${response?.status ?? 'failed'}`);
-        }
-
-        const blob = await response.blob();
-        if (!active) return;
-
-        createdUrl = URL.createObjectURL(blob);
-        blobUrl = createdUrl;
-      } catch (err) {
-        if (!active) return;
-        isError = true;
-        isLoaded = true;
-        blobUrl = null;
-      }
+      return;
     }
 
-    fetchImageBlob(resolvedSrc);
-
-    return () => { active = false; if (createdUrl) { URL.revokeObjectURL(createdUrl); } };
+    currentSrc = target.primary;
+    isLoaded = false;
+    isError = false;
   });
+
+  function handleImageError() {
+    const target = resolvedTarget;
+    if (target.fallback && currentSrc !== target.fallback) {
+      currentSrc = target.fallback;
+    } else {
+      isError = true;
+      isLoaded = true;
+    }
+  }
+
+  function handleImageLoad() {
+    isLoaded = true;
+    isError = false;
+  }
 </script>
 
 <div class="relative overflow-hidden bg-slate-900/60 {className}">
-  {#if !isLoaded && !isError && blobUrl}
+  {#if !isLoaded && !isError && currentSrc}
     <div class="absolute inset-0 bg-slate-800/80 animate-pulse flex items-center justify-center z-10">
       <Loader2 class="w-4 h-4 text-cyan-400/50 animate-spin" />
     </div>
   {/if}
 
-  {#if !blobUrl || isError}
+  {#if !currentSrc || isError}
     {#if isAvatar}
       <div class="w-full h-full flex items-center justify-center bg-gradient-to-tr from-cyan-600 via-teal-600 to-blue-600 text-white font-bold select-none text-xs">
         {letterFallback}
@@ -183,12 +171,12 @@
     {/if}
   {:else}
     <img
-      src={blobUrl}
+      src={currentSrc}
       {alt}
       loading="lazy"
       decoding="async"
-      onload={() => (isLoaded = true)}
-      onerror={() => { isError = true; isLoaded = true; }}
+      onload={handleImageLoad}
+      onerror={handleImageError}
       class="w-full h-full object-cover transition-opacity duration-200 {isLoaded ? 'opacity-100' : 'opacity-0'}"
       {...restProps}
     />

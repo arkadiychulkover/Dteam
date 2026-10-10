@@ -340,7 +340,7 @@
             {#if selectedGame}
               <div class="w-14 h-10 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-cyan-400/40 relative">
                 {#if selectedGame.bannerUrl}
-                  <img src={selectedGame.bannerUrl} alt={selectedGame.title} class="w-full h-full object-cover" />
+                  <BackendImage src={selectedGame.bannerUrl} alt={selectedGame.title} class="w-full h-full object-cover" />
                 {:else}
                   <div class="w-full h-full bg-gradient-to-tr from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400">
                     <Gamepad2 class="w-5 h-5" />
@@ -468,7 +468,7 @@
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження...</p>
               {:else if mediaPreviewUrl || mediaUrl}
-                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
+                <BackendImage src={mediaPreviewUrl || mediaUrl} alt="Uploaded" class="max-h-32 rounded-lg object-cover mb-2" />
                 <p class="text-xs text-cyan-400">Файл успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
@@ -496,7 +496,7 @@
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження арту...</p>
               {:else if mediaPreviewUrl || mediaUrl}
-                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded Artwork" class="max-h-48 rounded-lg object-cover mb-2" />
+                <BackendImage src={mediaPreviewUrl || mediaUrl} alt="Uploaded Artwork" class="max-h-48 rounded-lg object-cover mb-2" />
                 <p class="text-xs text-cyan-400">Арт успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл арту сюди або</p>
@@ -547,7 +547,7 @@
                 <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                 <p class="text-xs text-slate-400">Завантаження...</p>
               {:else if mediaPreviewUrl || mediaUrl}
-                <img src={mediaPreviewUrl || mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
+                <BackendImage src={mediaPreviewUrl || mediaUrl} alt="Uploaded Screenshot" class="max-h-48 rounded-lg object-cover mb-2" />
                 <p class="text-xs text-cyan-400">Зображення успішно обрано</p>
               {:else}
                 <p class="text-sm text-slate-400 mb-3">Перетягніть файл сюди або</p>
@@ -630,7 +630,7 @@
                     <Loader2 class="w-6 h-6 text-cyan-400 animate-spin mb-2" />
                     <p class="text-xs text-slate-400">Завантаження...</p>
                   {:else if mediaUrl}
-                    <img src={mediaUrl} alt="Guide Cover" class="max-h-24 rounded-lg object-cover mb-1" />
+                    <BackendImage src={mediaUrl} alt="Guide Cover" class="max-h-24 rounded-lg object-cover mb-1" />
                     <p class="text-xs text-cyan-400">Обкладинку завантажено</p>
                   {:else}
                     <p class="text-xs text-slate-400 mb-3 text-center">Перетягніть файл сюди або</p>
@@ -848,7 +848,7 @@
                 onclick={() => (lightboxMedia = { src: resolveMediaUrl(post.media.url), title: post.title, author: post.author })}
                 onkeydown={(e) => e.key === 'Enter' && (lightboxMedia = { src: resolveMediaUrl(post.media.url), title: post.title, author: post.author })}
               >
-                <img src={resolveMediaUrl(post.media.url)} alt="" class="max-h-96 w-full object-cover group-hover/img:scale-101 transition-transform" />
+                <BackendImage src={post.media.url} alt="" class="max-h-96 w-full object-cover group-hover/img:scale-101 transition-transform" />
                 <div class="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-xs text-slate-200 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
                   <ZoomIn class="w-3 h-3" />
                   <span>Збільшити</span>

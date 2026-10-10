@@ -269,11 +269,11 @@ namespace DteamBackend
             forwardedHeadersOptions.KnownProxies.Clear();
             app.UseForwardedHeaders(forwardedHeadersOptions);
 
-            app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-
             app.UseRouting();
 
             app.UseCors("DteamCorsPolicy");
+
+            app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
             app.UseRateLimiter();
 
